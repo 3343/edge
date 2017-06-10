@@ -1,0 +1,199 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#
+# @section LICENSE
+# Copyright (c) 2017, Regents of the University of California
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# Build file of EDGEcut.
+##
+import os
+import warnings
+
+def simpleWarning(message, category, filename, lineno, file=None, line=None):
+    return '%s\n' % (message)
+warnings.formatwarning = simpleWarning
+
+# configuration
+vars = Variables()
+
+# add possible xml config
+vars.AddVariables(
+  PathVariable( 'xml',
+                'xml configuration of the build, command line arguments have priority over xml.',
+                 None,
+                 PathVariable.PathIsFile )
+)
+
+# create environment
+env = Environment( variables = vars )
+
+# parse xml
+xmlArgs = {}
+if 'xml' in env:
+  xmlTree = xml.etree.ElementTree.parse( env['xml'] )
+  build = xmlTree.getroot().find('build')
+
+  # get the xml args
+  for option in build:
+    xmlArgs[option.tag] = [option.text]
+
+# add command line arguments
+vars.AddVariables(
+  EnumVariable( 'mode',
+                'compile modes, option \'san\' enables address and undefind sanitizers',
+                'release',
+                 allowed_values=('release', 'debug', 'release+san', 'debug+san' )
+              ),
+  BoolVariable( 'cov',
+                'enable code coverage',
+                 False ),
+  PathVariable( 'build_dir',
+                'location where the code is build',
+                'build',
+                PathVariable.PathIsDirCreate ),
+  PathVariable( 'cgal_dir',
+                'directory of the cgal installation',
+                None )
+)
+
+# command args have priority
+cArgs=vars.args
+for cArg in cArgs:
+  xmlArgs[cArg] = cArgs[cArg]
+
+# forward combined args to scons
+vars.args=xmlArgs
+
+# include environment
+env = Environment( variables = vars )
+
+# exit in the case of unknown variables
+if vars.UnknownVariables():
+  print "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys())
+  exit(1)
+
+# generate help message
+Help( vars.GenerateHelpText(env) )
+
+print "##########################################################################"
+print "##############   ##############            ###############  ##############"
+print "##############   ###############         ################   ##############"
+print "#####            #####       #####      ######                       #####"
+print "#####            #####        #####    #####                         #####"
+print "#############    #####         #####  #####                  #############"
+print "#############    #####         #####  #####      #########   #############"
+print "#####            #####         #####  #####      #########           #####"
+print "#####            #####        #####    #####        ######           #####"
+print "#####            #####       #####      #####       #####            #####"
+print "###############  ###############         ###############   ###############"
+print "###############  ##############           #############    ###############"
+print "#######################################################################cut"
+
+# print welcome message
+print( 'Running build script of EDGEcut.' )
+
+# configuration
+conf = Configure(env )
+
+# include environment
+env['ENV'] = os.environ
+
+# forward compiler
+if 'CC' in env['ENV'].keys():
+  env['CC'] = env['ENV']['CC']
+if 'CXX' in env['ENV'].keys():
+  env['CXX'] = env['ENV']['CXX']
+
+# forward flags
+if 'CFLAGS' in env['ENV'].keys():
+  env['CFLAGS'] = env['ENV']['CFLAGS']
+if 'CXXFLAGS' in env['ENV'].keys():
+  env['CXXFLAGS'] = env['ENV']['CXXFLAGS']
+if 'LINKFLAGS' in env['ENV'].keys():
+  env['LINKFLAGS'] = env['ENV']['LINKFLAGS']
+if 'CPLUS_INCLUDE_PATH' in env['ENV'].keys():
+  env.Append( CPPPATH = env['ENV']['CPLUS_INCLUDE_PATH'] )
+if 'LIBRARY_PATH' in env['ENV'].keys():
+  env.Append( LIBPATH = env['ENV']['LIBRARY_PATH'] )
+
+
+# add current path to seach path
+env.Append( CPPPATH = ['#', '#/src'] )
+
+# forward CGAL
+if 'cgal_dir' in vars.args.keys():
+  env.Append( CXXFLAGS=['-isystem'+env['cgal_dir']+'/include'] )
+  env.Append( LIBPATH=[env['cgal_dir']+'/lib'    ] )
+  # set rpath, we dislike the annoying LD_LIBRARY_PATH
+  env.Append( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib'] )
+
+# add CGAL
+#if( not conf.CheckLibWithHeader( 'libCGAL', 'CGAL/constant.h', 'CXX' ) ):
+#  warnings.warn('Error: Could not find CGAL. Try using cgal_dir option')
+if( not conf.CheckLib( 'libCGAL', language='CXX' ) ):
+  warnings.warn('Error: Could not find CGAL. Try using cgal_dir option')
+
+# add mpfr and gmp
+if not conf.CheckLib( 'mpfr', language='CXX' ):
+  warnings.warn('Warning: Could not find mpfr')
+
+if not conf.CheckLib( 'gmp', language='CXX' ):
+  warnings.warn('Warning: Could not find gmp')
+
+# needed for compilation on Ubuntu systems (since when using Ubuntu's CGAL, one needs to link against boost_thread)
+if not conf.CheckLib( 'boost_thread', language='CXX' ):
+  warnings.warn('Warning: Could not find boost_thread')
+
+
+# add default flags
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror", "-pedantic", "-Wshadow"] )
+
+# set optimization mode
+if 'debug' in env['mode']:
+  env.Append( CXXFLAGS = ['-g','-O0'] )
+else:
+  env.Append( CXXFLAGS = ['-O2'] )
+
+# add sanitizers
+if 'san' in  env['mode']:
+  env.Append( CXXFLAGS =  ['-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
+  env.Append( LINKFLAGS = ['-fsanitize=address', '-fsanitize=undefined'] )
+
+# enable code coverage, if requested
+if env['cov'] == True:
+  env.Append( CXXFLAGS = ['-coverage', '-fno-inline', '-fno-inline-small-functions', '-fno-default-inline'] )
+  env.Append( LINKFLAGS = ['-coverage'] )
+
+
+# get source files
+VariantDir( env['build_dir']+'/src', 'src')
+VariantDir( env['build_dir']+'/submodules', 'submodules')
+
+env.sources = []
+
+
+Export('env')
+SConscript( env['build_dir']+'/submodules/SConscript' )
+Import('env')
+
+Export('env')
+SConscript( env['build_dir']+'/src/SConscript' )
+Import('env')
+
+# add a new line
+print ''
+env.Program( env['build_dir']+'/edge_cut', source = env.sources )

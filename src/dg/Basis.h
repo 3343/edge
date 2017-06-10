@@ -1,0 +1,372 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ *
+ * @section LICENSE
+ * Copyright (c) 2016, Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Basis of an element.
+ **/
+
+#ifndef BASIS_HPP
+#define BASIS_HPP
+
+#include <cassert>
+#include <vector>
+#include "constants.hpp"
+#include "linalg/Matrix.h"
+
+namespace edge {
+  namespace dg {
+    class Basis;
+  }
+}
+
+class edge::dg::Basis {
+  private:
+    // Evaluated basis for different orders at a specific quad point.
+    struct EvalBasis {
+      //! values of the basis; [*]: mode
+      std::vector< real_base > val;
+      //! values of the partial derivatives; [*][]: dim, [][*]: mode
+      std::array< std::vector< real_base >,  3 > valD;
+    };
+
+    // Quad points and evaluated basis functions at the quad points of the reference elements for different order.
+    struct EvalQpRefElOrder {
+      //! reference dimension xi1
+      std::vector< real_mesh > xi1;
+      //! reference dimension xi2
+      std::vector< real_mesh > xi2;
+      //! reference dimensions xi2
+      std::vector< real_mesh > xi3;
+      //! quadrature weigts
+      std::vector< real_mesh > weights;
+      //! evaluated basis at quad points dependent on the order; [*][]: quad poiints, [][*]: basis of given order
+      std::vector< std::vector< EvalBasis > > basis;
+    };
+
+    // different evaluated orders of quad rules
+    std::vector< EvalQpRefElOrder > m_qpEval;
+
+    //! mass matrix
+    t_matCrd m_mass;
+
+    //! stiffnes matrix / matrices
+    std::vector< t_matCrd > m_stiff;
+
+    //! flux matrices
+    std::vector< t_matCrd > m_flux;
+
+    //! entity for which the basis is defined
+    const t_entityType m_entType;
+
+    //! order of convergence
+    const unsigned short m_order;
+
+    //! number of basis functions
+    unsigned short m_nBaseFuncs;
+
+    /**
+     * Initializes the precomputed quad point positions and their basis values.
+     *
+     * @param i_order maximum order (quadrature & basis) for all ref-elements.
+     **/
+    void initEvalQpRefEl( unsigned short i_order );
+
+    /**
+     * Computes the mass matrix using numerical integration.
+     **/
+    void computeMassMatrix();
+
+    /**
+     * Computes the stiffness matrix/matrices using numerical integration.
+     **/
+    void computeStiffMatrices();
+
+    /**
+     * Computes the flux matrices for line elements.
+     **/
+    void computeFluxMatricesLine();
+
+    /**
+     * Computes the flux matrices for two-dimensional elements.
+     **/
+    void computeFluxMatrices2d();
+
+    /**
+     * Computes the flux matrices for hexahedral elements.
+     *
+     * Remark: While the local flux matrices default to six, we only derive 6 flux matrices for the neighboring cont also.
+     *         This is because we assume rectangular elements which are aligned to the coordinates system.
+     *         (The mapping to-/from- the reference coordinate system does not contain a rotation.
+     **/
+    void computeFluxMatricesHex();
+
+    /**
+     * Computes the flux matrices for tetrahedral elements.
+     **/
+    void computeFluxMatricesTet();
+
+    /**
+     * Computes the flux matrices using numerical integration.
+     **/
+    void computeFluxMatrices();
+
+    /**
+     * Evaluates a basis functions for the line reference element.
+     *
+     * @param i_b id of the basis function which get evaluated. First basis is 0.
+     * @param i_xi location in the reference element, where the basis is evaluated.
+     * @param o_val will be set to the value of the basis function at the given point.
+     **/
+    static void evalBasisLine( unsigned int  i_b,
+                               real_mesh     i_xi,
+                               real_base    &o_val );
+
+    /**
+     * Evaluates the derivative of a basis function for the line reference element.
+     *
+     * @param i_b id of the basis function which derivative gets evaluated. First id is 0.
+     * @param i_xi location in the reference element, where the derivative of the basis function is evaluated.
+     * @param o_valDxi will bet set the value of the derivative of the basis function at the given point.
+     **/
+    static void evalBasisDerLine( unsigned int  i_b,
+                                  real_mesh     i_xi,
+                                  real_base    &o_valDxi );
+
+    /**
+     * Evaluates a basis function for the quadrilateral reference element by going through the tensor structure.
+     *
+     * @param i_b id of the basis function which gets evaluated. First basis is 0.
+     * @param i_xi xi-coord in the reference element.
+     * @param i_eta eta-coord in the reference element.
+     * @param o_val will be set to the value of the basis function at the given point.
+     * @param i_der index for derivative evaluation:
+     *              0               : der in first (xi),
+     *              1               : der in second (eta),
+     *              everything else : no derivatives in both 1D functions
+     * @param i_order order of the basis (to be removed when hierachical).
+     **/
+    static void evalBasisQuad( unsigned int  i_b,
+                               real_mesh     i_xi,
+                               real_mesh     i_eta,
+                               real_base    &o_val,
+                               int           i_der = -1,
+                               unsigned int  i_order = PP_ORDER );
+
+    /**
+     * Evaluates a basis function for the triangular reference element.
+     *
+     * @param i_b id of the basis function which gets evaluated. First basis is 0.
+     * @param i_xi xi-coord in the reference element.
+     * @param i_eta eta-coord in the reference element.
+     * @param o_val will be set to the value of the basis function at the given point.
+     * @param i_der index for derivative evaluation:
+     *              0               : evaluate der of basis w.r.t. to xi,
+     *              1               : evaluate der of basis w.r.t. to eta,
+     *              everything else : no derivative at all.
+     **/
+    static void evalBasisTria( unsigned int  i_b,
+                               real_mesh     i_xi,
+                               real_mesh     i_eta,
+                               real_base    &o_val,
+                               int           i_der = -1 );
+
+    /**
+     * Evaluates a basis function for the hexahedral reference element by going through the tensor structure.
+     *
+     * @param i_b id of the basis function which gets evaluated. First basis is 0.
+     * @param i_xi xi-coord in the reference element.
+     * @param i_eta eta-coord in the reference element.
+     * @param i_zeta zeta-coord in the reference element.
+     * @param o_val will be set to the value of the basis function at the given point.
+     * @param i_der index for derivative evaluation:
+     *              0               : der in first (xi),
+     *              1               : der in second (eta),
+     *              2               : der in third (zeta),
+     *              everything else : no derivatives in both 1D functions
+     * @param i_order order of the basis (to be removed when hierachical).
+     **/
+    static void evalBasisHex( unsigned int i_b,
+                              real_mesh    i_xi,
+                              real_mesh    i_eta,
+                              real_mesh    i_zeta,
+                              real_base   &o_val,
+                              int          i_der = -1,
+                              unsigned int i_order = PP_ORDER );
+
+    /**
+     * Evaluates a basis function for the tetrahedral reference element.
+     *
+     * @param i_b id of the basis function which gets evaluated. First basis is 0.
+     * @param i_xi xi-coord in the reference element.
+     * @param i_eta eta-coord in the reference element.
+     * @param i_zeta zeta-coord in the reference element.
+     * @param o_val will be set to the value of the basis function at the given point.
+     * @param i_der index for derivative evaluation:
+     *              0               : der in first (xi),
+     *              1               : der in second (eta),
+     *              2               : der in third (zeta)
+     *              everything else : no derivatives in both 1D functions,
+     **/
+    static void evalBasisTet( unsigned int  i_b,
+                              real_mesh     i_xi_1,
+                              real_mesh     i_xi_2,
+                              real_mesh     i_xi_3,
+                              real_base    &o_val,
+                              int           i_der = -1 );
+  public:
+    /**
+     * Constructur.
+     *
+     * @param i_entityType entity type of the basis.
+     * @param i_order maximum oder of the basis (such that sub-matrices of a hierarchical basis can be queried).
+     **/
+    Basis( t_entityType   i_entityType,
+           unsigned short i_order );
+
+    /**
+     * Evaluates a basis function for different reference elements.
+     *
+     * @param i_b id of the basis function which gets evaluated. First basis is 0.
+     * @param i_entType type of the reference element which basis is evaluated.
+     * @param o_val will be set to the value of the basis function at the given point.
+     * @param i_xi xi-coord in the reference element.
+     * @param i_eta eta-coord in the reference element.
+     * @param i_zeta zeta-coord in the reference element.
+     * @param i_der index for derivative evaluation:
+     *              0               : evaluate der of basis w.r.t. to xi,
+     *              1               : evaluate der of basis w.r.t. to eta,
+     *              2               : evaluate der of basis w.r.t. to zeta,
+     *              everything else : no derivative at all.
+     * @param i_order order of the basis (to be removed when hierachical).
+     **/
+    static void evalBasis( unsigned int  i_b,
+                           t_entityType  i_entType,
+                           real_base    &o_val,
+                           real_mesh     i_xi,
+                           real_mesh     i_eta  = 0,
+                           real_mesh     i_zeta = 0,
+                           int           i_der  = -1,
+                           unsigned int i_order = PP_ORDER );
+
+    /**
+     * Evaluates a basis function for different reference elements.
+     *
+     * @param i_b id of the basis function which gets evaluated. First basis is 0.
+     * @param i_entType type of the reference element for which basis is evaluated.
+     * @param o_val will be set to the value of the basis function at the given point.
+     * @param i_pt pt where the basis is evaluated.
+     * @param i_der index for derivative evaluation:
+     *              0               : evaluate der of basis w.r.t. to xi,
+     *              1               : evaluate der of basis w.r.t. to eta,
+     *              2               : evaluate der of basis w.r.t. to zeta,
+     *              everything else : no derivative at all.
+     * @param i_order order of the basis (to be removed when hierachical).
+     **/
+    static void evalBasis( unsigned int        i_b,
+                           t_entityType        i_enType,
+                           real_base          &o_val,
+                           real_mesh*   const  i_pt,
+                           int                 i_der  = -1,
+                           unsigned int        i_order = PP_ORDER );
+
+    /**
+     * Prints the mass matrix, stiffness matrix/matrices and flux matrices.
+     **/
+    void print() const;
+
+    /**
+     * Maps evaluated quadrature points to modal representation.
+     *
+     * @param i_evalF evaluated function at quadrature points.
+     * @param i_orderQr order of the quadrature rule.
+     * @param o_modes will bet set to modes.
+     **/
+    void qpts2modal( const real_base    *i_evalF,
+                           unsigned int  i_orderQr,
+                           real_base    *o_modes ) const;
+
+    /**
+     * Evaluates the modal representation at a given point of the reference element (everything else gets extrapolated).
+     *
+     * @param i_pt point of the ref. element.
+     * @param i_modes modes (coefficients) of the basis.
+     **/
+    real_base modal2ptval( const real_mesh  i_pt[3],
+                           const real_base *i_modes ) const;
+
+    /**
+     * Evaluates the modal representation at a given point of the reference element.
+     * In contrast to modal2ptval the point matches a (precomputed) quadrature point.
+     *
+     * @param i_orderQr order of the quadrature rule (implicitly changes quad points).
+     * @param i_quadPoi id of the requested quad point evaluation.
+     * @param i_modes modes.
+     **/
+    real_base modal2refPtVal(       unsigned short  i_orderQr,
+                                    unsigned int    i_quadPoi,
+                              const real_base      *i_modes ) const;
+
+    /**
+     * Gets the inverse mass matrix.
+     * Format is dense (including zero entries).
+     * Storage is row-major or column-major w.r.t. to the i-th basis function phi[i] in:
+     * Int[Ref. element] ( phi[row] * phi[col] )
+     *
+     * @param i_nModes number of modes.
+     * @param o_matrix will be set to inverse mass matrix in dense storage: [nmodes][nmodes].
+     * @param i_rowMajor true if row major storage is requested.
+     **/
+    void getMassInvDense( int_md     i_nModes,
+                          real_base *o_matrix,
+                          bool       i_rowMajor=true ) const;
+
+    /**
+     * Gets the stiffness matrices multiplied with the inverse mass matrix.
+     * Format is dense (including zero entries).
+     * Storage is row-major or column-major w.r.t. to the i-th basis function phi[i] in:
+     * Int[Ref. element] ( phi[row] * phi[col]_x )
+     *
+     * @param i_nModes number of modes.
+     * @param o_matrices will be set to stiffness matrices in dense storage: [ndim][nmodes][nmodes].
+     * @param i_tStiff true if the stiffness matrix should be transposed before multiplying with the inverse mass matrix.
+     * @param i_rowMajor true if row major storage is requested.
+     **/
+    void getStiffMm1Dense( int_md     i_nModes,
+                           real_base *o_matrices,
+                           bool       i_tStiff=false,
+                           bool       i_rowMajor=true ) const;
+
+    /**
+     * Gets the flux matrices multiplied with the inverse mass matrix.
+     * Format is dense (including zero entries).
+     * Order of storage is: 1) Local face 2) neighboring face 3) vertex orientation (if applicable).
+     *
+     * Storage is row-major or column-major w.r.t. to the i-th basis function phi[i] in: 
+     * Int[surface of Ref. element] ( phi_neigh[row] * phi_local[col] )
+     *
+     * @param i_nModes number of modes.
+     * @param o_matrices will be set to flux matrices in dense storage: [flux-mat. id][nmodes][nmodes].
+     * @param i_rowMajor true if row major storage is requested.
+     **/
+    void getFluxMm1Dense( int_md     i_nModes,
+                          real_base *o_matrices,
+                          bool       i_rowMajor=true ) const;
+};
+
+#endif

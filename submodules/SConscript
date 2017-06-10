@@ -1,0 +1,134 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#         Alexander Heinecke (alexander.heinecke AT intel.com)
+#
+# @section LICENSE
+# Copyright (c) 2015-2017, Regents of the University of California
+# Copyright (c) 2016, Intel Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# Source files in the submodules.
+##
+import os
+import warnings
+
+Import('env')
+Import('conf')
+
+l_objects = [ env.Object( 'pugixml/src/pugixml.cpp' ) ]
+
+# enable libdl available
+conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
+
+# enable libnuma if available
+if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True):
+  env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
+
+# forward libxsmm
+if env['xsmm'] != False:
+  if env['xsmm'] != True:
+    env.AppendUnique( CPPPATH=[ env['xsmm']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['xsmm']+'/lib']     )
+
+  if conf.CheckLibWithHeaderFlags( 'libxsmmnoblas', 'libxsmm.h' ) and \
+     conf.CheckLibWithHeaderFlags( 'libxsmm', 'libxsmm.h' ):
+    env.AppendUnique( LINKFLAGS=['-pthread'] )
+    if env['cfr'] == '1':
+      env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_DENSE_SINGLE'] )
+    else:
+      env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM'] )
+  else:
+    warnings.warn('  Warning: Could not find libxsmm, continuing without.' )
+    env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )
+else:
+  env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )
+
+# enable zlib if available
+if env['zlib'] != False:
+  if env['zlib'] != True:
+    env.AppendUnique( LIBPATH=[ env['zlib']+'/lib']     )
+  conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' )
+
+# enable HDF5 if available
+if env['hdf5'] != False:
+  if env['hdf5'] != True:
+    env.AppendUnique( CPPPATH=[ env['hdf5']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['hdf5']+'/lib']     )
+  conf.CheckLibWithHeaderFlags( 'hdf5' )
+  conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
+
+
+# enable NetCDF if available
+if env['netcdf'] != False:
+  if env['netcdf'] != True:
+    env.AppendUnique( CPPPATH=[ env['netcdf']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['netcdf']+'/lib']     )
+
+  if conf.CheckLibWithHeaderFlags( 'netcdf', 'netcdf.h' ):
+    env.AppendUnique( CPPDEFINES = ['PP_HAS_NETCDF'] )
+    env['netcdf'] = True
+  else:
+    env['netcdf'] = False
+
+# forward MOAB
+if env['moab'] != False:
+  if env['moab'] != True:
+    env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
+
+  if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
+    env.AppendUnique( CPPDEFINES=['PP_T_MESH_UNSTRUCTURED'] )
+    env.AppendUnique( CPPDEFINES=['PP_USE_MOAB'] )
+  else:
+    warnings.warn( 'Warning: Could not find MOAB, falling back to structured meshes.' )
+    env['moab'] = False
+
+# use regular meshes if not MOAB
+if env['moab'] == False:
+  env.AppendUnique( CPPDEFINES=['PP_T_MESH_REGULAR'] )
+
+# create visit writer separately to get around "format string" warnings
+env.sources.append( env.Object( 'visit_writer/visit_writer.cpp',
+                                CXXFLAGS = env['CXXFLAGS']+
+                                           ['-Wno-error']+
+                                           ['-Wno-shadow']+
+                                           ['-Wno-unused-variable']+
+                                           ['-Wno-format-security'] ) )
+
+# create easylogging separately to get around shadow warnings
+l_def = ['ELPP_NO_DEFAULT_LOG_FILE']
+if 'omp' in env['parallel']: l_def=l_def+['ELPP_THREAD_SAFE']
+env.sources.append( env.Object( 'easylogging/src/easylogging++.cc',
+                                CXXFLAGS   = env['CXXFLAGS']+
+                                             ['-Wno-shadow'],
+                                CPPDEFINES = l_def ) )
+
+# compile numerical libs separately
+l_numLibs = [ 'FastGL/fastgl.cpp' ]
+for l_lib in l_numLibs:
+  env.sources.append( env.Object( l_lib,
+                                  CXXFLAGS = env['CXXFLAGS']+
+                                             '-Wno-error'+
+                                             '-Wno-all'+
+                                             '-Wno-shadow'+
+                                             '-Wno-unused-variable' ) )
+
+# compile default soruces
+for l_object in l_objects:
+  env.sources.append( l_object )
+
+Export('conf')
+Export('env')

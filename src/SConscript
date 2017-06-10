@@ -1,0 +1,107 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#
+# @section LICENSE
+# Copyright (c) 2015-2016, Regents of the University of California
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# Source files for the build.
+##
+
+Import('env')
+
+l_vec = []
+if  env['compilers'] == 'clang':
+  # disable pragma omp simd errors (not vectorized) of sanitizer
+  if 'san' in env['mode']:
+    l_vec += ['-Wno-error=pass-failed']
+
+l_kernels = [ 'time/TimeGroupStatic.cpp' ]
+
+l_sources = [ 'data/Dynamic.cpp',
+              'data/EntityLayout.cpp',
+              'mesh/Regular.cpp',
+              'dg/Basis.cpp',
+              'io/OptionParser.cpp',
+              'io/logging.cpp',
+              'io/Config.cpp',
+              'io/Vtk.cpp',
+              'io/WaveField.cpp',
+              'io/ErrorNorms.cpp',
+              'io/Receivers.cpp',
+              'parallel/Shared.cpp',
+              'parallel/Mpi.cpp',
+              'parallel/global.cpp',
+              'time/Manager.cpp' ]
+if env['element_type'] == 'tet4':
+  l_sources = l_sources + ['mesh/regular/Tet.cpp']
+if env['moab'] != False:
+  l_sources = l_sources + ['mesh/Unstructured.cpp', 'mesh/Moab.cpp']
+
+if 'elastic' in env['equations']:
+  l_sources = l_sources + ['impl/elastic/io/Config.cpp']
+
+for l_source in l_sources:
+  env.sources.append( env.Object( l_source ) )
+
+# vector report for kernels
+for l_kernel in l_kernels:
+  env.sources.append( env.Object( l_kernel, CXXFLAGS = env['CXXFLAGS']+[l_vec] ) )
+
+# gather unit tests
+if env['tests']:
+  l_tests = ['tests.cpp',
+             'data/EntityLayout.test.cpp',
+             'data/SparseEntities.test.cpp',
+             'dg/Basis.test.cpp',
+             'dg/QuadratureEval.test.cpp',
+             'mesh/regular/Base.test.cpp',
+             'parallel/Mpi.test.cpp',
+             'mesh/common.test.cpp',
+             'linalg/Geom.test.cpp',
+             'linalg/Matrix.test.cpp',
+             'linalg/Mappings.test.cpp',
+             'linalg/HalfSpace.test.cpp',
+             'linalg/Domain.test.cpp',
+             'linalg/Series.test.cpp',
+             'io/Config.test.cpp',
+             'io/Receivers.test.cpp',
+             'io/ReceiversQuad.test.cpp' ]
+
+  if env['element_type'] == 'tet4':
+    l_tests = l_tests + ['mesh/regular/Tet.test.cpp']
+
+  if 'elastic' in env['equations']:
+    l_tests = l_tests+['impl/elastic/common.test.cpp',
+                       'impl/elastic/setups/RuptureInit.test.cpp',
+                       'impl/elastic/solvers/InternalBoundary.test.cpp',
+                       'impl/elastic/solvers/FrictionLaws.test.cpp',
+                       'impl/elastic/setups/KinematicsInit.test.cpp' ]
+
+  if env['netcdf'] == True:
+    l_tests = l_tests + ['impl/elastic/io/Nrf.test.cpp' ]
+    if 'elastic' in env['equations']:
+      l_tests = l_tests + ['impl/elastic/solvers/Kinematics.test.cpp']
+
+  # add objects and make sure we are allowed to overwrite private keywords
+  env.tests.append( env.sources )
+  for l_test in l_tests:
+    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+['-Wno-keyword-macro', '-DPP_UNIT_TEST'] ) )
+
+# prepend main file to edge
+env.sources = env.Object( 'main.cpp' ) + env.sources
+
+Export('env')

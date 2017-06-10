@@ -1,0 +1,228 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#
+# @section LICENSE
+# Copyright (c) 2016-2017, Regents of the University of California
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+#
+# Debian bootstrap for EDGE and supporting software.
+#
+# Assumes that /edge.tar.gz in the image already contains EDGE:
+#   git clone --recursive git@github.com:3343/edge.git
+#   cd edge
+#   git checkout develop
+#   get submodule update
+#   cd ..
+#   tar -czf /tmp/edge.tar.gz edge
+#   sudo singularity import YOUR_IMAGE.img /tmp/edge.tar.gz
+#   sudo singularity bootstrap YOUR_IMAGE.img ./debian.def
+##
+BootStrap: debootstrap
+OSVersion: jessie
+MirrorURL: http://ftp.us.debian.org/debian/
+Include:
+
+%post
+  #####################
+  # Prepare build env #
+  #####################
+  echo "preparing build env"
+  echo "deb http://http.us.debian.org/debian testing main non-free contrib"     >>  /etc/apt/sources.list
+  echo "deb-src http://http.us.debian.org/debian testing main non-free contrib" >>  /etc/apt/sources.list
+  apt-get update -qq -o=Dpkg::Use-Pty=0
+
+  # silence frontend
+  export DEBIAN_FRONTEND=noninteractive
+
+  export INSTALL_DIR=/tmp/singularity_install_$(date +'%s')
+
+  # move to tmp dir
+  mkdir ${INSTALL_DIR}
+  cd ${INSTALL_DIR}
+
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y wget
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y make
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y cmake
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y scons
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y am-utils
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y python
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y git
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y vim
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y dh-autoreconf
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y zlib1g zlib1g-dev
+
+  #################
+  # gnu compilers #
+  #################
+  echo "installing gnu compilers"
+  echo "Package: gcc"           >  /etc/apt/preferences.d/gcc
+  echo "Pin: release a=testing" >> /etc/apt/preferences.d/gcc
+  echo "Pin-Priority: 100"      >> /etc/apt/preferences.d/gcc
+
+  apt-get install -t testing -qq -o=Dpkg::Use-Pty=0 -y g++-6
+  apt-get install -t testing -qq -o=Dpkg::Use-Pty=0 -y gfortran-6
+
+  # set links
+  ln -f -s /usr/bin/g++-6      /usr/bin/g++
+  ln -f -s /usr/bin/gcc-6      /usr/bin/gcc
+  ln -f -s /usr/bin/gfortran-6 /usr/bin/gfortran
+
+  ###########
+  # OpenMPI #
+  ###########
+  #echo "installing openmpi"
+  #wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.4.tar.gz
+  #tar -xzf openmpi-1.10.4.tar.gz
+  #cd openmpi-1.10.4
+  #./configure --enable-static --disable-shared
+  #make install
+  #cd ..
+
+  ########
+  # Gmsh #
+  ########
+  #wget http://gmsh.info/src/gmsh-2.13.1-source.tgz
+  #tar -xzf gmsh-2.13.1-source.tgz
+  #cd gmsh-2.13.1-source
+  #cmake .
+  #make install
+  #cd ..
+
+  ########
+  # zlib #
+  ########
+  wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz
+  mkdir zlib
+  tar -xzf zlib.tar.gz -C zlib --strip-components=1
+  cd zlib
+  ./configure --static --prefix=/usr/local> /dev/null
+  make install > /dev/null
+  cd ..
+
+  ########
+  # HDF5 #
+  ########
+  wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz
+  mkdir hdf5
+  tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
+  cd hdf5
+  ./configure --enable-shared=no --prefix=/usr/local > /dev/null 2> /dev/null
+  make install > /dev/null
+  cd ..
+
+  ##########
+  # NetCDF #
+  ##########
+  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz -O netcdf.tar.gz
+  mkdir netcdf
+  tar -xzf netcdf.tar.gz -C netcdf --strip-components=1
+  cd netcdf
+  ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null
+  make install > /dev/null
+  cd ..
+
+  ########
+  # EDGE #
+  ########
+  echo 'building edge'
+  cp -r /edge .
+  cd edge
+
+  # build libxsmm
+  cd submodules/libxsmm
+  PREFIX=/usr/local make BLAS=0 install > /dev/null
+  cd ../..
+
+  # build moab
+  cd submodules/moab
+  LANG=C autoreconf -fi
+  # sequential
+  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --enable-all-static --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+  make install > /dev/null 2> /dev/null
+  cd ../..
+
+  for order in 1 2 3 4 5 6
+  do
+    for cfr in 1 8
+    do
+      for mesh_type in reg uns
+      do
+        for arch in hsw knl
+        do
+          if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
+
+          CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=${arch} xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j 4 > /dev/null
+            cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_${arch}_xsmm_omp
+        done
+      done
+    done
+  done
+  cd ..
+
+  ############
+  # Clean up #
+  ############
+  echo "cleaning up"
+  rm -rf ${INSTALL_DIR}
+
+%runscript
+  # check input
+  if [ "$#" -ne 1 ]
+  then
+    echo "Error: Only one command line argument, containing EDGE's xml-file, is allowed."
+    exit 1
+  fi
+
+  # parse xml
+  MOAB="$(echo "cat /edge/build/moab/text()" | xmllint --nocdata --shell $* | sed -n -e 2p)"
+  ORDER="$(echo "cat /edge/build/order/text()" | xmllint --nocdata --shell $* | sed -n -e 2p)"
+  CFR="$(echo "cat /edge/build/cfr/text()" | xmllint --nocdata --shell $* | sed -n -e 2p )"
+  ARCH="$(echo "cat /edge/build/arch/text()" | xmllint --nocdata --shell $* | sed -n -e 2p)"
+
+  # derive mesh type
+  if [ "${MOAB}" = "no" ]
+  then
+    MESH_TYPE=reg
+  else
+    MESH_TYPE=uns
+  fi
+
+  # catch non-supported executables
+  if [ "${CFR}" != "1" ] && [ "${CFR}" != "8" ]
+  then
+    echo "CFR-tag: is not supported (<cfr>CFR</cfr>); ${CFR}"
+    exit 1
+  fi
+
+  if [ "${ORDER}" != "1" ] && [ "${ORDER}" != "2" ] && [ "${ORDER}" != "3" ] && [ "${ORDER}" != "4" ] && [ "${ORDER}" != "5" ] && [ "${ORDER}" != "6" ]
+  then
+    echo "Error: ORDER-tag is not supported (<order>ORDER</order>); ${ORDER}"
+    exit 1
+  fi
+
+  if [ "${ARCH}" != "hsw" ] && [ "${ARCH}" != "knl" ]
+  then
+    echo "Warning: ARCH-tag is not supported (<arch>ARCH</arch>): ${ARCH}; falling back to hsw"
+    ARCH=hsw
+  fi
+
+  # define excecutable
+  EDGE_EXEC=edge_elastic_${MESH_TYPE}_o${ORDER}_cfr${CFR}_${ARCH}_xsmm_omp
+
+  # run EDGE
+  ${EDGE_EXEC} -x $*

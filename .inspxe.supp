@@ -1,0 +1,295 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#
+# @section LICENSE
+# Copyright (c) 2016-2017, Regents of the University of California
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# Suppressions for Intel Inspector XE.
+##
+
+##
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64535#c17
+##
+suppression = {
+  name = "eh_alloc"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=libstdc++.so.6,src=eh_alloc.cc,func=pool;
+    }
+  }
+}
+
+##
+# Dynamic linker
+##
+suppression = {
+  name = "dynamic linker"
+  type = {invalid_memory_access}
+  stacks = {
+    {
+      ...;
+      mod=ld-linux-x86-64.so.2,func=_dl_relocate_object;
+      mod=ld-linux-x86-64.so.2,func=dl_main;
+      mod=ld-linux-x86-64.so.2,func=_dl_sysdep_start;
+      mod=ld-linux-x86-64.so.2,func=_dl_start;
+      mod=ld-linux-x86-64.so.2,func=_start;
+    }
+  }
+}
+
+##
+# HDF5
+##
+suppression = {
+  name = "HDF5"
+  type = {invalid_call}
+  stacks = {
+    {
+      ...;
+      mod=edge,func=H5T_path_find;
+    }
+  }
+}
+
+##
+# Easylogging
+##
+suppression = {
+  name = "easy_logging"
+  type = {invalid_call}
+  stacks = {
+    {
+      !!!;
+      mod=edge,src=easylogging++.cc,func=replaceFirstWithEscape;
+    }
+  }
+}
+
+##
+# Memkind
+##
+suppression = {
+  name = "memkind leak #1"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=edge,src=chunk_mmap.c,func=pages_map;
+    }
+  }
+}
+suppression = {
+	name = "memkind leak leak #2"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			mod=edge,src=chunk_mmap.c,func=pages_map;
+		}
+	}
+}
+suppression = {
+	name = "memkind leak #3"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			mod=edge,src=memkind_default.c,func=memkind_default_mmap;
+		}
+	}
+}
+suppression = {
+  name = "memkind leak #5"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=edge,src=memkind_default.c,func=memkind_default_mmap;
+    }
+  }
+}
+suppression = {
+  name = "memkind leak #6"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=edge,src=memkind_hbw.c,func=fill_bandwidth_values_heuristically;
+    }
+  }
+}
+suppression = {
+  name = "memkind leak #7"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=edge,src=memkind_hbw.c,func=set_closest_numanode;
+    }
+  }
+}
+suppression = {
+	name = "memkind invalid call"
+	type = {invalid_call}
+	stacks = {
+		{
+      !!!;
+      mod=edge,src=memkind_hbw.c,func=fill_bandwidth_values_heuristically;
+		}
+	}
+}
+
+##
+# MOAB
+##
+suppression = {
+  name = "MOAB: load_file"
+  type = {invalid_memory_access}
+  stacks = {
+    {
+      !!!;
+      mod=edge,src=Moab.cpp,func=read,line=803,func_line=5;
+    }
+    allocation={
+      !!!;
+      mod=edge,src=Moab.cpp,func=read,line=803,func_line=5;
+    }
+  }
+}
+suppression = {
+  name = "MOAB: write_file"
+  type = {invalid_memory_access}
+  stacks = {
+    {
+      !!!;
+      mod=edge,src=Moab.cpp,func=write,line=893,func_line=7;
+    }
+    allocation={
+      !!!;
+      mod=edge,src=Moab.cpp,func=write,line=893,func_line=7;
+    }
+  }
+}
+
+##
+# Intel MPI
+##
+suppression = {
+  name = "impi: NUMA #1"
+  type = {invalid_call}
+  stacks = {
+    {
+      !!!;
+      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
+    }
+  }
+}
+suppression = {
+  name = "impi: NUMA #2"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
+    }
+  }
+}
+
+suppression = {
+  name = "impi: NUMA #3"
+  type = {unreachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
+    }
+  }
+}
+suppression = {
+  name = "impi: NUMA #4"
+  type = {invalid_memory_access_partial}
+  stacks = {
+    {
+      !!!;
+      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
+    }
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
+    }
+  }
+}
+suppression = {
+  name = "impi: table"
+  type = {invalid_memory_access_partial}
+  stacks = {
+    {
+      !!!;
+      mod=libmpi.so.12,src=simple_pmi.c,func=iPMI_Get_r2h_table;
+    }
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=simple_pmi.c,func=iPMI_Get_r2h_table;
+    }
+  }
+}
+suppression = {
+  name = "impi: in_map"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=init_pinning.c,func=I_MPI_Get_pin_map;
+    }
+  }
+}
+suppression = {
+  name = "impi: cpu_info #1"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=init_pinning.c,func=I_MPI_Get_cpu_info;
+    }
+  }
+}
+suppression = {
+  name = "impi: cpu_info #2"
+  type = {reachable_memory_leak}
+  stacks = {
+    allocation={
+      !!!;
+      mod=libmpi.so.12,src=init_pinning.c,func=I_MPI_Get_cpu_info;
+    }
+  }
+}
+
+##
+# Intel OMP
+##
+suppression = {
+  name = "kmp: get thread id"
+  type = {invalid_memory_access,invalid_memory_access_partial}
+  stacks = {
+    {
+      ...;
+      mod=edge,func=__kmp_get_global_thread_id_reg;
+    }
+  }
+}

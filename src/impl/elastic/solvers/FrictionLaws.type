@@ -1,0 +1,99 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ *
+ * @section LICENSE
+ * Copyright (c) 2017, Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Data types of the friction laws.
+ **/
+
+#ifndef FRICTION_LAWS_TYPE
+#define FRICTION_LAWS_TYPE
+
+namespace edge {
+  namespace elastic {
+    namespace solvers {
+      template< typename TL_T_REAL, unsigned short TL_N_CRUNS >
+      struct t_LinSlipWeakGlobal;
+
+      template< typename TL_T_REAL >
+      struct t_LinSlipWeakFace;
+
+      template< typename TL_T_REAL, unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
+      struct t_LinSlipWeakFaceQuadPoint;
+    }
+  }
+}
+
+/**
+ * Global data shared among an entire Simulation:
+ * Parameters in the linear slip weakening friction law.
+ *
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_N_CRUNS number of fused simulations.
+ **/
+template< typename TL_T_REAL, unsigned short TL_N_CRUNS >
+struct edge::elastic::solvers::t_LinSlipWeakGlobal {
+  //! friction coefficients
+  TL_T_REAL mus[TL_N_CRUNS];
+  //! dynamic friction coefficients
+  TL_T_REAL mud[TL_N_CRUNS];
+  //!  inverse critical slip distance (1/Dc)
+  TL_T_REAL dcInv[TL_N_CRUNS];
+};
+
+/**
+ * Linear slip weakening: Per-face data
+ *
+ * @paramt TL_T_REAL floating point type.
+ **/
+template < typename TL_T_REAL >
+struct edge::elastic::solvers::t_LinSlipWeakFace {
+  //! true if the left element is equivalent to the minus side, false otherwise
+  bool lEqM;
+  //! shear wave speed divided by Lame parameter mu for the minus-side element
+  TL_T_REAL csDmuM;
+  //! shear wave speed divided by Lame parameter mu for the plus-side element
+  TL_T_REAL csDmuP;
+};
+
+/**
+ * Linear slip weakening: Per quad point data
+ *
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_N_DIM number of dimension.
+ * @paramt TL_N_CRUNS number of fused simulations.
+ **/
+template< typename TL_T_REAL, unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
+struct edge::elastic::solvers::t_LinSlipWeakFaceQuadPoint {
+  //! initial normal stress
+  TL_T_REAL sn0[TL_N_CRUNS];
+  //! initial shear stress
+  TL_T_REAL ss0[TL_N_DIM-1][TL_N_CRUNS];
+  //! initial, absolute shear stress
+  TL_T_REAL ss0A[TL_N_CRUNS];
+  //! friction cofficients
+  TL_T_REAL muf[TL_N_CRUNS];
+  //! traction
+  TL_T_REAL tr[TL_N_DIM-1][TL_N_CRUNS];
+  //! slip rate
+  TL_T_REAL sr[TL_N_DIM-1][TL_N_CRUNS];
+  //! slip
+  TL_T_REAL dd[TL_N_DIM-1][TL_N_CRUNS];
+};
+
+#endif

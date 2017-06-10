@@ -1,0 +1,6 @@
+leak:libiomp5
+leak:__kmp_fork_call
+leak:PMPI_Init_thread
+leak:ompi_mpi_init
+leak:ompi_mpi_finalize
+leak:start_thread
