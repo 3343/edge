@@ -293,7 +293,7 @@ before_install:
   - cd ..
 
   # install moab
-  - cd cfr/submodules/moab
+  - cd edge/submodules/moab
   - autoreconf -fi
   - if [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
   - if [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
@@ -308,7 +308,7 @@ before_install:
   - cd ..
 
   # install LIBXSMM
-  - cd cfr/submodules/libxsmm
+  - cd edge/submodules/libxsmm
   - make BLAS=0 -j 4 > /dev/null && sudo make install
   - cd ../../..
 
@@ -322,7 +322,7 @@ before_install:
   - ssh-keyscan bitbucket.org >> ~/.ssh/known_hosts
   - git clone git@bitbucket.org:3343/edge_opt.git
 
-  - cd cfr
+  - cd edge
   - ln -s ../edge_opt/cont .
 
 script:
@@ -639,7 +639,7 @@ script:
 #
 # Singularity bootstrap
 #
-  - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; mv cfr edge; tar -czf /tmp/edge.tar.gz edge; fi
+  - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; tar -czf /tmp/edge.tar.gz edge; fi
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity create --size 4096 /tmp/singularity.img; fi;
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity import /tmp/singularity.img /tmp/edge.tar.gz || true; fi
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity bootstrap /tmp/singularity.img edge/tools/singularity/debian.def; fi;
