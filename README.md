@@ -1,4 +1,4 @@
-# EDGƎ [![Build Status](https://travis-ci.com/3343/edge.svg?branch=master)](https://travis-ci.com/3343/edge) [![codecov](https://codecov.io/gh/3343/edge/branch/master/graph/badge.svg)](https://codecov.io/gh/3343/edge) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge?ref=badge_shield)
+# EDGƎ [![Build Status](https://travis-ci.com/3343/edge.svg?branch=master)](https://travis-ci.org/3343/edge) [![codecov](https://codecov.io/gh/3343/edge/branch/master/graph/badge.svg)](https://codecov.io/gh/3343/edge) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge?ref=badge_shield)
 
 ## Equations
 * *advection (1D)*:
