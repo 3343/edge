@@ -329,7 +329,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
@@ -635,7 +635,7 @@ script:
 
 
   # 3D elastics
-  ## tet4, unstructured, fv, cfr=1,2,4
+  ## hex8r, unstructured, fv, cfr=1,2,4
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
@@ -660,18 +660,15 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons order=2 cfr=8 parallel=omp xml=cont/elastic/plane_waves/hex8r.xml -j $N_BUILD_PROC xsmm=yes; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  ## tet4, unstructured, fv, cfr=1,2,4
+  ## tet4, unstructured, fv, cfr=1,2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=1 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=2 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
-
-  ## tet4, unstructured order=2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
+  ## tet4, unstructured order=2, cfr=2
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
   ## code coverage, tet4, unstructured order=1,2, cfr=2
