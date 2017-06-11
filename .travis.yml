@@ -343,8 +343,8 @@ script:
   - export MOAB_DIR=submodules/moab/build
 
   # do static code analysis
-  - if [ "$SINGULARITY_VERSION" = "" ]; cppcheck --version; fi;
-  - if [ "$SINGULARITY_VERSION" = "" ]; cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1; fi;
+  - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck --version; fi;
+  - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1; fi;
 
   #
   # SWE
