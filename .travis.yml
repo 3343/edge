@@ -245,83 +245,83 @@ matrix:
 
 before_install:
   - cd ..
-  - if [ "SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then sudo apt-get install -qq gfortran; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install -qq gfortran; fi;
 
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.3.tar.bz2; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then tar -xjf openmpi-1.10.3.tar.bz2; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd openmpi-1.10.3; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then ./configure --enable-static --disable-shared > /dev/null; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then make -j 4 > /dev/null; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then sudo make install > /dev/null; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd ..; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER} && export OMPI_CC=${CC_COMPILER}; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.3.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then tar -xjf openmpi-1.10.3.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd openmpi-1.10.3; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then ./configure --enable-static --disable-shared > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then make -j 4 > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then sudo make install > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER} && export OMPI_CC=${CC_COMPILER}; fi;
 
   # install cppcheck
-  - if [ "SYSTEM_SETUP" = "1" ]; then wget https://github.com/danmar/cppcheck/archive/master.zip; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then unzip master.zip; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd cppcheck-master; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j 4 > /dev/null; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://github.com/danmar/cppcheck/archive/master.zip; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then unzip master.zip; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck-master; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j 4 > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install gmsh
-  - if [ "SYSTEM_SETUP" = "1" ]; then wget http://gmsh.info/src/gmsh-2.13.1-source.tgz; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then tar -xzf gmsh-2.13.1-source.tgz; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd gmsh-2.13.1-source; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cmake . && make -j 4 > /dev/null && sudo make install; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://gmsh.info/src/gmsh-2.13.1-source.tgz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xzf gmsh-2.13.1-source.tgz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd gmsh-2.13.1-source; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cmake . && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install valgrind
-  - if [ "SYSTEM_SETUP" = "1" ]; then sudo apt-get install libc6-dbg; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then wget http://valgrind.org/downloads/valgrind-3.11.0.tar.bz2; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.11.0.tar.bz2; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd valgrind-3.11.0; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then ./configure && make -j 4 > /dev/null && sudo make install; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install libc6-dbg; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://valgrind.org/downloads/valgrind-3.11.0.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.11.0.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.11.0; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
-  - if [ "SYSTEM_SETUP" = "1" ]; then wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then mkdir zlib && tar -xzf zlib.tar.gz -C zlib --strip-components=1; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd zlib; CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --static --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir zlib && tar -xzf zlib.tar.gz -C zlib --strip-components=1; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --static --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install hdf5
-  - if [ "SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install netcdf
-  - if [ "SYSTEM_SETUP" = "1" ]; then wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz -O netcdf.tar.gz; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then mkdir netcdf; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then tar -xzf netcdf.tar.gz -C netcdf --strip-components=1; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd netcdf; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install > /dev/null; fi
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install > /dev/null; fi
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz -O netcdf.tar.gz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir netcdf; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xzf netcdf.tar.gz -C netcdf --strip-components=1; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd netcdf; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install > /dev/null; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install > /dev/null; fi
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install moab
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
-  - if [ "SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install intel sde
   - "wget --delete-after --no-check-certificate --save-cookies cookie.txt --keep-session-cookies --post-data=\"accept_license=1&op=Continue&form_id=intel_licensed_dls_step_1\"  https://software.intel.com/protected-download/267266/144917"
   - "wget --no-check-certificate --no-cookies --header \"Cookie: $(echo $(grep 'SSESS[^ ]*' cookie.txt) | awk '{print $6 \"=\" $7}');\" https://software.intel.com/system/files/managed/2f/ac/sde-external-7.49.0-2016-07-07-lin.tar.bz2"
-  - if [ "SYSTEM_SETUP" = "1" ]; then tar -xjf sde-external-7.49.0-2016-07-07-lin.tar.bz2; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd sde-external-7.49.0-2016-07-07-lin; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/sde64 /usr/local/bin/sde64; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf sde-external-7.49.0-2016-07-07-lin.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd sde-external-7.49.0-2016-07-07-lin; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/sde64 /usr/local/bin/sde64; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install LIBXSMM
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then make BLAS=0 -j 4 > /dev/null && sudo make install; fi;
-  - if [ "SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then make BLAS=0 -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install singularity and dependencies
   - if [ "$SINGULARITY_VERSION" != "" ]; then wget https://launchpad.net/ubuntu/+archive/primary/+files/debootstrap_1.0.81ubuntu2.1_all.deb; sudo dpkg -i debootstrap_1.0.81ubuntu2.1_all.deb; fi
