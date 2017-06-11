@@ -656,4 +656,4 @@ script:
 
 after_success:
   - ${GCOV} -v
-  - bash <(curl -s https://codecov.io/bash) -t 8e53239f-d088-42e5-9dbd-b9c2f0b79483 -x ${GCOV} -a "-a -l -p" -g */submodules/*
+  - bash <(curl -s https://codecov.io/bash) -x ${GCOV} -a "-a -l -p" -g */submodules/*
