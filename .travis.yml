@@ -23,6 +23,11 @@
 
 sudo: required
 
+env:
+  global:
+    # COVERITY
+    - secure: "qLjyYdpdlV3xp+vbj8gnUr+WeWvriURBVmhzeKqU17WE94gyehd5qyavG0Fk0M6a6WZidf6+eAxQI0NbBJrcUC4QHUGYQQ9ftVEVXfMVOJpkF4pcWmbStf2Z0qFW3euVk9CQxPQBy4NC3/3i6LECk9HBr0kRuWhyw1STyPCz8R0Zq/XoZy2rKwhPOHf3cSR4dZ1DtSM2DXZFvIDQCW7VnaYrCudpw6TRI7CJgEFbkq/JiTCFtLqczXbWwfiHazxEOx81nflf1I71peZJVcWD14R/J0jNcXy8LAv+vxmMW/PtxWpZcKDux3qKjvZV8kK/1qXHoivuWmljGLw5k40kSM3YbohNqyZVvT7bD8g2ix0kxqGudLiIkGxCAQRaCa9nHf1L8cEbbI01zEIWhZtp9Inxi2qJcr1Y9VrU1Pat3ahGCDTU76OFl6jSULYg8ZdRUrc0G8CCFYOd/2ke/KrYM/gSYYHjkywmA1iiOQ8sdqJvzTkly4bzm+xYnLE6LuZcC8b7LTm/a3AWvl2Uw+WTXd2ooIiwY+0n5EpDbAUEZBUtJtV/0gObhV5/MfRyRUKnCzOhPt0G2q96sd4YWcqszWln9bxONalppIE3rlAJduCqPT3Zuodosh6/e3lQaydV37l3ZKKNw/kCZqHTlJ2Gsiq9V3LRAq5LdrmBhzXxqLQ="
+
 notifications:
   email:
     on_success: change
@@ -50,6 +55,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # advection - line
@@ -68,6 +74,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # advection - quad4r
@@ -86,6 +93,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # advection - tria3
@@ -104,6 +112,7 @@ matrix:
         USE_MPI=1
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     - os: linux
       compiler: gcc
@@ -119,6 +128,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # advection - hex8r
@@ -137,6 +147,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # advection - tet4
@@ -155,6 +166,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
 
     #
@@ -174,6 +186,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # elastics - tria3
@@ -192,6 +205,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # elastics - hex8r
@@ -210,6 +224,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # elastics - tet4
@@ -228,6 +243,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-5
         SYSTEM_SETUP=1
+        N_BUILD_PROC=4
 
     #
     # Container build: Singularity
@@ -243,8 +259,31 @@ matrix:
         CXX_COMPILER=g++-5
         CC_COMPILER=gcc-5
 
+    #
+    # Coverity: elastics, tet4
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5']
+        coverity_scan:
+          project:
+          name: "3343/edge"
+          description: "elastics, tet4"
+          build_command:   "scons"
+          branch_pattern: develop
+      env:
+        CXX_COMPILER=g++-5
+        CC_COMPILER=gcc-5
+        SYSTEM_SETUP=1
+        USE_MPI=1
+        COVERITY=1
+
 before_install:
   - cd ..
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install -qq gfortran; fi;
 
@@ -252,7 +291,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then tar -xjf openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd openmpi-1.10.3; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then ./configure --enable-static --disable-shared > /dev/null; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then make -j 4 > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then make -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then sudo make install > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd ..; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER} && export OMPI_CC=${CC_COMPILER}; fi;
@@ -261,7 +300,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://github.com/danmar/cppcheck/archive/master.zip; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then unzip master.zip; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck-master; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j 4 > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
@@ -269,7 +308,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://gmsh.info/src/gmsh-2.13.1-source.tgz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xzf gmsh-2.13.1-source.tgz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd gmsh-2.13.1-source; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cmake . && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cmake . && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install valgrind
@@ -277,21 +316,21 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://valgrind.org/downloads/valgrind-3.11.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.11.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.11.0; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir zlib && tar -xzf zlib.tar.gz -C zlib --strip-components=1; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --static --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --static --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install hdf5
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install netcdf
@@ -299,15 +338,15 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir netcdf; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xzf netcdf.tar.gz -C netcdf --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd netcdf; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install > /dev/null; fi
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install > /dev/null; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make install -j $N_BUILD_PROC > /dev/null; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null; sudo make -j $N_BUILD_PROC install > /dev/null; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local && make -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install intel sde
@@ -320,7 +359,7 @@ before_install:
 
   # install LIBXSMM
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then make BLAS=0 -j 4 > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then make BLAS=0 -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install singularity and dependencies
@@ -351,21 +390,21 @@ script:
   #
   # 1D SWE
   ## release
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/swe/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/swe/line.xml; fi;
 
   ## valgrind
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
 
   ## code coverage, order=1, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/swe/line.xml; fi;
 
 
@@ -378,80 +417,80 @@ script:
 
   # 1D advection
   ## cfr 1, orders 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/advection/sine/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/advection/sine/line.xml; fi;
 
   ## cfr 8, orders 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=8 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/advection/sine/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=8 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/advection/sine/line.xml; fi;
 
   ## valgrind, debug, cfr 4, orders 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=4 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/line.xml; fi;
 
   ## code coverage, orders=1&2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_4/edge -x cont/advection/sine/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_4" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_4" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_4/edge -x cont/advection/sine/line.xml; fi;
 
 
 
   # 2D advection
   ## quad4r, cfr 1, order 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   ## quad4r, cfr 8, order 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=8 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=8 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   ## quad4r, cfr 1, order 1-2, omp
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 parallel=omp > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 parallel=omp -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 parallel=omp > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 parallel=omp -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   ## tria3, unstructured, cfr=8, order=1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=8 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=8 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=8 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=8 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
   ## tria3, unstructured, cfr=8, order=2, MPI enabled
   - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then gmsh -3 cont/advection/sine/tria3_mpi.geo -part 3 -o tria3_mpi.msh; fi;
-  - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns_mpi.xml order=2 cfr=8 parallel=mpi zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns_mpi.xml order=2 cfr=8 parallel=mpi zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then mpirun -n 3 ./build/edge -x cont/advection/sine/tria3_uns_mpi.xml; fi;
 
   ## valgrind, cfr=4, orders=1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=4 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=4 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
   # valgrind, unstructured, cfr=4, order=2-3, MPI enabled
@@ -464,61 +503,61 @@ script:
 #  - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then mpirun -n 4 valgrind --suppressions=/usr/local/share/openmpi/openmpi-valgrind.supp --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns_mpi.xml; fi;
 
   ## code coverage, orders=1-2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_4/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_4" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_4" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_4/edge -x cont/advection/sine/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes  -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_4/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_4" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_4" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes  -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_4/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
 
 
   # 3D advection
   ## hex8r, cfr 4, order 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=4 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=4 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
   ## valgrind, cfr=2, orders=1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=2 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
   ## code coverage, orders=1-2, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/advection/sine/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/advection/sine/hex8r.xml; fi;
 
   ## tet4, unstructured, cfr 4, order 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
   ## valgrind, cfr=2, orders=1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
   ## code coverage, order=1-2, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
 
@@ -531,128 +570,136 @@ script:
 
   # 2D elastics
   ## quad4r, fv, cfr=1,2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=2 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=2 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   ## tria3, unstructured, fv, cfr=1,2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=1 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=1 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=2 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=2 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## quad4r order=2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=4 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   # tria3, unstructured order=2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   # valgrind, fv, cfr=1,2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=1 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=2 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=1 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=1 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## code coverage, fv, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   # valgrind, order=2, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## code coverage, order=2, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   # Knights Landing: Elastics on tria3 elements
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=2 cfr=8 parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=2 cfr=8 parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=3 cfr=8 parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=3 cfr=8 parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
 
 
   # 3D elastics
   ## tet4, unstructured, fv, cfr=1,2,4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=1 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=2 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=2 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=4 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
   ## hex8r, regular order=2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=2 cfr=4 > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=2 cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
   ## code coverage, regular, hex8r order=1,2, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
   ## hex8r, regular KNL
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons order=2 cfr=8 parallel=omp xml=cont/elastic/plane_waves/hex8r.xml xsmm=yes; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons order=2 cfr=8 parallel=omp xml=cont/elastic/plane_waves/hex8r.xml -j $N_BUILD_PROC xsmm=yes; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
   ## tet4, unstructured, fv, cfr=1,2,4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=1 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=1 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=2 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=2 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
   ## tet4, unstructured order=2, cfr=4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=4 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
   ## code coverage, tet4, unstructured order=1,2, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
   ## tet4, unstructured, KNL
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons order=2 cfr=8 parallel=omp xml=cont/elastic/plane_waves/tet4_uns.xml xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons order=2 cfr=8 parallel=omp xml=cont/elastic/plane_waves/tet4_uns.xml xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
-#
-# Singularity bootstrap
-#
+  #
+  # Singularity bootstrap
+  #
   - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; tar -czf /tmp/edge.tar.gz edge; fi
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity create --size 4096 /tmp/singularity.img; fi;
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity import /tmp/singularity.img /tmp/edge.tar.gz || true; fi
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity bootstrap /tmp/singularity.img edge/tools/singularity/debian.def; fi;
+
+  #
+  # Coverity
+  #
+  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=1 cfr=1          xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
+  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=6 cfr=1          xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
+  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=4 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
+  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=5 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
 
 after_success:
   - ${GCOV} -v
