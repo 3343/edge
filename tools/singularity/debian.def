@@ -50,6 +50,8 @@ Include:
 
   export INSTALL_DIR=/tmp/singularity_install_$(date +'%s')
 
+  export N_BUILD_PROC=4
+
   # move to tmp dir
   mkdir ${INSTALL_DIR}
   cd ${INSTALL_DIR}
@@ -111,7 +113,7 @@ Include:
   tar -xzf zlib.tar.gz -C zlib --strip-components=1
   cd zlib
   ./configure --static --prefix=/usr/local> /dev/null
-  make install > /dev/null
+  make install -j ${N_BUILD_PROC} > /dev/null
   cd ..
 
   ########
@@ -122,7 +124,7 @@ Include:
   tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
   cd hdf5
   ./configure --enable-shared=no --prefix=/usr/local > /dev/null 2> /dev/null
-  make install > /dev/null
+  make install -j ${N_BUILD_PROC} > /dev/null
   cd ..
 
   ##########
@@ -133,7 +135,7 @@ Include:
   tar -xzf netcdf.tar.gz -C netcdf --strip-components=1
   cd netcdf
   ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null
-  make install > /dev/null
+  make install -j ${N_BUILD_PROC} > /dev/null
   cd ..
 
   ########
@@ -145,7 +147,7 @@ Include:
 
   # build libxsmm
   cd submodules/libxsmm
-  PREFIX=/usr/local make BLAS=0 install > /dev/null
+  PREFIX=/usr/local make BLAS=0 install -j ${N_BUILD_PROC} > /dev/null
   cd ../..
 
   # build moab
@@ -153,7 +155,7 @@ Include:
   LANG=C autoreconf -fi
   # sequential
   CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --enable-all-static --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
-  make install > /dev/null 2> /dev/null
+  make install -j ${N_BUILD_PROC} > /dev/null 2> /dev/null
   cd ../..
 
   for order in 1 2 3 4 5 6
@@ -166,7 +168,7 @@ Include:
         do
           if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
 
-          CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=${arch} xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j 4 > /dev/null
+          CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=${arch} xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
             cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_${arch}_xsmm_omp
         done
       done
