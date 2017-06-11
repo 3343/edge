@@ -298,7 +298,7 @@ before_install:
 
   # install cppcheck
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://github.com/danmar/cppcheck/archive/master.zip; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then unzip master.zip; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then unzip master.zip > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck-master; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
@@ -316,7 +316,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://valgrind.org/downloads/valgrind-3.11.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.11.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.11.0; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
@@ -330,7 +330,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install netcdf
@@ -345,8 +345,8 @@ before_install:
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install intel sde
@@ -366,7 +366,7 @@ before_install:
   - if [ "$SINGULARITY_VERSION" != "" ]; then wget https://launchpad.net/ubuntu/+archive/primary/+files/debootstrap_1.0.81ubuntu2.1_all.deb; sudo dpkg -i debootstrap_1.0.81ubuntu2.1_all.deb; fi
   - if [ "$SINGULARITY_VERSION" != "" ]; then wget https://github.com/singularityware/singularity/releases/download/${SINGULARITY_VERSION}/singularity-${SINGULARITY_VERSION}.tar.gz; fi;
   - if [ "$SINGULARITY_VERSION" != "" ]; then tar -xf singularity-${SINGULARITY_VERSION}.tar.gz; fi;
-  - if [ "$SINGULARITY_VERSION" != "" ]; then cd singularity-${SINGULARITY_VERSION}; ./configure; make; sudo make install; cd ..; fi;
+  - if [ "$SINGULARITY_VERSION" != "" ]; then cd singularity-${SINGULARITY_VERSION}; ./configure > /dev/null; make > /dev/null; sudo make install; cd ..; fi;
 
   # clone EDGE's asset repository
   - git clone https://bitbucket.org/3343/edge_opt.git
