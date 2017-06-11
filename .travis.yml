@@ -691,6 +691,9 @@ script:
   - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; tar -czf /tmp/edge.tar.gz edge; fi
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity create --size 4096 /tmp/singularity.img; fi;
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity import /tmp/singularity.img /tmp/edge.tar.gz || true; fi
+  # enforce fewer builds in boostrap to fit in limited windows of public Travis CI
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5 6/for order in 1 2 3/g' edge/tools/singularity/debian.def; fi
+  # run bootstrap
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity bootstrap /tmp/singularity.img edge/tools/singularity/debian.def; fi;
 
   #
