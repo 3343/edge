@@ -270,8 +270,8 @@ matrix:
           packages: ['g++-5']
         coverity_scan:
           project:
-          name: "3343/edge"
-          description: "elastics, tet4"
+            name: "3343/edge"
+            description: "elastics, tet4"
           build_command:   "scons"
           branch_pattern: develop
       env:
@@ -305,12 +305,8 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install gmsh
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install gmsh; fi;
-#  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://gmsh.info/src/gmsh-2.13.1-source.tgz; fi;
-#  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xzf gmsh-2.13.1-source.tgz; fi;
-#  - if [ "$SYSTEM_SETUP" = "1" ]; then cd gmsh-2.13.1-source; fi;
-#  - if [ "$SYSTEM_SETUP" = "1" ]; then cmake . && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
-#  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://gmsh.info/bin/Linux/gmsh-3.0.2-Linux64.tgz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo tar -xzf gmsh-3.0.2-Linux64.tgz -C /usr --strip-components=1; fi;
 
   # install valgrind
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install libc6-dbg; fi;
@@ -330,8 +326,8 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && CFLAGS=-w make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && CFLAGS=-w make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install netcdf
