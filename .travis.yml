@@ -275,8 +275,8 @@ matrix:
           build_command:   "scons"
           branch_pattern: develop
       env:
-        CXX_COMPILER=g++-6
-        CC_COMPILER=gcc-6
+        CXX_COMPILER=g++-5
+        CC_COMPILER=gcc-5
         SYSTEM_SETUP=1
         USE_MPI=1
         COVERITY=1
@@ -696,8 +696,8 @@ script:
   #
   - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=1 cfr=1          xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
   - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=6 cfr=1          xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
-  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=4 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
-  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=5 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
+#  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=4 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
+#  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=5 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
 
 after_success:
   - ${GCOV} -v
