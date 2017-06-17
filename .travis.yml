@@ -375,13 +375,13 @@ before_install:
   - cd edge
   - ln -s ../edge_opt/cont .
 
-script:
   - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
   - if [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER}; fi;
   - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
   - ${CXX} --version
   - export MOAB_DIR=submodules/moab/build
 
+script:
   # do static code analysis
   - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck --version; fi;
   - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1; fi;
@@ -693,14 +693,6 @@ script:
   - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5 6/for order in 1 2 3/g' edge/tools/singularity/debian.def; fi
   # run bootstrap
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity bootstrap /tmp/singularity.img edge/tools/singularity/debian.def; fi;
-
-  #
-  # Coverity
-  #
-  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=1 cfr=1 xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
-#  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=6 cfr=1 xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
-#  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=4 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
-#  - if [ "$COVERITY" = "1" ]; then scons equations=elastic element_type=tet4 order=5 cfr=8 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp; fi;
 
 after_success:
   - ${GCOV} -v
