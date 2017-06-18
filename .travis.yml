@@ -375,11 +375,15 @@ before_install:
   - cd edge
   - ln -s ../edge_opt/cont .
 
+   # set up compilers
   - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
   - if [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER}; fi;
   - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
   - ${CXX} --version
   - export MOAB_DIR=submodules/moab/build
+
+  # set custom compilers for coverity
+  - if [ "$COVERITY = "1" ]; then cov-configure --comptype gcc --compiler $(which $CXX); fi;
 
 script:
   # do static code analysis
