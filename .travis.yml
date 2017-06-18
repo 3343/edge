@@ -383,7 +383,7 @@ before_install:
   - export MOAB_DIR=submodules/moab/build
 
   # set custom compilers for coverity
-  - if [ "$COVERITY = "1" ]; then cov-configure --comptype gcc --compiler $(which $CXX); fi;
+  - if [ "$COVERITY" = "1" ]; then cov-configure --comptype gcc --compiler $(which $CXX); fi;
 
 script:
   # do static code analysis
