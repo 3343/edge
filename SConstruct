@@ -161,7 +161,7 @@ vars.AddVariables(
   EnumVariable( 'arch',
                 'architecture to compile for',
                 'host',
-                 allowed_values=('host', 'snb', 'hsw', 'knl')
+                 allowed_values=('host', 'snb', 'hsw', 'knl', 'skx')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
@@ -312,8 +312,8 @@ if( env['xsmm'] ):
   if( env['order'] == '1' ):
     warnings.warn( '  Warning: LIBXSMM is not supported for first order runs, continuing without' )
     env['xsmm'] = False
-  if( int(env['cfr']) > 1 and env['arch'] != 'knl' ):
-    warnings.warn( '  Warning: LIBXSMM is not supported for CFR>1 and arch!=knl, continuing without' )
+  if( int(env['cfr']) > 1 and ( env['arch'] != 'knl' and env['arch'] != 'skx' )  ):
+    warnings.warn( '  Warning: LIBXSMM is not supported for CFR>1 and arch!=knl or skx, continuing without' )
     env['xsmm'] = False
 
 # forward number of forward runs to compiler
@@ -329,6 +329,11 @@ if env['arch'] == 'snb':
   env.Append( CPPFLAGS = ['-mavx'] )
 elif env['arch'] == 'hsw':
   env.Append( CPPFLAGS = ['-march=core-avx2'] )
+elif env['arch'] == 'skx':
+  if compilers=='gnu':
+    env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd'] )
+  elif compilers=='intel':
+    env.Append( CPPFLAGS = ['-xCOMMON-AVX512'] )
 elif env['arch'] == 'knl':
   if compilers=='gnu':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512er', '-mavx512pf'] )
