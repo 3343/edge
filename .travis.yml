@@ -327,7 +327,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install hdf5
-  - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 --tries=10 --wait=30 -O hdf5.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CFLAGS=-w CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
@@ -383,7 +383,9 @@ before_install:
   - export MOAB_DIR=submodules/moab/build
 
   # set custom compilers for coverity
-  - if [ "$COVERITY" = "1" ]; then cov-configure --comptype gcc --compiler $(which $CXX); fi;
+  - if [ "$COVERITY" = "1" ]; then wget -nv https://scan.coverity.com/download/Linux --post-data "project=$COVERITY_SCAN_PROJECT_NAME&token=$COVERITY_SCAN_TOKEN" -O coverity.tgz; fi
+  - if [ "$COVERITY" = "1" ]; then tar -xzf coverity.tgz -C coverity --strip-components=1; fi
+  - if [ "$COVERITY" = "1" ]; then coverity/bin/cov-configure --comptype gcc --compiler $(which $CXX); fi;
 
 script:
   # do static code analysis
