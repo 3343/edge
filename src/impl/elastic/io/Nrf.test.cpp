@@ -29,7 +29,7 @@
 #include <fstream>
 
 TEST_CASE( "Nrf: Init, updateBuf.", "[nrf][init]" ) {
-  std::string l_ncFile = "examples/ci/elastic/sources/unit_tests/nrf_1.nc";
+  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_1.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
@@ -174,7 +174,7 @@ TEST_CASE( "Nrf: Init, updateBuf.", "[nrf][init]" ) {
 }
 
 TEST_CASE( "Nrf: srcCrds", "[nrf][srcCrds]" ) {
-  std::string l_ncFile = "examples/ci/elastic/sources/unit_tests/nrf_1.nc";
+  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_1.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
@@ -228,7 +228,7 @@ TEST_CASE( "Nrf: srcCrds", "[nrf][srcCrds]" ) {
 }
 
 TEST_CASE( "Nrf: getOffSetsG", "[nrf][getOffSetsG]" ) {
-  std::string l_ncFile = "examples/ci/elastic/sources/unit_tests/nrf_1.nc";
+  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_1.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
@@ -307,7 +307,7 @@ TEST_CASE( "Nrf: getOffSetsG", "[nrf][getOffSetsG]" ) {
 }
 
 TEST_CASE( "Nrf: Gets of source data", "[nrf][gets]" ) {
-  std::string l_ncFile = "examples/ci/elastic/sources/unit_tests/nrf_1.nc";
+  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_1.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location

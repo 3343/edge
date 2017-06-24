@@ -163,7 +163,7 @@ TEST_CASE( "Kinematics: Apply dirac delta distribution.", "[kinematics][applyDir
     l_vel[l_el].lam = l_el+2;
   }
 
-  std::string l_ncFile = "examples/ci/elastic/sources/unit_tests/kinematics_init_3.nc";
+  std::string l_ncFile = "cont/elastic/sources/unit_tests/kinematics_init_3.nc";
 
   // dynamic memory
   edge::data::Dynamic l_mem;
