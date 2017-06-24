@@ -385,7 +385,7 @@ before_install:
 
   # set custom compilers for coverity
   - if [ "$COVERITY" = "1" ]; then wget -nv https://scan.coverity.com/download/Linux --post-data "project=$COVERITY_SCAN_PROJECT_NAME&token=$COVERITY_SCAN_TOKEN" -O coverity.tgz; fi
-  - if [ "$COVERITY" = "1" ]; then tar -xzf coverity.tgz -C coverity --strip-components=1; fi
+  - if [ "$COVERITY" = "1" ]; then mkdir coverity; tar -xzf coverity.tgz -C coverity --strip-components=1; fi
   - if [ "$COVERITY" = "1" ]; then coverity/bin/cov-configure --comptype gcc --compiler $(which $CXX); fi;
 
 script:
