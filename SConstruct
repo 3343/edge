@@ -323,7 +323,7 @@ env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 if env['arch'] == 'host':
   if compilers == 'intel':
     env.Append( CPPFLAGS = ['-xHost'] )
-  elif compilers == 'intel':
+  elif compilers == 'gnu':
     env.Append( CPPFLAGS = ['-march=native'] )
 if env['arch'] == 'snb':
   env.Append( CPPFLAGS = ['-mavx'] )
