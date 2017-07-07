@@ -32,12 +32,30 @@ import xml.etree.ElementTree
 # Parses an XML-config containing a finite fault description.
 #
 # @param i_inFile XML-file which is parsed
+# @return 1) Parsed config (dict) 2) number of assumed dimensions.
 ##
 def parseConfig( i_inFile ):
   l_tree = xml.etree.ElementTree.parse( i_inFile )
   l_root = l_tree.getroot()
 
   l_dict = { 'subfaults': [] }
+
+  # determine number of dimensions
+  l_nDims = 3
+  l_dimsN = ['x', 'y', 'z']
+  l_dirsN = ['n', 's', 't']
+  for l_subfault in l_root.iter('subfault'):
+    if( l_subfault.find('center').find( 'z') == None or
+        l_subfault.find(  'dirs').find('sz') == None or
+        l_subfault.find(  'dirs').find('tx') == None or
+        l_subfault.find(  'dirs').find('ty') == None or
+        l_subfault.find(  'dirs').find('tz') == None ):
+      l_nDims = 2
+      l_dimsN = ['x', 'y']
+      l_dirsN = ['n', 's']
+      logging.info( "couldn't find all 3D attributes, assuming a 2D kinematic source." )
+    else:
+      logging.info( "found all 3D attributes, assuming a 3D kinematic source." )
 
   # get common options
   l_dict['cdl'] = l_root.find('path_to_cdl').text
@@ -52,19 +70,20 @@ def parseConfig( i_inFile ):
 
     l_dict['subfaults'][-1]['center'] = []
     l_center = l_subfault.find('center')
-    for l_di in ['x', 'y', 'z']:
+    for l_di in l_dimsN:
       l_dict['subfaults'][-1]['center'] = l_dict['subfaults'][-1]['center'] +\
                                           [ float( l_center.find(l_di).text ) ]
 
-    l_dict['subfaults'][-1]['dirs'] = {'n': [], 's': [], 't': []}
+    l_dict['subfaults'][-1]['dirs'] = {}
     l_dirs = l_subfault.find('dirs')
-    for l_dir in ['n', 's', 't']:
-      for l_di in ['x', 'y', 'z']:
+    for l_dir in l_dirsN:
+      l_dict['subfaults'][-1]['dirs'][l_dir] = []
+      for l_di in l_dimsN:
         l_str = l_dir+l_di
         l_dict['subfaults'][-1]['dirs'][l_dir] = l_dict['subfaults'][-1]['dirs'][l_dir] +\
                                                  [ float( l_dirs.find(l_str).text ) ]
 
-  return l_dict
+  return l_nDims, l_dict
 
 ##
 # Creates a netCDF-file based on the given cdl-source template.
@@ -100,12 +119,15 @@ def createNcFile( i_inFile, i_outFile, i_nSrcStr, i_centerStr, i_subStr ):
       l_proc = subprocess.check_call( ['ncgen -o '+i_outFile+' '+l_tmpFile.name], shell=True )
 
 ##
-# Writes the given slip-rate samples of a single point source to var sliprates1 and the corresponding dimensions and metainfo.
+# Writes the given slip-rate samples of a single point source the corresponding dimensions and metainfo.
+# In the case of three-dimensional source, the slip-rate samples are written to var sliprates1.
+# In the case of a two-dimnesional source, the slip-rate samples are written to vars sliprates1 and sliprates2 (explosive source).
 #
+# @param i_nDims number of slip-directions.
 # @param i_outFile netCDF-file where the slip-rate samples are written to.
 # @param i_srs slip-rate samples which are written. list of lists [*][]: subfault, [][*]: sample
 ##
-def writeSrs( i_outFile, i_srs ):
+def writeSrs( i_nDims, i_outFile, i_srs ):
   # warn user about upcoming warning
   logging.info( 'warning \'unsupported Compound type, skipping...\' can be ignored, we are not touching this part of the netCDF-file' )
 
@@ -114,7 +136,7 @@ def writeSrs( i_outFile, i_srs ):
 
   # create offset dimension
   l_rootGroup.createDimension( 'sroffset',  len(i_srs)+1 )
-  l_rootGroup.createDimension( 'direction', 3 )
+  l_rootGroup.createDimension( 'direction', i_nDims )
 
   # create offset variable
   l_rootGroup.createVariable( varname='sroffsets',
@@ -128,7 +150,8 @@ def writeSrs( i_outFile, i_srs ):
   # create slip-rate dimensions
   l_rootGroup.createDimension( 'sample1', l_nSrs )
   l_rootGroup.createDimension( 'sample2', None       )
-  l_rootGroup.createDimension( 'sample3', None       )
+  if( i_nDims > 2 ):
+    l_rootGroup.createDimension( 'sample3', None       )
 
   # create slip-rate variables
   l_rootGroup.createVariable( varname='sliprates1',
@@ -137,20 +160,23 @@ def writeSrs( i_outFile, i_srs ):
   l_rootGroup.createVariable( varname='sliprates2',
                               datatype='f8',
                               dimensions=('sample2') )
-  l_rootGroup.createVariable( varname='sliprates3',
-                              datatype='f8',
-                              dimensions=('sample3') )
+  if( i_nDims > 2 ):
+    l_rootGroup.createVariable( varname='sliprates3',
+                                datatype='f8',
+                                dimensions=('sample3') )
 
   # set units
   l_rootGroup['sliprates1'].units = "m/s"
   l_rootGroup['sliprates2'].units = "m/s"
-  l_rootGroup['sliprates3'].units = "m/s"
+  if( i_nDims > 2 ):
+    l_rootGroup['sliprates3'].units = "m/s"
 
   # write slip-rates
   l_first = 0
   l_flush = 0;
   for l_su in i_srs:
     l_rootGroup['sliprates1'][l_first:l_first+len(l_su)] = l_su
+    if( i_nDims == 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
     l_first = l_first + len(l_su)
 
     # flush periodically
@@ -158,19 +184,57 @@ def writeSrs( i_outFile, i_srs ):
     if l_flush % 10 == 0:
       l_rootGroup.sync
 
-#  l_rootGroup['sliprates1'][:] = [l_en for l_sub in i_srs for l_en in l_sub]
-
   # write offsets
-  l_rootGroup['sroffsets'][0, :] = [ 0, 0, 0 ]
+  l_rootGroup['sroffsets'][0, :] = ( [ 0, 0, 0 ] if( i_nDims > 2 ) else [0, 0] )
   l_off = 0
   for l_so in xrange( 0, len(i_srs) ):
     l_off = l_off + len(i_srs[l_so])
-    l_rootGroup['sroffsets'][l_so+1, :] = [ l_off, 0, 0 ]
+    l_rootGroup['sroffsets'][l_so+1, :] = ( [ l_off, 0, 0 ] if( i_nDims > 2 ) else [ l_off, l_off ] )
 
   l_rootGroup.close()
 
 ##
-# Generates slip-rate samples for the wave propagation benchmarks (see http://www.sismowine.org/model.html )
+# Generates slip rate samples as given by the Ricker wavelet.
+#
+# Source: Geophysical Journal International 166.2 (2006): 855-877.
+#         An arbitrary high-order discontinuous Galerkin method for
+#         elastic waves on unstructured meshes I. The two-dimensional isotropic case with external source terms
+#         Eq. (64)
+#
+# Derivative in Wolfram Alpha to obtain moment rate time history:
+#                  d/dt( a*(0.5+b(t-T)^2)*exp(b*(t-T)^2) )
+#                = 2 a b (t - T) e^(b (t - T)^2) (b (t - T)^2 + 1.5)
+#
+# @param i_t1 start time of the sampling.
+# @param i_t2 end time of the sampling.
+# @param i_dt time step of the sampling.
+# @param i_a width parameter of the wavelet.
+# @param i_M0 scaling used for the moment-rate time history
+# @return sampled slip rates.
+##
+def ricker( i_t1,
+            i_t2,
+            i_dt,
+            i_f=1.0,
+            i_M0=1.0):
+  # set parameters as used in the equation above
+  l_a = i_M0
+  l_b = -(math.pi * i_f)**2
+
+  # slip rate samples
+  l_sr = []
+
+  # local time
+  l_t = i_t1
+
+  while( l_t < i_t2 ):
+    l_sr.append( 2.0 * l_a * l_b * l_t * math.exp( l_b * l_t**2 ) * ( l_b * l_t**2 + 1.5 )  )
+    l_t = l_t + i_dt
+
+  return l_sr
+
+##
+# Generates slip-rate samples for the SISMOWINE wave propagation benchmarks (see http://www.sismowine.org/model.html )
 #
 # @param i_t1 start time of the sampling.
 # @param i_t2 end time of the sampling.
@@ -219,7 +283,7 @@ The expected syntax is as follows:\n\
   <finite_fault>\n\
     <!-- subfault struct, arbitrary number of subfaults are allowed -->\n\
     <subfault>\n\
-      <!-- onset time -->\n\
+      <!-- onset time, in 2D setups this is used as time shift for the Ricker wavelet -->\n\
       <on>0.0</on>\n\
       <!-- time step of the slip-rate sampling -->\n\
       <dt>0.001</dt>\n\
@@ -269,9 +333,11 @@ The expected syntax is as follows:\n\
   </finite_fault>\n\
 ')
 
+logging.info( "running kinematic benchmark script.." )
+
 l_args = vars(l_parser.parse_args())
 
-l_cfg = parseConfig( l_args['xml'] )
+l_nDims, l_cfg = parseConfig( l_args['xml'] )
 assert( len( l_cfg['subfaults']) > 0 )
 
 # assemble center str
@@ -282,9 +348,9 @@ for l_sf in l_cfg['subfaults']:
   else: l_first = False
 
   l_ctrStr = l_ctrStr + '{'
-  l_ctrStr = l_ctrStr + str( l_sf['center'][0] ) + ', ' +\
-                        str( l_sf['center'][1] ) + ', ' +\
-                        str( l_sf['center'][2] )
+  l_ctrStr = l_ctrStr +         str( l_sf['center'][0] )                       +\
+                         ', ' + str( l_sf['center'][1] )                       +\
+                        (', ' + str( l_sf['center'][2] ) if l_nDims>2 else '')
   l_ctrStr = l_ctrStr + '}'
 
 # assemble subfault string
@@ -295,24 +361,25 @@ for l_sf in l_cfg['subfaults']:
   else: l_first = False
 
   l_subStr = l_subStr + '{'
-  l_subStr = l_subStr +   str( l_sf['on'] ) + ', ' +\
+                          # onset time shifts ricker wavelet in 2D setups
+  l_subStr = l_subStr +   str( l_sf['on'] if l_nDims>2 else 0 ) + ', ' +\
                           str( l_sf['dt'] ) + ', ' +\
                           str( l_sf['mu'] ) + ', ' +\
                           str( l_sf[ 'a'] ) + ', ' +\
                           '{' +\
-                            str( l_sf['dirs'][ 's'][0] ) + ', ' +\
-                            str( l_sf['dirs'][ 's'][1] ) + ', ' +\
-                            str( l_sf['dirs'][ 's'][2] )        +\
+                                    str( l_sf['dirs'][ 's'][0] )                       +\
+                             ', ' + str( l_sf['dirs'][ 's'][1] )                       +\
+                            (', ' + str( l_sf['dirs'][ 's'][2] ) if l_nDims>2 else '') +\
                           '}' + ', ' +\
+                          ('{' if l_nDims>2 else '') +\
+                            (       str( l_sf['dirs'][ 't'][0] ) if l_nDims>2 else '') +\
+                            (', ' + str( l_sf['dirs'][ 't'][1] ) if l_nDims>2 else '') +\
+                            (', ' + str( l_sf['dirs'][ 't'][2] ) if l_nDims>2 else '') +\
+                          ('},' if l_nDims>2 else '') +\
                           '{' +\
-                            str( l_sf['dirs'][ 't'][0] ) + ', ' +\
-                            str( l_sf['dirs'][ 't'][1] ) + ', ' +\
-                            str( l_sf['dirs'][ 't'][2] )        +\
-                          '}' + ', ' +\
-                          '{' +\
-                            str( l_sf['dirs'][ 'n'][0] ) + ', ' +\
-                            str( l_sf['dirs'][ 'n'][1] ) + ', ' +\
-                            str( l_sf['dirs'][ 'n'][2] )        +\
+                             str( l_sf['dirs'][ 'n'][0] )                              +\
+                             ', ' + str( l_sf['dirs'][ 'n'][1] )                       +\
+                            (', ' + str( l_sf['dirs'][ 'n'][2] ) if l_nDims>2 else '') +\
                           '}' +\
                         '}'
 
@@ -322,7 +389,6 @@ createNcFile( l_cfg['cdl'],
               l_ctrStr,
               l_subStr )
 
-#createNcFile( l_arguments['cdl_file'], l_arguments['out_file'], l_centerStr, l_subStr )
 logging.info( "created netCDF-file "+l_cfg['out'] );
 
 # slip rate samples
@@ -335,15 +401,22 @@ for l_sf in l_cfg['subfaults']:
   l_t2 = l_sf['dur']
   l_dt = l_sf['dt']
   l_t  = l_sf['T']
-  l_sr = wp( 0.0,
-             l_sf['dur'],
-             l_sf['dt'],
-             l_sf['T'],
-             l_sf['m0'] )
+  if l_nDims == 3:
+    l_sr = wp( 0.0,
+               l_sf['dur'],
+               l_sf['dt'],
+               l_sf['T'],
+               l_sf['m0'] )
+  else:
+    l_sr = ricker( l_sf['on'],
+                   l_sf['dur']-l_sf['on'],
+                   l_sf['dt'],
+                   l_sf['T'],
+                   l_sf['m0'] )
   l_srs  = l_srs + [l_sr]
   l_nSrs = l_nSrs + len( l_sr )
 
 logging.info( "generated a total of "+str(l_nSrs)+" slip-rate samples for " + str(len(l_cfg['subfaults'])) + ' subfaults' )
-writeSrs( l_cfg['out'], l_srs )
+writeSrs( l_nDims, l_cfg['out'], l_srs )
 
 logging.info( "finished, enjoy your benchmark source" )
