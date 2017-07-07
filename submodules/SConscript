@@ -89,6 +89,9 @@ if env['moab'] != False:
     env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
 
+  # forward CGNS if available
+  conf.CheckLibWithHeaderFlags( 'cgns' )
+
   if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
     env.AppendUnique( CPPDEFINES=['PP_T_MESH_UNSTRUCTURED'] )
     env.AppendUnique( CPPDEFINES=['PP_USE_MOAB'] )
