@@ -319,6 +319,11 @@ if( env['xsmm'] ):
 # forward number of forward runs to compiler
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 
+# enable libnuma if available
+if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], False) or\
+   conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True):
+  env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
+
 # set architecture and alignment
 if env['arch'] == 'host':
   if compilers == 'intel':

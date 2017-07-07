@@ -33,10 +33,6 @@ l_objects = [ env.Object( 'pugixml/src/pugixml.cpp' ) ]
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
 
-# enable libnuma if available
-if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True):
-  env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
-
 # forward libxsmm
 if env['xsmm'] != False:
   if env['xsmm'] != True:
