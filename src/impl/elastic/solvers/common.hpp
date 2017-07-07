@@ -62,8 +62,6 @@ class edge::elastic::solvers::common {
                                real_base o_fL[5][5],
                                real_base o_fR[5][5],
                                bool      i_freeSurface = false ) {
-      EDGE_CHECK( i_freeSurface == false ); // TODO: Implement free-surface bnds
-
 #include "impl/elastic/generated/SolverElastic2D.inc"
     }
 
@@ -429,7 +427,8 @@ class edge::elastic::solvers::common {
                          i_faceChars[l_fa].outNormal[1],
                          i_faceChars[l_fa].outNormal[2],
                          o_fluxSolversOwn[l_elL][l_fIdL].solver,
-                         o_fluxSolversNeigh[l_elL][l_fIdL].solver );
+                         o_fluxSolversNeigh[l_elL][l_fIdL].solver,
+                        (i_faceChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
         }
 
         // compute solvers for the right element
@@ -441,7 +440,8 @@ class edge::elastic::solvers::common {
                         -i_faceChars[l_fa].outNormal[1],
                         -i_faceChars[l_fa].outNormal[2],
                          o_fluxSolversOwn[l_elR][l_fIdR].solver,
-                         o_fluxSolversNeigh[l_elR][l_fIdR].solver );
+                         o_fluxSolversNeigh[l_elR][l_fIdR].solver,
+                         false );
         }
 #elif PP_N_DIM == 3
         // compute solvers for the left element
