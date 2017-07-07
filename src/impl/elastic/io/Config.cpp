@@ -36,7 +36,7 @@ void edge::elastic::io::Config::print() {
       EDGE_LOG_INFO << "      domain #" << l_do << ":";
       EDGE_LOG_INFO << "        rho: " << m_velVals[l_do][0] << ", "
                     <<         "lam: " << m_velVals[l_do][1] << ", "
-                    <<         "mu:  " << m_velVals[l_do][1] << ", ";
+                    <<         "mu:  " << m_velVals[l_do][2] << ", ";
       std::vector< std::string > l_doStrs = m_velDoms[l_do].toString();
       for( std::size_t l_ob = 0; l_ob < l_doStrs.size(); l_ob++ ) {
         EDGE_LOG_INFO << "        object #" << l_ob << ": " << l_doStrs[l_ob];
