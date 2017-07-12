@@ -145,7 +145,18 @@ suppression = {
   }
 }
 suppression = {
-	name = "memkind invalid call"
+  name = "memkind leak #8"
+  type = {reachable_memory_leak}
+    stacks = {
+      allocation={
+        ...;
+        mod=edge,func=memkind_hbw_get_mbind_nodemask,src=memkind_hbw.c;
+      }
+    }
+}
+
+suppression = {
+	name = "memkind invalid call #1"
 	type = {invalid_call}
 	stacks = {
 		{
@@ -153,6 +164,16 @@ suppression = {
       mod=edge,src=memkind_hbw.c,func=fill_bandwidth_values_heuristically;
 		}
 	}
+}
+suppression = {
+  name = "memkind invalid call #2"
+  type = {invalid_call}
+    stacks = {
+      {
+        ...;
+        mod=edge,func=memkind_hbw_get_mbind_nodemask,src=memkind_hbw.c;
+      }
+    }
 }
 
 ##
