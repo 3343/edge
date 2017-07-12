@@ -32,7 +32,7 @@ namespace edge {
   namespace elastic {
     namespace solvers {
       template< t_entityType   TL_T_EL,
-                unsigned short TL_N_QU,
+                unsigned short TL_N_QTS,
                 unsigned short TL_O_SP,
                 unsigned short TL_N_FRUNS,
                 unsigned short TL_N_FSRCS
@@ -75,9 +75,9 @@ template< t_entityType   TL_T_EL,
         >
 class edge::elastic::solvers::Kinematics {
   private:
-    //! number of dimensions.
+    //! number of dimensions
     static unsigned short const TL_N_DIM = C_ENT[TL_T_EL].N_DIM;
-    //! number fo element modes.
+    //! number fo element modes
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
     //! number of independent, non-fused kinematic source descriptions
     static unsigned short const TL_N_IND_SRCS = (TL_N_FSRCS == 1) ? TL_N_FRUNS : 1;
