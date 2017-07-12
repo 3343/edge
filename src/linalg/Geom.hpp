@@ -47,6 +47,21 @@ namespace edge {
 class edge::linalg::Geom {
   public:
     /**
+     * Computes the scalar product of the two 1-entry "vectors" a and b.
+     *
+     * @param i_a vector a.
+     * @param i_b vector b.
+     * @return scalar product.
+     *
+     * @paramt T floating point type.
+     **/
+    template <typename T>
+    static T sprod1( const T i_a[1],
+                     const T i_b[1] ) {
+      return i_a[0] * i_b[0];
+    }
+
+    /**
      * Computes the scalar product of the two 2-entry vectors a and b.
      *
      * @param i_a vector a.
@@ -87,6 +102,20 @@ class edge::linalg::Geom {
     template <typename T>
     static T norm2( const T i_vec[2] ) {
       return std::sqrt( sprod2( i_vec, i_vec) );
+    }
+
+    /**
+     * Normalizes the given 1D "vector" to unit length.
+     *
+     * @param io_vec vector which will be normalized.
+     *
+     * @paramt T floating point type.
+     **/
+    template <typename T>
+    static void normalize1( T io_vec[1] ) {
+      if(      io_vec[0] > 0 ) io_vec[0] =  1;
+      else if( io_vec[0] < 0 ) io_vec[0] = -1;
+      else EDGE_LOG_FATAL << "can't normalize zero vector";
     }
 
     /**

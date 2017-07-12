@@ -69,7 +69,10 @@ class edge::linalg::HalfSpace {
       }
 
       // normalize normal
-      if( TL_N_DIM == 2 ) {
+      if(      TL_N_DIM == 1 ) {
+        Geom::normalize1( m_normal );
+      }
+      else if( TL_N_DIM == 2 ) {
         Geom::normalize2( m_normal );
       }
       else if( TL_N_DIM == 3 ) {
@@ -152,7 +155,10 @@ class edge::linalg::HalfSpace {
 
       // determine dot product
       TL_T_REAL l_dot = 0;
-      if( TL_N_DIM == 2 ) {
+      if(      TL_N_DIM == 1 ) {
+        l_dot = Geom::sprod1( m_normal, l_dir );
+      }
+      else if( TL_N_DIM == 2 ) {
         l_dot = Geom::sprod2( m_normal, l_dir );
       }
       else if( TL_N_DIM == 3 ) {
