@@ -28,6 +28,7 @@
 #include "constants.hpp"
 #include "mesh/common.hpp"
 #include "linalg/Mappings.hpp"
+#include "TimePred.hpp"
 
 namespace edge {
   namespace advection {
@@ -182,48 +183,23 @@ class edge::advection::solvers::AderDg {
          * compute ader time integration
          */
         // buffer for derivatives
-        real_base l_derBuffer[2][N_ELEMENT_MODES][N_CRUNS];
+        real_base l_derBuffer[ORDER][N_ELEMENT_MODES][N_CRUNS];
 
-        real_base l_scalar = i_dT;
-
-        // initialize derivative buffer, reset time integrated dofs
-        for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-#pragma omp simd
-          for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-            l_derBuffer[0][l_md][l_cfr]  = io_dofs[l_el][0][l_md][l_cfr];
-            l_derBuffer[1][l_md][l_cfr]  = 0;
-            o_tInt[l_el][0][l_md][l_cfr] = l_scalar * io_dofs[l_el][0][l_md][l_cfr];
-          }
-        }
-
-        // iterate over time derivatives
-        for( unsigned int l_de = 1; l_de < ORDER; l_de++ ) {
-          for( unsigned int l_dim = 0; l_dim < N_DIM; l_dim++ ) {
 #if defined PP_T_KERNELS_VANILLA
-            // multiply with transposed stiffness matrices and inverse mass matrix
-            matMulB0( l_derBuffer[(l_de-1)%2], i_dg.mat.stiffT[l_dim], l_tmpProd );
-
-            // multiply with star "matrices"
-            matMulB1( i_starM[l_el][l_dim], l_tmpProd, l_derBuffer[l_de%2] );
-#elif defined PP_T_KERNELS_XSMM
-            assert( false );
+        TimePred<
+          T_SDISC.ELEMENT,
+          ORDER,
+          ORDER,
+          N_CRUNS >::ckVanilla( i_dT,
+                                i_dg.mat.stiffT,
+                                i_starM[l_el],
+                                io_dofs[l_el][0],
+                                l_tmpProd,
+                                l_derBuffer,
+                                o_tInt[l_el][0] );
 #else
-            assert( false );
+#error kernels not implemented.
 #endif
-          }
-
-          // update scalar
-          l_scalar *= -i_dT / (l_de+1);
-
-          // update time integrated dofs and reset der buffer for next step
-          for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-#pragma omp simd
-            for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-              o_tInt[l_el][0][l_md][l_cfr] += l_scalar * l_derBuffer[l_de%2][l_md][l_cfr];
-              l_derBuffer[(l_de-1)%2][l_md][l_cfr] = 0;
-            }
-          }
-        }
 
         /*
          * compute volume contribution
