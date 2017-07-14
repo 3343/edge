@@ -28,7 +28,10 @@ import warnings
 Import('env')
 Import('conf')
 
-l_objects = [ env.Object( 'pugixml/src/pugixml.cpp' ) ]
+l_objects = []
+
+# add pugixml
+l_objects.append(  env.Object( 'pugixml/src/pugixml.cpp' ) )
 
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
@@ -120,10 +123,10 @@ l_numLibs = [ 'FastGL/fastgl.cpp' ]
 for l_lib in l_numLibs:
   env.sources.append( env.Object( l_lib,
                                   CXXFLAGS = env['CXXFLAGS']+
-                                             '-Wno-error'+
-                                             '-Wno-all'+
-                                             '-Wno-shadow'+
-                                             '-Wno-unused-variable' ) )
+                                             ['-Wno-error']+
+                                             ['-Wno-all']+
+                                             ['-Wno-shadow']+
+                                             ['-Wno-unused-variable'] ) )
 
 # compile default soruces
 for l_object in l_objects:
