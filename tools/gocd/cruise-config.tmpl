@@ -39,10 +39,9 @@
     TEMPLATE_REVENGE_2_UUID
     TEMPLATE_REVENGE_3_UUID
 -->
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="90">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="93">
   <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID">
     <security>
-      <passwordFile path="/var/go/.htaccess" />
       <admins>
         <user>breuera</user>
       </admins>
@@ -2726,7 +2725,7 @@
               <!-- link source template -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>ln -s tools/processing/kinematic_bench.cdl .</arg>
+                <arg>ln -s tools/processing/kinematic_bench_3d.cdl .</arg>
                 <runif status="passed" />
               </exec>
 
