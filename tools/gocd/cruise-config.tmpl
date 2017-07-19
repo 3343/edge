@@ -42,6 +42,17 @@
 <cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="93">
   <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID">
     <security>
+      <!-- Authentification -->
+      <authConfigs>
+        <authConfig id="auth_file" pluginId="cd.go.authentication.passwordfile">
+          <property>
+            <key>PasswordFilePath</key>
+            <value>/var/go/.htaccess</value>
+          </property>
+        </authConfig>
+      </authConfigs>
+
+      <!-- Admins -->
       <admins>
         <user>breuera</user>
       </admins>
