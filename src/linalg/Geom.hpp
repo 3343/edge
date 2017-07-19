@@ -575,7 +575,7 @@ class edge::linalg::Geom {
       TL_T_REAL l_box[3][2];
       for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
         l_box[l_di][0] = std::numeric_limits< TL_T_REAL >::max();
-        l_box[l_di][1] = std::numeric_limits< TL_T_REAL >::min();
+        l_box[l_di][1] = std::numeric_limits< TL_T_REAL >::lowest();
       }
       for( unsigned short l_di = 0; l_di < l_nDims; l_di++ ) {
         for( unsigned short l_ve = 0; l_ve < l_nEnVes; l_ve++ ) {
