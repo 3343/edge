@@ -320,8 +320,8 @@ if( env['xsmm'] ):
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 
 # enable libnuma if available
-if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], False) or\
-   conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True):
+if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
+   conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], False):
   env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
 
 # set architecture and alignment

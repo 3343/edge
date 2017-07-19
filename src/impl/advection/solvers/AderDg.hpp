@@ -159,7 +159,7 @@ class edge::advection::solvers::AderDg {
      **/
     static void local(       int_el       i_first,
                              int_el       i_nElements,
-                             double       i_dT,
+                             real_base    i_dT,
                        const t_dg        &i_dg,
                        const real_base (*i_starM)[N_DIM],
                        const real_base (*i_fluxSolvers)[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],
@@ -325,7 +325,7 @@ class edge::advection::solvers::AderDg {
      **/
     static void neigh(       int_el           i_first,
                              int_el           i_nElements,
-                             double           i_dT,
+                             real_base        i_dT,
                        const t_dg            &i_dg,
                        const t_faceChars     *i_faChars,
                        const real_base      (*i_fluxSolvers)[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],

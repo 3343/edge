@@ -445,21 +445,21 @@ class edge::linalg::Geom {
         TL_T_REAL l_tX = i_vertices[0*l_nVe + 0] - i_vertices[0*l_nVe + 1];
         TL_T_REAL l_tY = i_vertices[1*l_nVe + 0] - i_vertices[1*l_nVe + 1];
 
+        // get length of tangent (norm)
+        TL_T_REAL l_length = std::sqrt(l_tX * l_tX + l_tY * l_tY);
+
+        // scale vector (unit length)
+        l_tX /= l_length; l_tY /= l_length;
+
         // compute normal vector
         TL_T_REAL l_nX = l_tY;
         TL_T_REAL l_nY = -l_tX;
 
         // check that this is a normal (dot product == 0)
-        assert( std::abs(l_nX * l_tX + l_nY * l_tY) < TOL.MESH );
-
-        // get length of normal (norm)
-        TL_T_REAL l_length = std::sqrt(l_nX * l_nX + l_nY * l_nY);
-
-        // scale vector (unit length)
-        l_nX /= l_length; l_nY /= l_length;
+        EDGE_CHECK( std::abs(l_nX * l_tX + l_nY * l_tY) < TOL.MESH );
 
         // check for length one
-        assert( std::abs(std::sqrt( l_nX * l_nX + l_nY * l_nY ) - 1) < TOL.MESH );
+        EDGE_CHECK( std::abs(std::sqrt( l_nX * l_nX + l_nY * l_nY ) - 1) < TOL.MESH );
 
         /*
          * compute dot product of vector pointing from a vertex to the normal point and the normal
@@ -510,7 +510,7 @@ class edge::linalg::Geom {
 
         // compute length
         TL_T_REAL l_nLength = std::sqrt( l_nX*l_nX + l_nY*l_nY + l_nZ*l_nZ );
-        assert( l_nLength > TOL.MESH );
+        EDGE_CHECK( l_nLength > TOL.MESH );
 
         // normalize
         l_nX /= l_nLength; l_nY /= l_nLength; l_nZ /= l_nLength;
@@ -519,7 +519,7 @@ class edge::linalg::Geom {
         TL_T_REAL l_dP =   l_nX * (i_normalPoint[0] - i_vertices[0*l_nVe + 0])
                          + l_nY * (i_normalPoint[1] - i_vertices[1*l_nVe + 0])
                          + l_nZ * (i_normalPoint[2] - i_vertices[2*l_nVe + 0]);
-        assert( std::abs(l_dP) > TOL.MESH );
+        EDGE_CHECK( std::abs(l_dP) > TOL.MESH );
 
         // if the dot product is positive, the angle is below 90deg:
         // we want the normal to point in the other direction; therefore we have to change the sign
@@ -534,7 +534,7 @@ class edge::linalg::Geom {
         o_outNormal[1] = l_nY;
         o_outNormal[2] = l_nZ;
       }
-      else assert( false );
+      else EDGE_LOG_FATAL;
     }
 
     /**
