@@ -3098,7 +3098,7 @@
             <value>32</value>
         </variable>
         <variable name="MPI_EXEC">
-            <value>eval rm -r inspxe_results* 2> /dev/null || true; mpiexec -n 8</value>
+            <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec -n 8</value>
         </variable>
         <variable name="OMP_NUM_THREADS">
             <value>62</value>
@@ -3113,7 +3113,7 @@
             <value>inspxe-cl --collect=mi2 --suppression-file=".inspxe.supp" --</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>inspxe-cl --result-dir=inspxe_results --collect=mi2 --suppression-file=".inspxe.supp" --</value>
+            <value>inspxe-cl --result-dir=$rd --collect=mi2 --suppression-file=".inspxe.supp" --</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>knl</value>
