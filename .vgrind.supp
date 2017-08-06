@@ -54,9 +54,6 @@
    Memcheck:Param
    sched_setaffinity(mask)
    ...
-   fun:*kmp_env_initialize*
-   fun:*kmp_do_serial_initialize*
-   fun:*kmp_get_global_thread_id_reg
    fun:*kmpc_fork_call
    fun:*edge*parallel*Shared*init*
    fun:main
@@ -88,21 +85,8 @@
 }
 
 {
-   PMPI_Init
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   ...
-   fun:ompi_mpi_init
-   fun:PMPI_Init
-   fun:*edge*parallel*Mpi*
-   fun:main
-}
-
-{
-   PMPI_Init_thread_malloc
-   Memcheck:Leak
-   fun:malloc
+   PMPI_Init_Cond
+   Memcheck:Cond
    ...
    fun:ompi_mpi_init
    fun:PMPI_Init_thread
@@ -111,9 +95,8 @@
 }
 
 {
-   PMPI_Init_thread_calloc
+   PMPI_Init_Leak
    Memcheck:Leak
-   fun:calloc
    ...
    fun:ompi_mpi_init
    fun:PMPI_Init_thread
@@ -124,8 +107,6 @@
 {
    ompi_mpi_finalize
    Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
    ...
    fun:orte_finalize
    fun:ompi_mpi_finalize

@@ -13,3 +13,6 @@
 [submodule "submodules/moab"]
 	path = submodules/moab
 	url = https://bitbucket.org/fathomteam/moab.git
+[submodule "submodules/exprtk"]
+	path = submodules/exprtk
+	url = https://github.com/ArashPartow/exprtk.git
