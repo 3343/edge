@@ -376,7 +376,8 @@ before_install:
   - if [ "$SINGULARITY_VERSION" != "" ]; then cd singularity-${SINGULARITY_VERSION}; ./configure > /dev/null; make > /dev/null; sudo make install; cd ..; fi;
 
   # clone EDGE's asset repository
-  - git clone https://bitbucket.org/3343/edge_opt.git
+  - git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
+  - cd edge_opt; git lfs fetch -I cont; cd..
 
   - cd edge
   - ln -s ../edge_opt/cont .
