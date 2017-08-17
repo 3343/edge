@@ -2,3 +2,9 @@
 config.log
 .sconf_temp/
 build/
+
+##
+# Python
+##
+__pycache__/
+*.py[cod]
