@@ -1159,6 +1159,8 @@ void edge::dg::Basis::evalBasisTria( unsigned int  b,
                                      int           i_der ) {
   // temporary vars
   double val, valDxi1, valDxi2;
+  val = valDxi1 = valDxi2 = std::numeric_limits< double >::max();
+
   if( i_der == 0 ) {
 #include "generated/basis_tria_der_xi1.inc"
     o_val = valDxi1;
@@ -1181,6 +1183,8 @@ void edge::dg::Basis::evalBasisTet( unsigned int  b,
                                     int           i_der ) {
   // temporary vars
   double val, valDxi1, valDxi2, valDxi3;
+  val = valDxi1 = valDxi2 = std::numeric_limits< double >::max();
+
   if( i_der == 0 ) {
 #include "generated/basis_tet_der_xi1.inc"
     o_val = valDxi1;
