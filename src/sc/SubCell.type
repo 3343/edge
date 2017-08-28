@@ -1,0 +1,209 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ *
+ * @section LICENSE
+ * Copyright (c) 2017, Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Data types of the sub-cell limiter.
+ **/
+#ifndef SC_TYPE
+#define SC_TYPE
+
+namespace edge {
+  namespace sc {
+    template< typename       TL_T_LID,
+              t_entityType   TL_T_EL,
+              unsigned short TL_O_SP >
+    struct t_connect;
+
+    template< typename     TL_T_REAL,
+              t_entityType TL_T_EL >
+    struct t_svChars;
+
+    template< typename       TL_T_REAL,
+              t_entityType   TL_T_EL,
+              unsigned short TL_O_SP >
+    struct t_ops;
+
+    template< typename       TL_T_LID,
+              typename       TL_T_REAL,
+              t_entityType   TL_T_EL,
+              unsigned short TL_O_SP,
+              unsigned short TL_N_QTS,
+              unsigned short TL_N_CRS >
+    struct t_SubCell;
+  }
+}
+
+/**
+ * Connectivity info of the sub-grid.
+ *
+ * @paramt TL_T_LID integral type for local ids.
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP spatial order of the DG-element.
+ **/
+template< typename       TL_T_LID,
+          t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+struct edge::sc::t_connect {
+  //! number of sub-cells per element
+  static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+
+  //! number of vertices per element / sub-cell
+  static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
+
+  //! number of faces per element / sub-cell
+  static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+  //! number of sub-faces per element face
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! sub-vertices adjacent to sub-cells (owned + recv)
+  TL_T_LID scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_VES ];
+
+  //! sub-cells adjacent to sub-cells (sub-faces as bride, owned + recv)
+  TL_T_LID scSfSc[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_FAS ];
+
+  //! send sub-cells adjacent to DG faces
+  TL_T_LID faSfSc[TL_N_FAS][TL_N_SFS];
+
+  //! type of the sub-cells' faces
+  unsigned short scTySf[TL_N_SCS][TL_N_FAS];
+
+  //! link between limited plus elements and dense elements (no bridge)
+  TL_T_LID (*lpEl);
+
+  //! link between limited plus elements and limited elements (no bridge)
+  TL_T_LID (*lpLi);
+
+  //! link between limited plus elements and limited plus elements (faces as bridge)
+  TL_T_LID (*lpFaLp)[ TL_N_FAS ];
+
+  //! link between limited elements and elements providing extrema (no bridge)
+  TL_T_LID *liEx;
+
+  //! link between limited elements and elements providing extrema (vertices as bridge)
+  TL_T_LID *(*liVeEx);
+};
+
+/**
+ * Sub-vertex characteristics.
+ *
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_T_EL element type.
+ **/
+template< typename     TL_T_REAL,
+          t_entityType TL_T_EL >
+struct edge::sc::t_svChars {
+  //! number of dims
+  static unsigned short const TL_N_DIMS = C_ENT[TL_T_EL].N_DIM;
+
+  //! coordinates
+  TL_T_REAL coords[TL_N_DIMS];
+};
+
+/**
+ * Sub-cell operators.
+ *
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP DG-order in space.
+ **/
+template< typename       TL_T_REAL,
+          t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+struct edge::sc::t_ops {
+  //! number of faces per element / sub-cell
+  static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+  //! number of sub-faces per element face
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! number of element modes
+  static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
+
+  //! number of sub-cells per element
+  static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+
+  //! scatter matrix
+  TL_T_REAL scatter[TL_N_MDS][TL_N_SCS];
+
+  //! scatter matrix for sub-cells at the DG element's and adjacent DG elements surfaces
+  TL_T_REAL scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS];
+
+  //! gather matrix
+  TL_T_REAL gather[TL_N_SCS][TL_N_MDS];
+
+  //! sub-face integration operator
+  TL_T_REAL sfInt[TL_N_FAS][TL_N_SFS][TL_N_MDS];
+};
+
+
+/**
+ * Data of the sub-cell resolution.
+ *
+ * @paramt TL_T_LID integer type of local ids.
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP order of the DG-polynomials in space.
+ * @paramt TL_N_QTS number of quantities.
+ * @paramt TL_N_CRS number of fused simulations.
+ **/
+template< typename TL_T_LID,
+          typename TL_T_REAL,
+          t_entityType   TL_T_EL,
+          unsigned short TL_O_SP,
+          unsigned short TL_N_QTS,
+          unsigned short TL_N_CRS >
+struct edge::sc::t_SubCell {
+  //! number of sub-vertices
+  static unsigned short const TL_N_SVS = CE_N_SUB_VERTICES( TL_T_EL, TL_O_SP );
+
+  //! number of sub-cells per element
+  static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+
+  //! number of sub-faces per element face
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! connectivity info
+  t_connect< TL_T_LID,
+             TL_T_EL, 
+             TL_O_SP > connect;
+
+  //! sub-vertex characteristics
+  t_svChars< TL_T_REAL,
+             TL_T_EL > svChars[TL_N_SVS];
+
+  //! operators of the sub-cell limiter
+  t_ops< TL_T_REAL,
+         TL_T_EL,
+         TL_O_SP > ops;
+
+  //! DOFs of the DG-element's sub-cell solution
+  TL_T_REAL (* dofs)[TL_N_QTS][TL_N_SCS][TL_N_CRS];
+
+  //! DOFs of DG-elemetn's sub-cell solution sub-cell solution for sub-cells adjacent to the DG-element's faces
+  TL_T_REAL (* surf)[C_ENT[TL_T_EL].N_FACES][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+
+  //! minima and maxima of elements providing extrema
+  TL_T_REAL (*ext[2])[2][TL_N_QTS][TL_N_CRS];
+
+  //! admissibility of the DG solution; three-way admissibility in alternating order for 1) previous, valid solution 2) candidate solution 3) limited solution
+  bool (*adm[3])[TL_N_CRS];
+};
+
+#endif
