@@ -63,6 +63,22 @@ class edge::data::Internal {
      * TODO: Extend with more data structures.
      **/
     struct {
+#ifdef PP_ELEMENT_PRIVATE_1_HBW
+      unsigned short elementPrivate1 = 1;
+#else
+      unsigned short elementPrivate1 = 0;
+#endif
+#ifdef PP_ELEMENT_PRIVATE_2_HBW
+      unsigned short elementPrivate2 = 1;
+#else
+      unsigned short elementPrivate2 = 0;
+#endif
+#ifdef PP_ELEMENT_PRIVATE_3_HBW
+      unsigned short elementPrivate3 = 1;
+#else
+      unsigned short elementPrivate3 = 0;
+#endif
+
 #ifdef PP_ELEMENT_MODE_PRIVATE_1_HBW
       unsigned short elementModePrivate1 = 1;
 #else
@@ -278,6 +294,9 @@ class edge::data::Internal {
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_5
     t_elementSparseShared5 (*m_elementSparseShared5)[PP_N_ELEMENT_SPARSE_SHARED_5];
 #endif
+#ifdef PP_N_ELEMENT_SPARSE_SHARED_6
+    t_elementSparseShared6 (*m_elementSparseShared6)[PP_N_ELEMENT_SPARSE_SHARED_6];
+#endif
 
     // dense data for every mode and concurrent run
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_1
@@ -299,6 +318,17 @@ class edge::data::Internal {
 #endif
 #ifdef PP_N_ELEMENT_MODE_SHARED_3
     t_elementModeShared3 (*m_elementModeShared3)[PP_N_ELEMENT_MODE_SHARED_3][N_ELEMENT_MODES];
+#endif
+
+    // dense data for every concurrent run
+#ifdef PP_N_ELEMENT_PRIVATE_1
+    t_elementPrivate1 (*m_elementPrivate1)[PP_N_ELEMENT_PRIVATE_1][N_CRUNS];
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_2
+    t_elementPrivate2 (*m_elementPrivate2)[PP_N_ELEMENT_PRIVATE_2][N_CRUNS];
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_3
+    t_elementPrivate3 (*m_elementPrivate3)[PP_N_ELEMENT_PRIVATE_3][N_CRUNS];
 #endif
 
     // dense data for every element, shared among the runs
@@ -418,6 +448,15 @@ class edge::data::Internal {
       size_t l_elementModeSharedSize3    = m_nElements * PP_N_ELEMENT_MODE_SHARED_3  * N_ELEMENT_MODES           * sizeof(t_elementModeShared3);
 #endif
 
+#ifdef PP_N_ELEMENT_PRIVATE_1
+      size_t l_elementPrivateSize1   = m_nElements * PP_N_ELEMENT_PRIVATE_1 * N_CRUNS * sizeof(t_elementPrivate1);
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_2
+      size_t l_elementPrivateSize2   = m_nElements * PP_N_ELEMENT_PRIVATE_2 * N_CRUNS * sizeof(t_elementPrivate2);
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_3
+      size_t l_elementPrivateSize3   = m_nElements * PP_N_ELEMENT_PRIVATE_3 * N_CRUNS * sizeof(t_elementPrivate3);
+#endif
 
 #ifdef PP_N_ELEMENT_SHARED_1
       size_t l_elementSharedSize1        = m_nElements * PP_N_ELEMENT_SHARED_1                                   * sizeof(t_elementShared1);
@@ -432,17 +471,18 @@ class edge::data::Internal {
       size_t l_elementSharedSize4        = m_nElements * PP_N_ELEMENT_SHARED_4                                   * sizeof(t_elementShared4);
 #endif
 
-      size_t l_connElVeSize              = m_nElements * C_ENT[T_SDISC.ELEMENT].N_VERTICES                       * sizeof(int_el);
-      size_t l_connElFaElSize            = m_nElements * C_ENT[T_SDISC.ELEMENT].N_FACES                          * sizeof(int_el);
-      size_t l_connElFaSize              = m_nElements * C_ENT[T_SDISC.ELEMENT].N_FACES                          * sizeof(int_el);
-      size_t l_connFaElSize              = m_nFaces    * 2                                                       * sizeof(int_el);
-      size_t l_connFaVeSize              = m_nFaces    * C_ENT[T_SDISC.FACE].N_VERTICES                          * sizeof(int_el);
-      size_t l_connfIdElFaElSize         = m_nElements * C_ENT[T_SDISC.ELEMENT].N_FACES                          * sizeof(unsigned short);
-      size_t l_connvIdElFaElSize         = m_nElements * C_ENT[T_SDISC.ELEMENT].N_FACES                          * sizeof(unsigned short);
+      size_t l_connElVeSize              =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_VERTICES                 * sizeof(int_el);
+      size_t l_connElVeElSize            = (m_nElements + 1)                                                     * sizeof(int_el*);
+      size_t l_connElFaElSize            =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
+      size_t l_connElFaSize              =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
+      size_t l_connFaElSize              =  m_nFaces         * 2                                                 * sizeof(int_el);
+      size_t l_connFaVeSize              =  m_nFaces         * C_ENT[T_SDISC.FACE].N_VERTICES                    * sizeof(int_el);
+      size_t l_connfIdElFaElSize         =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
+      size_t l_connvIdElFaElSize         =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
 
-      size_t l_vertexCharsSize           = m_nVertices                                                           * sizeof(t_vertexChars );
-      size_t l_faceCharsSize             = m_nFaces                                                              * sizeof(t_faceChars);
-      size_t l_elementCharsSize          = m_nElements                                                           * sizeof(t_elementChars);
+      size_t l_vertexCharsSize           =  m_nVertices                                                          * sizeof(t_vertexChars);
+      size_t l_faceCharsSize             =  m_nFaces                                                             * sizeof(t_faceChars);
+      size_t l_elementCharsSize          =  m_nElements                                                          * sizeof(t_elementChars);
 
       // faces
 #ifdef PP_N_FACE_MODE_PRIVATE_1
@@ -491,6 +531,23 @@ class edge::data::Internal {
 #endif
 
 
+#ifdef PP_N_ELEMENT_PRIVATE_1
+      m_elementPrivate1   = (t_elementPrivate1 (*)[PP_N_ELEMENT_PRIVATE_1][N_CRUNS]) common::allocate( l_elementPrivateSize1,
+                                                                                                       ALIGNMENT.BASE.HEAP,
+                                                                                                       m_memTypes.elementPrivate1 );
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_2
+      m_elementPrivate2   = (t_elementPrivate2 (*)[PP_N_ELEMENT_PRIVATE_2][N_CRUNS]) common::allocate( l_elementPrivateSize2,
+                                                                                                       ALIGNMENT.BASE.HEAP,
+                                                                                                       m_memTypes.elementPrivate2 );
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_3
+      m_elementPrivate3   = (t_elementPrivate3 (*)[PP_N_ELEMENT_PRIVATE_3][N_CRUNS]) common::allocate( l_elementPrivateSize3,
+                                                                                                       ALIGNMENT.BASE.HEAP,
+                                                                                                       m_memTypes.elementPrivate3 );
+#endif
+
+
 #ifdef PP_N_ELEMENT_SHARED_1
       m_elementShared1        = (t_elementShared1 (*)[PP_N_ELEMENT_SHARED_1]                                     ) common::allocate( l_elementSharedSize1,
                                                                                                                                      ALIGNMENT.BASE.HEAP );
@@ -509,6 +566,8 @@ class edge::data::Internal {
 #endif
 
       m_connect.elVe            = (int_el         (*)[C_ENT[T_SDISC.ELEMENT].N_VERTICES]                         ) common::allocate( l_connElVeSize,
+                                                                                                                                     ALIGNMENT.BASE.HEAP );
+      m_connect.elVeEl          = (int_el**                                                                      ) common::allocate( l_connElVeElSize,
                                                                                                                                      ALIGNMENT.BASE.HEAP );
       m_connect.elFaEl          = (int_el         (*)[C_ENT[T_SDISC.ELEMENT].N_FACES]                            ) common::allocate( l_connElFaElSize,
                                                                                                                                      ALIGNMENT.BASE.HEAP );
@@ -542,6 +601,15 @@ class edge::data::Internal {
      * @param i_nVeSp3 number of sparse vertices #3.
      * @param i_nElSp3 number of sparse elements #3.
      * @param i_nfaSp3 number of sparse faces #3.
+     * @param i_nVeSp4 number of sparse vertices #4.
+     * @param i_nElSp4 number of sparse elements #4.
+     * @param i_nfaSp4 number of sparse faces #4.
+     * @param i_nVeSp5 number of sparse vertices #5.
+     * @param i_nElSp5 number of sparse elements #5.
+     * @param i_nfaSp5 number of sparse faces #5.
+     * @param i_nVeSp6 number of sparse vertices #6.
+     * @param i_nElSp6 number of sparse elements #6.
+     * @param i_nfaSp6 number of sparse faces #6.
      **/
     void initSparse( int_el i_nVeSp1 = 0,
                      int_el i_nFaSp1 = 0,
@@ -685,6 +753,9 @@ class edge::data::Internal {
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_5
       size_t l_elSpShared5               = m_nElSp5 * PP_N_ELEMENT_SPARSE_SHARED_5                               * sizeof(t_elementSparseShared5);
 #endif
+#ifdef PP_N_ELEMENT_SPARSE_SHARED_6
+      size_t l_elSpShared6               = m_nElSp6 * PP_N_ELEMENT_SPARSE_SHARED_6                               * sizeof(t_elementSparseShared6);
+#endif
 
 
       // vertices
@@ -820,6 +891,10 @@ class edge::data::Internal {
       m_elementSparseShared5      = (t_elementSparseShared5 (*)[PP_N_ELEMENT_SPARSE_SHARED_5]                    ) common::allocate( l_elSpShared5,
                                                                                                                                      ALIGNMENT.BASE.HEAP );
 #endif
+#ifdef PP_N_ELEMENT_SPARSE_SHARED_6
+      m_elementSparseShared6      = (t_elementSparseShared6 (*)[PP_N_ELEMENT_SPARSE_SHARED_6]                    ) common::allocate( l_elSpShared6,
+                                                                                                                                     ALIGNMENT.BASE.HEAP );
+#endif
     }
 
     /**
@@ -867,6 +942,16 @@ class edge::data::Internal {
        common::release(m_elementModePrivate3, m_memTypes.elementModePrivate3);
 #endif
 
+#ifdef PP_N_ELEMENT_PRIVATE_1
+       common::release(m_elementPrivate1, m_memTypes.elementPrivate1);
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_2
+       common::release(m_elementPrivate2, m_memTypes.elementPrivate2);
+#endif
+#ifdef PP_N_ELEMENT_PRIVATE_3
+       common::release(m_elementPrivate3, m_memTypes.elementPrivate3);
+#endif
+
 #ifdef PP_N_ELEMENT_MODE_SHARED_1
        common::release(m_elementModeShared1);
 #endif
@@ -894,6 +979,7 @@ class edge::data::Internal {
       common::release(m_connect.elFa);
       common::release(m_connect.faEl);
       common::release(m_connect.faVe);
+      common::release(m_connect.elVeEl);
       common::release(m_connect.elFaEl);
       common::release(m_connect.fIdElFaEl);
       common::release(m_connect.vIdElFaEl);
@@ -1002,6 +1088,9 @@ class edge::data::Internal {
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_5
         common::release(m_elementSparseShared5);
+#endif
+#ifdef PP_N_ELEMENT_SPARSE_SHARED_6
+        common::release(m_elementSparseShared6);
 #endif
       }
     }
