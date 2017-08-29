@@ -236,6 +236,7 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
                                      2,
                                      l_internal.m_connect.faEl[0],
                                      t_spTypeElastic::RUPTURE,
+                                     t_spTypeElastic::RUPTURE,
                                      l_internal.m_faceChars,
                                      l_internal.m_elementChars );
 
@@ -511,21 +512,21 @@ l_internal.initSparse( 0, l_enLayouts[l_rupLayoutFa].nEnts, 0,
 if( l_elasticConf.m_frictionLaw != "" ) {
   EDGE_LOG_INFO << "  setting up rupture physics";
   // link sparse rupture faces and sparse rupture elements
-  edge::data::SparseEntities::linkSpAdj( l_enLayouts[1].nEnts,
-                                         2,
-                                         l_internal.m_connect.faEl[0],
-                                         t_spTypeElastic::RUPTURE,
-                                         l_internal.m_faceChars,
-                                         l_internal.m_elementChars,
-                                         l_internal.m_faceSparseShared3[0] );
+  edge::data::SparseEntities::linkSpAdjDst( l_enLayouts[1].nEnts,
+                                            2,
+                                            l_internal.m_connect.faEl[0],
+                                            t_spTypeElastic::RUPTURE,
+                                            l_internal.m_faceChars,
+                                            l_internal.m_elementChars,
+                                            l_internal.m_faceSparseShared3[0] );
 
   // link sparse rupture elements and sparse faces
-  edge::data::SparseEntities::linkSpAdj( l_enLayouts[2].nEnts,
-                                         C_ENT[T_SDISC.ELEMENT].N_FACES,
-                                         l_internal.m_connect.elFa[0],
-                                         t_spTypeElastic::RUPTURE,
-                                         l_internal.m_faceChars,
-                                         l_internal.m_elementSparseShared2[0][0] );
+  edge::data::SparseEntities::linkSpAdjSst( l_enLayouts[2].nEnts,
+                                            C_ENT[T_SDISC.ELEMENT].N_FACES,
+                                            l_internal.m_connect.elFa[0],
+                                            t_spTypeElastic::RUPTURE,
+                                            l_internal.m_faceChars,
+                                            l_internal.m_elementSparseShared2[0][0] );
 
   edge::elastic::solvers::InternalBoundaryTypes<
     T_SDISC.ELEMENT

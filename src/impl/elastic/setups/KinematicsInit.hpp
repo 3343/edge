@@ -560,8 +560,8 @@ class edge::elastic::setups::KinematicsInit {
          * Evalute basis at the position of the point source and scale with inverse Jacobian.
          **/
         // get elements' ve-coords
-        TL_T_REAL_MESH l_veCrds[3][TL_N_VE];
-        mesh::common< TL_T_EL >::getElVeCoords( i_srcEl[l_so], i_elVe, i_veChars, l_veCrds );
+        TL_T_REAL_MESH l_veCrds[TL_N_DIM][TL_N_VE];
+        mesh::common< TL_T_EL >::getElVeCrds( i_srcEl[l_so], i_elVe, i_veChars, l_veCrds );
 
         // get source coordinates
         TL_T_REAL_MESH l_srcCrds[TL_N_DIM];

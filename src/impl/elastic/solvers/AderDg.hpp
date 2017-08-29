@@ -341,8 +341,8 @@ class edge::elastic::solvers::AderDg {
         getJac( i_bgPars[l_el][0].rho, i_bgPars[l_el][0].lam, i_bgPars[l_el][0].mu, l_A[0][0], N_DIM );
 
         // derive vertex coords
-        real_mesh l_veCoords[3][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
-        mesh::common< T_SDISC.ELEMENT >::getElVeCoords( l_el, i_elVe, i_vertexChars, l_veCoords );
+        real_mesh l_veCoords[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
+        mesh::common< T_SDISC.ELEMENT >::getElVeCrds( l_el, i_elVe, i_vertexChars, l_veCoords );
 
         // get inverse jacobian
         real_mesh l_jac[N_DIM][N_DIM];
