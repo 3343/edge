@@ -43,6 +43,9 @@ namespace edge {
 template < t_entityType TL_T_EL >
 class edge::mesh::common {
   private:
+    //! number of dimensions
+    static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
+
     //! face type
     static const t_entityType TL_T_FA = C_ENT[TL_T_EL].TYPE_FACES;
 
@@ -685,21 +688,29 @@ class edge::mesh::common {
     /**
      * Gets the coordinates of an elements vertices based on connectivity information.
      *
-     * @param i_el id of the elment.
-     * @param i_elVe elements' vertices.
-     * @param i_vertexChars characteristics of the vertices.
-     * @param o_veCoords will be set to coordinates of the vertices.
+     * @param i_el id of the entity.
+     * @param i_elVe entities' vertices.
+     * @param i_veChars characteristics of the vertices.
+     * @param o_veCrds will be set to coordinates of the vertices.
+     *
+     * @paramt TL_T_LID integral type of the local ids.
+     * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_VE_CHARS type of the vertex characteristics, offering member .coords.
      **/
-    static void getElVeCoords(       int_el         i_el,
-                               const int_el       (*i_elVe)[TL_N_EL_VES],
-                               const t_vertexChars *i_vertexChars,
-                                     real_mesh      o_veCoords[3][TL_N_EL_VES] ) {
+    template< typename TL_T_LID,
+              typename TL_T_REAL,
+              typename TL_T_VE_CHARS >
+    static void getElVeCrds(       TL_T_LID        i_el,
+                             const TL_T_LID      (*i_elVe)[TL_N_EL_VES],
+                             const TL_T_VE_CHARS  *i_veChars,
+                                   TL_T_REAL       o_veCrds[TL_N_DI][TL_N_EL_VES] ) {
       // get elements vertices
-      for( int_md l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
-        int_el l_veId       = i_elVe[i_el][l_ve];
-        o_veCoords[0][l_ve] = i_vertexChars[l_veId].coords[0];
-        o_veCoords[1][l_ve] = i_vertexChars[l_veId].coords[1];
-        o_veCoords[2][l_ve] = i_vertexChars[l_veId].coords[2];
+      for( unsigned short l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
+        TL_T_LID l_veId       = i_elVe[i_el][l_ve];
+
+        for( unsigned short l_di = 0; l_di < TL_N_DI; l_di++ ) {
+          o_veCrds[l_di][l_ve] = i_veChars[l_veId].coords[l_di];
+        }
       }
     }
 
