@@ -94,9 +94,14 @@ class edge::data::Expression {
     /**
      * Compiles the expression.
      *
-     * @param i_exprStr expression string which is compiled.
+     * @param i_exprStr expression string which is compiled. if the length of the string is zero, a dummy expression is compiled instead.
      **/
     void compile( std::string const & i_exprStr ) {
+      // use empty expression if nothing is given
+      std::string l_exprStr;
+      if( i_exprStr.length() > 0 ) l_exprStr = i_exprStr;
+      else l_exprStr = "0==0;";
+
       // add constants by default
       bool l_err = m_symTab.add_constants();
       EDGE_CHECK( l_err ) << "failed adding constants";
@@ -105,8 +110,8 @@ class edge::data::Expression {
       m_expr.register_symbol_table( m_symTab );
 
       // compile
-      if( !m_parser.compile( i_exprStr, m_expr ) ) {
-        EDGE_LOG_ERROR << "couldn't compile expression: " << i_exprStr;
+      if( !m_parser.compile( l_exprStr, m_expr ) ) {
+        EDGE_LOG_ERROR << "couldn't compile expression: " << l_exprStr;
         EDGE_LOG_ERROR << "here's what went wrong:";
 
         for( std::size_t l_er = 0; l_er < m_parser.error_count(); l_er++ ) {
