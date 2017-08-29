@@ -220,6 +220,25 @@ class edge::linalg::Mappings {
     }
 
     /**
+     * Maps the point in reference coordinates xi to physical coords
+     * w.r.t. to the vertices of the line element.
+     *
+     * @param i_xi coord in xi-direction.
+     * @param i_veCoords coords of the line element.
+     * @param o_pt will be set to resulting point in physical coordinates.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template< typename TL_T_REAL >
+    static void mapRefToPhyLine( TL_T_REAL       i_xi,
+                                 TL_T_REAL const i_veCoords[1][2],
+                                 TL_T_REAL       o_pt[1] ) {
+      o_pt[0]  = i_veCoords[0][1] - i_veCoords[0][0];
+      o_pt[0] *= i_xi;
+      o_pt[0] += i_veCoords[0][0];
+    }
+
+    /**
      * Maps the point in reference coordinates xi and eta to physical coords
      * w.r.t. to the vertices of the quadrilateral.
      *
@@ -227,13 +246,16 @@ class edge::linalg::Mappings {
      * @param i_eta coord in eta-direction.
      * @param i_veCoords coords of the quadrilateral.
      * @param o_pt will be set to resulting point in physical coordinates.
+     *
+     * @paramt TL_T_REAL floating point precision.
      **/
-    static void mapRefToPhyQuad4( const real_mesh i_xi,
-                                  const real_mesh i_eta,
-                                  const real_mesh i_veCoords[2][4],
-                                        real_mesh o_pt[2] ) {
+    template< typename TL_T_REAL >
+    static void mapRefToPhyQuad4( TL_T_REAL       i_xi,
+                                  TL_T_REAL       i_eta,
+                                  TL_T_REAL const i_veCoords[2][4],
+                                  TL_T_REAL       o_pt[2] ) {
       // get the evaluated shape functions
-      real_mesh l_evalSf[4];
+      TL_T_REAL l_evalSf[4];
       Shape::quad4( i_xi, i_eta, l_evalSf );
 
       // perform the mapping
@@ -253,13 +275,16 @@ class edge::linalg::Mappings {
      * @param i_eta coord in eta-direction.
      * @param i_veCoords coords of the triangle.
      * @param o_pt will be set to resulting point in physical coordinates.
+     *
+     * @paramt TL_T_REAL floating point precision.
      **/
-    static void mapRefToPhyTria3( const real_mesh i_xi,
-                                  const real_mesh i_eta,
-                                  const real_mesh i_veCoords[2][3],
-                                        real_mesh o_pt[2] ) {
+    template< typename TL_T_REAL >
+    static void mapRefToPhyTria3( TL_T_REAL       i_xi,
+                                  TL_T_REAL       i_eta,
+                                  TL_T_REAL const i_veCoords[2][3],
+                                  TL_T_REAL       o_pt[2] ) {
       // get the evaluated shape functions
-      real_mesh l_evalSf[3];
+      TL_T_REAL l_evalSf[3];
       Shape::tria3( i_xi, i_eta, l_evalSf );
 
       // perform the mapping
@@ -280,14 +305,17 @@ class edge::linalg::Mappings {
      * @param i_zeta coord in zeta-direction
      * @param i_veCoords coords of the hexahedron.
      * @param o_pt will be set to resulting point in physical coordinates.
+     *
+     * @paramt TL_T_REAL floating point precision.
      **/
-    static void mapRefToPhyHex8r( const real_mesh i_xi,
-                                  const real_mesh i_eta,
-                                  const real_mesh i_zeta,
-                                  const real_mesh i_veCoords[3][8],
-                                        real_mesh o_pt[3] ) {
+    template< typename TL_T_REAL >
+    static void mapRefToPhyHex8r( TL_T_REAL       i_xi,
+                                  TL_T_REAL       i_eta,
+                                  TL_T_REAL       i_zeta,
+                                  TL_T_REAL const i_veCoords[3][8],
+                                  TL_T_REAL       o_pt[3] ) {
       // get the evaluated shape functions
-      real_mesh l_evalSf[8];
+      TL_T_REAL l_evalSf[8];
       Shape::hex8Lin( i_xi, i_eta, i_zeta, l_evalSf );
 
       // perform the mapping
@@ -308,14 +336,17 @@ class edge::linalg::Mappings {
      * @param i_zeta coord in zeta-direction
      * @param i_veCoords coords of the tetrahedron.
      * @param o_pt will be set to resulting point in physical coordinates.
+     *
+     * @paramt TL_T_REAL floating point precision.
      **/
-    static void mapRefToPhyTet4( const real_mesh i_xi,
-                                 const real_mesh i_eta,
-                                 const real_mesh i_zeta,
-                                 const real_mesh i_veCoords[3][4],
-                                       real_mesh o_pt[3] ) {
+    template< typename TL_T_REAL >
+    static void mapRefToPhyTet4( TL_T_REAL       i_xi,
+                                 TL_T_REAL       i_eta,
+                                 TL_T_REAL       i_zeta,
+                                 TL_T_REAL const i_veCoords[3][4],
+                                 TL_T_REAL       o_pt[3] ) {
       // get the evaluated shape functions
-      real_mesh l_evalSf[4];
+      TL_T_REAL l_evalSf[4];
       Shape::tet4( i_xi, i_eta, i_zeta, l_evalSf );
 
       // perform the mapping
@@ -325,6 +356,39 @@ class edge::linalg::Mappings {
           o_pt[l_dim] += i_veCoords[l_dim][l_pt] * l_evalSf[l_pt];
         }
       }
+    }
+
+    /**
+     * Maps the given point in reference coordinates to physical coordinates.
+     *
+     * @param i_enType entity type.
+     * @param i_ves vertices of the entity in physical coordinates (vertices are the fastest dimension).
+     * @param i_xi point in reference coords.
+     * @param o_x will be set point in physical coords.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template< typename TL_T_REAL >
+    static void refToPhy( t_entityType        i_enType,
+                          TL_T_REAL    const *i_ves,
+                          TL_T_REAL    const *i_xi,
+                          TL_T_REAL          *o_x ) {
+     if(      i_enType == LINE   ) mapRefToPhyLine( i_xi[0],
+                                                    (TL_T_REAL const (*)[2]) i_ves,
+                                                    o_x );
+     else if( i_enType == QUAD4R ) mapRefToPhyQuad4( i_xi[0], i_xi[1],
+                                                     (TL_T_REAL const (*)[4]) i_ves,
+                                                     o_x );
+     else if( i_enType == TRIA3  ) mapRefToPhyTria3( i_xi[0], i_xi[1],
+                                                     (TL_T_REAL const (*)[3]) i_ves,
+                                                     o_x );
+     else if( i_enType == HEX8R  ) mapRefToPhyHex8r( i_xi[0], i_xi[1], i_xi[2],
+                                                     (TL_T_REAL const (*)[8]) i_ves,
+                                                     o_x );
+     else if( i_enType == TET4   ) mapRefToPhyTet4( i_xi[0], i_xi[1], i_xi[2],
+                                                    (TL_T_REAL (*)[4]) i_ves,
+                                                    o_x  );
+     else                          EDGE_LOG_FATAL;
     }
 
     /**
