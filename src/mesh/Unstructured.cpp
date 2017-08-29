@@ -227,6 +227,15 @@ int_el edge::mesh::Unstructured::getNElements() const {
 #endif
 }
 
+
+int_el edge::mesh::Unstructured::getNelVeEl() {
+#ifdef PP_USE_MOAB
+  return m_moab.getNelVeEl();
+#else
+  assert(false);
+#endif
+}
+
 void edge::mesh::Unstructured::getElVe( int_el (*o_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES] ) {
 #ifdef PP_USE_MOAB
   m_moab.getElVe( o_elVe );
@@ -246,6 +255,14 @@ void edge::mesh::Unstructured::getElementsAdjacentFaces( int_el (*o_elementsAdja
 void edge::mesh::Unstructured::getFacesAdjacentElements( int_el (*o_neighboringIds)[2] ) {
 #ifdef PP_USE_MOAB
   m_moab.getFacesAdjacentElements( o_neighboringIds );
+#else
+  assert(false);
+#endif
+}
+
+void edge::mesh::Unstructured::getElVeEl( int_el **o_elVeEl ) {
+#ifdef PP_USE_MOAB
+  m_moab.getElVeEl( o_elVeEl );
 #else
   assert(false);
 #endif
@@ -302,6 +319,7 @@ void edge::mesh::Unstructured::getConnect( const t_vertexChars *i_veChars,
   getElementsAdjacentFaces(    o_connect.elFa   );
   getFacesAdjacentElements(    o_connect.faEl   );
   getFacesAdjacentVertices(    o_connect.faVe   );
+  getElVeEl(                   o_connect.elVeEl );
   getElementsFaceNeighbors(    o_connect.elFaEl );
 
   // get the element and face layout

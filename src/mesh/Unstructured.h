@@ -86,6 +86,16 @@ class edge::mesh::Unstructured {
      **/
     void getFacesAdjacentVertices( int_el (*o_neighVeIds)[C_ENT[T_SDISC.FACE].N_VERTICES] );
 
+
+    /**
+     * Determines the element-to-element adjacency through vertices as bridge.
+     * Remark: It is expected that o_elVeEl is an array of pointers of size #nel+1 (incl. ghost element) for consistent size computations.
+     *         Futher, o_elVeEl[0] is expected to point to raw memory, large enough to hold all adjacent elemenets of all elements.
+     *
+     * @param o_elVeEl will be set to elements adjacent to elements (vertices as bridge). [*][]: ptr to elements, [][*]: adjacent elements.
+     **/
+    void getElVeEl( int_el **o_elVeEl );
+
     /**
      * Initializes the given array with the face neighbors' ids of all elements.
      * Remark: Ordering w.r.t. to the vertices of the shared face is guaranteed to be ascending.
@@ -208,6 +218,13 @@ class edge::mesh::Unstructured {
      * @return number of elements.
      **/
     int_el getNElements() const;
+
+    /**
+     * Gets the number of elements adjacent to all elements (vertices as bridge).
+     *
+     * @return number of adjacent elements.
+     **/
+    int_el getNelVeEl();
 
     /**
      * Gets the connectivity information.
