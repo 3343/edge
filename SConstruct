@@ -294,13 +294,13 @@ env['compilers']=compilers
 print '  using', compilers, 'as compiler suite'
 
 if env['PLATFORM'] == 'darwin':
-  opSys = 'macos'
+  env['op_sys'] = 'macos'
 else:
-  opSys = 'linux'
-print '  using', opSys, 'as operating system'
+  env['op_sys'] = 'linux'
+print '  using', env['op_sys'], 'as operating system'
 
 # use static linking for EDGE's direct dependencies (if possible) and dynamic for the rest
-if opSys != 'macos': # not supported by mac's ld
+if env['op_sys'] != 'macos': # not supported by mac's ld
   env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
   env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
 

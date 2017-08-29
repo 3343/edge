@@ -24,6 +24,15 @@
 ##
 import os
 import warnings
+import subprocess
+
+# get dir of scons script
+l_scriptDir = Dir('.').srcnode().abspath
+
+import os
+from sys import path
+path.append(l_scriptDir + '/edge_pre' )
+import csvToCpp
 
 Import('env')
 Import('conf')
@@ -31,7 +40,7 @@ Import('conf')
 l_objects = []
 
 # add pugixml
-l_objects.append(  env.Object( 'pugixml/src/pugixml.cpp' ) )
+l_objects.append( env.Object( 'pugixml/src/pugixml.cpp' ) )
 
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
@@ -91,6 +100,14 @@ if env['moab'] != False:
   # forward CGNS if available
   conf.CheckLibWithHeaderFlags( 'cgns' )
 
+  # forward gfortran if available
+  conf.CheckLibWithHeaderFlags( 'm' )
+  conf.CheckLibWithHeaderFlags( 'quadmath' )
+  conf.CheckLibWithHeaderFlags( 'gfortran' )
+
+  # forward openblas if available
+  conf.CheckLibWithHeaderFlags( 'openblas' )
+
   if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
     env.AppendUnique( CPPDEFINES=['PP_T_MESH_UNSTRUCTURED'] )
     env.AppendUnique( CPPDEFINES=['PP_USE_MOAB'] )
@@ -131,6 +148,65 @@ for l_lib in l_numLibs:
 # compile default soruces
 for l_object in l_objects:
   env.sources.append( l_object )
+
+# add EDGE's pre-processed data
+def csvToCpp( target, source, env ):
+  assert( len(target) == 1 )
+  assert( len(source) == 1 )
+
+  # assemble args
+  l_in  = source[0].get_abspath()
+  l_ons = env['edge_pre'][source[0].get_abspath()]['ons']
+  l_on  = env['edge_pre'][source[0].get_abspath()]['on']
+  l_ot  = env['edge_pre'][source[0].get_abspath()]['ot']
+  l_out = target[0].get_abspath()
+
+  l_comm = [ 'python3', 'tools/edge_pre/cpp.py',
+             '-i', l_in,
+             '-s', l_ons,
+             '-n', l_on,
+             '-t', l_ot,
+             '-o', l_out ]
+  if 'r' in env['edge_pre'][source[0].get_abspath()]:
+    l_comm = l_comm + ['-r'] + env['edge_pre'][source[0].get_abspath()]['r']
+  l_proc = subprocess.Popen( l_comm, stdout=subprocess.PIPE )
+  l_pOut, l_pErr = l_proc.communicate()
+  print( l_pOut )
+
+edgePre = {}
+edgePre['src'] = []
+env['edge_pre'] = {}
+for l_pre in ['svcrds', 'scsv', 'scsfsc', 'sctysf', 'gather', 'scatter', 'scattersurf', 'sfint']:
+  # generate file names
+  l_dir = 'edge_pre/sc/' + env['element_type'] + '/' + str( int(env['order'])-1 ) + '/'
+  l_base = l_dir + env['element_type'] +\
+             '_' +str( int(env['order'])-1 ) + '_' + l_pre
+  l_csv = File( l_scriptDir + '/' + l_base + '.csv' )
+  l_cpp = File( l_base + '.cpp' )
+
+  # set info
+  env['edge_pre'][l_csv.get_abspath()] = {}
+  env['edge_pre'][l_csv.get_abspath()]['ons'] = 'sc'
+  env['edge_pre'][l_csv.get_abspath()]['on']  = l_pre
+
+  if l_pre in ['svcrds', 'gather', 'scatter', 'scattersurf', 'sfint']:
+    env['edge_pre'][l_csv.get_abspath()]['ot']  = 'double'
+  elif l_pre in ['scsv', 'scsfsc', 'sctysf']:
+    env['edge_pre'][l_csv.get_abspath()]['ot']  = 'unsigned short'
+    env['edge_pre'][l_csv.get_abspath()]['r']  = ['-1', 'std::numeric_limits< unsigned short >::max()']
+  else: assert( False )
+
+  # create command to build file
+  env.Command( l_cpp, l_csv, csvToCpp )
+
+  # append object to edge_pre library
+  edgePre['src'].append( l_cpp )
+
+# create a library out of EDGE's pre-processed data
+edgePre['lib'] = env.StaticLibrary( 'edge_pre/edge_pre', edgePre['src'] )
+
+# attach library to build
+env.Append( LIBS = edgePre['lib'] )
 
 Export('conf')
 Export('env')
