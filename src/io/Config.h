@@ -145,11 +145,22 @@ class edge::io::ConfigDoms {
 };
 
 class edge::io::Config {
-  //private:
+  private:
+    /**
+     * Prints the given string line by line.
+     *
+     * @param i_pre string which is added to the front of every line.
+     * @param i_str string which is printed line by line.
+     **/
+    void printMultiLine( std::string i_pre,
+                         std::string i_str );
+
     /**
      * Print build.
      * Runtime parameters don't have an influence here.
      * This is double checking to avoid changed build configs without a recompile.
+     *
+     * @param i_build build config which will be printed.
      **/
     void printBuild( pugi::xml_node i_build );
 
@@ -204,8 +215,11 @@ class edge::io::Config {
     /*
      * Simulation parameters
      */
-    //! type of the setups
-    std::string m_setups[N_CRUNS];
+    //! expression strings for the intial DOFs
+    std::string m_initValsExprStrs[N_CRUNS];
+
+    //! expressions strings for the reference DOFs
+    std::string m_refValsExprStrs[N_CRUNS];
 
     //! end time of the simulations
     double m_endTime;
