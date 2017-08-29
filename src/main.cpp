@@ -33,6 +33,8 @@ INITIALIZE_EASYLOGGINGPP
 #include "io/Config.h"
 #include "dg/Basis.h"
 #include "dg/QuadratureEval.hpp"
+#include "sc/Memory.hpp"
+#include "sc/Init.hpp"
 #include "io/Receivers.h"
 #include "io/ReceiversQuad.hpp"
 #include "io/WaveField.h"
@@ -140,12 +142,15 @@ int main( int i_argc, char *i_argv[] ) {
   l_basis.print();
 
 #include "dg/setup_ader.inc"
+#include "sc/setup.inc"
 
   // initialize internal chars and connectivity information
   EDGE_LOG_INFO << "initializing internal chars and connectivity info";
   l_mesh.getVeChars( l_internal.m_vertexChars  );
   l_mesh.getElChars( l_internal.m_elementChars );
   l_mesh.getFaChars( l_internal.m_faceChars    );
+  int_el l_nElVeEl = l_mesh.getNelVeEl();
+  l_internal.m_connect.elVeEl[0] = (int_el*) l_dynMem.allocate( l_nElVeEl * sizeof(int_el) );
   l_mesh.getConnect( l_internal.m_vertexChars,
                      l_internal.m_faceChars,
                      l_internal.m_connect      );
@@ -160,7 +165,14 @@ int main( int i_argc, char *i_argv[] ) {
                                                       l_config.m_spTypesDoms[1],
                                                       l_internal.m_vertexChars,
                                                       l_internal.m_faceChars );
-  if( l_config.m_spTypesDoms[2].size() > 0 ) EDGE_LOG_FATAL << "not implemented";
+  if( l_config.m_spTypesDoms[2].size() > 0 ) edge::mesh::SparseTypes<
+                                               T_SDISC.ELEMENT
+                                             >::set(  l_enLayouts[2].nEnts,
+                                                      l_internal.m_connect.elVe,
+                                                     &l_config.m_spTypesVals[2][0],
+                                                      l_config.m_spTypesDoms[2],
+                                                      l_internal.m_vertexChars,
+                                                      l_internal.m_elementChars );
 
   EDGE_VLOG(2) << "  printing neigh relations (loc_fa-nei_fa-nei_ve):";
   if (EDGE_VLOG_IS_ON(2)) {
