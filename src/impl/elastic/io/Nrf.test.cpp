@@ -29,7 +29,7 @@
 #include <fstream>
 
 TEST_CASE( "2D Nrf: Init, updateBuf.", "[nrf2d][init]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_2d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_2d.nc";
 
   // return silently if file does not exist
   if( !std::ifstream(l_ncFile) ) return;
@@ -147,7 +147,7 @@ TEST_CASE( "2D Nrf: Init, updateBuf.", "[nrf2d][init]" ) {
 }
 
 TEST_CASE( "3D Nrf: Init, updateBuf.", "[nrf3d][init]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_3d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_3d.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
@@ -292,7 +292,7 @@ TEST_CASE( "3D Nrf: Init, updateBuf.", "[nrf3d][init]" ) {
 }
 
 TEST_CASE( "2D Nrf: srcCrds", "[nrf2d][srcCrds]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_2d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_2d.nc";
 
   // return silently if file does not exist
   if( !std::ifstream(l_ncFile) ) return;
@@ -339,7 +339,7 @@ TEST_CASE( "2D Nrf: srcCrds", "[nrf2d][srcCrds]" ) {
 }
 
 TEST_CASE( "3D Nrf: srcCrds", "[nrf3d][srcCrds]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_3d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_3d.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
@@ -393,7 +393,7 @@ TEST_CASE( "3D Nrf: srcCrds", "[nrf3d][srcCrds]" ) {
 }
 
 TEST_CASE( "2D Nrf: getOffSetsG", "[nrf2d][getOffSetsG]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_2d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_2d.nc";
 
   // return silently if file does not exist
   if( !std::ifstream(l_ncFile) ) return;
@@ -459,7 +459,7 @@ TEST_CASE( "2D Nrf: getOffSetsG", "[nrf2d][getOffSetsG]" ) {
 }
 
 TEST_CASE( "3D Nrf: getOffSetsG", "[nrf3d][getOffSetsG]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_3d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_3d.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
@@ -538,7 +538,7 @@ TEST_CASE( "3D Nrf: getOffSetsG", "[nrf3d][getOffSetsG]" ) {
 }
 
 TEST_CASE( "2D Nrf: Gets of source data", "[nrf2d][gets]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_2d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_2d.nc";
 
   // return silently if file does not exist
   if( !std::ifstream(l_ncFile) ) return;
@@ -647,7 +647,7 @@ TEST_CASE( "2D Nrf: Gets of source data", "[nrf2d][gets]" ) {
 }
 
 TEST_CASE( "3D Nrf: Gets of source data", "[nrf3d][gets]" ) {
-  std::string l_ncFile = "cont/elastic/sources/unit_tests/nrf_3d.nc";
+  std::string l_ncFile = "cont/unit_tests/elastic/sources/nrf_3d.nc";
 
   // return silently if file does not exist
   // we assume that the unit tests executable is simply run from a different location
