@@ -84,6 +84,30 @@ class edge::data::SparseEntities {
 
   public:
     /**
+     * Determines the number of sparse entities for the given dense entities.
+     *
+     * @param i_nen number of dense entities.
+     * @param i_spType value of the sparse type, which is used (as a bit mask) to count the sparse entities.
+     * @param i_chars entity characteristics corresponding to the dense layout (includes the sparse type).
+     * @return number of sparse entities of the given type in the dense layout.
+     *
+     * @paramt TL_T_INT_LID integer for local ids.
+     * @paramt TL_T_INT_SP integer type of the sparse type.
+     * @paramt TL_T_EN_CHARS struct of the entity characteristics.
+     **/
+    template< typename TL_T_INT_LID, typename TL_T_INT_SP, typename TL_T_EN_CHARS >
+    static TL_T_INT_LID nSp( TL_T_INT_LID          i_nEn,
+                             TL_T_INT_SP           i_spType,
+                             TL_T_EN_CHARS const * i_chars ) {
+      TL_T_INT_LID l_nSp = 0;
+
+      for( TL_T_INT_LID l_en = 0; l_en < i_nEn; l_en++ )
+        if( (i_chars[l_en].spType & i_spType) == i_spType ) l_nSp++;
+
+      return l_nSp;
+    }
+
+    /**
      * Extracts a sparse layout based from a dense layout based on the given sparse type.
      *
      * Remark: The sparse type is handle as a bit flag.
@@ -321,7 +345,7 @@ class edge::data::SparseEntities {
     /**
      * Propagates sparse information to adjacent entities.
      *
-     * Example:
+     * Example (i_spTypeIn == i_spTypeOut):
      *
      *   Input bits  Input bits  Adjacency of    Result (critical bit is
      *   of en0:     of en1:     entity 0 to 1:  the second (x): xy:
@@ -337,7 +361,8 @@ class edge::data::SparseEntities {
      * @param i_nEn0 number of en0-entities.
      * @param i_nEn0PerEn1 number of en0-entities adjacent to a single en1-entity.
      * @param i_en0En1 adjacency information from en0 to en1. Assumed is a flat array, meaning: id0*i_nEn0PerEn1 + id1] gives the entity (en1) adjacent to id0 (en0) at position id1.
-     * @param i_spType sparse type which is propagated.
+     * @param i_spTypeIn sparse type, which triggers propagation.
+     * @param i_spTypeOut sparse type which is set in elements adjacent to a triggered element.
      * @param i_charsEn0 characteristics of entity type en0 (has to provide the member .spType).
      * @param i_charsEn1 characteristics of entity type en1 (has to provide the member .spType) which will be updated via bit-wise | if an adjacent en0 entity has the respective sparse type.
      *
@@ -353,20 +378,164 @@ class edge::data::SparseEntities {
     static void propAdj( TL_T_INT_LID           i_nEn0,
                          unsigned short         i_nEn0PerEn1,
                          TL_T_INT_LID   const * i_en0En1,
-                         TL_T_INT_SP            i_spType,
+                         TL_T_INT_SP            i_spTypeIn,
+                         TL_T_INT_SP            i_spTypeOut,
                          TL_T_EN0_CHARS const * i_charsEn0,
                          TL_T_EN1_CHARS       * o_charsEn1 ) {
       // iterate over en0
       for( TL_T_INT_LID l_en = 0; l_en < i_nEn0; l_en++ ) {
         // check for sparse type
-        if( (i_charsEn0[l_en].spType & i_spType) == i_spType ) {
+        if( (i_charsEn0[l_en].spType & i_spTypeIn) == i_spTypeIn ) {
           // iterate over adjacent entities
           for( unsigned short l_ae = 0; l_ae < i_nEn0PerEn1; l_ae++ ) {
             TL_T_INT_LID l_aeId = i_en0En1[ l_en*i_nEn0PerEn1 + l_ae ];
-            // propagate the info
-            o_charsEn1[l_aeId].spType |= i_spType;
+            // propagate the info (if entity exists)
+            if( l_aeId != std::numeric_limits< TL_T_INT_LID >::max() ) o_charsEn1[l_aeId].spType |= i_spTypeOut;
           }
         }
+      }
+    }
+
+    /**
+     * Propagates sparse information to adjacent entities.
+     *   Array of pointers (i_en0en1) equivalent of the single array function.
+     *   Allows for dynamic number of adjacent entities, e.g. for vertives.
+     *
+     * @param i_nEn0 number of en0-entities.
+     * @param i_en0En1 adjacency information from en0 to en1. For entity en0_n, the expression i_en0En1[en0_n+1] - i_en0En1[en0_n] is assumed to give the number of adjacent en1 entities.
+     * @param i_spTypeIn sparse type, which triggers propagation.
+     * @param i_spTypeOut sparse type which is set in elements adjacent to a triggered element.
+     * @param i_charsEn0 characteristics of entity type en0 (has to provide the member .spType).
+     * @param i_charsEn1 characteristics of entity type en1 (has to provide the member .spType) which will be updated via bit-wise | if an adjacent en0 entity has the respective sparse type.
+     *
+     * @paramt TL_T_INT_LID integer type of local ids.
+     * @paramt TL_T_INT_SP integer type of the sparse type.
+     * @paramt TL_T_EN0_CHARS struct of the en0 entities' characteristics. Offers a member .spType for comparison with i_spType.
+     * @paramt TL_T_EN1_CHARS struct of the en1 entities' characteristics. Offers a member .spType for comparison with i_spType.
+     **/
+    template< typename TL_T_INT_LID,
+              typename TL_T_INT_SP,
+              typename TL_T_EN0_CHARS,
+              typename TL_T_EN1_CHARS >
+    static void propAdj( TL_T_INT_LID                   i_nEn0,
+                         TL_T_INT_LID   const * const * i_en0En1,
+                         TL_T_INT_SP                    i_spTypeIn,
+                         TL_T_INT_SP                    i_spTypeOut,
+                         TL_T_EN0_CHARS         const * i_charsEn0,
+                         TL_T_EN1_CHARS               * o_charsEn1 ) {
+      // iterate over en0
+      for( TL_T_INT_LID l_en = 0; l_en < i_nEn0; l_en++ ) {
+        // check for sparse type
+        if( (i_charsEn0[l_en].spType & i_spTypeIn) == i_spTypeIn ) {
+          // iterate over adjacent entities
+          for( unsigned short l_ae = 0; l_ae < i_en0En1[l_en+1]-i_en0En1[l_en]; l_ae++ ) {
+            TL_T_INT_LID l_aeId = i_en0En1[l_en][l_ae];
+            // propagate the info (if entity exists)
+            if( l_aeId != std::numeric_limits< TL_T_INT_LID >::max() ) o_charsEn1[l_aeId].spType |= i_spTypeOut;
+          }
+        }
+      }
+    }
+
+    /**
+     * Links sparse entities to their dense counter-part.
+     *
+     * Example:
+     *
+     *   Input (implicit):    Output
+     *
+     *    SpId | DeId         SpId | DeId
+     *         | 0               0 | 2
+     *         | 1               1 | 4
+     *       0 | 2               2 | 5
+     *         | 3               3 | 7
+     *       1 | 4
+     *       2 | 5
+     *         | 6
+     *       3 | 7
+     *         | 8
+     *
+     * @param i_nDe number of dense entities.
+     * @param i_spType sparse type for which the link is determined.
+     * @param i_chars entity characteristics with a sparse type.
+     * @param o_spDe will be set to link between the sparse and dense elements.
+     *
+     * @paramt TL_T_INT_LID integer type of local ids.
+     * @paramt TL_T_INT_SP integer type of the sparse type.
+     * @paramt TL_T_CHARS struct of the dense entities' characteristics. Offers a member .spType for comparison with i_spType.
+     **/
+    template< typename TL_T_INT_LID,
+              typename TL_T_INT_SP,
+              typename TL_T_CHARS >
+    static void linkSpDe( TL_T_INT_LID       i_nDe,
+                          TL_T_INT_SP        i_spType,
+                          TL_T_CHARS const * i_chars,
+                          TL_T_INT_LID     * o_spDe ) {
+      // init sparse id
+      TL_T_INT_LID l_sp = 0;
+
+      // iterate over dense entities
+      for( TL_T_INT_LID l_de = 0; l_de < i_nDe; l_de++ ) {
+        if( (i_chars[l_de].spType & i_spType) == i_spType ) {
+          o_spDe[l_sp] = l_de;
+          l_sp++;
+        }
+      }
+    }
+
+    /**
+     * Links sparse entities to their sparse counter-part.
+     *
+     * Example:
+     *
+     *   Input (implicit):    Output
+     *
+     *    SpId0 | SpId1 | DeId         SpId0 | SpId1
+     *          | 0     | 0                0 | 1
+     *          |       | 1                1 | -
+     *        0 | 1     | 2                2 | -
+     *          |       | 3                3 | 2
+     *        1 |       | 4
+     *        2 |       | 5            undefined values (- in the table above)
+     *          |       | 6            are set to std::numeric_limits< TL_T_LID >::max()
+     *        3 | 2     | 7
+     *          |       | 8
+     *
+     * @param i_nDe number dense entities.
+     * @param i_spType0 first sparse type for which the link is determined.
+     * @param i_spType1 second sparse type for which the link is determined.
+     * @param i_chars entity characteristics with a sparse type.
+     * @param o_sp0Sp1 will be set to link between the sparse elements.
+     *
+     * @paramt TL_T_LID integer type of local ids.
+     * @paramt TL_T_SP integer type of the sparse type.
+     * @paramt TL_T_CHARS struct of the dense entities' characteristics. Offers a member .spType for comparison with i_spType.
+     **/
+    template< typename TL_T_LID,
+              typename TL_T_SP,
+              typename TL_T_CHARS >
+    static void linkSpSp( TL_T_LID           i_nDe,
+                          TL_T_SP            i_spType0,
+                          TL_T_SP            i_spType1,
+                          TL_T_CHARS const * i_chars,
+                          TL_T_LID         * o_sp0Sp1 ) {
+      // init sparse ids
+      TL_T_LID l_sp0 = 0;
+      TL_T_LID l_sp1 = 0;
+
+      // iterate over dense entities
+      for( TL_T_LID l_de = 0; l_de < i_nDe; l_de++ ) {
+        if( (i_chars[l_de].spType & i_spType0) == i_spType0 ) {
+          if( (i_chars[l_de].spType & i_spType1) == i_spType1 )
+            o_sp0Sp1[l_sp0] = l_sp1;
+          else
+            o_sp0Sp1[l_sp0] = std::numeric_limits< TL_T_LID >::max();
+
+          l_sp0++;
+        }
+
+        if( (i_chars[l_de].spType & i_spType1) == i_spType1 )
+          l_sp1++;
       }
     }
 
@@ -375,7 +544,7 @@ class edge::data::SparseEntities {
      *
      * Single vs. double sparse type:
      *   The case of single sparse type, only considers the to-entities having the sparse type.
-     *   The case of double sparse type, assumes that both side have the sparse type defined an uses
+     *   The case of double sparse type, assumes that both side have sparse types defined and uses
      *   the from-sparse ids for indexing.
      *
      * Example (single sparse type):
@@ -416,12 +585,12 @@ class edge::data::SparseEntities {
     template< typename TL_T_INT_LID,
               typename TL_T_INT_SP,
               typename TL_T_ADJ_CHARS >
-    static void linkSpAdj( TL_T_INT_LID           i_nEn,
-                           unsigned short         i_nAdjPerEn,
-                           TL_T_INT_LID   const * i_enEn,
-                           TL_T_INT_SP            i_spType,
-                           TL_T_ADJ_CHARS const * i_charsAdj,
-                           TL_T_INT_LID         * o_spLink ) {
+    static void linkSpAdjSst( TL_T_INT_LID           i_nEn,
+                              unsigned short         i_nAdjPerEn,
+                              TL_T_INT_LID   const * i_enEn,
+                              TL_T_INT_SP            i_spType,
+                              TL_T_ADJ_CHARS const * i_charsAdj,
+                              TL_T_INT_LID         * o_spLink ) {
       // nothing to do if no entities are given
       if( i_nEn == 0 ) return;
       EDGE_CHECK( i_nAdjPerEn > 0 );
@@ -485,10 +654,12 @@ class edge::data::SparseEntities {
 
     /**
      * Links sparse entities based on adjacency information (double sparse type).
+     *   This implementation assumes a flat array for the adjacency information (i_enEn) and
+     *   a fixed number of to-entities for every from entity (i_nAdjPerEn).
      *
      * Single vs. double sparse type:
      *   The case of single sparse type, only considers the to-entities having the sparse type.
-     *   The case of double sparse type, assumes that both side have the sparse type defined an uses
+     *   The case of double sparse type, assumes that both side have sparse types defined and uses
      *   the from-sparse ids for indexing.
      *
      *   An example use case for double sparse types are internal boundaries (faces),
@@ -497,7 +668,7 @@ class edge::data::SparseEntities {
      *   in faces who were originally part of the internal boundary, not all faces adjacent to
      *   "internal boundary elements".
      *
-     * Example (double sparse type)
+     * Example (double sparse type, flat)
      *
      *   Dense adjacency          elements with     dense illustration  compressed sparse info
      *   information of           sparse ids        of derived          as given as output
@@ -528,7 +699,8 @@ class edge::data::SparseEntities {
      * @param i_nEn number of dense entities which having adjacent entities.
      * @param i_nAdjPerEn number of adjacent entities (to) for each of the dense entities (from).
      * @param i_enEn adjacency information.nAdjPerEn. Adjacency information with std::numeric_limits< TL_T_INT_LID > is ignored (assuming boundary conditions).
-     * @param i_spType sparse type used for the bit comparisons.
+     * @param i_spTypeFrom sparse type used for the bit comparisons of the from-entities.
+     * @param i_spTypeTo sparse type used for the bit comparisons of the to-entities.
      * @param i_charsFrom characteristics of the from entities (having a member .spType).
      * @param i_charsTo characteristics of the adjecent entities (having a member .spType).
      * @param o_spLink will be set to the linked sparse ids of the adjacent entities. Assumed is a flat array, meaning: [de*i_nAdjPerEn] gives the de's dense entity and [de*i_nAdjPerEn + ae] the ae's adjacent entity.
@@ -542,13 +714,14 @@ class edge::data::SparseEntities {
               typename TL_T_INT_SP,
               typename TL_T_CHARS_FROM,
               typename TL_T_CHARS_TO >
-    static void linkSpAdj( TL_T_INT_LID            i_nEn,
-                           unsigned short          i_nAdjPerEn,
-                           TL_T_INT_LID    const * i_enEn,
-                           TL_T_INT_SP             i_spType,
-                           TL_T_CHARS_FROM const * i_charsFrom,
-                           TL_T_CHARS_TO   const * i_charsTo,
-                           TL_T_INT_LID          * o_spLink ) {
+    static void linkSpAdjDst( TL_T_INT_LID            i_nEn,
+                              unsigned short          i_nAdjPerEn,
+                              TL_T_INT_LID    const * i_enEn,
+                              TL_T_INT_SP             i_spTypeFrom,
+                              TL_T_INT_SP             i_spTypeTo,
+                              TL_T_CHARS_FROM const * i_charsFrom,
+                              TL_T_CHARS_TO   const * i_charsTo,
+                              TL_T_INT_LID          * o_spLink ) {
       // nothing to do if no entities are given
       if( i_nEn == 0 ) return;
       EDGE_CHECK( i_nAdjPerEn > 0 );
@@ -574,7 +747,7 @@ class edge::data::SparseEntities {
       l_adjDeToSp.resize( l_nAdjEn );
       TL_T_INT_LID l_spId = 0;
       for( TL_T_INT_LID l_de = 0; l_de < l_nAdjEn; l_de++ ) {
-        if( ( i_charsTo[l_de].spType & i_spType ) == i_spType ) {
+        if( ( i_charsTo[l_de].spType & i_spTypeTo ) == i_spTypeTo ) {
           l_adjDeToSp[l_de] = l_spId;
           l_spId++;
         }
@@ -585,20 +758,189 @@ class edge::data::SparseEntities {
       l_spId = 0;
       for( TL_T_INT_LID l_de = 0; l_de < i_nEn; l_de++ ) {
         // link the sparse entities
-        if( (i_charsFrom[l_de].spType & i_spType) == i_spType ) {
+        if( (i_charsFrom[l_de].spType & i_spTypeFrom) == i_spTypeFrom ) {
           for( unsigned short l_ae = 0; l_ae < i_nAdjPerEn; l_ae++ ) {
             TL_T_INT_LID l_aeId = i_enEn[ l_de * i_nAdjPerEn + l_ae ];
 
             // ignore undefined adjacencies
             if( l_aeId == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
-            if( ( i_charsFrom[l_de].spType & i_spType ) == i_spType ) o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = l_adjDeToSp[l_aeId];
-            else                                                      o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = std::numeric_limits< TL_T_INT_LID >::max();
+            if( ( i_charsTo[l_aeId].spType & i_spTypeTo ) == i_spTypeTo ) o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = l_adjDeToSp[l_aeId];
+            else                                                          o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = std::numeric_limits< TL_T_INT_LID >::max();
           }
 
           l_spId++;
         }
       }
+    }
+
+    /**
+     * Determines the sizes of the link for sparse entities based on adjacency information (double sparse type).
+     *   This implementation assumes dynamic storage for the adjacency information (i_enEn).
+     *   E.g., for vertices as bridge between elements, a dynamic number of adjacent to-elements per from-entity is allowed.
+     *
+     * Single vs. double sparse type:
+     *   The case of single sparse type, only considers the to-entities having the sparse type.
+     *   The case of double sparse type, assumes that both side have sparse types defined and uses
+     *   the from-sparse ids for indexing.
+     *
+     * Example (double sparse type, dynamic)
+     *
+     *   Dense adjacency                elements with      dense illustration  compressed sparse info.
+     *   information of                 sparse ids         of derived          the number of entries of both columns
+     *   vertices connected             (implicit info):   adjacency info:     as output of this function:
+     *   to elements:
+     *
+     *   ve | el        | spId           el | spId         ve | spId           veSpId | elSpId
+     *   0  | 1-4       |  -             0  | -            0  | x-x            0      | 2-1
+     *   1  | 8-5-0-3   |  0             1  | -            1  | x-2-x-1        1      | -
+     *   2  | 8-7-4     |  1             2  | 0            2  | x-x-x          2      | 1
+     *   3  | 8-3-6-7-8 |  2             3  | 1            3  | x-1-x-x-x      3      | 0
+     *   4  | 2-1       |  3             4  | -            4  | 0-x            4      | 1
+     *   5  | 2-6-5-3   |  -             5  | 2            5  | x-x-x-x        5      | 3-0-2-1
+     *   6  | 3-8       |  4             6  | -            6  | 1-x
+     *   7  | 0-4       |  -             7  | -            7  | x-x
+     *   8  | 9-2-5-3-7 |  5             8  | -            8  | 3-0-2-1-x
+     *   9  | 4-1-9-8   |  -             9  | 3            9  | x-x-x-x
+     *   10 | 4-9       |  -                               10 | x-x
+     *
+     * @param i_nEn number of dense entities having adjacent entities.
+     * @param i_enEn adjacency information. A ghost cell at position i_nEn is assumed, giving the number of adjacent to-entities for the last from-entity (i_nEn-1).
+     * @param i_spTypeFrom sparse type used for the bit comparisons of the from-entities.
+     * @param i_spTypeTo sparse type used for the bit comparisons of the to-entities.
+     * @param i_charsFrom characteristics of the from-entities (having a member .spType).
+     * @param i_charsTo characteristics of the adjecent to-entities (having a member .spType).
+     * @param o_nSpLinkRaw number of link items in terms of adjacenct to-entities.
+     * @param o_nSpLinkPtr number of link items in terms of the number of pointers, excludes ghost entry.
+     *
+     * @paramt TL_T_INT_LID integer type of local ids.
+     * @paramt TL_T_INT_SP integer type of the sparse type.
+     * @paramt TL_T_CHARS_FROM struct of the from entities' characteristics. Offers a member .spType for comparison with i_spType.
+     * @paramt TL_T_CHARS_TO struct of the adjacent entities' characteristics. Offers a member .spType for comparison with i_spType.
+     **/
+    template< typename TL_T_INT_LID,
+              typename TL_T_INT_SP,
+              typename TL_T_CHARS_FROM,
+              typename TL_T_CHARS_TO >
+    static void nLinkSpAdjDst( TL_T_INT_LID                    i_nEn,
+                               TL_T_INT_LID    const * const * i_enEn,
+                               TL_T_INT_SP                     i_spTypeFrom,
+                               TL_T_INT_SP                     i_spTypeTo,
+                               TL_T_CHARS_FROM         const * i_charsFrom,
+                               TL_T_CHARS_TO           const * i_charsTo,
+                               TL_T_INT_LID                  & o_nSpLinkRaw,
+                               TL_T_INT_LID                  & o_nSpLinkPtr ) {
+      // init output
+      o_nSpLinkRaw = o_nSpLinkPtr = 0;
+
+      // get number of adjacent entities to consider
+      for( TL_T_INT_LID l_de = 0; l_de < i_nEn; l_de++ ) {
+        // ignore from-entities that do not match the from sparse type
+        if( (i_charsFrom[l_de].spType & i_spTypeFrom) != i_spTypeFrom ) continue;
+
+        // increase counter for pointers
+        o_nSpLinkPtr++;
+
+        // iterate over adjacent entities
+        for( unsigned short l_ae = 0; l_ae < i_enEn[l_de+1]-i_enEn[l_de]; l_ae++ ) {
+          TL_T_INT_LID l_aeId = i_enEn[l_de][l_ae];
+
+          // require valid ids
+          EDGE_CHECK( l_aeId != std::numeric_limits< TL_T_INT_LID >::max() );
+
+          // increase counter for raw data
+          if( (i_charsTo[l_aeId].spType & i_spTypeTo) == i_spTypeTo ) o_nSpLinkRaw++;
+        }
+      }
+    }
+
+    /**
+     * Determines the link for sparse entities based on adjacency information (double sparse type).
+     *   This implementation assumes dynamic storage for the adjacency information (i_enEn).
+     *   E.g., for vertices as bridge between elements, a dynamic number of adjacent to-elements per from-entity is allowed.
+     *
+     * See nLinkSpAdjDst for an example. In contrast this function outputs the actual link and not the number of entries.
+     *
+     * @param i_nEn number of dense entities having adjacent entities.
+     * @param i_enEn adjacency information. A ghost cell at position i_nEn is assumed, giving the number of adjacent to-entities for the last from-entity (i_nEn-1).
+     * @param i_spTypeFrom sparse type used for the bit comparisons of the from-entities.
+     * @param i_spTypeTo sparse type used for the bit comparisons of the to-entities.
+     * @param i_charsFrom characteristics of the from-entities (having a member .spType).
+     * @param i_charsTo characteristics of the adjecent to-entities (having a member .spType).
+     * @param o_spLinkRaw raw entries of the sparse link.
+     * @param o_spLinkPtr pointers to entries for every sparse from-entity of the link.
+     *
+     * @paramt TL_T_INT_LID integer type of local ids.
+     * @paramt TL_T_INT_SP integer type of the sparse type.
+     * @paramt TL_T_CHARS_FROM struct of the from entities' characteristics. Offers a member .spType for comparison with i_spType.
+     * @paramt TL_T_CHARS_TO struct of the adjacent entities' characteristics. Offers a member .spType for comparison with i_spType.
+     **/
+    template< typename TL_T_INT_LID,
+              typename TL_T_INT_SP,
+              typename TL_T_CHARS_FROM,
+              typename TL_T_CHARS_TO >
+    static void linkSpAdjDst( TL_T_INT_LID                    i_nEn,
+                              TL_T_INT_LID    const * const * i_enEn,
+                              TL_T_INT_SP                     i_spTypeFrom,
+                              TL_T_INT_SP                     i_spTypeTo,
+                              TL_T_CHARS_FROM         const * i_charsFrom,
+                              TL_T_CHARS_TO           const * i_charsTo,
+                              TL_T_INT_LID                  * o_spLinkRaw,
+                              TL_T_INT_LID                 ** o_spLinkPtr ) {
+      // init output
+      o_spLinkPtr[0] = o_spLinkRaw;
+
+      // get number of adjacent entities to consider
+      TL_T_INT_LID l_nAdjEn = 0;
+      for( TL_T_INT_LID l_de = 0; l_de < i_nEn; l_de++ ) {
+        for( unsigned short l_ae = 0; l_ae < i_enEn[l_de+1]-i_enEn[l_de]; l_ae++ ) {
+          TL_T_INT_LID l_aeId = i_enEn[l_de][l_ae];
+          l_nAdjEn = std::max( l_nAdjEn, l_aeId );
+        }
+      }
+
+      // increase by one: size, not index
+      l_nAdjEn++;
+
+      // assemble lookup for the sparse to-id
+      std::vector< TL_T_INT_LID > l_adjDeToSp;
+      l_adjDeToSp.resize( l_nAdjEn );
+
+      TL_T_INT_LID l_spId = 0;
+      for( TL_T_INT_LID l_de = 0; l_de < l_nAdjEn; l_de++ ) {
+        if( (i_charsTo[l_de].spType & i_spTypeTo) == i_spTypeTo ) {
+          l_adjDeToSp[l_de] = l_spId;
+          l_spId++;
+        }
+        else l_adjDeToSp[l_de] = std::numeric_limits< TL_T_INT_LID >::max();
+      }
+
+
+      // set up compressed sparse info
+      l_spId = 0;
+      TL_T_INT_LID * l_raw = o_spLinkRaw;
+
+      for( TL_T_INT_LID l_de = 0; l_de < i_nEn; l_de++ ) {
+        // link the sparse entities
+        if( (i_charsFrom[l_de].spType & i_spTypeFrom) == i_spTypeFrom ) {
+          // set raw pointer
+          o_spLinkPtr[l_spId] = l_raw;
+
+          for( unsigned short l_ae = 0; l_ae < i_enEn[l_de+1]-i_enEn[l_de]; l_ae++ ) {
+            TL_T_INT_LID l_aeId = i_enEn[l_de][l_ae];
+
+            if( (i_charsTo[l_aeId].spType & i_spTypeTo) == i_spTypeTo ) {
+              *l_raw = l_adjDeToSp[l_aeId];
+              l_raw++;
+            }
+          }
+
+          l_spId++;
+        }
+      }
+
+      // set ghost entry
+      o_spLinkPtr[l_spId] = l_raw;
     }
 };
 #endif
