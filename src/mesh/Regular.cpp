@@ -459,6 +459,68 @@ void edge::mesh::Regular::getElementsAdjacentFaces( int_el (*o_elementAdjacentFa
 #endif
 }
 
+int_el edge::mesh::Regular::getNelVeEl() const {
+  if(      m_elementType == Line          ) return m_nRequestedElements  * 2;
+  else if( m_elementType == Quadrilateral ) return m_nRequestedElements  * 8;
+  else if( m_elementType == Hexahedral    ) return m_nRequestedElements * 26;
+
+  EDGE_LOG_FATAL << "unsupported element type";
+  return std::numeric_limits< int_el >::max();
+}
+
+void edge::mesh::Regular::getElVeEl( int_el** o_elVeEl ) const {
+  // pointer to raw data
+  int_el* l_raw = o_elVeEl[0];
+
+  if( m_elementType == Line ) {
+    for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+      l_raw[0] = l_el-1;
+      l_raw[1] = l_el+1;
+      o_elVeEl[l_el] = l_raw;
+      l_raw += 2;
+    }
+    // adjust periodic boundaries
+    o_elVeEl[0][0] = m_nRequestedElements-1;
+    o_elVeEl[m_nRequestedElements-1][1] = 0;
+  }
+  else if( m_elementType == Quadrilateral ) {
+    for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+      int_el l_px = l_el % m_nX;
+      int_el l_py = l_el / m_nX;
+
+
+      // compute offsets for perodic boundaries
+      int l_offx[2] = {0,0};
+      int l_offy[2] = {0,0};
+      if(      l_px == 0      ) l_offx[0] =  m_nX;
+      else if( l_px == m_nX-1 ) l_offx[1] = -m_nX;
+
+      if(      l_py == 0      ) l_offy[0] =  m_nX*m_nY;
+      else if( l_py == m_nY-1 ) l_offy[1] = -m_nX*m_nY;
+
+      // set vertices, bottom-left, counter-clockwise
+      l_raw[0] = ( (l_py-1) * m_nX ) + l_px - 1 + l_offx[0] + l_offy[0];
+      l_raw[1] = ( (l_py-1) * m_nX ) + l_px + 0 + 0         + l_offy[0];
+      l_raw[2] = ( (l_py-1) * m_nX ) + l_px + 1 + l_offx[1] + l_offy[0];
+
+      l_raw[3] = ( (l_py+0) * m_nX ) + l_px + 1 + l_offx[1] + 0;
+      l_raw[4] = ( (l_py+1) * m_nX ) + l_px + 1 + l_offx[1] + l_offy[1];
+      l_raw[5] = ( (l_py+1) * m_nX ) + l_px + 0 + 0         + l_offy[1];
+      l_raw[6] = ( (l_py+1) * m_nX ) + l_px - 1 + l_offx[0] + l_offy[1];
+
+      l_raw[7] = ( (l_py+0) * m_nX ) + l_px - 1 + l_offx[0] + 0;
+
+      o_elVeEl[l_el] = l_raw;
+      l_raw += 8;
+    }
+
+  }
+  else EDGE_LOG_FATAL;
+
+  // set ghost entry
+  o_elVeEl[m_nRequestedElements] = l_raw;
+}
+
 void edge::mesh::Regular::getElementsFaceNeighbors( int_el (*o_neighboringIds)[C_ENT[T_SDISC.ELEMENT].N_FACES] ) const {
   for( int_el l_element = 0; l_element < m_nRequestedElements; l_element++ ) {
     getElementFaceNeighbors( l_element, o_neighboringIds[l_element] );
@@ -689,6 +751,7 @@ void edge::mesh::Regular::getConnect( const t_vertexChars *i_veChars,
   getFacesAdjacentVertices(    o_connect.faVe   );
 #endif
   getFacesAdjacentElements(    o_connect.faEl   );
+  getElVeEl(                   o_connect.elVeEl );
   getElementsFaceNeighbors(    o_connect.elFaEl );
 
   t_enLayout l_veLayout, l_faLayout, l_elLayout;

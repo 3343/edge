@@ -110,6 +110,16 @@ class edge::mesh::Regular {
     void getElementFaceNeighbors( int_el  i_elementId,
                                   int_el *o_neighboringIds ) const;
 
+
+    /**
+     * Gets the ids of vertex neighboring elements.
+     * The first entry of the array of pointers is expected to hold the raw data for all info.
+     * Given nEl elements, an additional pointer (nEl+1) will be set for consistent size computations.
+     *
+     * @param o_elVeEl will be set to pointers pointing to the data of the respective element.
+     **/
+    void getElVeEl( int_el** o_elVeEl ) const;
+
     /**
      * Initializes the given array with the face neighbor ids for all elements.
      *
@@ -293,6 +303,13 @@ class edge::mesh::Regular {
      * @return number of vertices.
      **/
     int_el getNVertices() const;
+
+    /**
+     * Gets the total number of entries for elements adjacent through vertices.
+     *
+     * @return total number of entries.
+     **/
+    int_el getNelVeEl() const;
 
     /**
      * Gets the connectivity information.
