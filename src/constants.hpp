@@ -131,6 +131,19 @@ constexpr unsigned int CE_N_ELEMENT_MODES_CK( t_entityType   i_elType,
 }
 
 /**
+ * Gets the number of quadrature points (volume) for the given element type.
+ *
+ * @param i_elType element type for which the number of quadpoints are queried.
+ * @param i_order spatial order of the DG discretization.
+ **/
+constexpr unsigned int CE_N_QUAD_POINTS( t_entityType   i_elType,
+                                         unsigned short i_order ) {
+  return (C_ENT[i_elType].N_DIM == 1) ? i_order :
+         (C_ENT[i_elType].N_DIM == 2 )? i_order * (unsigned int) i_order :
+                                        i_order * (unsigned int) i_order * i_order;
+}
+
+/**
  * Gets the number of quad points at the faces for the given element type and order.
  *
  * Remark: Quadrature points through collapsed coordinates are assumed.
@@ -329,7 +342,8 @@ typedef unsigned short int_cfr;
 /*
  * integer representation of sparse types.
  *
- * Bits 0-14  are reserved for mesh-input, e.g. boundary conditions.
+ * Bits 0-11  are reserved for mesh-input, e.g. boundary conditions.
+ * Bits 12-14 are reserved for limiting.
  * Bit  15    is reserved for the receiver-flag.
  * Bits 16-31 are for application purposes.
  * Bits 32-63 are reserved for the time stepping
@@ -338,6 +352,9 @@ typedef long long int_spType;
 
 // define shared enums (of all implementations) for types
 typedef enum: int_spType {
+  LIMIT          =  2048, // 0b0000000000000000000000000000000000000000000000000000100000000000
+  LIMIT_PLUS     =  4096, // 0b0000000000000000000000000000000000000000000000000001000000000000
+  EXTREMA        =  8192, // 0b0000000000000000000000000000000000000000000000000010000000000000
   MESH_TYPE_NONE = 16384, // 0b0000000000000000000000000000000000000000000000000100000000000000
   RECEIVER       = 32768, // 0b0000000000000000000000000000000000000000000000001000000000000000
 } t_enTypeShared;
@@ -411,7 +428,10 @@ typedef struct {
   // faces adjacent to the elements
   int_el (*elFa)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 
-  // elements connected to element through faces
+  // elements connected to an element through vertices
+  int_el **elVeEl;
+
+  // elements connected to an element through faces
   int_el (*elFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 
   // local face id (ref element) of the face-neighboring elements
@@ -681,6 +701,13 @@ static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.ELEMENT_MODES.SHARED
 
 #ifdef PP_T_EQUATIONS_SWE
 #include "impl/swe/const.inc"
+#endif
+
+/*
+ * Sub-cell limiter.
+ */
+#if PP_ORDER > 1
+#include "sc/const.inc"
 #endif
 
 #endif
