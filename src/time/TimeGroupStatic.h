@@ -44,8 +44,8 @@ class edge::time::TimeGroupStatic {
     //! fundamental time step multiple of the cluster
     const int_ts m_funMult;
 
-    //! performed time steps of the cluster since last synchronization
-    int_ts m_updatesPer;
+    //! total number of performed updates
+    volatile int_ts m_updatesPer;
 
     //! number of required updates until synchronization
     int_ts m_updatesReq;
