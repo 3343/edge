@@ -21,6 +21,7 @@
  * Dependendencies of the advection setup.
  **/
 
+#include "setups/InitialDofs.hpp"
 #include "impl/advection/setups/Convergence.hpp"
 #include "impl/advection/solvers/common.hpp"
 #if PP_ORDER>1
