@@ -343,6 +343,38 @@ class edge::data::SparseEntities {
     }
 
     /**
+     * Inherits sparse information within the entities.
+     *
+     * Example:
+     *   "parent" sparse type: 01
+     *   "child"  sparse type: 10
+     *
+     *   Input:      Output:
+     *
+     *   en | bits   en | bits
+     *   0  | 01     0  | 11
+     *   1  | 11     1  | 11
+     *   2  | 01     2  | 11
+     *   3  | 10     3  | 10
+     *   4  | 01     4  | 11
+     *   5  | 00     5  | 00
+     **/
+    template< typename TL_T_INT_LID,
+              typename TL_T_INT_SP,
+              typename TL_T_CHARS >
+    static void inherit( TL_T_INT_LID  i_nEn,
+                         TL_T_INT_SP   i_spTypeIn,
+                         TL_T_INT_SP   i_spTypeOut,
+                         TL_T_CHARS   *io_chars ) {
+      // iterate over dense entities
+      for( TL_T_INT_LID l_en = 0; l_en < i_nEn; l_en++ ) {
+        if( (io_chars[l_en].spType & i_spTypeIn) == i_spTypeIn ) {
+          io_chars[l_en].spType |= i_spTypeOut;
+        }
+      }
+    }
+
+    /**
      * Propagates sparse information to adjacent entities.
      *
      * Example (i_spTypeIn == i_spTypeOut):

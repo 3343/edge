@@ -980,6 +980,42 @@ TEST_CASE( "SparseEnts: Links sparse entities based on adjacency information (do
   REQUIRE( l_ptr2[6] == l_raw2+9 );
 }
 
+TEST_CASE( "SparseEnts: Inherit sparse information within entities.", "[inherit][SparseEnts]" ) {
+  /*
+   * Out setup:
+   *   "parent" sparse type: 01
+   *   "child"  sparse type: 10
+   *
+   *   Input:      Output: 
+   *   en | bits   en | bits
+   *   0  | 01     0  | 11
+   *   1  | 11     1  | 11
+   *   2  | 01     2  | 11
+   *   3  | 10     3  | 10
+   *   4  | 01     4  | 11
+   *   5  | 00     5  | 00
+   */
+
+  // setup chars
+  typedef struct { unsigned short spType; } t_enChars;
+
+  t_enChars l_enChars1[6] = { {1}, {3}, {1}, {2}, {1}, {0} };
+
+  // call inheritance
+  edge::data::SparseEntities::inherit( 6,
+                                       1,
+                                       2,
+                                       l_enChars1 );
+
+  // check the result
+  REQUIRE( l_enChars1[0].spType == 3 );
+  REQUIRE( l_enChars1[1].spType == 3 );
+  REQUIRE( l_enChars1[2].spType == 3 );
+  REQUIRE( l_enChars1[3].spType == 2 );
+  REQUIRE( l_enChars1[4].spType == 3 );
+  REQUIRE( l_enChars1[5].spType == 0 );
+}
+
 TEST_CASE( "SparseEnts: Propagate sparse information to adjacent entities.", "[propAdj][SparseEnts]" ) {
   /*
    * Our setup for the flat array version
