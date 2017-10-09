@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ##
 # @file This file is part of EDGE.
 #
