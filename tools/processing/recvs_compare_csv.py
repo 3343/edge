@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 ##
 # @file This file is part of EDGE.
 #
@@ -27,6 +28,130 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot
 from matplotlib.backends.backend_pdf import PdfPages
+import numpy
+import copy
+
+##
+# Parses the control data of the prorgam TF_MISFIT_GOF_CRITERIA.
+#
+# @param i_file path to the file containing the control data.
+# @return 1) boolean if the control data is valid, 2) parsed control data
+##
+def tfMisContDat( i_file ):
+  # open file
+  with open( i_file, 'r' ) as l_fh:
+    # create csv reader
+    l_reader = csv.reader( l_fh, delimiter=' ', skipinitialspace=True )
+
+    # config
+    l_conf = []
+
+    # parse file
+    for l_ro in l_reader:
+      l_conf = l_conf + [ l_ro ]
+
+    l_valid = True
+
+    # check if we have valid data
+    if any( ('NaN' in li) or ('Infinity' in li) for li in l_conf ):
+      l_valid = False
+
+    # parse control data
+    assert( len(l_conf) == 10)
+
+    l_cdat = { 'fmin':         l_conf[0][0],
+               'fmax':         l_conf[0][1],
+               'nf_tf':        l_conf[1][0],
+               'mt':           l_conf[1][1],
+               'dt':           l_conf[2][0],
+               'nc':           l_conf[2][1],
+               'em':           l_conf[4][0],
+               'pm':           l_conf[4][1],
+               'eg':           l_conf[5][0],
+               'pg':           l_conf[5][1] }
+
+    # convert to float and int if valid
+    if l_valid:
+      for l_ke in [ 'fmin', 'fmax', 'dt', 'nc', 'em', 'pm', 'eg', 'pg' ]:
+        l_cdat[l_ke] = float( l_cdat[l_ke] )
+      for l_ke in ['nf_tf', 'mt', 'nc']:
+        l_cdat[l_ke] = int( l_cdat[l_ke] )
+
+      # check for single component
+      assert( l_cdat['nc'] == 1 )
+
+    # return data
+    return l_valid, l_cdat
+
+##
+# Generate a 2D, time-frequency plot.
+#
+# @param i_gs grid specs for the image and the colorbar.
+# @param i_data numpy array containing the raw data.
+# @param i_style style of the plot ( 'tfrs1', 'tfrs2', 'tfem', 'tfpm', 'tfeg', or 'tfpg' ).
+# @param i_rangeFreq frequency range.
+# @param i_rangeTime time range.
+##
+def timeFreq( i_gs,
+              i_data,
+              i_style,
+              i_rangeFreq,
+              i_rangeTime ):
+  # dictionary containing titles
+  l_titles = { 'tfrs1': 'Time-Frequency Representation of the input Signal (TFRS1)',
+               'tfrs2': 'Time-Frequency Representation of the reference Signal (TFRS2)',
+               'tfem': 'Time-Frequency Envelope Misfit (TFEM)',
+               'tfpm': 'Time-Frequency Phase Misfit (TFPM)',
+               'tfeg': 'Time-Frequency Envelope Goodness-of-fit (TFEG)',
+               'tfpg': 'Time-Frequency Phase Goodness-of-fit (TFPG)' }
+
+  # number of frequency samples
+  l_nfs, l_nts = i_data.shape
+
+  # copy over data
+  l_data = copy.deepcopy( i_data )
+
+  # default value of the color basr
+  l_cbarAno = ''
+
+  # set style-specific properties
+  if i_style in ['tfeg', 'tfpg']:
+    # derive color scale
+    l_vmin = 0
+    l_vabs = 10.0
+    l_map = matplotlib.pyplot.get_cmap('hot')
+  elif i_style in ['tfrs1', 'tfrs2']:
+    l_cbarAno = '%'
+    l_data = l_data * 100
+    l_vabs = abs( max( l_data.min(), l_data.max(), key=abs) )
+    l_vmin = 0
+    l_map = matplotlib.pyplot.get_cmap('binary')
+  else:
+    l_cbarAno = '%'
+    l_data = l_data * 100
+    l_vabs = abs( max( l_data.min(), l_data.max(), key=abs) )
+    l_vmin = -l_vabs
+    l_map = matplotlib.pyplot.get_cmap('seismic')
+
+  # extend of the plot
+  l_extend = [  i_rangeTime[0],  i_rangeTime[1],  i_rangeFreq[0],  i_rangeFreq[1] ]
+
+  # produce plot
+  matplotlib.pyplot.subplot( i_gs[0] )
+  l_ax = matplotlib.pyplot.imshow( l_data, cmap=l_map, origin='lower', vmin=l_vmin, vmax=l_vabs, aspect='auto', extent=l_extend  )
+
+  # annotate plot
+  matplotlib.pyplot.ylabel( 'frequency (Hz)' )
+
+  if i_style in l_titles.keys():
+    matplotlib.pyplot.title( l_titles[i_style] )
+
+  l_axes = matplotlib.pyplot.gca()
+  l_axes.grid(which='major', color='black', linestyle=':', linewidth=1)
+
+  # add color bar
+  l_ax = matplotlib.pyplot.subplot( i_gs[1] )
+  l_cb = matplotlib.pyplot.colorbar( label=l_cbarAno, cax=l_ax )
 
 ##
 # Reads the given column from the file. Header columns are ignored.
@@ -54,31 +179,29 @@ def readCsv( i_file, i_col ):
 ##
 # Plots the two time series.
 #
-# @parma i_recvNames names of the recivers in the plot.
+# @param i_title title of the plot.
+# @param i_recvNames names of the recivers in the plot.
 # @param i_first first time series. Two-element list of lists. First list is time, second values.
 # @param i_second second time series. Two-element list of lists. First list is time, second values.
-# @param i_outPdf path to outpfule pdf-file which will be written.
 ##
-def plot( i_recvNames, i_first, i_second, i_outPdf ):
-  # create pdf
-  l_pdf = PdfPages( i_outPdf )
+def plot( i_title, i_recvNames, i_first, i_second ):
+  # determine time range
+  l_tMin = max( min(i_first[0]), min(i_second[0]) )
+  l_tMax = min( max(i_first[0]), max(i_second[0]) )
 
-  # create figure
-  l_fig = matplotlib.pyplot.figure( figsize=(10, 7) )
   # add data
   matplotlib.pyplot.plot( i_first[0],  i_first[1],  label=i_recvNames[0] )
   matplotlib.pyplot.plot( i_second[0], i_second[1], label=i_recvNames[1] )
   matplotlib.pyplot.legend()
 
+  # set limit
+  matplotlib.pyplot.xlim( l_tMin, l_tMax )
+
+  # add title
+  matplotlib.pyplot.title( i_title )
+
   # create legends
-  matplotlib.pyplot.xlabel('time')
-  matplotlib.pyplot.ylabel('values')
-
-  # save figure
-  l_pdf.savefig( l_fig )
-
-  # close pdf
-  l_pdf.close()
+  matplotlib.pyplot.xlabel('time (s)')
 
 # set up logger
 logging.basicConfig( level=logging.DEBUG,
@@ -94,6 +217,11 @@ l_parser.add_argument( '--in_csv',
                        help     = 'Paths of the two receivers',
                        metavar  = ('RECV_0', 'RECV_1') )
 
+l_parser.add_argument( '--in_tmgc',
+                       dest     = 'in_tmgc',
+                       required = False,
+                       help     = 'Paths to direcory conaining output of program TF-MISFIT_GOF_CRITERIA for this given component of the receiver' )
+
 l_parser.add_argument( '--cols',
                        dest     = 'cols',
                        required = True,
@@ -106,6 +234,13 @@ l_parser.add_argument( '--out_pdf',
                        required = True,
                        help     = 'Paths to output pdf' )
 
+l_parser.add_argument( '--title',
+                       dest     = 'title',
+                       required = False,
+                       type     = str,
+                       default  = 'Receiver Comparison',
+                       help     = 'Title of the plot' )
+
 l_parser.add_argument( '--recv_names',
                        dest     = 'recv_names',
                        required = False,
@@ -117,7 +252,22 @@ l_parser.add_argument( '--recv_names',
 
 l_args = vars(l_parser.parse_args())
 
-logging.info( 'reading receivers '+l_args['in_csv'][0]+' '+l_args['in_csv'][1] )
+logging.info( 'parsing receivers '+l_args['in_csv'][0]+' '+l_args['in_csv'][1] )
+
+# create pdf
+l_pdf = PdfPages( l_args['out_pdf'] )
+
+# read TF_MISFIT_GOF_CRITERIA INFO
+if l_args['in_tmgc']:
+  l_valid, l_cDat = tfMisContDat( l_args['in_tmgc'] + '/MISFIT-GOF.DAT' )
+else: l_valid = False
+
+# create figure
+if l_valid:
+  l_fig = matplotlib.pyplot.figure( figsize=(10, 21) )
+else:
+  l_fig = matplotlib.pyplot.figure( figsize=(10, 7) )
+
 
 # read receiver info
 l_first  = [ readCsv( l_args['in_csv'][0], 0 ),
@@ -125,6 +275,52 @@ l_first  = [ readCsv( l_args['in_csv'][0], 0 ),
 l_second = [ readCsv( l_args['in_csv'][1], 0 ),
              readCsv( l_args['in_csv'][1], int(l_args['cols'][1]) ) ]
 
-plot( l_args['recv_names'], l_first, l_second, l_args['out_pdf'] )
+# use subplots if time-frequency are part of the figure
+if( l_valid ):
+  l_r = 3.5
+  l_gs = matplotlib.gridspec.GridSpec(7, 2, height_ratios=[6,l_r,l_r,l_r,l_r,l_r,l_r], width_ratios=[25,1], wspace=0.1, hspace=0.5)
+  matplotlib.pyplot.subplot( l_gs[0] )
+
+# plot receiver
+plot( l_args['title'], l_args['recv_names'], l_first, l_second )
+
+# read and plot TF-MISFIT_GOF_CRITERIA data, if available
+if l_args['in_tmgc']:
+  if l_valid:
+    # assemble frequency and time range
+    l_fr = ( l_cDat['fmin'], l_cDat['fmax'] )
+    l_tr = ( 0, (l_cDat['mt']-1)*l_cDat['dt'])
+
+    # id of the subplot
+    l_spId = 2
+
+    for l_en in [ ['tfrs1', 'TFRS1_1.DAT' ],
+                  ['tfrs2', 'TFRS2_1.DAT' ],
+                  ['tfem',  'TFEM1.DAT'   ],
+                  ['tfpm',  'TFPM1.DAT'   ],
+                  ['tfeg',  'TFEG1.DAT'   ],
+                  ['tfpg',  'TFPG1.DAT'   ] ]:
+      # add dir
+      l_en[1] = l_args['in_tmgc'] + '/' + l_en[1]
+
+      logging.info( 'parsing time-frequency data '+l_en[1] )
+
+      # read data
+      l_data = numpy.genfromtxt( l_en[1] )
+
+      # reshape data
+      l_data.reshape( l_cDat['nf_tf'], l_cDat['mt'] )
+
+      # generate plot
+      timeFreq( [ l_gs[l_spId], l_gs[l_spId+1] ], l_data, l_en[0], l_fr, l_tr )
+
+      # update sub-plot id
+      l_spId = l_spId + 2
+
+# save figure
+l_pdf.savefig( l_fig, bbox_inches='tight' )
+
+# close pdf
+l_pdf.close()
 
 logging.info( 'got it, bye bye' )
