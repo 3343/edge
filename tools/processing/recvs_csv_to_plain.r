@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ##
 # @file This file is part of EDGE.
 #
@@ -57,7 +58,6 @@ for(  fileIn in recvs  ) {
   
   # read receiver data
   fileIn  <- paste( dir, fileIn, sep='/')
-  fileOut <- paste0( dir, 'tst.txt' )
   recv <- read.csv(fileIn)
   
   # process receiver
