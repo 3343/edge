@@ -165,13 +165,22 @@ def readCsv( i_file, i_col ):
 
   # read file
   with open( i_file, 'r' ) as l_fi:
-    l_csv = csv.reader( l_fi )
+    # detect dialect
+    l_sniff = csv.Sniffer().sniff( l_fi.read(), [',', ' '] )
+    l_fi.seek(0)
+
+    l_csv = csv.reader( l_fi, l_sniff, skipinitialspace=True )
 
     for l_ro in l_csv:
       if len( l_ro ) > 0:
-        # ignore non-numbers
+        # ignore comments
+        if l_ro[0].lstrip()[0] == '#':
+          continue
+
+        # ignore indices out of range and non-numbers
         try:
           l_vals = l_vals + [ float(l_ro[i_col]) ]
+        except IndexError: continue
         except ValueError: continue
 
   return l_vals
@@ -220,7 +229,7 @@ l_parser.add_argument( '--in_csv',
 l_parser.add_argument( '--in_tmgc',
                        dest     = 'in_tmgc',
                        required = False,
-                       help     = 'Paths to direcory conaining output of program TF-MISFIT_GOF_CRITERIA for this given component of the receiver' )
+                       help     = 'Paths to direcory conaining output of program TF-MISFIT_GOF_CRITERIA for this given component of the receiver.' )
 
 l_parser.add_argument( '--cols',
                        dest     = 'cols',
@@ -233,6 +242,14 @@ l_parser.add_argument( '--out_pdf',
                        dest     = 'out_pdf',
                        required = True,
                        help     = 'Paths to output pdf' )
+
+l_parser.add_argument( '--shift',
+                       dest     = 'shift',
+                       required = False,
+                       nargs    = 2,
+                       type     = float,
+                       default  = [0, 0],
+                       help     = 'Shifts the seismogram in time.' )
 
 l_parser.add_argument( '--title',
                        dest     = 'title',
@@ -274,6 +291,10 @@ l_first  = [ readCsv( l_args['in_csv'][0], 0 ),
              readCsv( l_args['in_csv'][0], int(l_args['cols'][0]) ) ]
 l_second = [ readCsv( l_args['in_csv'][1], 0 ),
              readCsv( l_args['in_csv'][1], int(l_args['cols'][1]) ) ]
+
+# shift receivers in time
+l_first[0]  = [ l_t + l_args['shift'][0] for l_t in l_first[0] ]
+l_second[0] = [ l_t + l_args['shift'][1] for l_t in l_second[0] ]
 
 # use subplots if time-frequency are part of the figure
 if( l_valid ):
