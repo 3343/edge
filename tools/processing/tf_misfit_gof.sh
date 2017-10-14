@@ -24,11 +24,15 @@
 # Usage info
 show_help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-r RECEIVER1 -s RECEIVER2 -x EXTQ1 -y EXTQ2 -c EXTC1 -d EXTC2 -n EXTS1 -m EXTS2 -o OUTDIR]
+Usage: ${0##*/} [-h] [-r RECEIVER1 -s RECEIVER2 -t NTS -u DT -e DROP1 -f DROP2 -x EXTQ1 -y EXTQ2 -c EXTC1 -d EXTC2 -n EXTS1 -m EXTS2 -o OUTDIR]
 Calls TF-MISFIT_GOF_CRITERIA to produce goodness-of-fit criteria.
      -h This help message.
      -r RECEIVER1 first seismogram.
      -s RECEIVER2 second seismogram, used as reference solution.
+     -t NTS number of time steps.
+     -u DT time step.
+     -e DROP1 drops the first DROP1-1 lines for the first receiver (optional).
+     -f DROP2 drops the first DROP2-1 lines for the second receiver (optional).
      -x EXTQ1 component to extract from first receiver (optional).
      -y EXTQ2 component to extract from second receiver (optional).
      -c EXTC1 fused simulation to extract from first receiver (optional).
@@ -43,7 +47,12 @@ EOF
 # parse command line arguments
 #
 OPTIND=1
-while getopts "hr:s:x:y:c:d:n:m:o:" opt; do
+
+# init drops
+DROP1=1
+DROP2=1
+
+while getopts "hr:s:t:u:e:f:x:y:c:d:n:m:o:" opt; do
   case "$opt" in
     h)
        show_help
@@ -54,6 +63,18 @@ while getopts "hr:s:x:y:c:d:n:m:o:" opt; do
        ;;
     s)
        RECEIVER2=$OPTARG
+       ;;
+    t)
+       NTS=$OPTARG
+       ;;
+    u)
+       DT=$OPTARG
+       ;;
+    e)
+       DROP1=$OPTARG
+       ;;
+    f)
+       DROP2=$OPTARG
        ;;
     x)
        EXTQ1=$OPTARG
@@ -84,7 +105,7 @@ while getopts "hr:s:x:y:c:d:n:m:o:" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional --.
 
-if [[ $OPTIND != 7 ]] && [[ $OPTIND != 13 ]] && [[ $OPTIND != 19 ]]
+if [[ $OPTIND < 11 ]]
 then
   show_help >&2
   exit 1
@@ -107,48 +128,30 @@ if [[ $EXTQ1 != '' ]]
 then
   EXT_DIR=$(mktemp -d)
 
-  # extract
-  cp $RECEIVER1 $EXT_DIR
-  cd $EXT_DIR
-  recvs_csv_to_plain.r . $EXTS1 1
-
-  # move extracted receiver
-  mv *_Q${EXTQ1}_C${EXTC1}.dat ${TMP_DIR}/S1.dat
+  # extract data
+  tail -n +${DROP1} ${RECEIVER1} > $EXT_DIR/ext1.csv
+  recvs_extract_cols.py --in_csv $EXT_DIR/ext1.csv --cols 0 ${EXTQ1} --out_csv ${TMP_DIR}/S1.dat
 
   # remove extraction dir
   rm -r $EXT_DIR
-
-  # remove header
-  sed -i -e "1d" ${TMP_DIR}/S1.dat
-
-  cd $CUR_DIR
 else
-  # copy receivers as to temp dir
-  cp $RECEIVER1 $TMP_DIR/S1.dat
+  # drop lines only
+  tail -n +${DROP1} $RECEIVER1 > $TMP_DIR/S1.dat
 fi
 
 if [[ $EXTQ2 != '' ]]
 then
   EXT_DIR=$(mktemp -d)
 
-  # extract
-  cp $RECEIVER2 $EXT_DIR
-  cd $EXT_DIR
-  recvs_csv_to_plain.r . $EXTS2 1
-
-  # move extracted receiver
-  mv *_Q${EXTQ2}_C${EXTC2}.dat ${TMP_DIR}/S2.dat
+  # extract data
+  tail -n +${DROP2} ${RECEIVER2} > $EXT_DIR/ext2.csv
+  recvs_extract_cols.py --in_csv $EXT_DIR/ext2.csv --cols 0 ${EXTQ2} --out_csv ${TMP_DIR}/S2.dat
 
   # remove extraction dir
   rm -r $EXT_DIR
-
-  # remove header
-  sed -i -e "1d" ${TMP_DIR}/S2.dat
-
-  cd $CUR_DIR
 else
-  # copy receivers as to temp dir
-  cp $RECEIVER2 $TMP_DIR/S2.dat
+  # drop lines only
+   tail -n +${DROP2} $RECEIVER2 > $TMP_DIR/S2.dat
 fi
 
 # move to temp dir
@@ -156,7 +159,7 @@ cd $TMP_DIR
 
 # create config for TF_MISFIT_GOF
 # TODO: Fix to dynamic number of samples, time step and frequency range.
-echo "&INPUT MT=250, DT=0.02, FMIN=0.13, FMAX=5.0, S1_NAME='S1.dat', S2_NAME='S2.dat', NC = 1,
+echo "&INPUT MT=${NTS}, DT=${DT}, FMIN=0.13, FMAX=5.0, S1_NAME='S1.dat', S2_NAME='S2.dat', NC = 1,
        IS_S2_REFERENCE = T, LOCAL_NORM = F/
      "> HF_TF-MISFIT_GOF
 
