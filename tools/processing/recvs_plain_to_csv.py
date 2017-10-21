@@ -89,7 +89,7 @@ def writeCsv( i_data, i_basePath ):
     with open( l_out, 'w' ) as l_file:
       l_csv = csv.writer( l_file )
 
-      l_rows = zip( i_data[0], i_data[l_re] )
+      l_rows = zip( i_data[0], *i_data[l_re] )
 
       for l_ro in l_rows:
         l_csv.writerow( l_ro )
@@ -101,21 +101,42 @@ logging.basicConfig( level=logging.DEBUG,
 # command line arguments
 l_parser = argparse.ArgumentParser( description='Converts plain receivers (1 value per line) to csv-receiver data.' )
 
-l_parser.add_argument( '--in_file',
-                       dest     = 'in_file',
+l_parser.add_argument( '--in_files',
+                       dest     = 'in_files',
                        required = True,
-                       help     = 'Path to the plain-file which will be converted to csv.' )
+                       nargs    = '+',
+                       metavar  = 'PLAIN_FILE',
+                       help     = 'Path to the plain files which will be converted to csv. If more than one file is given, multiple columns are generated.' )
 
 l_parser.add_argument( '--out_base',
                        dest     = 'out_base',
                        required = True,
                        help     = 'Base-path to the csv-files which will be generated from the plain-file. The base path will be extended with \'_RECVID.csv\', where RECVID is, starting from 1, the id of the receiver.' )
 
-l_arguments = vars(l_parser.parse_args())
+l_args = vars(l_parser.parse_args())
 
-logging.info( "parsing "+l_arguments['in_file'] )
-l_data = readPlain( l_arguments['in_file'] )
+# read data
+l_data = []
+for l_fi in l_args['in_files']:
+  logging.info( "parsing "+l_fi )
+  l_data = l_data + [ readPlain( l_fi ) ]
 
-writeCsv( l_data, l_arguments['out_base'] )
+# make sure that the time dimension matches
+for l_da in l_data:
+  assert( l_data[0][0] == l_da[0] )
+
+# combine data
+l_comb = l_data[0]
+for l_re in range(1,len(l_comb)):
+  l_comb[l_re] = [l_comb[l_re]]
+
+# iterate over other components
+for l_da in l_data[1:]:
+  # iterate over receivers
+  for l_re in range(1,len(l_comb)):
+    # add components to receivers
+    l_comb[l_re] = l_comb[l_re] + [ l_da[l_re] ]
+
+writeCsv( l_comb, l_args['out_base'] )
 
 logging.info( "all done, see you later" )
