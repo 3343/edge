@@ -19,7 +19,7 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Extracts the given columns from a receiver.
+# Extracts the given data from a receiver.
 ##
 import logging
 import argparse
@@ -83,6 +83,7 @@ l_parser.add_argument( '--in_csv',
                        required = True,
                        type     = str,
                        help     = 'Paths of the input receiver.' )
+
 l_parser.add_argument( '--cols',
                        dest     = 'cols',
                        required = True,
@@ -90,6 +91,13 @@ l_parser.add_argument( '--cols',
                        type     = int,
                        help     = 'Columns which will be extracted (first column has id 0).',
                        metavar  = ('COL_0', 'COL_1') )
+
+l_parser.add_argument( '--sample',
+                       dest     = 'sample',
+                       required = False,
+                       type     = int,
+                       help     = 'Samples the rows in the given frequency. Example: 1 (default) is every row, 2 is every other row.',
+                       default  = 1 )
 
 l_parser.add_argument( '--out_csv',
                        dest     = 'out_csv',
@@ -103,6 +111,10 @@ l_data = []
 for l_co in l_args['cols']:
   logging.info( 'reading column ' + str(l_co) +' of receiver '+l_args['in_csv'] )
   l_data = l_data + [ readCsv( l_args['in_csv'], l_co ) ]
+
+# sample data
+for l_co in range( len(l_data) ):
+  l_data[l_co] = l_data[l_co][ 0::l_args['sample'] ]
 
 writeCsv( l_data, l_args['out_csv'] )
 
