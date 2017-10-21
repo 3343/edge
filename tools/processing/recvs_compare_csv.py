@@ -35,7 +35,7 @@ import copy
 # Parses the control data of the prorgam TF_MISFIT_GOF_CRITERIA.
 #
 # @param i_file path to the file containing the control data.
-# @return 1) boolean if the control data is valid, 2) parsed control data
+# @return 1) boolean if the control data is valid, 2) parsed control data.
 ##
 def tfMisContDat( i_file ):
   # open file
@@ -57,7 +57,7 @@ def tfMisContDat( i_file ):
       l_valid = False
 
     # parse control data
-    assert( len(l_conf) == 10)
+    assert( len(l_conf) >= 10)
 
     l_cdat = { 'fmin':         l_conf[0][0],
                'fmax':         l_conf[0][1],
@@ -65,20 +65,33 @@ def tfMisContDat( i_file ):
                'mt':           l_conf[1][1],
                'dt':           l_conf[2][0],
                'nc':           l_conf[2][1],
-               'em':           l_conf[4][0],
-               'pm':           l_conf[4][1],
-               'eg':           l_conf[5][0],
-               'pg':           l_conf[5][1] }
+               'em':           [],
+               'pm':           [],
+               'eg':           [],
+               'pg':           []
+             }
+
+    # convert string to int
+    for l_ke in ['nf_tf', 'mt', 'nc']:
+      l_cdat[l_ke] = int( l_cdat[l_ke] )
+
+    # extract single valued misfits
+    for l_co in range(l_cdat['nc']):
+      l_cdat['em'] = l_cdat['em'] + [ l_conf[4 + l_co][0] ]
+      l_cdat['pm'] = l_cdat['pm'] + [ l_conf[4 + l_co][1] ]
+
+      l_cdat['eg'] = l_cdat['eg'] + [ l_conf[4 + l_cdat['nc'] + l_co][0] ]
+      l_cdat['pg'] = l_cdat['pg'] + [ l_conf[4 + l_cdat['nc'] + l_co][1] ]
+
 
     # convert to float and int if valid
     if l_valid:
-      for l_ke in [ 'fmin', 'fmax', 'dt', 'nc', 'em', 'pm', 'eg', 'pg' ]:
+      for l_ke in [ 'fmin', 'fmax', 'dt', 'nc' ]:
         l_cdat[l_ke] = float( l_cdat[l_ke] )
-      for l_ke in ['nf_tf', 'mt', 'nc']:
-        l_cdat[l_ke] = int( l_cdat[l_ke] )
 
-      # check for single component
-      assert( l_cdat['nc'] == 1 )
+      for l_ke in [ 'em', 'pm', 'eg', 'pg' ]:
+        for l_co in range(len(l_cdat[l_ke])):
+          l_cdat[l_ke][l_co] = float( l_cdat[l_ke][l_co] )
 
     # return data
     return l_valid, l_cdat
@@ -229,7 +242,7 @@ l_parser.add_argument( '--in_csv',
 l_parser.add_argument( '--in_tmgc',
                        dest     = 'in_tmgc',
                        required = False,
-                       help     = 'Paths to direcory conaining output of program TF-MISFIT_GOF_CRITERIA for this given component of the receiver.' )
+                       help     = 'Paths to direcory conaining output of program TF-MISFIT_GOF_CRITERIA.' )
 
 l_parser.add_argument( '--cols',
                        dest     = 'cols',
@@ -237,6 +250,13 @@ l_parser.add_argument( '--cols',
                        nargs    = 2,
                        help     = 'Columns in the two files which are compared. Counting starts at 0, thus the first column (typically time) as id 0.',
                        metavar  = ('COL_0', 'COL_1') )
+
+l_parser.add_argument( '--tmgc_comp',
+                       dest     = 'tmgc_comp',
+                       required = False,
+                       type     = int,
+                       default  = 1,
+                       help     = 'Component (as parsed TF-MISFIT_GOF-CRITERIA) to use for the tmgc-plots.' )
 
 l_parser.add_argument( '--out_pdf',
                        dest     = 'out_pdf',
@@ -315,12 +335,12 @@ if l_args['in_tmgc']:
     # id of the subplot
     l_spId = 2
 
-    for l_en in [ ['tfrs1', 'TFRS1_1.DAT' ],
-                  ['tfrs2', 'TFRS2_1.DAT' ],
-                  ['tfem',  'TFEM1.DAT'   ],
-                  ['tfpm',  'TFPM1.DAT'   ],
-                  ['tfeg',  'TFEG1.DAT'   ],
-                  ['tfpg',  'TFPG1.DAT'   ] ]:
+    for l_en in [ ['tfrs1', 'TFRS1_' +str( l_args['tmgc_comp'] )+ '.DAT' ],
+                  ['tfrs2', 'TFRS2_' +str( l_args['tmgc_comp'] )+ '.DAT' ],
+                  ['tfem',  'TFEM'   +str( l_args['tmgc_comp'] )+ '.DAT' ],
+                  ['tfpm',  'TFPM'   +str( l_args['tmgc_comp'] )+ '.DAT' ],
+                  ['tfeg',  'TFEG'   +str( l_args['tmgc_comp'] )+ '.DAT' ],
+                  ['tfpg',  'TFPG'   +str( l_args['tmgc_comp'] )+ '.DAT' ] ]:
       # add dir
       l_en[1] = l_args['in_tmgc'] + '/' + l_en[1]
 
