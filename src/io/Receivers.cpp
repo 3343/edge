@@ -75,8 +75,8 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
     // iterate over the owned entities
     for( int_el l_en = l_first; l_en < l_first+l_size; l_en++ ) {
       // buffer ves
-      EDGE_CHECK_LE( l_nVe, 4 );
-      real_mesh l_tmpVe[ 3*4 ];
+      EDGE_CHECK_LE( l_nVe, 8 );
+      real_mesh l_tmpVe[ 3*8 ];
 
       // get the vertices
       for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
