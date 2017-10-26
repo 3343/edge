@@ -577,6 +577,36 @@ class edge::linalg::Mappings {
     }
 
     /**
+     * Maps the given point of a hex8r-element in physical coordinates to reference coordinates.
+     *
+     * @param i_ves vertices of the hex8r element in physical coordinates ([*][]: dim, [][*]: vertex).
+     * @param i_x point in physical coords.
+     * @param o_xi will be set to point in reference coordinates.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template <typename TL_T_REAL>
+    static void phyToRefHex8r( TL_T_REAL const i_ves[3][8],
+                               TL_T_REAL const i_x[3],
+                               TL_T_REAL       o_xi[3] ) {
+      TL_T_REAL l_dx = i_ves[0][1] - i_ves[0][0];
+      EDGE_CHECK_GT( l_dx, TOL.MESH );
+      TL_T_REAL l_dy = i_ves[1][3] - i_ves[1][0];
+      EDGE_CHECK_GT( l_dy, TOL.MESH );
+      TL_T_REAL l_dz = i_ves[2][4] - i_ves[2][0];
+      EDGE_CHECK_GT( l_dz, TOL.MESH );
+
+      // shift
+      o_xi[0] = i_x[0] - i_ves[0][0];
+      o_xi[1] = i_x[1] - i_ves[1][0];
+      o_xi[2] = i_x[2] - i_ves[2][0];
+      // scale
+      o_xi[0] /= l_dx;
+      o_xi[1] /= l_dy;
+      o_xi[2] /= l_dz;
+    }
+
+    /**
      * Maps the given point in physical coordinates to reference coordinates.
      *
      * @param i_enType entity type.
@@ -591,6 +621,7 @@ class edge::linalg::Mappings {
                                 T      *o_xi ) {
      if(      i_enType == QUAD4R ) phyToRefQuad4r((T(*)[4]) i_ves, i_x, o_xi );
      else if( i_enType == TRIA3  ) phyToRefTria3( (T(*)[3]) i_ves, i_x, o_xi );
+     else if( i_enType == HEX8R  ) phyToRefHex8r( (T(*)[8]) i_ves, i_x, o_xi );
      else if( i_enType == TET4   ) phyToRefTet4(  (T(*)[4]) i_ves, i_x, o_xi );
      else                          EDGE_LOG_FATAL;
     }
