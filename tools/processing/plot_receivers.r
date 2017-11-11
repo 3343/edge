@@ -37,7 +37,11 @@ plotRecv <- function( data, q ) {
         main = paste( 'min:', min, '\nmax:', max  )
         )
 
-  spectrum( data[, q] )
+  spec <- spectrum( data[,q], log='no', plot=FALSE )
+  spf <- spec$freq * ( length(data[,q]) / ( max(data[,'time']) - min(data[,'time'])) )
+  sps <- spec$spec
+
+  plot( spf, sps, type='l', xlim=c(0,20), xlab='frequency (Hz)', ylab='spectrum' )
 }
 
 # get command line arguments
