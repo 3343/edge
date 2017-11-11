@@ -24,13 +24,15 @@
 # Usage info
 show_help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-r RECEIVER1 -s RECEIVER2 -t NTS -u DT -e DROP1 -f DROP2 -x EXTQ1 -y EXTQ2 -m EXTS1 -n EXTS2 -o OUTDIR]
+Usage: ${0##*/} [-h] [-r RECEIVER1 -s RECEIVER2 -t NTS -u DT -a FREQ1 -b FREQ2 -e DROP1 -f DROP2 -x EXTQ1 -y EXTQ2 -m EXTS1 -n EXTS2 -o OUTDIR]
 Calls TF-MISFIT_GOF_CRITERIA to produce goodness-of-fit criteria.
      -h This help message.
      -r RECEIVER1 first seismogram, used as reference solution.
      -s RECEIVER2 second seismogram.
      -t NTS number of time steps.
      -u DT time step.
+     -a FREQ1 minimum frequency.
+     -b FREQ2 maximum frequency.
      -e DROP1 drops the first DROP1-1 lines for the first receiver (optional).
      -f DROP2 drops the first DROP2-1 lines for the second receiver (optional).
      -x EXTQ1 components to extract from first receiver (optional, time in column 0 is always parsed,
@@ -62,7 +64,7 @@ EXTS2=1
 EXTQ1=(0)
 EXTQ2=(0)
 
-while getopts "hr:s:t:u:e:f:x:y:m:n:o:" opt; do
+while getopts "hr:s:t:u:a:b:e:f:x:y:m:n:o:" opt; do
   case "$opt" in
     h)
        show_help
@@ -79,6 +81,12 @@ while getopts "hr:s:t:u:e:f:x:y:m:n:o:" opt; do
        ;;
     u)
        DT=$OPTARG
+       ;;
+    a)
+       FREQ1=$OPTARG
+       ;;
+    b)
+       FREQ2=$OPTARG
        ;;
     e)
        DROP1=$OPTARG
@@ -109,7 +117,7 @@ while getopts "hr:s:t:u:e:f:x:y:m:n:o:" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional --.
 
-if [[ $OPTIND < 11 ]]
+if [[ $OPTIND < 13 ]]
 then
   show_help >&2
   exit 1
@@ -183,7 +191,7 @@ cd $TMP_DIR
 
 # create config for TF_MISFIT_GOF
 # TODO: Fix to dynamic number of samples, time step and frequency range.
-echo "&INPUT MT=${NTS}, DT=${DT}, FMIN=0.13, FMAX=5.0, S1_NAME='S1.dat', S2_NAME='S2.dat', NC = ${COMP},
+echo "&INPUT MT=${NTS}, DT=${DT}, FMIN=${FREQ1}, FMAX=${FREQ2}, S1_NAME='S1.dat', S2_NAME='S2.dat', NC = ${COMP},
        IS_S2_REFERENCE = T, LOCAL_NORM = F/
      "> HF_TF-MISFIT_GOF
 
