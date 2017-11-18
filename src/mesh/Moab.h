@@ -83,6 +83,12 @@ class edge::mesh::Moab {
     //! mapping of indices from mesh to data and data to mesh
     t_inMap m_inMap;
 
+    //! tags in the mesh
+    std::vector< moab::Tag > m_tagsMesh;
+
+    //! names of the tags
+    std::vector< std::string > m_tagsNames;
+
     //! material tag, as defined in MATERIAL_SET of MOAB.
     // While we use this to define true material regions w.r.t to elements, this tag is also used to define boundary conditions on faces.
     moab::Tag m_tagMat;
@@ -109,6 +115,15 @@ class edge::mesh::Moab {
 
     //! handles of the remote periodic element, the matching handle of the face, not in MOAB's adjacencies is in the periodic face vector
     std::vector< moab::EntityHandle > m_periodicElementsRemote;
+
+    /**
+     * Gets the entity handle for the given entity.
+     *
+     * @param i_nDim number of dimensions of the entity.
+     * @param i_en local id of the entity.
+     **/
+    moab::EntityHandle getEnHandle( unsigned short i_nDim,
+                                    int_el         i_en );
 
     /**
      * Determines if the given entity is at the boundary.
@@ -443,6 +458,35 @@ class edge::mesh::Moab {
      * @param o_gIds will bet set to reference to the global element ids.
      **/
     void getGIdsEl( std::vector< int_gid > &o_gIds ) const;
+
+    /**
+     * Gets the the names of the tags in the mesh.
+     * The positions in the vector are identical to local ids for querying the tags.
+     *
+     * @param o_tagsNames will be set to names of tags.
+     **/
+    void getTagsNames( std::vector< std::string > &o_tagsNames );
+
+    /**
+     *  Gets the number of bytes for a tag.
+     *
+     *  @param i_tid local id of the tag.
+     *  @return size of the tag in bytes.
+     **/
+    int getTagBytes( unsigned short i_tid );
+
+    /**
+     * Gets tag data for the given entity.
+     *
+     * @param i_tid local id of the tag.
+     * @param i_nDim number of entity dimensions. 0: vertex, m_dim-1: face, m_dim: element.
+     * @param i_en local id of the entity.
+     * @param o_val will be set to the value of the tag.
+     **/
+    void getTagData( unsigned short  i_tid,
+                     unsigned short  i_nDim,
+                     int_el          i_en,
+                     void           *o_val );
 
     /**
      * Gets the material tag value for the given entity.

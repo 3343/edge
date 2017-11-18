@@ -250,6 +250,87 @@ class edge::mesh::Unstructured {
      * @param o_faChars will be set to the faces' characteristics.
      **/
     void getFaChars( t_faceChars *o_faChars );
+
+    /**
+     * Gets the given parameters for all dense entities (including duplicates).
+     *
+     * @param i_nDim number of dimensions of the dense entities. 0: vertices, NDIM-1: faces, NDIM: elemennts, where NDIM is the number of dimensions for the simulation.
+     * @param i_nPars number of parameters, which are queried.
+     * @param i_names names of the paramters.
+     * @param o_pars output to which the parameters are written as array of struct. Fastest dimension are parameters.
+     * @return error code. 0 if succecessful, 1 if parameter is missing, 2 if size of template parameter does not match mesh specifications (size in byte).
+     *
+     * @paramt TL_T_PAR type of the parameter.
+     **/
+    template< typename TL_T_PAR >
+    bool getParsDe( unsigned short   i_nDim,
+                    unsigned short   i_nPars,
+                    std::string    * i_names,
+                    TL_T_PAR       * o_pars ) {
+      // get the names of available tags
+      std::vector< std::string > l_tagsNames;
+#ifdef PP_USE_MOAB
+      m_moab.getTagsNames( l_tagsNames );
+#else
+      EDGE_LOG_FATAL;
+#endif
+
+      // determine local ids of the parameters
+      std::vector< unsigned short > l_idsPar;
+      for( unsigned short l_pa = 0; l_pa < i_nPars; l_pa++ ) {
+        // iterate over mesh tag-names and find matches
+        for( std::size_t l_pm = 0; l_pm < l_tagsNames.size(); l_pm++ ) {
+          // store local id if this is our parameter
+          if( i_names[l_pa] == l_tagsNames[l_pm] ) {
+            l_idsPar.push_back( l_pm );
+            break;
+          }
+
+          // abort execution if the parameter does not exist in the mesh
+          if( l_pm == l_tagsNames.size()-1 ) {
+            return 1;
+          }
+        }
+      }
+
+      // check that the template parameters size matches the mesh's specs
+#ifdef PP_USE_MOAB
+      for( unsigned short l_pa = 0; l_pa < i_nPars; l_pa++ ) {
+        int l_nParBytes = m_moab.getTagBytes( l_idsPar[l_pa] );
+
+        EDGE_CHECK_EQ(l_nParBytes, sizeof( TL_T_PAR ) )
+          << "size of mesh parameter " << l_tagsNames[ l_idsPar[l_pa] ]
+          << " and template don't match; "
+          << "mesh: " << l_nParBytes
+          << ", template: " << sizeof( TL_T_PAR );
+      }
+#else
+      EDGE_LOG_FATAL;
+#endif
+
+      // determine number of entities
+      int_el l_nEn = ( i_nDim == 0       ) ? getNVertices() :
+                     ( i_nDim == N_DIM-1 ) ? getNFaces() :
+                                             getNElements();
+      // iterate over entities
+      for( int_el l_en = 0; l_en < l_nEn; l_en++ ) {
+        // iterate over parameters
+        for( unsigned short l_pa = 0; l_pa < i_nPars; l_pa++ ) {
+#ifdef PP_USE_MOAB
+          // get data from MOAB
+          m_moab.getTagData( l_idsPar[l_pa],
+                             i_nDim,
+                             l_en,
+                             o_pars+(i_nPars*l_en)+l_pa );
+#else
+          EDGE_LOG_FATAL;
+#endif
+        }
+      }
+
+      return 0;
+
+    }
 };
 
 #endif

@@ -111,6 +111,21 @@ void edge::mesh::Moab::init() {
   initEn( m_elements, m_inMap.elMeDa, m_inMap.elDaMe );
 }
 
+moab::EntityHandle edge::mesh::Moab::getEnHandle( unsigned short i_nDim,
+                                                  int_el         i_en ) {
+  // get entity handle
+  moab::EntityHandle l_ha;
+  if( i_nDim == 0 )
+    l_ha = m_vertices[i_en];
+  else if( i_nDim == m_dim-1 )
+    l_ha = m_faces[i_en];
+  else if( i_nDim == m_dim )
+    l_ha = m_elements[i_en];
+  else EDGE_LOG_FATAL << "invalid dimension: " << i_nDim << " " << i_en;
+
+  return l_ha;
+}
+
 bool edge::mesh::Moab::isBnd( moab::EntityHandle i_ent ) {
   bool l_isBnd = false;
 
@@ -805,11 +820,16 @@ void edge::mesh::Moab::read( const std::string &i_pathToMesh,
 
   EDGE_LOG_INFO << "  processing mesh info";
   // get tags defined by the mesh
-  std::vector< moab::Tag > l_tagsMesh;
-  l_error = m_core.tag_get_tags( l_tagsMesh ); checkError( l_error );
+  l_error = m_core.tag_get_tags( m_tagsMesh ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+
+  // get names of tags
+  m_tagsNames.resize( m_tagsMesh.size() );
+  for( std::size_t l_ta = 0; l_ta < m_tagsMesh.size(); l_ta++ ) {
+    l_error = m_core.tag_get_name( m_tagsMesh[l_ta], m_tagsNames[l_ta] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+  }
 
   // set material tag
-  m_tagMat = l_tagsMesh[0];
+  m_tagMat = m_tagsMesh[0];
 
   // get name of material tag
   std::string l_matName;
@@ -1162,23 +1182,45 @@ void edge::mesh::Moab::getGIdsEl( std::vector< int_gid > &o_gIds ) const {
   checkError( l_error );
 }
 
+void edge::mesh::Moab::getTagsNames( std::vector< std::string > &o_tagsNames ) {
+  // copy values
+  o_tagsNames = m_tagsNames;
+}
+
+int edge::mesh::Moab::getTagBytes( unsigned short i_tid ) {
+  moab::ErrorCode l_err;
+
+  int l_bytes = std::numeric_limits< int >::max();
+
+  l_err = m_core.tag_get_bytes( m_tagsMesh[i_tid], l_bytes ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  return l_bytes;
+}
+
+void edge::mesh::Moab::getTagData( unsigned short  i_tid,
+                                   unsigned short  i_nDim,
+                                   int_el          i_en,
+                                   void           *o_val ) {
+  // error code
+  moab::ErrorCode l_err;
+
+  // get entity handle
+  moab::EntityHandle l_ha = getEnHandle( i_nDim, i_en );
+
+  // query for value
+  l_err = m_core.tag_get_data( m_tagsMesh[i_tid],
+                               &l_ha,
+                               1,
+                               o_val ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+}
+
 void edge::mesh::Moab::getMatVal( unsigned short  i_dim,
                                   int_el          i_ent,
                                   int_spType     &o_val ) {
   moab::ErrorCode l_error;
 
   // get entity handle
-  moab::EntityHandle l_ha;
-  if( i_dim == 0 ) {
-    l_ha = m_vertices[i_ent];
-  }
-  else if( i_dim == m_dim-1 ) {
-    l_ha = m_faces[i_ent];
-  }
-  else if( i_dim == m_dim ) {
-    l_ha = m_elements[i_ent];
-  }
-  else EDGE_LOG_FATAL << "invalid dimension: " << i_dim << " " << i_ent;
+  moab::EntityHandle l_ha = getEnHandle( i_dim, i_ent );
 
   // get the entity sets with material tags
   moab::Range l_sets;

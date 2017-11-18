@@ -49,6 +49,52 @@ for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
 // get the initial setup
 PP_INSTR_REG_DEF(dofsMat)
 PP_INSTR_REG_BEG(dofsMat,"dofs_mat")
+
+// query velocity model from mesh
+unsigned short l_vmMesh = std::numeric_limits< unsigned short >::max();
+EDGE_LOG_INFO << "    querying mesh for velocity model";
+
+#if defined PP_T_MESH_UNSTRUCTURED
+// allocate memory for velocity model
+double (*l_velMod)[3] = (double (*)[3]) new double[ l_internal.m_nElements * 3 ];
+std::string l_bgPars[3] = { "LAMBDA",
+                            "MU",
+                            "RHO" };
+
+l_vmMesh = l_mesh.getParsDe( N_DIM,
+                             3,
+                             l_bgPars,
+                             l_velMod[0] );
+
+if( l_vmMesh == 0 ) {
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
+    // check for valid lame parameters
+    EDGE_CHECK_GT( l_velMod[l_el][0], 0 ) << l_el;
+    EDGE_CHECK_GT( l_velMod[l_el][1], 0 ) << l_el;
+    EDGE_CHECK_GT( l_velMod[l_el][2], 0 ) << l_el;
+
+    l_internal.m_elementShared1[l_el][0].lam  = l_velMod[l_el][0];
+    l_internal.m_elementShared1[l_el][0].mu   = l_velMod[l_el][1];
+    l_internal.m_elementShared1[l_el][0].rho  = l_velMod[l_el][2];
+  }
+}
+
+// free memory of velocity model
+delete[] l_velMod;
+#endif
+
+if( l_vmMesh == 0 ) {
+  EDGE_LOG_INFO << "    successfully obtained velocity model from mesh";
+}
+else {
+  EDGE_LOG_INFO << "    failed obtaining velocity model from mesh, continuining w/o "
+                << l_vmMesh;
+}
+
+EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-provided config (if available)";
 for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
   if( l_internal.m_globalPrivate1[0][l_run].initialDofs == setupChars::InitialDofs::planeWaves ) {
     // setup dofs
@@ -87,6 +133,10 @@ for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
         l_ave[l_dm] /= C_ENT[T_SDISC.ELEMENT].N_VERTICES;
       }
 
+      // check if velocity model is provided in user-config
+      EDGE_CHECK( (l_vmMesh == 0) || (l_elasticConf.m_velDoms.size() > 0) )
+        << "couldn't find a velocity model in the mesh or user config, aborting";
+
       // find the matching domain in the velocity model
       for( std::size_t l_do = 0; l_do < l_elasticConf.m_velDoms.size(); l_do++ ) {
         if( l_elasticConf.m_velDoms[l_do].inside(l_ave) ) {
@@ -97,7 +147,9 @@ for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
         }
 
         // abort if no matching velocity domain is present
-        EDGE_CHECK( l_do != l_elasticConf.m_velDoms.size()-1 ) << "here is the troublesome point: "
+        EDGE_CHECK( (l_vmMesh == 0) ||
+                    (l_do != l_elasticConf.m_velDoms.size()-1 ) )
+          << "here is the troublesome point: "
           << l_ave[0] << " " << l_ave[1] << " " << ( (N_DIM > 2) ? std::to_string(l_ave[2]) : "" );
       }
     }
