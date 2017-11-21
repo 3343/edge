@@ -468,6 +468,15 @@ class edge::mesh::Moab {
     void getTagsNames( std::vector< std::string > &o_tagsNames );
 
     /**
+     * Synchronizes the given tags for shared entitities in distributed memory settings.
+     *
+     * @param i_tids local ids of the tags.
+     * @param i_nDim number of entity dimensions. 0: vertex, m_dim-1: face, m_dim: element.
+     **/
+    void syncTags( std::vector< unsigned short > const &i_tids,
+                   unsigned short                       i_nDim  );
+
+    /**
      *  Gets the number of bytes for a tag.
      *
      *  @param i_tid local id of the tag.

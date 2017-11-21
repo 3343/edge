@@ -1182,6 +1182,29 @@ void edge::mesh::Moab::getGIdsEl( std::vector< int_gid > &o_gIds ) const {
   checkError( l_error );
 }
 
+void edge::mesh::Moab::syncTags( std::vector< unsigned short > const &i_tids,
+                                 unsigned short                       i_nDim  ) {
+#ifdef PP_USE_MPI
+  moab::ErrorCode l_err;
+
+  // get MOAB tag-handles from local ids
+  std::vector< moab::Tag > l_tags;
+  for( std::size_t l_ta = 0; l_ta < i_tids.size(); l_ta++ )
+    l_tags.push_back( m_tagsMesh[ i_tids[l_ta] ] );
+
+  moab::Range l_enMpi;
+  // get handles of given dimension
+  l_err = m_core.get_entities_by_dimension( 0, i_nDim, l_enMpi ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS ) << l_err;
+
+  // filter handles by MPI-status
+  unsigned char l_psMpi = PSTATUS_GHOST | PSTATUS_SHARED | PSTATUS_MULTISHARED | PSTATUS_INTERFACE;
+  l_err = m_pcomm.filter_pstatus( l_enMpi, l_psMpi, PSTATUS_OR, -1 ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS ) << l_err;
+
+  // exchange tags
+  l_err = m_pcomm.exchange_tags( l_tags, l_tags, l_enMpi ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS ) << l_err;
+#endif
+}
+
 void edge::mesh::Moab::getTagsNames( std::vector< std::string > &o_tagsNames ) {
   // copy values
   o_tagsNames = m_tagsNames;

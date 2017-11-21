@@ -308,6 +308,13 @@ class edge::mesh::Unstructured {
       EDGE_LOG_FATAL;
 #endif
 
+      // synchronize tags
+#ifdef PP_USE_MOAB
+      m_moab.syncTags( l_idsPar, N_DIM );
+#else
+      EDGE_LOG_FATAL;
+#endif
+
       // determine number of entities
       int_el l_nEn = ( i_nDim == 0       ) ? getNVertices() :
                      ( i_nDim == N_DIM-1 ) ? getNFaces() :
