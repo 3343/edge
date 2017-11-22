@@ -51,7 +51,7 @@ Finally, to build Edge-V tool, please run the following command:
 ```bash
 PREFIX=$(pwd) make MOABDIR="path_to_MOAB" UCVMDIR="path_to_UCVMC" PROJ4DIR="path_to_Proj_4" 
 ```
-The paths to MOAB library and UCVMC library are requiredIf `PROJ4DIR` is not provided, the Proj.4 library within UCVMC will be searched and used. By default, the released tool is in `$(pwd)`. Please set `PREFIX` to change it.
+The paths to MOAB library and UCVMC library are required. If `PROJ4DIR` is not provided, the Proj.4 library within UCVMC will be searched and used. By default, the released tool is in `$(pwd)`. Please set `PREFIX` to change it.
 
 One can also set up the dependent libraries in the `Makefile.inc` file, and simply run:
 ```bash
@@ -103,15 +103,15 @@ All the settings are required.
     The input mesh file in Gmsh’s native “MSH” ASCII file format.
 * `node_vm_file` :
     The output velocity model data for all the nodes in the mesh in ASCII file format.
-    The velocity model data is parameterized as $\lambda$, $\mu$ and $\rho$.
+    The velocity model data is parameterized as `lambda`, `mu` and `rho`.
 
 * `elmt_vm_file` :
     The output velocity model data for all the tets in the mesh in ASCII file format.
-    The velocity model data is parameterized as $\lambda$, $\mu$ and $\rho$.
+    The velocity model data is parameterized as `lambda`, `mu` and `rho`.
 
 * `h5m_file` :
-    The output mesh file with velocity model annotation in H5D file format.
-    The velocity model data is parameterized as $\lambda$, $\mu$ and $\rho$, recorded as sparse, 4-byte tags for only tetrahedron elements in the mesh. Each 4-byte data is interpreted as a single-precision floating-point number for use.
+    The output mesh file with velocity model annotation in H5M file format.
+    The velocity model data is parameterized as `lambda`, `mu` and `rho`, recorded as dense, 4-byte tags for only tetrahedron elements in the mesh. Each 4-byte data is interpreted as a single-precision floating-point number for use.
 
 ### Example
 
