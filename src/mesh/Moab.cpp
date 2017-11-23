@@ -114,7 +114,7 @@ void edge::mesh::Moab::init() {
 moab::EntityHandle edge::mesh::Moab::getEnHandle( unsigned short i_nDim,
                                                   int_el         i_en ) {
   // get entity handle
-  moab::EntityHandle l_ha;
+  moab::EntityHandle l_ha = std::numeric_limits< moab::EntityHandle >::max();
   if( i_nDim == 0 )
     l_ha = m_vertices[i_en];
   else if( i_nDim == m_dim-1 )
