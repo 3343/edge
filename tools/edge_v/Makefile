@@ -2,6 +2,7 @@
 # @file This file is part of EDGE.
 #
 # @author Junyi Qiu (juq005 AT ucsd.edu)
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
 # Copyright (c) 2017, Regents of the University of California
@@ -21,7 +22,7 @@
 # This is the Makefile of Edge-V.
 ##
 
-CXX=mpicxx
+CXX ?= mpicxx
 
 PREFIX ?= .
 
@@ -34,12 +35,12 @@ UCVMLIB=$(UCVMDIR)/lib
 PROJ4INC=$(PROJ4DIR)/include
 PROJ4LIB=$(PROJ4DIR)/lib
 
-UCVMCLDFLAGS=-L$(UCVMDIR)/model/cvms426/lib -lcvmsi \
-             -L$(UCVMDIR)/model/cvms/lib -lcvms \
-             -L$(UCVMDIR)/model/cvmh1510/lib -lvxapi -lgeo \
-             -L$(UCVMDIR)/model/cencal/lib -lcencalvm \
-             -L$(UCVMDIR)/lib/euclid3/lib -letree \
-             -L$(UCVMDIR)/lib/fftw/lib -lfftw3
+UCVMCLDFLAGS=-L$(UCVMDIR)/model/cvms426/lib  -lcvmsi       -Wl,-rpath,$(UCVMDIR)/model/cvms426/lib  \
+             -L$(UCVMDIR)/model/cvms/lib     -lcvms        -Wl,-rpath,$(UCVMDIR)/model/cvms/lib     \
+             -L$(UCVMDIR)/model/cvmh1510/lib -lvxapi -lgeo -Wl,-rpath,$(UCVMDIR)/model/cvmh1510/lib \
+             -L$(UCVMDIR)/model/cencal/lib   -lcencalvm    -Wl,-rpath,$(UCVMDIR)/model/cencal/lib   \
+             -L$(UCVMDIR)/lib/euclid3/lib    -letree       -Wl,-rpath,$(UCVMDIR)/lib/euclid3/lib    \
+             -L$(UCVMDIR)/lib/fftw/lib       -lfftw3       -Wl,-rpath,$(UCVMDIR)/lib/fftw/lib
 
 MOABINC=$(MOABDIR)/include
 MOABLIB=$(MOABDIR)/lib
@@ -48,7 +49,9 @@ MOABLIB=$(MOABDIR)/lib
 MOAB_LINKS := $(shell echo $(MOAB_LIBS_LINK) | sed 's/-all-static//g')
 
 CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp 
-LDFLAGS=-L$(PROJ4LIB) -lproj -L$(UCVMLIB) -lucvm $(UCVMCLDFLAGS) $(MOAB_LINKS) -lm -ldl
+LDFLAGS=-L$(PROJ4LIB) -lproj -Wl,-rpath,$(PROJ4LIB)                \
+        -L$(UCVMLIB)  -lucvm $(UCVMCLDFLAGS) -Wl,-rpath,$(UCVMLIB) \
+        $(MOAB_LINKS) -lm -ldl
 
 
 SRCDIR=./src
