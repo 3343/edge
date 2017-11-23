@@ -25,7 +25,8 @@ CXX=mpicxx
 
 PREFIX ?= .
 
-include ./Makefile.inc
+
+-include ./Makefile.inc
 
 UCVMINC=$(UCVMDIR)/include
 UCVMLIB=$(UCVMDIR)/lib
@@ -43,7 +44,7 @@ UCVMCLDFLAGS=-L$(UCVMDIR)/model/cvms426/lib -lcvmsi \
 MOABINC=$(MOABDIR)/include
 MOABLIB=$(MOABDIR)/lib
 
-include $(MOABLIB)/moab.make
+-include $(MOABLIB)/moab.make
 MOAB_LINKS := $(shell echo $(MOAB_LIBS_LINK) | sed 's/-all-static//g')
 
 CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp 
@@ -73,15 +74,12 @@ $(OBJDIR)/edge_v: $(OBJ)
 	if [ ! -d $(RELEASE) ]; then mkdir -p $(RELEASE); fi
 	cp $(OBJDIR)/edge_v $(RELEASE)/
 
-.PHONY: directory cleanobj clean
 
-directory:
-	if [ ! -d $(OBJDIR)  ]; then mkdir -p $(OBJDIR) ; fi
-	if [ ! -d $(RELEASE) ]; then mkdir -p $(RELEASE); fi
-
+.PHONY: cleanobj clean
 
 cleanobj:
 	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v
 
 clean:
 	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(RELEASE)/edge_v
+

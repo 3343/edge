@@ -21,12 +21,13 @@
 # Dependent libraries of Edge-V.
 ##
 
+# path for MOAB lib
+# e.g. MOABDIR ?= $(HOME)/workspace/edge/submodules/libs/
+MOABDIR ?= 
+
 # path for UCVMC lib
-UCVMDIR ?= $(HOME)/workspace/edge/velocity_model/UCVMC/ucvm-17.1.0
+# e.g. UCVMDIR ?= $(HOME)/workspace/edge/velocity_model/UCVMC/ucvm-17.1.0
+UCVMDIR ?= 
 
 # path for Proj.4 lib
 PROJ4DIR ?= $(UCVMDIR)/lib/proj-4
-
-# path for MOAB lib
-MOABDIR ?= $(HOME)/workspace/edge/submodules/libs/
-#MOABDIR ?= $(HOME)/moab/build
