@@ -1,7 +1,7 @@
 # EDGƎ-V
 
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg)](LICENSE.md) 
-<!--[![Travis CI](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/wiki/Status) -->
+
 
 EDGE Velocity (EDGE-V) is a tool used to annotate the meshes with velocity model data. It is developed based on [Unified Community Velocity Model](http://scec.usc.edu/scecpedia/UCVMC)(UCVM), which is the data source, and [Mesh-Oriented dAtABase](http://sigma.mcs.anl.gov/moab-library)(MOAB).
 
@@ -76,7 +76,7 @@ Here `config_file.log` is the path to the annotation configuration file. There i
 
 ```bash
 # initialization params for UCVMC
-ucvm_config=[@path_to_UCVMC]/conf/ucvm.conf
+ucvm_config=./conf/ucvm.conf
 ucvm_model_list=cvmsi
 
 # input mesh file path
@@ -115,7 +115,14 @@ All the settings are required.
 
 ### Example
 
-A basic example is provided with `example/annotation.conf` and `meshes/ucvm_mini.msh`. Change the `ucvm_config` setting to the path of the reference config file in UCVMC (could be found at ${UCVMC_DIR}/conf/ucvm.conf), and run the following command:
+A basic example is provided with `example/annotation.conf`. First, download the mini mesh:
+
+```bash
+mkdir -p meshes
+wget http://opt.dial3343.org/master/tools/edge_v/meshes/ucvm_mini.msh -O ./meshes/ucvm_mini.msh
+```
+
+Change the `ucvm_config` setting in `annotation.conf` to the path of the reference config file in UCVMC (could be found at `${UCVMC_DIR}/conf/ucvm.conf` ), and run the following command:
 
 ```bash
 ~bash $ ./bin/edge_v -f example/annotation.conf 
@@ -130,8 +137,4 @@ Writing Velocity Model: ./meshes/ucvm_mini_elmt.vel ... Done!
 Writing Annotated Mesh File: ./meshes/ucvm_mini_vmtags.h5m ... Done!
 ```
 
-It should output the same logging info as above. The velocity model files and the annotation file are generated in `meshes/`. It is also recommend to convert `.h5m` file to `.vtk` for visualization.
-
-```bash
-$(MOAD_DIR)/bin/mbconvert -f VTK ./meshes/ucvm_mini_vmtags.h5m ./meshes/ucvm_mini_vmtags.vtk
-```
+This should output the same logging info as above. The velocity model files and the annotation file are generated in `meshes/`.
