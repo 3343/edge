@@ -89,12 +89,18 @@ class edge::data::Xsmm {
                    << " alpha=" << i_alpha << " beta=" << i_beta;
 
       // check precision
-#if PP_PRECISION == 64
-      EDGE_CHECK( sizeof(T)== 8 );
-      EDGE_CHECK( PP_N_CRUNS == 8  );
-#elif PP_PRECISION == 32
+#if (PP_PRECISION == 32) and defined(__AVX512F__)
       EDGE_CHECK( sizeof(T)== 4 );
       EDGE_CHECK( PP_N_CRUNS == 16 );
+#elif (PP_PRECISION == 32) and defined(__AVX2__)
+      EDGE_CHECK( sizeof(T)== 4 );
+      EDGE_CHECK( PP_N_CRUNS == 8 );
+#elif (PP_PRECISION == 64) and defined(__AVX512F__)
+      EDGE_CHECK( sizeof(T)== 8 );
+      EDGE_CHECK( PP_N_CRUNS == 8  );
+#elif (PP_PRECISION == 64) and defined(__AVX2__)
+      EDGE_CHECK( sizeof(T)== 8 );
+      EDGE_CHECK( PP_N_CRUNS == 4  );
 #else
 #error precision not supported.
 #endif
@@ -152,10 +158,18 @@ class edge::data::Xsmm {
                    << " alpha=" << i_alpha << " beta=" << i_beta;
 
       // check precision
-#if PP_PRECISION == 64
-      EDGE_CHECK( sizeof(T)== 8 );
-#elif PP_PRECISION == 32
+#if (PP_PRECISION == 32) and defined(__AVX512F__)
       EDGE_CHECK( sizeof(T)== 4 );
+      EDGE_CHECK( PP_N_CRUNS == 16 );
+#elif (PP_PRECISION == 32) and defined(__AVX2__)
+      EDGE_CHECK( sizeof(T)== 4 );
+      EDGE_CHECK( PP_N_CRUNS == 8 );
+#elif (PP_PRECISION == 64) and defined(__AVX512F__)
+      EDGE_CHECK( sizeof(T)== 8 );
+      EDGE_CHECK( PP_N_CRUNS == 8  );
+#elif (PP_PRECISION == 64) and defined(__AVX2__)
+      EDGE_CHECK( sizeof(T)== 8 );
+      EDGE_CHECK( PP_N_CRUNS == 4  );
 #else
 #error precision not supported.
 #endif
