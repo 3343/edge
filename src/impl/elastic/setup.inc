@@ -94,6 +94,22 @@ else {
                 << l_vmMesh;
 }
 
+// perform NUMA-aware zero-init of DOFs and tDOFs
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
+  for( int_qt l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
+    for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
+      for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
+        l_internal.m_elementModePrivate1[l_el][l_qt][l_md][l_ru] = 0;
+        l_internal.m_elementModePrivate2[l_el][l_qt][l_md][l_ru] = 0;
+      }
+    }
+  }
+}
+
+
 EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-provided config (if available)";
 for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
   if( l_internal.m_globalPrivate1[0][l_run].initialDofs == setupChars::InitialDofs::planeWaves ) {
@@ -111,17 +127,8 @@ for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
                                                         -50+l_run*5 );
   }
   else if( l_internal.m_globalPrivate1[0][l_run].initialDofs == setupChars::InitialDofs::zero ) {
+    // setup material parameters
     for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
-      for( int_qt l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
-        for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-          for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
-            l_internal.m_elementModePrivate1[l_el][l_qt][l_md][l_ru] = 0;
-          }
-        }
-      }
-
-      // setup material parameters
-
       // compute vertices average position in all dimension
       real_mesh l_ave[N_DIM];
       for( unsigned short l_dm = 0; l_dm < N_DIM; l_dm++ ) {
@@ -154,7 +161,7 @@ for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
       }
     }
   }
-  else EDGE_LOG_FATAL << "initial dofs not supported";
+  else EDGE_LOG_FATAL;
 }
 PP_INSTR_REG_END(dofsMat)
 
