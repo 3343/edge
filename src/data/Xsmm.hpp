@@ -105,10 +105,6 @@ class edge::data::Xsmm {
 #error precision not supported.
 #endif
 
-      if(      sizeof(T) == 8 ) { EDGE_CHECK( PP_N_CRUNS == 8  ); }
-      else if( sizeof(T) == 4 ) { EDGE_CHECK( PP_N_CRUNS == 16 ); }
-      else { EDGE_LOG_FATAL << "unknown precision in LIBXSMM-kernel"; }
-
       // add description
       libxsmm_gemm_descriptor l_desc;
       LIBXSMM_GEMM_DESCRIPTOR( l_desc, (PP_PRECISION == 64) ? LIBXSMM_GEMM_PRECISION_F64 : LIBXSMM_GEMM_PRECISION_F32, 0,
