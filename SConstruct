@@ -312,8 +312,8 @@ if( env['xsmm'] ):
   if( env['order'] == '1' ):
     warnings.warn( '  Warning: LIBXSMM is not supported for first order runs, continuing without' )
     env['xsmm'] = False
-  if( int(env['cfr']) > 1 and ( env['arch'] != 'knl' and env['arch'] != 'skx' )  ):
-    warnings.warn( '  Warning: LIBXSMM is not supported for CFR>1 and arch!=knl or skx, continuing without' )
+  if( int(env['cfr']) > 1 and ( env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' )  ):
+    warnings.warn( '  Warning: LIBXSMM not supported for fused simulations and arch != (hsw, knl or skx), continuing without' )
     env['xsmm'] = False
 
 # forward number of forward runs to compiler
