@@ -1147,7 +1147,7 @@ void write_unstructured_mesh(const char *filename, int ub, int npts,
  * EDGE version of write_unstructured removing overhead by fixed input.
  **/
 void edge_write_unstructured_mesh( const char *filename, int ub, int npts,
-                                   float *pts, int ncells, int celltype, int *conn,
+                                   float *pts, int nvars, int ncells, int celltype, int *conn,
                                    const char * const *varnames, float **vars)
 {
     int   i, j;
@@ -1194,7 +1194,7 @@ void edge_write_unstructured_mesh( const char *filename, int ub, int npts,
         end_line();
     }
 
-    edge_write_variables(N_CRUNS*N_QUANTITIES, 1, 0, varnames, vars, npts, ncells);
+    edge_write_variables(nvars, 1, 0, varnames, vars, npts, ncells);
  
     close_file();
 }
