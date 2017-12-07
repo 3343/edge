@@ -179,7 +179,7 @@ def readCsv( i_file, i_col ):
   # read file
   with open( i_file, 'r' ) as l_fi:
     # detect dialect
-    l_sniff = csv.Sniffer().sniff( l_fi.read(), [',', ' '] )
+    l_sniff = csv.Sniffer().sniff( l_fi.read(), [',', ' ', '\t'] )
     l_fi.seek(0)
 
     l_csv = csv.reader( l_fi, l_sniff, skipinitialspace=True )
