@@ -173,11 +173,13 @@ else {
 #pragma omp parallel for num_threads( std::max( edge::parallel::g_nThreads-1, 1 ) )
 #endif
 for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
+  EDGE_CHECK( l_internal.m_globalShared6[0] != nullptr );
+
   for( int_qt l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
     for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
       for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
         l_internal.m_elementModePrivate1[l_el][l_qt][l_md][l_ru] = 0;
-        l_internal.m_elementModePrivate2[l_el][l_qt][l_md][l_ru] = 0;
+        l_internal.m_globalShared6[0][l_el][l_qt][l_md][l_ru] = 0;
       }
     }
   }
