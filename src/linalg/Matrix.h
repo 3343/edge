@@ -66,6 +66,27 @@ typedef struct {
   std::vector< unsigned int > colIdx;
 } t_matCsr;
 
+/*
+ * Sparse matrix format: Compressed sparse column.
+ *
+ * Example:
+ *    _     _  nnz:    4
+ *   | 1 0 2 | colPtr: 0,2,3,6
+ *   | 0 0 3 | rowIdx: 0,2,2,0,1,2
+ *   |_4 5 6_| val:    1,4,5,2,3,6
+ *
+ */
+typedef struct {
+  // number of non-zero values
+  unsigned int nnz;
+  // non-zero values
+  std::vector< real_base    > val;
+  // column pointers
+  std::vector< unsigned int > colPtr;
+  // row indices
+  std::vector< unsigned int > rowIdx;
+} t_matCsc;
+
 namespace edge {
   namespace linalg {
     class Matrix;
@@ -631,7 +652,6 @@ class edge::linalg::Matrix {
 
     /**
      * Converts a matrix in coordinate format to CSR-format.
-     *   Remark: No memory allocations are performed.
      *
      * @param i_subMatRows number of rows in the sub-matrix extracted from coord format.
      * @param i_subMatCols number of cols in the sub-matrix extracted from coord format.
@@ -673,6 +693,49 @@ class edge::linalg::Matrix {
     }
 
     /**
+     * Converts a matrix in coordinate format to CSC-format.
+     *
+     * @param i_subMatRows number of rows in the sub-matrix extracted from coord format.
+     * @param i_subMatCols number of cols in the sub-matrix extracted from coord format.
+     * @param i_coord matrix in coordinate format.
+     * @param o_csc will be set to sub-matrix in CSC format.
+     **/
+    static void crdToCsc(       unsigned int  i_subMatRows,
+                                unsigned int  i_subMatCols,
+                          const t_matCrd     &i_coord,
+                                t_matCsc     &o_csc ) {
+      // get the number of non-zero entries for the given submatrix
+      unsigned int l_nnz = getNnzCrd( i_subMatRows,
+                                      i_subMatCols,
+                                      i_coord );
+
+      o_csc.val.resize(    l_nnz          );
+      o_csc.colPtr.resize( i_subMatCols+1 );
+      o_csc.rowIdx.resize( l_nnz          );
+
+      // el gives the number of non-zero elements we have seen, equivalent to id in csc
+      unsigned int l_el = 0;
+
+      for( unsigned int l_co = 0; l_co < i_subMatCols; l_co++ ) {
+        o_csc.colPtr[l_co] = l_el;
+
+        for( unsigned int l_ro = 0; l_ro < i_subMatRows; l_ro++ ) {
+          // iterate over non-zeros
+          for( unsigned int l_nzId = 0; l_nzId < i_coord.nz.size(); l_nzId++ ) {
+            if( l_ro == i_coord.ro[l_nzId] && l_co == i_coord.co[l_nzId] ) {
+              o_csc.val[l_el] = i_coord.nz[l_nzId];
+              o_csc.rowIdx[l_el] = i_coord.ro[l_nzId];
+              l_el++;
+            }
+          }
+        }
+      }
+
+      // set number of non-zeros as last entry
+      o_csc.colPtr[i_subMatCols] = l_nnz;
+    }
+
+    /**
      * Converts a dense matrix in row-major format to compressed-sparse-row format.
      *
      * @param i_nRows number of rows.
@@ -683,20 +746,21 @@ class edge::linalg::Matrix {
      * @param i_subMatRows numeber of rows in the sub-matrix extracted.
      * @param i_subMatCols numeber of cols in the sub-matrix extracted.
      *
+     * @paramt TL_T_REAL floating point precision.
      **/
-    template <typename T>
-    static void denseToCsr(       unsigned int  i_nRows,
-                                  unsigned int  i_nCols,
-                            const T            *i_a,
-                                  t_matCsr     &o_csr,
-                                  T             i_tol = 0.000001,
-                                  unsigned int  i_subMatRows = std::numeric_limits< unsigned int >::max(),
-                                  unsigned int  i_subMatCols = std::numeric_limits< unsigned int >::max() ) {
+    template< typename TL_T_REAL >
+    static void denseToCsr( unsigned int        i_nRows,
+                            unsigned int        i_nCols,
+                            TL_T_REAL    const *i_a,
+                            t_matCsr           &o_csr,
+                            TL_T_REAL           i_tol = 0.000001,
+                            unsigned int        i_subMatRows = std::numeric_limits< unsigned int >::max(),
+                            unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max() ) {
       // temporary coord matrix
       t_matCrd l_tmpCrd;
 
       // convert to coordinate format
-      denseToCrd< T >( i_nRows, i_nCols, i_a, l_tmpCrd, i_tol );
+      denseToCrd< TL_T_REAL >( i_nRows, i_nCols, i_a, l_tmpCrd, i_tol );
 
       // adjust submatrix size if not defined
       unsigned int l_nRows = i_subMatRows;
@@ -706,6 +770,43 @@ class edge::linalg::Matrix {
 
       // do the conversion to csr
       crdToCsr( l_nRows, l_nCols, l_tmpCrd, o_csr );
+    }
+
+    /**
+     * Converts a dense matrix in row-major format to compressed-sparse-column format.
+     *
+     * @param i_nRows number of rows.
+     * @param i_nCols number of columns.
+     * @param i_a dense matrix in row-major storage which gets converted.
+     * @param o_csc will be set to result in csc-format.
+     * @param i_tol tolerance/delta which is considered to be zero for the matrix entries.
+     * @param i_subMatRows numeber of rows in the sub-matrix extracted.
+     * @param i_subMatCols numeber of cols in the sub-matrix extracted.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template <typename TL_T_REAL>
+    static void denseToCsc( unsigned int        i_nRows,
+                            unsigned int        i_nCols,
+                            TL_T_REAL    const *i_a,
+                            t_matCsc           &o_csc,
+                            TL_T_REAL           i_tol = 0.000001,
+                            unsigned int        i_subMatRows = std::numeric_limits< unsigned int >::max(),
+                            unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max() ) {
+      // temporary coord matrix
+      t_matCrd l_tmpCrd;
+
+      // convert to coordinate format
+      denseToCrd< TL_T_REAL >( i_nRows, i_nCols, i_a, l_tmpCrd, i_tol );
+
+      // adjust submatrix size if not defined
+      unsigned int l_nRows = i_subMatRows;
+      unsigned int l_nCols = i_subMatCols;
+      if( l_nRows == std::numeric_limits< unsigned int >::max() ) l_nRows = i_nRows;
+      if( l_nCols == std::numeric_limits< unsigned int >::max() ) l_nCols = i_nCols;
+
+      // do the conversion to csc
+      crdToCsc( l_nRows, l_nCols, l_tmpCrd, o_csc );
     }
 };
 

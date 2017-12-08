@@ -110,6 +110,54 @@ TEST_CASE( "Matrix: Tests the dense to compressed sparse row format conversion",
   REQUIRE( l_res.colIdx[3] == 0 );
 }
 
+TEST_CASE( "Matrix: Tests the dense to compressed sparse column format conversion", "[matrix][denseToCsc]") {
+  double l_mat[3][3];
+
+  for( unsigned short l_ro = 0; l_ro < 3; l_ro++ ) {
+    for( unsigned short l_co = 0; l_co < 3; l_co++ ) {
+      l_mat[l_ro][l_co] = 0;
+    }
+  }
+
+  t_matCsc l_res;
+
+  edge::linalg::Matrix::denseToCsc( 3, 3, l_mat[0], l_res );
+  REQUIRE( l_res.val.size()    == 0 );
+  REQUIRE( l_res.rowIdx.size() == 0 );
+  REQUIRE( l_res.colPtr.size() == 4 );
+
+
+  l_mat[0][0] = 1.0;
+  l_mat[0][2] = 2.0;
+  l_mat[1][2] = 3.0;
+  l_mat[2][0] = 4.0;
+  l_mat[2][1] = 5.0;
+  l_mat[2][2] = 6.0;
+  edge::linalg::Matrix::denseToCsc( 3, 3, l_mat[0], l_res );
+  REQUIRE( l_res.val.size()    == 6 );
+  REQUIRE( l_res.rowIdx.size() == 6 );
+  REQUIRE( l_res.colPtr.size() == 4 );
+
+  REQUIRE( l_res.val[0] == (real_base) 1.0 );
+  REQUIRE( l_res.val[1] == (real_base) 4.0 );
+  REQUIRE( l_res.val[2] == (real_base) 5.0 );
+  REQUIRE( l_res.val[3] == (real_base) 2.0 );
+  REQUIRE( l_res.val[4] == (real_base) 3.0 );
+  REQUIRE( l_res.val[5] == (real_base) 6.0 );
+
+  REQUIRE( l_res.colPtr[0] == 0 );
+  REQUIRE( l_res.colPtr[1] == 2 );
+  REQUIRE( l_res.colPtr[2] == 3 );
+  REQUIRE( l_res.colPtr[3] == 6 );
+
+  REQUIRE( l_res.rowIdx[0] == 0 );
+  REQUIRE( l_res.rowIdx[1] == 2 );
+  REQUIRE( l_res.rowIdx[2] == 2 );
+  REQUIRE( l_res.rowIdx[3] == 0 );
+  REQUIRE( l_res.rowIdx[4] == 1 );
+  REQUIRE( l_res.rowIdx[5] == 2 );
+}
+
 TEST_CASE( "Matrix: Derivation of non-zero blocks in matrices", "[matrix][getBlockNz]" ) {
   // dense test matrix
   real_base l_matDense[9][9];
