@@ -106,8 +106,8 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   }
 }
 
-void edge::io::WaveField::write( double   i_time,
-                                 bool   (*i_adm)[N_CRUNS] ) {
+void edge::io::WaveField::write( double         i_time,
+                                 unsigned int (*i_limSync)[N_CRUNS] ) {
   PP_INSTR_FUN("write_wf")
 
 //  if( m_type == netcdf ) writeNetcdf( i_time, i_dofs );
@@ -125,7 +125,7 @@ void edge::io::WaveField::write( double   i_time,
                  m_veChars,
                  m_elVe,
                  m_dofs,
-                 i_adm );
+                 i_limSync );
   }
 
   m_writeStep++;

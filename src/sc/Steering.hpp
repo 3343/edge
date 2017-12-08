@@ -142,6 +142,33 @@ class edge::sc::Steering {
       // reorder extrema
       for( unsigned short l_ex = 0; l_ex < 2; l_ex++ ) io_ext[l_ex] = l_ext[ l_extIds[l_ex] ];
     }
+
+    /**
+     * Resets the counter for the number of times the elements were limited.
+     *
+     * @param i_lpFirst first limited plus element.
+     * @param i_lpSize number of limited plus elements for which the counter is reset.
+     * @param i_lpLi limited elements associated with limited plus elements.
+     * @param o_limSync counters, defined on limited element, which will be reset.
+     **/
+    template< typename       TL_T_LID,
+              unsigned short TL_N_CRS >
+    static void resetLimSync( TL_T_LID             i_lpFirst,
+                              TL_T_LID             i_lpSize,
+                              TL_T_LID     const  *i_lpLi,
+                              unsigned int       (*o_limSync)[TL_N_CRS] ) {
+      // iterate over limited plus elements
+      for( TL_T_LID l_lp = i_lpFirst; l_lp < i_lpFirst+i_lpSize; l_lp++ ) {
+        // determine id of limited element
+        TL_T_LID l_li = i_lpLi[l_lp];
+
+        // reset counter for limited element
+        if( l_li != std::numeric_limits< TL_T_LID >::max() ) {
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+            o_limSync[l_li][l_cr] = 0;
+        }
+      }
+    }
 };
 
 #endif

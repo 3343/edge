@@ -207,6 +207,9 @@ struct edge::sc::t_SubCell {
 
   //! locks the solution in sub-cell space; if false, elements are projected to DG space after application of the limiter if the projection doesn't lead to oscillations (DMP)
   bool (*lock)[TL_N_CRS];
+
+  //! number of times the sub-cell solution was limited since synchronization
+  unsigned int (*limSync)[TL_N_CRS];
 };
 
 #endif

@@ -101,10 +101,10 @@ class edge::io::WaveField {
      * Writes the given dofs.
      *
      * @param i_time time of this snapshot
-     * @param i_adm optional admissibility information.
+     * @param i_limSync optional number of times the elements were limited since the last sync.
      **/
-    void write( double i_time,
-                bool (*i_adm)[N_CRUNS] = nullptr );
+    void write( double         i_time,
+                unsigned int (*i_limSync)[N_CRUNS] = nullptr );
 };
 
 #endif

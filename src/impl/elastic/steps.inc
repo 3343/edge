@@ -189,6 +189,15 @@ else if ( i_step == 2 ) {
 #endif
 }
 else if( i_step == 3 ) {
+  // reset counters in first step since sync
+  if( m_updatesSync != 0 ){}
+  else {
+    sc::Steering::resetLimSync( i_first,
+                                i_size,
+                                m_internal.m_globalShared2[0].connect.lpLi,
+                                m_internal.m_globalShared2[0].limSync );
+  }
+
   edge::sc::Limiter<
     T_SDISC.ELEMENT,
     ORDER,
@@ -210,6 +219,7 @@ else if( i_step == 3 ) {
                       m_internal.m_globalShared2[0].adm[ l_admId[1] ],
                       m_internal.m_globalShared2[0].adm[ l_admId[2] ],
                       m_internal.m_globalShared2[0].lock,
+                      m_internal.m_globalShared2[0].limSync,
                       m_internal.m_globalShared6,
                       m_internal.m_elementModePrivate1,
                       m_internal.m_globalShared2[0].surf,

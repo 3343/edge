@@ -144,7 +144,7 @@ class edge::sc::Limiter {
                           TL_T_REAL           io_dofsDg[   TL_N_QTS][TL_N_MDS][TL_N_CRS],
                           TL_T_MM      const &i_mm,
                           TL_T_SOLV_SC const &i_solvSc ) {
-      // determine if a rollback is required: a single fused sim of the limited element is not admissible
+      // determine if a rollback is required: a single fused sim of the adjacent limited element is not admissible
       bool l_rb = false;
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
         l_rb = l_rb || (i_admAdC[l_cr] == false );
@@ -191,7 +191,7 @@ class edge::sc::Limiter {
               l_fluxes[l_qt][l_sf][l_cr] /= TL_N_SCS;
 
               // DG solver scaled by inverse det of surface-jac (twice the area of the triangle)
-              if( TL_T_EL == TRIA3 ) l_fluxes[l_qt][l_sf][l_cr] *= 2;
+              if( TL_T_EL == TRIA3 ) l_fluxes[l_qt][l_sf][l_cr] *= 0.5;
             }
           }
         }
@@ -433,6 +433,7 @@ class edge::sc::Limiter {
                        bool                const                  (*i_admC)[TL_N_CRS],
                        bool                                       (*o_admL)[TL_N_CRS],
                        bool                const                  (*i_lock)[TL_N_CRS],
+                       unsigned int                               (*io_limSync)[TL_N_CRS],
                        TL_T_REAL           const (* const * const   i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
                        TL_T_REAL                                  (*io_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                        TL_T_REAL           const                  (*i_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
@@ -640,6 +641,9 @@ class edge::sc::Limiter {
 
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               if( i_admC[l_li][l_cr] == false ) {
+                // increase counter for number of limited solutions since synchronization
+                io_limSync[l_li][l_cr]++;
+
                 if( l_admL[l_cr] == false ) {
                   o_extL[l_li][0][0][l_cr] = l_extSc[0][0][l_cr];
                   o_extL[l_li][1][0][l_cr] = l_extSc[1][0][l_cr];

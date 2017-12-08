@@ -97,6 +97,11 @@ class edge::sc::Memory {
                   l_lockSize *= i_nLim * sizeof(bool);
       o_lim.lock = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_lockSize );
 
+      // #limits since sync
+      std::size_t l_limSyncSize  = TL_N_CRS;
+                  l_limSyncSize *= i_nLim * sizeof(unsigned int);
+      o_lim.limSync = (unsigned int (*) [TL_N_CRS]) io_dynMem.allocate( l_limSyncSize );
+
       // extrema of the DG / sub-cell solution
       std::size_t l_extSize  = 2 * (std::size_t) TL_N_QTS * TL_N_CRS;
                   l_extSize *= i_nExt * sizeof(TL_T_REAL);

@@ -45,8 +45,8 @@ class edge::io::Vtk {
     //! connectivity information of elements to vertices.
     int    *m_connElVe;
 
-    //! admissibility; TODO: stored as float since this is all our vtk-writer supports.
-    float *m_adm;
+    //! number of time an element was limited since the last sync; TODO: stored as float since this is all our vtk-writer supports.
+    float *m_limSync;
 
     //! 1st order dofs in single precision, storage is element as ld, then quantities, then cruns (slowest dim).
     float  *m_dofs;
@@ -104,7 +104,7 @@ class edge::io::Vtk {
      * @param i_veChars vertex characteristics.
      * @param i_elVe ids of the elements' adjacent vertices.
      * @param i_dofs DOFs.
-     * @param i_adm admissibility of the DG solution.
+     * @param i_limSync optitional number of times the elements were limited.
      **/
     void write( const std::string           &i_outFile,
                       bool                   i_binary,
@@ -114,7 +114,7 @@ class edge::io::Vtk {
                 const t_vertexChars         *i_veChars,
                 const int_el               (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
                 const real_base            (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                const bool                 (*i_adm)[N_CRUNS]=nullptr );
+                const unsigned int         (*i_limSync)[N_CRUNS]=nullptr );
 };
 
 #endif

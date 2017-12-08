@@ -32,7 +32,7 @@ void edge::io::Vtk::init(       int_el                 i_nVe,
   // allocate buffers for output matching the format of the visit_writer
   m_coordsVe       = (float*)  data::common::allocate( sizeof(float)  * i_nVe * 3                                            );
   m_connElVe       = (int*)    data::common::allocate( sizeof(int)    * i_elPrint.size() * C_ENT[T_SDISC.ELEMENT].N_VERTICES );
-  m_adm            = (float*)  data::common::allocate( sizeof(float)  * i_elPrint.size() * N_QUANTITIES     * N_CRUNS        );
+  m_limSync        = (float*)  data::common::allocate( sizeof(float)  * i_elPrint.size() * N_QUANTITIES     * N_CRUNS        );
   m_dofs           = (float*)  data::common::allocate( sizeof(float)  * i_elPrint.size() * N_QUANTITIES     * N_CRUNS        );
   m_ptrs           = (float**) data::common::allocate( sizeof(float*)                    * (N_QUANTITIES+1) * N_CRUNS        );
 
@@ -55,10 +55,10 @@ void edge::io::Vtk::init(       int_el                 i_nVe,
       m_ptrs[l_run*N_QUANTITIES+l_q]    = m_dofs+(i_elPrint.size()*(N_QUANTITIES*l_run + l_q));
     }
 
-    // admissiblity
+    // counter for the limiter
     m_varNames[  N_CRUNS*N_QUANTITIES + l_run ] =   "crun_" + std::to_string( (unsigned long long) l_run ) + "_lim";
     m_varNamesC[ N_CRUNS*N_QUANTITIES + l_run ] = m_varNames[N_CRUNS*N_QUANTITIES + l_run].c_str();
-    m_ptrs[      N_CRUNS*N_QUANTITIES + l_run ] = m_adm+(i_elPrint.size()*l_run);
+    m_ptrs[      N_CRUNS*N_QUANTITIES + l_run ] = m_limSync+(i_elPrint.size()*l_run);
   }
 
   // setup vertices coords
@@ -81,7 +81,7 @@ edge::io::Vtk::~Vtk() {
   if( m_initialized ) {
      data::common::release( m_coordsVe );
      data::common::release( m_connElVe );
-     data::common::release( m_adm      );
+     data::common::release( m_limSync  );
      data::common::release( m_dofs     );
      data::common::release( m_ptrs     );
   }
@@ -95,7 +95,7 @@ void edge::io::Vtk::write( const std::string           &i_outFile,
                            const t_vertexChars         *i_veChars,
                            const int_el               (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
                            const real_base            (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                           const bool                 (*i_adm)[N_CRUNS] ) {
+                           const unsigned int         (*i_limSync)[N_CRUNS] ) {
   // do the init if not already accomplished
   if( !m_initialized ) {
     init( i_nVe,
@@ -117,15 +117,15 @@ void edge::io::Vtk::write( const std::string           &i_outFile,
   }
 
   // assemble admissibility info if available
-  if( i_adm != nullptr ) {
+  if( i_limSync != nullptr ) {
     for( int_el l_el = 0; l_el < (int_el) i_elPrint.size(); l_el++ ) {
       int_el l_le = i_lePrint[l_el];
 
       for( unsigned short l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
         if( l_le == std::numeric_limits< int_el >::max() )
-          m_adm[i_elPrint.size()*l_ru + l_el] = -1;
+          m_limSync[i_elPrint.size()*l_ru + l_el] = -1;
         else
-          m_adm[i_elPrint.size()*l_ru + l_el] = (i_adm[l_le][l_ru]==false);
+          m_limSync[i_elPrint.size()*l_ru + l_el] = i_limSync[l_le][l_ru];
       }
     }
   }
@@ -135,7 +135,7 @@ void edge::io::Vtk::write( const std::string           &i_outFile,
                                 i_binary,
                                 i_nVe,
                                 m_coordsVe,
-                                N_CRUNS*N_QUANTITIES + (i_adm!=nullptr),
+                                N_CRUNS*N_QUANTITIES + (i_limSync!=nullptr),
                                 i_elPrint.size(),
                                 m_visitElType,
                                 m_connElVe,

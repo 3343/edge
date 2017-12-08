@@ -242,7 +242,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   // write setup
   EDGE_LOG_INFO << "reached synchronization point #0: " << l_simTime;
   l_writer.write( 0,
-                  l_internal.m_globalShared2[0].adm[0] );
+                  l_internal.m_globalShared2[0].limSync );
 
   // print mem stats
   edge::data::common::printMemStats();
@@ -275,7 +275,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
 
     // write this sync step
     l_writer.write( l_stepTime,
-                    l_internal.m_globalShared2[0].adm[0] );
+                    l_internal.m_globalShared2[0].limSync );
   }
 
   // print time info for compute
