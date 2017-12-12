@@ -316,7 +316,7 @@ class edge::elastic::solvers::AderDg {
 
       // iterate over elements
 #ifdef PP_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads( std::max( parallel::g_nThreads-1, 1 ) )
 #endif
       for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
         // derive jacobians of the pdes

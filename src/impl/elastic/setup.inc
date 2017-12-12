@@ -96,7 +96,7 @@ else {
 
 // perform NUMA-aware zero-init of DOFs and tDOFs
 #ifdef PP_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads( std::max( edge::parallel::g_nThreads-1, 1 ) )
 #endif
 for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
   for( int_qt l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {

@@ -352,7 +352,7 @@ class edge::elastic::solvers::common {
 
       // iterate over elements and reset flux solvers (wrong configs should at least blow up our simulation)
 #ifdef PP_USE_OMP
-#pragma omp parallel for
+#pragma omp parallel for num_threads( std::max( parallel::g_nThreads-1, 1 ) )
 #endif
       for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
         for( int_md l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fa++ ) {
