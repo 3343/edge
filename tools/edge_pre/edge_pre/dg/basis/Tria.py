@@ -37,8 +37,8 @@ def gen( i_deg ):
   l_xi1 = sympy.symbols('xi_1') # first triangular coords
   l_xi2 = sympy.symbols('xi_2') # second triangular coord
 
-  l_eta1 = sympy.symbols('l_eta_1') # first collapsed coord
-  l_eta2 = sympy.symbols('l_eta_2') # scond collapsed coord
+  l_eta1 = sympy.symbols('eta_1') # first collapsed coord
+  l_eta2 = sympy.symbols('eta_2') # scond collapsed coord
 
   # basis
   l_basis = []
@@ -65,7 +65,7 @@ def gen( i_deg ):
           # simplify the basis
           l_basis[-1] = sympy.simplify( l_basis[-1] )
 
-          # cancel nominators
+          # cancel denominators
           l_basis[-1] = sympy.cancel( l_basis[-1] )
 
   return [l_xi1, l_xi2], l_basis

@@ -25,7 +25,7 @@ from . import Tet
 import sympy
 from fractions import Fraction as Fra
 
-class TestTria( unittest.TestCase ):
+class TestTet( unittest.TestCase ):
   ##
   # Tests generation of basis functions.
   ##

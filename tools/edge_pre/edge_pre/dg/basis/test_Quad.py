@@ -25,7 +25,7 @@ from . import Quad
 import sympy
 from fractions import Fraction as Fra
 
-class TestLine( unittest.TestCase ):
+class TestQuad( unittest.TestCase ):
   ##
   # Tests generation of basis functions.
   ##
@@ -43,7 +43,7 @@ class TestLine( unittest.TestCase ):
 
     l_syms, l_basis = Quad.gen( 2 )
     self.assertEqual( l_syms,  [ l_xi1, l_xi2 ] )
-    self.assertEqual( l_basis, [ 1,
+    self.assertEqual( l_basis, [ sympy.sympify(1),
                                  2*l_xi1-1,
                                  Fra(3,2)*(2*l_xi1-1)**2 - Fra(1,2),
                                  2*l_xi2-1,

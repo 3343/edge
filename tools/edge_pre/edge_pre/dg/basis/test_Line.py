@@ -38,15 +38,15 @@ class TestLine( unittest.TestCase ):
 
     l_syms, l_basis = Line.gen( 1 )
     self.assertEqual( l_syms,  [ l_xi ] )
-    self.assertEqual( l_basis, [ 1, 2*l_xi-1 ] )
+    self.assertEqual( l_basis, [ sympy.sympify(1), 2*l_xi-1 ] )
 
     l_syms, l_basis = Line.gen( 2 )
     self.assertEqual( l_syms,  [ l_xi ] )
-    self.assertEqual( l_basis, [ 1, 2*l_xi-1, Fra(3,2) * (2*l_xi -1)**2 - Fra(1,2) ] )
+    self.assertEqual( l_basis, [ sympy.sympify(1), 2*l_xi-1, Fra(3,2) * (2*l_xi -1)**2 - Fra(1,2) ] )
 
     l_syms, l_basis = Line.gen( 3 )
     self.assertEqual( l_syms,  [ l_xi ] )
-    self.assertEqual( l_basis, [ 1,
+    self.assertEqual( l_basis, [ sympy.sympify(1),
                                  2*l_xi-1,
                                  Fra(3,2) * (2*l_xi -1)**2 - Fra(1,2),
                                  -3*l_xi + Fra(5,2) * (2*l_xi -1)**3 + Fra(3,2) ] )

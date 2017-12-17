@@ -25,7 +25,7 @@ from . import Tria
 import sympy
 from fractions import Fraction as Fra
 
-class TestLine( unittest.TestCase ):
+class TestTria( unittest.TestCase ):
   ##
   # Tests generation of basis functions.
   ##
@@ -35,7 +35,7 @@ class TestLine( unittest.TestCase ):
 
 
     # P4, hierarchical storage
-    l_basisUt = [ 1,
+    l_basisUt = [ sympy.sympify(1),
                   3*l_xi2 - 1,
                   2*l_xi1 + l_xi2 - 1,
                   10*l_xi2**2 - 8*l_xi2 + 1,
