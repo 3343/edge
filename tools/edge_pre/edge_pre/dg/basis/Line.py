@@ -57,3 +57,4 @@ def plot( i_out, i_syms, i_funs ):
   assert( len(i_syms) == 1 )
   l_plot = sympy.plot( *i_funs, (i_syms[0], 0, 1) )
   l_plot.save( i_out )
+  matplotlib.pyplot.close()
