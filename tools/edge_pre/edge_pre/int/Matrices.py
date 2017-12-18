@@ -101,28 +101,85 @@ def mass( i_ints,
   return l_mass
 
 ##
+# Computes the stiffness matrices.
+#
+# @param i_syms symbols, used for the derivative computation.
+# @param i_basis element basis.
+# @param i_int integration intervals for the element.
+#
+# @return stiffness matrices, one per given symbol.
+##
+def stiff( i_syms,
+           i_basis,
+           i_int ):
+  l_stiff = []
+
+  for l_sy in i_syms:
+    # derivative computation
+    l_der = lambda bf: sympy.diff( bf, l_sy)
+
+    # integration
+    l_int = lambda bf: sympy.integrate( bf, *i_int )
+
+    l_stiff = l_stiff + [[]]
+    l_stiff[-1] = sympy.Matrix.transpose( sympy.Matrix( i_basis ) )
+    l_stiff[-1] = l_stiff[-1].applyfunc( l_der )
+    l_stiff[-1] = sympy.Matrix( i_basis ) * l_stiff[-1]
+    l_stiff[-1] = l_stiff[-1].applyfunc( l_int )
+
+  # return stiffness matrices
+  return l_stiff
+
+##
 # Computes the flux matrices.
+#   Remkark: For line elements standard flux matrices are written to the projections.
+#
 #
 # @param i_basisFa face basis.
-# @param i_basisVo volume basis.
+# @param i_basisEl element basis.
+# @param i_symsFa symbols for the faces.
+# @param i_symsEl symbols for the element. If only one, special handling for line elements is triggered.
 # @param i_intFa integration intervals for the faces.
 # @param i_faToFa mapping of face coordinates to adjacent element in dependency of the vertex orientation.
-# @param i_faToVol mapping from face-coordinate to volune coordinates in dependency of the face.
+# @param i_faToEl mapping from face-coordinate to volune coordinates in dependency of the face.
 #
-# @return three lists, 1) matrices for the projection to/from face-basis, 2) face mass-matrix, 3) matrices for neighboring face-orientation and mirroring
+# @return three lists, 1) matrices for the projection to/from face-basis, 2) face mass-matrix, 3) matrices for neighboring face-orientation and mirroring.
 ##
 def flux( i_basisFa,
-          i_basisVo,
+          i_basisEl,
           i_symsFa,
-          i_symsVo,
+          i_symsEl,
           i_intFa,
           i_faToFa,
-          i_faToVol ):
+          i_faToEl ):
+  # special handling for line elements (nothing to reduce)
+  if( len(i_symsEl) == 1 ):
+    assert( i_basisFa     == None )
+    assert( i_symsFa      == None )
+    assert( i_intFa       == None )
+    assert( len(i_faToEl) == 2    )
+    assert( i_faToFa      == None )
+
+    # evaluation of basis function ats
+    l_eval = [[],[]]
+    for l_sd in range(2):
+      for l_ba in i_basisEl:
+        l_eval[l_sd] = l_eval[l_sd] + [l_ba.subs(i_symsEl[0], i_faToEl[l_sd][0])]
+      # convert to sympy matrix
+      l_eval[l_sd] = sympy.Matrix( l_eval[l_sd] )
+
+    # pseudo face mass matrix and orientations
+    l_massFa  = sympy.eye( 1 )
+    l_ori     = [sympy.eye( 1 )]
+
+    # return this as only result
+    return l_eval, l_massFa, l_ori
+
   # derive number of vertices
   l_nVes = len(i_faToFa)
 
   # derive number of faces
-  l_nFas = len(i_faToVol)
+  l_nFas = len(i_faToEl)
 
   # assemble integrands for projection
   l_proj = []
@@ -130,14 +187,14 @@ def flux( i_basisFa,
     # add new matrix
     l_proj = l_proj + [[]]
 
-    for l_ro in i_basisVo:
+    for l_ro in i_basisEl:
       # add a new row
       l_proj[-1] = l_proj[-1] + [[]]
 
       l_in = l_ro
       # replace symbols
-      for l_sy in range( len(i_symsVo) ):
-        l_in = l_in.subs( i_symsVo[l_sy], i_faToVol[l_fa][l_sy] )
+      for l_sy in range( len(i_symsEl) ):
+        l_in = l_in.subs( i_symsEl[l_sy], i_faToEl[l_fa][l_sy] )
 
       for l_co in i_basisFa:
         # add entry
