@@ -57,3 +57,31 @@ class Tria:
   def intEl( self, i_sym ):
     return( [ (i_sym[0], self.ves[0][0], 1-i_sym[1]        ),
               (i_sym[1], self.ves[0][1], self.ves[2][1]) ] )
+
+  ##
+  # Determines the local face coordinates of adjacent elements.
+  #
+  # @param i_symsFa symbols used for the face parametrization.
+  # @return list containing one tuple with the new coordinates per face vertex orientation.
+  ##
+  def faToFa( self, i_symsFa ):
+    assert( len(i_symsFa) == 1 )
+
+    l_chi = i_symsFa[0]
+
+    return [ (1-l_chi,) ]
+
+  ##
+  # Determines the element coordinates based on the faces coordinates.
+  #
+  # @param i_symsFa symbols used for the face parametrization.
+  # @return list containing one tuple with the element coordinates per face.
+  ##
+  def faToEl( self, i_symsFa ):
+    assert( len(i_symsFa) == 1 )
+
+    l_chi = i_symsFa[0]
+
+    return [ (l_chi,   0       ),
+             (1-l_chi, l_chi   ),
+             (0,       1-l_chi ) ]
