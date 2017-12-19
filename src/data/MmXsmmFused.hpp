@@ -85,21 +85,10 @@ class edge::data::MmXsmmFused< float > {
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                    << " alpha=" << i_alpha << " beta=" << i_beta;
  
-      // check precision
-#if (PP_PRECISION == 32) and defined(__AVX512F__)
-      EDGE_CHECK( sizeof(T)== 4 );
+#if defined(__AVX512F__)
       EDGE_CHECK( PP_N_CRUNS == 16 );
-#elif (PP_PRECISION == 32) and defined(__AVX2__)
-      EDGE_CHECK( sizeof(T)== 4 );
+#elif defined(__AVX2__)
       EDGE_CHECK( PP_N_CRUNS == 8 );
-#elif (PP_PRECISION == 64) and defined(__AVX512F__)
-      EDGE_CHECK( sizeof(T)== 8 );
-      EDGE_CHECK( PP_N_CRUNS == 8  );
-#elif (PP_PRECISION == 64) and defined(__AVX2__)
-      EDGE_CHECK( sizeof(T)== 8 );
-      EDGE_CHECK( PP_N_CRUNS == 4  );
-#else
-#error precision not supported.
 #endif
 
       // add description
@@ -165,16 +154,10 @@ class edge::data::MmXsmmFused< double > {
                    << " alpha=" << i_alpha << " beta=" << i_beta;
 
       // check fused runs
-      EDGE_CHECK( PP_N_CRUNS == 1 );
-
-      // check precision
-#if PP_PRECISION == 32
-      EDGE_CHECK( sizeof(T)== 4 );
-
-#elif PP_PRECISION == 64
-      EDGE_CHECK( sizeof(T)== 8 );
-#else
-#error precision not supported.
+#if defined(__AVX512F__)
+      EDGE_CHECK( PP_N_CRUNS == 8 );
+#elif defined(__AVX2__)
+      EDGE_CHECK( PP_N_CRUNS == 4 );
 #endif
 
       // add description

@@ -409,17 +409,17 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline neigh( TL_T_REAL                       const   i_fInt[TL_N_MDS][TL_N_MDS],
-                              TL_T_REAL                       const   i_fSol[TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              data::MmXsmmSingle< TL_T_REAL > const & i_mm,
+    static void inline neigh( TL_T_REAL                      const  * i_fInt,
+                              TL_T_REAL                      const    i_fSol[TL_N_QTS][TL_N_QTS],
+                              TL_T_REAL                      const    i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              data::MmXsmmFused< TL_T_REAL > const  & i_mm,
                               TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                               TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                       const   i_pre[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                      const    i_pre[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                               unsigned short                          i_fId ) {
       // multiply with flux matrix
-      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1) + l_fId]( i_tDofs[0][0],
-                                                    i_fInt[0],
+      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1) + i_fId]( i_tDofs[0][0],
+                                                    i_fInt,
                                                     o_scratch[0][0] );
 
       // // multiply with flux solver

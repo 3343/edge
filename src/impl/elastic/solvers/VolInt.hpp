@@ -159,7 +159,6 @@ class edge::elastic::solvers::VolInt {
                                                        io_dofs[0][0] );
       }
     }
-}
 #endif
 
 
