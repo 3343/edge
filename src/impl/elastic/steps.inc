@@ -52,13 +52,8 @@ if( i_step == 0 ) {
                                          m_internal.m_elementModePrivate1,
                                          m_internal.m_elementModePrivate2,
                                          m_internal.m_elementSparseShared3[0],
-                                         io_recvs
-#ifdef PP_T_KERNELS_XSMM
-                                       ,&m_internal.m_xsmm.m_kernels[0]
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-                                       ,&m_internal.m_xsmm.m_kernels[0]
-#endif
-                                       );
+                                         io_recvs,
+                                         m_internal.m_mm );
 #endif
 }
 else if( i_step == 1 ) {
@@ -93,13 +88,8 @@ else if( i_step == 1 ) {
                                          m_internal.m_connect.vIdElFaEl,
                                          m_internal.m_elementModePrivate2,
                                          m_internal.m_faceSparseShared4,
-                                         m_internal.m_elementModePrivate1
-#ifdef PP_T_KERNELS_XSMM
-                                       ,&m_internal.m_xsmm.m_kernels[ORDER*(N_DIM+1)]
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-                                       ,&m_internal.m_xsmm.m_kernels[0]
-#endif
-                                       );
+                                         m_internal.m_elementModePrivate1,
+                                         m_internal.m_mm );
 #endif
 }
 else if ( i_step == 2 ) {

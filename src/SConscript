@@ -33,7 +33,7 @@ l_kernels = [ 'time/TimeGroupStatic.cpp' ]
 
 l_sources = [ 'data/Dynamic.cpp',
               'data/EntityLayout.cpp',
-              'data/Expression.cpp',
+#              'data/Expression.cpp',
               'mesh/Regular.cpp',
               'dg/Basis.cpp',
               'io/OptionParser.cpp',
