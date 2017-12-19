@@ -131,6 +131,150 @@ class edge::elastic::common {
     }
 
     /**
+     * Gets the Jacobians of the elastic wave equations in 2 dimensions.
+     *
+     * @param i_rho density rho.
+     * @param i_lam Lame parameter lambda.
+     * @param i_mu Lame parameter mu.
+     * @param o_A will be set to Jacobians.
+     **/
+    template <typename T>
+    static void getJac2D( T i_rho, T i_lam, T i_mu,
+                          T o_A[2][5][5] ) {
+      // reset to zero
+      for( unsigned short l_di = 0; l_di < 2; l_di++ ) {
+        for( int_qt l_q1 = 0; l_q1 < 5; l_q1++ ) {
+          for( int_qt l_q2 = 0; l_q2 < 5; l_q2++ ) {
+            o_A[l_di][l_q1][l_q2] = 0;
+          }
+        }
+      }
+
+     /*
+      * Jacobians in q_t = A(x,y) * q_x + B(x,y) * q_y
+      *
+      * A:
+      *    _____0__1_______2_______________3____4
+      *  0|     0, 0,      0, -lambda - 2*mu,   0|0
+      *  1|     0, 0,      0,        -lambda,   0|1
+      *  2|     0, 0,      0,              0, -mu|2
+      *  3|-1/rho, 0,      0,              0,   0|3
+      *  4|     0, 0, -1/rho,              0,   0|4
+      *    -----0--1-------2---------------3----4
+      *
+      * B:
+      *    0_______1_______2____3_______________4
+      *  0|0,      0,      0,   0,        -lambda|0
+      *  1|0,      0,      0,   0, -lambda - 2*mu|1
+      *  2|0,      0,      0, -mu,              0|2
+      *  3|0,      0, -1/rho,   0,              0|3
+      *  4|0, -1/rho,      0,   0,              0|4
+      *    0-------1-------2----3---------------4
+      */
+      o_A[0][0][3] = -i_lam - T(2) * i_mu;
+      o_A[0][1][3] = -i_lam;
+      o_A[0][2][4] = -i_mu;
+      o_A[0][3][0] = -T(1) / i_rho;
+      o_A[0][4][2] = -T(1) / i_rho;
+
+      o_A[1][0][4] = -i_lam;
+      o_A[1][1][4] = -i_lam - T(2) * i_mu;
+      o_A[1][2][3] = -i_mu;
+      o_A[1][3][2] = -T(1) / i_rho;
+      o_A[1][4][1] = -T(1) / i_rho;
+    }
+
+    /**
+     * Gets the Jacobians of the elastic wave equations in 3 dimensions.
+     *
+     * @param i_rho density rho.
+     * @param i_lam Lame parameter lambda.
+     * @param i_mu Lame parameter mu.
+     * @param o_A will be set to Jacobians.
+     **/
+    template <typename T>
+    static void getJac3D( T i_rho, T i_lam, T i_mu,
+                          T o_A[3][9][9] ) {
+      // reset to zero
+      for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+        for( int_qt l_q1 = 0; l_q1 < 9; l_q1++ ) {
+          for( int_qt l_q2 = 0; l_q2 < 9; l_q2++ ) {
+            o_A[l_di][l_q1][l_q2] = 0;
+          }
+        }
+      }
+
+      /*
+       * Jacobians in q_t = A(x,y,z) * q_x + B(x,y,z) * q_y + C(x,y,z) * q_z
+       *
+       * A:
+       *   _____0__1__2_______3__4_______5_______________6____7____8
+       * 0|     0, 0, 0,      0  0,      0, -lambda - 2*mu,   0,   0|0
+       * 1|     0, 0, 0,      0, 0,      0,        -lambda,   0,   0|1
+       * 2|     0, 0, 0,      0, 0,      0,        -lambda,   0,   0|2
+       * 3|     0, 0, 0,      0, 0,      0,              0, -mu,   0|3
+       * 4|     0, 0, 0,      0, 0,      0,              0,   0,   0|4
+       * 5|     0, 0, 0,      0, 0,      0,              0,   0, -mu|5
+       * 6|-1/rho, 0, 0,      0, 0,      0,              0,   0,   0|6
+       * 7|     0, 0, 0, -1/rho, 0,      0,              0,   0,   0|7
+       * 8|     0, 0, 0,      0, 0, -1/rho,              0,   0,   0|8
+       *   -----0--1--2-------3--4-------5---------------6----7----8
+       *
+       * B:
+       *   0_______1__2_______3_______4__5____6_________________7______8
+       * 0|0,      0, 0,      0       0, 0,   0,          -lambda,     0|0
+       * 1|0,      0, 0,      0,      0, 0,   0,   -lambda - 2*mu,     0|1
+       * 2|0,      0, 0,      0,      0, 0,   0,          -lambda,     0|2
+       * 3|0,      0, 0,      0,      0, 0, -mu,                0,     0|3
+       * 4|0,      0, 0,      0,      0, 0,   0,                0,   -mu|4
+       * 5|0,      0, 0,      0,      0, 0,   0,                0,     0|5
+       * 6|0,      0, 0, -1/rho,      0, 0,   0,                0,     0|6
+       * 7|0, -1/rho, 0,      0,      0, 0,   0,                0,     0|7
+       * 8|0,      0, 0,      0, -1/rho, 0,   0,                0,     0|8
+       *   0-------1--2-------3-------4--5---------------6------7------8
+       *
+       * C:
+       *   0__1_______2__3_______4_______5____6____7_______________8
+       * 0|0, 0,      0, 0       0,      0,   0,   0,        -lambda|0
+       * 1|0, 0,      0, 0,      0,      0,   0,   0,        -lambda|1
+       * 2|0, 0,      0, 0,      0,      0,   0,   0, -lambda - 2*mu|2
+       * 3|0, 0,      0, 0,      0,      0,   0,   0,              0|3
+       * 4|0, 0,      0, 0,      0,      0,   0, -mu,              0|4
+       * 5|0, 0,      0, 0,      0,      0, -mu,   0,              0|5
+       * 6|0, 0,      0, 0,      0, -1/rho,   0,   0,              0|6
+       * 7|0, 0,      0, 0, -1/rho,      0,   0,   0,              0|7
+       * 8|0, 0, -1/rho, 0,      0,      0,   0,   0,              0|8
+       *   0--1-------2--3-------4-------5----6----7---------------8
+       */
+      o_A[0][0][6] = -i_lam - T(2) * i_mu;
+      o_A[0][1][6] = -i_lam;
+      o_A[0][2][6] = -i_lam;
+      o_A[0][3][7] = -i_mu;
+      o_A[0][5][8] = -i_mu;
+      o_A[0][6][0] = -T(1) / i_rho;
+      o_A[0][7][3] = -T(1) / i_rho;
+      o_A[0][8][5] = -T(1) / i_rho;
+
+      o_A[1][0][7] = -i_lam;
+      o_A[1][1][7] = -i_lam - T(2) * i_mu;
+      o_A[1][2][7] = -i_lam;
+      o_A[1][3][6] = -i_mu;
+      o_A[1][4][8] = -i_mu;
+      o_A[1][6][3] = -T(1) / i_rho;
+      o_A[1][7][1] = -T(1) / i_rho;
+      o_A[1][8][4] = -T(1) / i_rho;
+
+      o_A[2][0][8] = -i_lam;
+      o_A[2][1][8] = -i_lam;
+      o_A[2][2][8] = -i_lam - T(2) * i_mu;
+      o_A[2][4][7] = -i_mu;
+      o_A[2][5][6] = -i_mu;
+      o_A[2][6][5] = -T(1) / i_rho;
+      o_A[2][7][4] = -T(1) / i_rho;
+      o_A[2][8][2] = -T(1) / i_rho;
+    }
+
+    /**
      * Sets up the 3D transformation of quantities, from a local, face-aligned coordinate system to physical xyz-coords.
      * Remark: n is face's the normal, s and t the two tangents in xyz. All of which have length one.
      *

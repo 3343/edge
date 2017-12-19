@@ -49,6 +49,9 @@ void edge::time::TimeGroupStatic::setUp( double i_dTfun,
   // set general time step
   m_dTgen = i_dTfun * m_funMult;
 
+  // reset number of updates since sync
+  m_updatesSync = 0;
+
   // derive number of required updates
   m_updatesReq  = i_time / m_dTgen;
   m_updatesReq += 1;
@@ -67,8 +70,9 @@ void edge::time::TimeGroupStatic::setDt() {
 
 void edge::time::TimeGroupStatic::updateTsInfo() {
   // update counters
-  m_updatesPer += 1;
-  m_updatesReq -= 1;
+  m_updatesSync++;
+  m_updatesPer++;
+  m_updatesReq--;
 
   m_covSimTime += m_dT;
 
@@ -93,4 +97,12 @@ void edge::time::TimeGroupStatic::computeStep( unsigned short                   
 #else
 #error "steps not defined"
 #endif
+}
+
+void edge::time::TimeGroupStatic::limSync() {
+  sc::Steering::resetAdm( m_updatesSync,
+                          m_internal.m_globalShared2[0].adm );
+
+  sc::Steering::resetExt( m_updatesSync,
+                          m_internal.m_globalShared2[0].ext );
 }

@@ -20,6 +20,17 @@
  * @section DESCRIPTION
  * Invidual steps of a time group update for the elastic wave equations.
  **/
+
+// get admissibility ids
+unsigned short l_admId[3];
+edge::sc::Steering::getAdmIds( m_updatesSync,
+                               l_admId );
+
+// get extrema ids
+unsigned short l_extIds[2];
+edge::sc::Steering::getExtIds( m_updatesSync,
+                               l_extIds );
+
 if( i_step == 0 ) {
 #if PP_ORDER == 1
   EDGE_CHECK_NE( i_enSp, nullptr );
@@ -37,23 +48,34 @@ if( i_step == 0 ) {
                                                   io_recvs );
 #else
   // ADER-DG local
-  edge::elastic::solvers::AderDg::local( i_first,
-                                         i_size,
-                                         m_covSimTime,
-                                         m_dT,
-                                         i_enSp[2].first,
-                                         i_enSp[0].first,
-                                         m_internal.m_connect.elFa,
-                                         m_internal.m_faceChars,
-                                         m_internal.m_elementChars,
-                                         m_internal.m_globalShared1[0],
-                                         m_internal.m_elementShared4,
-                                         m_internal.m_elementShared2,
-                                         m_internal.m_elementModePrivate1,
-                                         m_internal.m_elementModePrivate2,
-                                         m_internal.m_elementSparseShared3[0],
-                                         io_recvs,
-                                         m_internal.m_mm );
+  edge::elastic::solvers::AderDg<
+    T_SDISC.ELEMENT,
+    N_QUANTITIES,
+    ORDER,
+    ORDER,
+    N_CRUNS
+  >::local( i_first,
+            i_size,
+            m_covSimTime,
+            m_dT,
+            i_enSp[2].first,
+            i_enSp[0].first,
+            m_internal.m_globalShared2[0].connect.faSfSc,
+            m_internal.m_connect.elFa,
+            m_internal.m_faceChars,
+            m_internal.m_elementChars,
+            m_internal.m_globalShared1[0],
+            m_internal.m_elementShared4,
+            m_internal.m_elementShared2,
+            m_internal.m_elementModePrivate1,
+            m_internal.m_globalShared2[0].dofs,
+            m_internal.m_globalShared6,
+            m_internal.m_globalShared2[0].surf,
+            m_internal.m_globalShared2[0].adm[ l_admId[0] ],
+            m_internal.m_globalShared2[0].adm[ l_admId[1] ],
+            m_internal.m_globalShared2[0].lock,
+            io_recvs,
+            m_internal.m_mm );
 #endif
 }
 else if( i_step == 1 ) {
@@ -64,8 +86,8 @@ else if( i_step == 1 ) {
                                                 i_enSp[0].first,
                                                 m_internal.m_connect.elFaEl,
                                                 m_internal.m_connect.elFa,
-                                                m_internal.m_faceSparseShared3,
-                                                m_internal.m_elementSparseShared2[0],
+                                                m_internal.m_globalShared7[0].connect.bfBe,
+                                                m_internal.m_globalShared7[0].connect.beBf,
                                                 m_internal.m_faceChars,
                                                 m_internal.m_elementShared2,
                                                 m_internal.m_elementShared3,
@@ -74,22 +96,35 @@ else if( i_step == 1 ) {
                                                 m_internal.m_elementModePrivate1 );
 #else
   // ADER-DG: neigh contrib
-  edge::elastic::solvers::AderDg::neigh( i_first,
-                                         i_size,
-                                         i_enSp[0].first,
-                                         m_internal.m_globalShared1[0],
-                                         m_internal.m_faceChars,
-                                         m_internal.m_elementShared3,
-                                         m_internal.m_connect.elFa,
-                                         m_internal.m_connect.elFaEl,
-                                         m_internal.m_faceSparseShared3,
-                                         m_internal.m_elementSparseShared2[0],
-                                         m_internal.m_connect.fIdElFaEl,
-                                         m_internal.m_connect.vIdElFaEl,
-                                         m_internal.m_elementModePrivate2,
-                                         m_internal.m_faceSparseShared4,
-                                         m_internal.m_elementModePrivate1,
-                                         m_internal.m_mm );
+  edge::elastic::solvers::AderDg<
+    T_SDISC.ELEMENT,
+    N_QUANTITIES,
+    ORDER,
+    ORDER,
+    N_CRUNS
+  >::neigh( i_first,
+            i_size,
+            i_enSp[0].first,
+            i_enSp[1].first,
+            m_internal.m_globalShared1[0],
+            m_internal.m_globalShared2[0].ops.scatter,
+            m_internal.m_faceChars,
+            m_internal.m_elementChars,
+            m_internal.m_elementShared3,
+            m_internal.m_globalShared2[0].connect.liVeEx,
+            m_internal.m_connect.elFa,
+            m_internal.m_connect.elFaEl,
+            m_internal.m_globalShared7[0].connect.bfBe,
+            m_internal.m_globalShared7[0].connect.beBf,
+            m_internal.m_connect.fIdElFaEl,
+            m_internal.m_connect.vIdElFaEl,
+            m_internal.m_globalShared6,
+            m_internal.m_elementModePrivate1,
+            m_internal.m_globalShared2[0].adm[ l_admId[1] ],
+            m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
+            m_internal.m_globalShared2[0].ext[ l_extIds[1] ],
+            m_internal.m_mm
+          );
 #endif
 }
 else if ( i_step == 2 ) {
@@ -114,40 +149,74 @@ else if ( i_step == 2 ) {
                                                  i_enSp[0].first,
                                                  m_covSimTime,
                                                  m_dT,
-                                                 m_internal.m_faceSparseShared3,
-                                                 m_internal.m_faceSparseShared6[0],
-                                                 m_internal.m_globalShared2[0],
+                                                 m_internal.m_globalShared7[0].connect.bfBe,
+                                                 m_internal.m_globalShared7[0].bfChars,
+                                                 m_internal.m_globalShared5[0],
                                                  m_internal.m_faceSparseShared1[0],
                                                  m_internal.m_faceSparseShared2[0],
-                                                 m_internal.m_faceSparseShared5,
+                                                 m_internal.m_globalShared7[0].mss,
                                                  m_internal.m_elementSparseShared3[0],
                                                  m_internal.m_faceSparseShared4,
                                                  io_recvsQuad );
 #else
-  edge::elastic::solvers::AderDg::rupture( i_first,
-                                           i_size,
-                                           i_enSp[0].first,
-                                           m_covSimTime,
-                                           m_dT,
-                                           m_internal.m_globalShared1[0],
-                                           m_internal.m_elementShared4,
-                                           m_internal.m_faceSparseShared3,
-                                           m_internal.m_faceSparseShared6[0],
-                                           m_internal.m_globalShared2[0],
-                                           m_internal.m_faceSparseShared1[0],
-                                           m_internal.m_faceSparseShared2[0],
-                                           m_internal.m_faceSparseShared5,
-                                           m_internal.m_elementSparseShared3[0],
-                                           m_internal.m_faceSparseShared4,
-                                           io_recvsQuad
-#ifdef PP_T_KERNELS_XSMM
-                                       ,&m_internal.m_xsmm.m_kernels[ORDER*(N_DIM+1)]
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-                                       ,&m_internal.m_xsmm.m_kernels[0]
-#endif
-                                       );
+  edge::elastic::solvers::AderDg<
+    T_SDISC.ELEMENT,
+    N_QUANTITIES,
+    ORDER,
+    ORDER,
+    N_CRUNS
+  >::rupture( i_first,
+              i_size,
+              i_enSp[0].first,
+  (real_base) m_covSimTime,
+  (real_base) m_dT,
+              m_internal.m_globalShared1[0],
+              m_internal.m_globalShared2[0].ops.scatterSurf,
+              m_internal.m_elementShared4,
+              m_internal.m_globalShared7[0],
+              m_internal.m_globalShared5[0],
+              m_internal.m_faceSparseShared1[0],
+              m_internal.m_faceSparseShared2[0],
+              m_internal.m_globalShared6[1],
+              m_internal.m_globalShared2[0].surf,
+              m_internal.m_faceSparseShared4,
+              m_internal.m_globalShared2[0].adm[ l_admId[0] ],
+              m_internal.m_globalShared2[0].adm[ l_admId[1] ],
+              m_internal.m_globalShared2[0].lock,
+              io_recvsQuad );
 #endif
 
 #endif
+}
+else if( i_step == 3 ) {
+  edge::sc::Limiter<
+    T_SDISC.ELEMENT,
+    ORDER,
+    N_QUANTITIES,
+    N_CRUNS >::aPost( i_first,
+                      i_size,
+                      m_dT,
+                      m_internal.m_globalShared1[0].mat.flux,
+                      m_internal.m_globalShared2[0].ops,
+                      m_internal.m_globalShared2[0].connect,
+                      m_internal.m_faceChars,
+(real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) m_internal.m_elementShared2, // TODO: fix type
+(real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) m_internal.m_elementShared3, // TODO: fix type
+                      m_internal.m_connect.elFa,
+                      m_internal.m_connect.elFaEl,
+                      m_internal.m_connect.vIdElFaEl,
+                      m_internal.m_connect.fIdElFaEl,
+                      m_internal.m_globalShared2[0].adm[ l_admId[0] ],
+                      m_internal.m_globalShared2[0].adm[ l_admId[1] ],
+                      m_internal.m_globalShared2[0].adm[ l_admId[2] ],
+                      m_internal.m_globalShared2[0].lock,
+                      m_internal.m_globalShared6,
+                      m_internal.m_elementModePrivate1,
+                      m_internal.m_globalShared2[0].surf,
+                      m_internal.m_globalShared2[0].dofs,
+                      m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
+                      m_internal.m_globalShared2[0].ext[ l_extIds[1] ],
+                      m_internal.m_mm,
+                      m_internal.m_globalShared8[0] );
 }
 else EDGE_LOG_FATAL << "step not supported in elastic implementation: " << i_step;

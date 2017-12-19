@@ -31,7 +31,7 @@
  */
 
 // make sure we have our eight entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 8, "entries of control flow not matching" );
+static_assert( N_ENTRIES_CONTROL_FLOW == 10, "entries of control flow not matching" );
 
 // initialize control flow if neccessary
 if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
@@ -47,6 +47,8 @@ if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
   m_cflow[4] = 0;
   m_cflow[6] = 0;
   m_cflow[7] = 0;
+  m_cflow[8] = 0;
+  m_cflow[9] = 0;
 }
 
 /*
@@ -76,6 +78,12 @@ if( m_cflow[3] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 3) ) m_cflow
 
 // send-elements finished neighboring update
 if( m_cflow[4] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 4) ) m_cflow[4] = 2;
+
+// inner-elements finished limiting
+if( m_cflow[8] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 8) ) m_cflow[8] = 2;
+
+// send-elements finished limiting
+if( m_cflow[9] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 9) ) m_cflow[9] = 2;
 
 ////////////////////////////////////////
 // TODO: GLOBAL TIME STEPPING ONLY //
@@ -143,8 +151,20 @@ if( m_cflow[4] == 2 && m_cflow[5] == 0 ) {
   }
 }
 
+// neighboring updates for inner elements done, statrt limiting inner elements
+if( m_cflow[3] == 2 && m_cflow[8] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 8);
+  m_cflow[8] = 1;
+}
+
+// neighboring updates for send elements done, start limiting send elements
+if( m_cflow[4] == 2 && m_cflow[9] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 9);
+  m_cflow[9] = 1;
+}
+
 // neighboring updates for inner- and send-elements done, plus MPI-send is done, initiated local update of send elements
-if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[2] == 2 ) {
+if( m_cflow[8] == 2 && m_cflow[9] == 2 && m_cflow[2] == 2 ) {
   EDGE_CHECK( m_cflow[1] == 0 );
   EDGE_CHECK( m_cflow[5] == 1 || m_cflow[5] == 2 );
   EDGE_CHECK( m_cflow[6] == 2 );
@@ -164,6 +184,7 @@ if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[2] == 2 ) {
     // reset the four cflow-entities
     m_cflow[6] = m_cflow[7] = 0;
     m_cflow[3] = m_cflow[4] = 0;
+    m_cflow[8] = m_cflow[9] = 0;
 
     // also initiated the local updates of inner elements
     if( m_cflow[0] == 0 ) {
@@ -173,10 +194,10 @@ if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[2] == 2 ) {
   }
 }
 
-// neighboring updates for inner- and send-elements done, start the local part for the inner element update
+// limiting for inner- and send-elements done, start the local part for the inner element update
 // this condition is included in the statement above but less restrictive since local updates
 // do not depend on sends
-if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[0] == 0 ) {
+if( m_cflow[8] == 2 && m_cflow[9] == 2 && m_cflow[0] == 0 ) {
   // only schedule a new time step if don't we reach a synchronization point at the end of the time step
   if( !m_timeGroups[0]->finished() && !m_timeGroups[0]->lastTimeStep() ) {
     // not that condition above is also allowed to schedule 0

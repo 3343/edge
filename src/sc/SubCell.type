@@ -156,7 +156,7 @@ struct edge::sc::t_ops {
 /**
  * Data of the sub-cell resolution.
  *
- * @paramt TL_T_LID integer type of local ids.
+ * @paramt TL_T_LID integral type of local ids.
  * @paramt TL_T_REAL floating point type.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP order of the DG-polynomials in space.
@@ -204,6 +204,9 @@ struct edge::sc::t_SubCell {
 
   //! admissibility of the DG solution; three-way admissibility in alternating order for 1) previous, valid solution 2) candidate solution 3) limited solution
   bool (*adm[3])[TL_N_CRS];
+
+  //! locks the solution in sub-cell space; if false, elements are projected to DG space after application of the limiter if the projection doesn't lead to oscillations (DMP)
+  bool (*lock)[TL_N_CRS];
 };
 
 #endif

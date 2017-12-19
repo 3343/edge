@@ -18,33 +18,37 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Support for internal boundary conditions through quadrature rules.
+ * Support for seismic internal boundary conditions through sub-cell limiting.
  **/
 
-#ifndef INTERNAL_BOUNDARY_HPP
-#define INTERNAL_BOUNDARY_HPP
+#ifndef EDGE_SEISMIC_INTERNAL_BOUNDARY_HPP
+#define EDGE_SEISMIC_INTERNAL_BOUNDARY_HPP
 
 #include "InternalBoundary.type"
 #include "constants.hpp"
 #include "io/logging.h"
-#include "dg/QuadratureEval.hpp"
 #include "linalg/Matrix.h"
-#include "TimePred.hpp"
+#include "linalg/Geom.hpp"
 #include "common.hpp"
 
 namespace edge {
   namespace elastic {
     namespace solvers {
-      template< t_entityType TL_T_EL, unsigned short TL_N_QU, unsigned short TL_O_SP, unsigned short TL_N_CRUNS, unsigned short TL_O_TI >
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_N_QTS,
+                unsigned short TL_O_SP,
+                unsigned short TL_N_CRS >
       class InternalBoundary;
 
       template< t_entityType TL_T_EL >
       class InternalBoundaryTypes;
 
 #ifdef __INTEL_COMPILER
-      template< t_entityType TL_T_EL, unsigned short TL_N_DIM=N_DIM >
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_N_DIM=N_DIM >
 #else
-      template< t_entityType TL_T_EL, unsigned short TL_N_DIM=C_ENT[TL_T_EL].N_DIM >
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_N_DIM=C_ENT[TL_T_EL].N_DIM >
 #endif
       class InternalBoundarySolvers;
 
@@ -58,78 +62,74 @@ namespace edge {
 }
 
 /**
- * Internal boundary conditions through quadrature rules.
+ * Internal boundary conditions through sub-cell limiting.
  *
  * @paramt TL_T_EL element type.
- * @paramt TL_N_QU number of quantities.
- * @paramt TL_O_SP order of the used quadrature in space.
- * @paramt TL_N_CRUNS number of concurrent forward runs (fused simulations).
- * @paramt TL_O_TI order of the used quadrature in time.
+ * @paramt TL_N_QTS number of quantities.
+ * @paramt TL_O_SP order of the used DG method in space.
+ * @paramt TL_N_CRS number of concurrent forward runs (fused simulations).
  **/
-template <t_entityType TL_T_EL, unsigned short TL_N_QU, unsigned short TL_O_SP, unsigned short TL_N_CRUNS, unsigned short TL_O_TI=TL_O_SP>
+template< t_entityType   TL_T_EL,
+          unsigned short TL_N_QTS,
+          unsigned short TL_O_SP,
+          unsigned short TL_N_CRS >
 class edge::elastic::solvers::InternalBoundary {
   private:
-    // assemble derived template parameters
-    //! dimension of the element
-    static unsigned short const TL_N_DIM              = C_ENT[TL_T_EL].N_DIM;
-    //! number of element modes
-    static unsigned short const TL_N_ELEMENT_MODES    = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
-    //! number of options for the layout of quad points
-    static unsigned short const TL_N_FACE_QUAD_OPTS   = (CE_N_FACE_VERTEX_OPTS(TL_T_EL)+1) *
-                                                         C_ENT[TL_T_EL].N_FACES;
-    //! number of quadrature points per face
-    static unsigned short const TL_N_FACE_QUAD_POINTS = CE_N_FACE_QUAD_POINTS( TL_T_EL, TL_O_SP );
+    //! number of sub-faces
+    static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
   public:
     /**
      * Dummy solver perturbating nothing.
-     *
-     * @param i_ms middle state.
-     * @param o_msL will be set to middle state.
-     * @param o_msR will be set to middle state.
-     *
-     * @paramt TL_T_REAL type of floating point arithmetic.
-     * @paramt TL_T_FA_DATA face data.
      **/
     class DummySolv {
       public:
         /**
          * Dummy perturbations.
          *
+         * @param i_ms middle state which is not perturbed.
+         * @param o_msL will be set to input middle state.
+         * @param o_msR will be set to input middle state.
+         * @param o_per will be set to false.
+         *
+         * @paramt TL_T_REAL floating point precision.
+         * @paramt TL_T_FA_DATA type of face data (unused).
          **/
         template< typename TL_T_REAL, typename TL_T_FA_DATA >
         static void inline perturb( unsigned short,
                                     TL_T_REAL,
-                                    TL_T_REAL            i_ms[TL_N_QU][TL_N_CRUNS],
+                                    TL_T_REAL            i_ms[TL_N_QTS][TL_N_CRS],
                                     TL_T_FA_DATA const *,
-                                    TL_T_REAL            o_msL[TL_N_QU][TL_N_CRUNS],
-                                    TL_T_REAL            o_msR[TL_N_QU][TL_N_CRUNS] ) {
-          for( unsigned short l_qt = 0; l_qt < TL_N_QU; l_qt++ ) {
-            for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
+                                    TL_T_REAL            o_msL[TL_N_QTS][TL_N_CRS],
+                                    TL_T_REAL            o_msR[TL_N_QTS][TL_N_CRS],
+                                    TL_T_REAL            o_per[TL_N_CRS] ) {
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+            for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
               o_msL[l_qt][l_ru] = i_ms[l_qt][l_ru];
               o_msR[l_qt][l_ru] = i_ms[l_qt][l_ru];
+              o_per[l_ru] = false;
             }
           }
         }
     };
 
     /**
-     * Evaluates the internal boundary condition in space at a face of the given element type.
+     * Evaluates the internal boundary condition for all sub-faces at a DG-face of the given element type.
      *
      * Tria3-example:
      *
      *
      * 1) Illustatration of an element in physical coordinates
      *
-     *   x: face-local quadrature points
+     *   ***xxx***: DG-face sub-divided into three sub-faces
      *
      *   vertices to faces: f0: 0-1, f1: 1-2, f2: 2-0
      *
      *              *
      *             *2* 1  *
-     *            *   x         *
-     *           *     *           0   *
-     *          *0  L   *     R     *
+     *            *   *         *
+     *           *     x           0  *
+     *          *0  L   x     R     *
      *             *     x        *
      *                *   *     *
      *                   *1*2 *
@@ -137,7 +137,7 @@ class edge::elastic::solvers::InternalBoundary {
      *   In this example the left element's face f1 matches the right elements face f2.
      *   Vertex 2 of the right element lies on the first vertex of the left elements face f1.
      *
-     * 2) Illustration of the quadrature point-local Riemann problem.
+     * 2) Illustration of the sub-face-local Riemann problem.
      *
      *   Q^L: left-side middle state     Q^R: right-side middle state
      *   c^L_s: left going s-wave        c^L_s right going s-wave
@@ -158,28 +158,18 @@ class edge::elastic::solvers::InternalBoundary {
      *           due to non-zero zero wave speeds of the respective eigenvectors.
      *
      * 3) After solving the Riemann problem, the flux function is applied to the middle states
-     *    and the repspective DOF-update stemming from the side obtained through multiplication
-     *    with the test functions and quadrature.
+     *    and the repspective sub-cell net-updates are obtained for the two sides.
      *
-     * @paramt TL_T_REAL precision of the evaluation.
-     * @param i_faIdL local face id of the left element.
-     * @param i_faIdR local face id of the right element.
-     * @param i_vIdR local id of the right element's vertex lying on the left element's first face-vertex.
-     * @param i_massI diagonal of the inverse mass matrix (orthogonal basis is assumed).
-     * @param i_weightsFaces weights of the face's quadrature point.
-     * @param i_basisFaces evaluated basis at the quad points.
-     *                     [*][][]: options of the quad point layout,
-     *                     [][*][]: quad points of the option,
-     *                     [][][*]: evaluated basis functions per quad point.
      * @param i_tm1 transformation matrix from physical coordinates for face-aligned coordinates.
      * @param i_solMsJumpL solver for the single jump from the left element's quantities to the middle state.
      * @param i_solMsFluxL flux solver using (probably perturbed) middle states for the left element.
      * @param i_solMsFluxR flux solver using (probably perturbed) middle states for the right element.
-     * @param i_dofsL modal DOFs of the left element.
-     * @param i_dofsR modal DOFs of the right element.
-     * @param o_surfUpdateL will be set to left-going surface update of this part of the internal boundary.
-     * @param o_surfUpdateR will be set to right-going surface update of this part of the internal boundary.
-     * @param i_dt associated "time step" of this evaluation, might be used internally to compute slip from the slip rate, for example.
+     * @param i_dofsL DOFs of the left element's face-adjacent sub-cells.
+     * @param i_dofsR DOFs of the right element's face-adjacent sub-cells.
+     * @param o_netUpsL will be set to left-going sub-cell net-updates.
+     * @param o_netUpsL will be set to right-going sub-cell net-updates.
+     * @param o_per will be set to true if middle states were perturbed, false otherwise.
+     * @param i_dt time step, used for scaling the net-updates; might be used internally to compute slip from the slip rate, for example.
      * @param io_faData data used in the pertubation of the middle states.
      *
      * @paramt TL_T_REAL floating point type.
@@ -189,244 +179,107 @@ class edge::elastic::solvers::InternalBoundary {
     template< typename TL_T_REAL,
               typename TL_T_MS_SOLV = DummySolv,
               typename TL_T_FA_DATA = void >
-    static void evalSpace( unsigned short        i_faIdL,
-                           unsigned short        i_faIdR,
-                           unsigned short        i_vIdR,
-                           TL_T_REAL      const  i_massI[TL_N_ELEMENT_MODES],
-                           TL_T_REAL      const  i_weightsFaces[TL_N_FACE_QUAD_POINTS],
-                           TL_T_REAL      const  i_basisFaces[TL_N_FACE_QUAD_OPTS][TL_N_FACE_QUAD_POINTS][TL_N_ELEMENT_MODES],
-                           TL_T_REAL      const  i_tm1[TL_N_QU][TL_N_QU],
-                           TL_T_REAL      const  i_solMsJumpL[TL_N_QU][TL_N_QU],
-                           TL_T_REAL      const  i_solMsFluxL[TL_N_QU][TL_N_QU],
-                           TL_T_REAL      const  i_solMsFluxR[TL_N_QU][TL_N_QU],
-                           TL_T_REAL      const  i_dofsL[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                           TL_T_REAL      const  i_dofsR[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                           TL_T_REAL             o_surfUpdateL[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                           TL_T_REAL             o_surfUpdateR[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                           TL_T_REAL             i_dt = 0,
-                           TL_T_FA_DATA         *io_faData = nullptr ) {
+    static void netUpdates( TL_T_REAL      const  i_tm1[TL_N_QTS][TL_N_QTS],
+                            TL_T_REAL      const  i_solMsJumpL[TL_N_QTS][TL_N_QTS],
+                            TL_T_REAL      const  i_solMsFluxL[TL_N_QTS][TL_N_QTS],
+                            TL_T_REAL      const  i_solMsFluxR[TL_N_QTS][TL_N_QTS],
+                            TL_T_REAL      const  i_dofsL[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                            TL_T_REAL      const  i_dofsR[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                            TL_T_REAL             o_netUpsL[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                            TL_T_REAL             o_netUpsR[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                            bool                  o_per[TL_N_SFS][TL_N_CRS],
+                            TL_T_REAL             i_dt = 0,
+                            TL_T_FA_DATA         *io_faData = nullptr ) {
+      // TODO: store as part of the flux solvers
+      TL_T_REAL l_sca = i_dt / TL_N_SFS;
+                l_sca *= CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+      // DG solver scaled by inverse det of surface-jac (twice the area of the triangle)
+      if( TL_T_EL == TRIA3 ) l_sca *= 2;
+
       // temporary storage for the middle states
-      TL_T_REAL l_msTmp[2][TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS];
-      for( int_qt l_qt = 0; l_qt < TL_N_QU; l_qt++ ) {
-        for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
-          for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-            l_msTmp[0][l_qt][l_md][l_ru] = 0;
-            l_msTmp[1][l_qt][l_md][l_ru] = 0;
+      TL_T_REAL l_msTmp[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_msTmp[0][l_qt][l_sf][l_cr] = 0;
+            l_msTmp[1][l_qt][l_sf][l_cr] = 0;
           }
         }
       }
 
       // rotate the DOFs from physical coordinates to face-aligned coords
       // remark: the back-rotation to physical coordinates is part of the the flux solver
-      TL_T_REAL l_dofs[2][TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS];
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRUNS,
-                                       TL_N_QU, TL_N_ELEMENT_MODES, TL_N_QU,
+      TL_T_REAL l_dofs[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
                                        i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRUNS,
-                                       TL_N_QU, TL_N_ELEMENT_MODES, TL_N_QU,
+      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
                                        i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
 
-      // derive face quad pos of right element
-      unsigned short l_posR  = C_ENT[TL_T_EL].N_FACES;
-      l_posR                += i_faIdR * CE_N_FACE_VERTEX_OPTS(TL_T_EL);
-      l_posR                += i_vIdR;
-
-      // iterate over the quad points in space
-      for( int_md l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( TL_T_EL, TL_O_SP ); l_qp++ ) {
-        // temporary values at the quad points
-        TL_T_REAL l_qEv[2][TL_N_QU][TL_N_CRUNS];
+      // iterate over sub-faces
+      for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+        // temporary values at the sub-faces
+        TL_T_REAL l_qVal[2][TL_N_QTS][TL_N_CRS];
         // jump in quantities
-        TL_T_REAL l_qJump[TL_N_QU][TL_N_CRUNS];
+        TL_T_REAL l_qJump[TL_N_QTS][TL_N_CRS];
 
-        // eval left and right elements' DOFs at quad points
-        for( int_qt l_qt = 0; l_qt < TL_N_QU; l_qt++ ) {
-          dg::QuadratureEval<TL_T_EL, TL_O_SP, TL_N_CRUNS>::evalBasis( i_basisFaces[i_faIdL][l_qp],
-                                                                       l_dofs[0][l_qt],
-                                                                       l_qEv[0][l_qt] );
-
-          dg::QuadratureEval<TL_T_EL, TL_O_SP, TL_N_CRUNS>::evalBasis( i_basisFaces[l_posR][l_qp],
-                                                                       l_dofs[1][l_qt],
-                                                                       l_qEv[1][l_qt] );
-
+        // copy left and right elements' DOFs at sub-face (SoA -> AoS), compute jump
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           // compute the jump in quantities
-          for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-            l_qJump[l_qt][l_ru] = l_qEv[1][l_qt][l_ru] - l_qEv[0][l_qt][l_ru];
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_qVal[0][l_qt][l_cr] = l_dofs[0][l_qt][l_sf][l_cr];
+            l_qVal[1][l_qt][l_cr] = l_dofs[1][l_qt][l_sf][l_cr];
+
+            l_qJump[l_qt][l_cr] = l_qVal[1][l_qt][l_cr] - l_qVal[0][l_qt][l_cr];
           }
         }
+
         // jump over waves with negative speeds from the left to get the left-side middle state
-        linalg::Matrix::matMulB1FusedBC( TL_N_CRUNS,
-                                         TL_N_QU, 1, TL_N_QU,
+        linalg::Matrix::matMulB1FusedBC( TL_N_CRS,
+                                         TL_N_QTS, 1, TL_N_QTS,
+                                         TL_N_QTS, 1, 1,
                                          i_solMsJumpL[0],
                                          l_qJump[0],
-                                         l_qEv[0][0] );
+                                         l_qVal[0][0] );
 
-         // perturb if necessary
-         TL_T_REAL l_ms[2][TL_N_QU][TL_N_CRUNS];
-         TL_T_MS_SOLV::perturb( l_qp,
-                                i_dt,
-                                l_qEv[0],
-                                io_faData,
-                                l_ms[0],
-                                l_ms[1] );
+        // perturb if necessary
+        TL_T_REAL l_ms[2][TL_N_QTS][TL_N_CRS];
+        TL_T_MS_SOLV::perturb( l_sf,
+                               i_dt,
+                               l_qVal[0],
+                               io_faData,
+                               l_ms[0],
+                               l_ms[1],
+                               o_per[l_sf] );
 
-         // compute the contribution of this quad point
-         // remark: due to linear fluxes, the flux computation is applied at the very end.
-         for( int_qt l_qt = 0; l_qt < TL_N_QU; l_qt++ ) {
-           for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
-             // precompute weights
-             TL_T_REAL l_weightL = i_weightsFaces[l_qp] *              // weight of the face
-                                   i_basisFaces[i_faIdL][l_qp][l_md] * // test function
-                                   i_massI[l_md];                      // inverse mass matrix
-
-             TL_T_REAL l_weightR = i_weightsFaces[l_qp] *              // weight of the face
-                                   i_basisFaces[l_posR][l_qp][l_md] *  // test function
-                                   i_massI[l_md];                      // inverse mass matrix
-
-             // add contribution
-             for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-               // left-going fluxes are subtracted
-               l_msTmp[0][l_qt][l_md][l_ru] -= l_weightL * l_ms[0][l_qt][l_ru];
-               // right-going fluxes are added
-               l_msTmp[1][l_qt][l_md][l_ru] += l_weightR * l_ms[1][l_qt][l_ru];
-             }
-           }
-         }
+        // scale and save middle states (AoS -> SoA)
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            // left-going fluxes are subtracted
+            l_msTmp[0][l_qt][l_sf][l_cr] = -l_ms[0][l_qt][l_cr] * l_sca;
+            // right-going fluxes are added
+            l_msTmp[1][l_qt][l_sf][l_cr] =  l_ms[1][l_qt][l_cr] * l_sca;
+          }
+        }
       }
 
       // compute fluxes and rotate DOFs back to physical coordinate system
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRUNS,
-                                       TL_N_QU, TL_N_ELEMENT_MODES, TL_N_QU,
+      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
                                        i_solMsFluxL[0],
                                        l_msTmp[0][0][0],
-                                       o_surfUpdateL[0][0] );
+                                       o_netUpsL[0][0] );
 
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRUNS,
-                                       TL_N_QU, TL_N_ELEMENT_MODES, TL_N_QU,
+      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
                                        i_solMsFluxR[0],
                                        l_msTmp[1][0][0],
-                                       o_surfUpdateR[0][0] );
-    }
-
-    /**
-     * Evaluates the internal boundary condition in space and time at a face of the given element type.
-     *
-     * @paramt TL_T_REAL precision of the evaluation.
-     * @param i_faIdL local face id of the left element.
-     * @param i_faIdR local face id of the right element.
-     * @param i_veIdR local id of the right element's vertex lying on the left element's first face-vertex.
-     * @param i_massI diagonal of the inverse mass matrix (orthogonal basis is assumed).
-     * @param i_dT time step.
-     * @param i_ptsLine quadrature points for the unit line element [0,1].
-     * @param i_weightsLine quadrature weights for the unit line element [0,1].
-     * @param i_weightsFaces weights of the face's quadrature point.
-     * @param i_basisFaces evaluated basis at the quad points.
-     *                     [*][][]: options of the quad point layout,
-     *                     [][*][]: quad points of the option,
-     *                     [][][*]: evaluated basis functions per quad point.
-     * @param i_tm1 transformation matrix from physical coordinates for face-aligned coordinates.
-     * @param i_solMsJumpL solver for the single jump from the left element's quantities to the middle state.
-     * @param i_solMsFluxL flux solver using (probably perturbed) middle states for the left element.
-     * @param i_solMsFluxR flux solver using (probably perturbed) middle states for the right element.
-     * @param i_tDersL modal time derivatives of the left element (time prediction).
-     * @param i_tDersR modal time derivatives of the right element (time prediction).
-     * @param o_scratch will be used as scratch memory.
-     * @param o_surfUpdateL will be set to left-going surface update of this part of the internal boundary.
-     * @param o_surfUpdateR will be set to right-going surface update of this part of the internal boundary.
-     *
-     * @paramt TL_T_REAL floating point type.
-     * @paramt TL_T_MS_SOLV middle state "solver", offers member functions .perturb.
-     * @paramt TL_T_FA_DATA data passed to middle state solver.
-     **/
-    template< typename TL_T_REAL,
-              typename TL_T_MS_SOLV = DummySolv,
-              typename TL_T_FA_DATA = void >
-    static void evalSpaceTime( unsigned short       i_faIdL,
-                               unsigned short       i_faIdR,
-                               unsigned short       i_veIdR,
-                               TL_T_REAL      const i_massI[TL_N_ELEMENT_MODES],
-                               TL_T_REAL      const i_dT,
-                               TL_T_REAL      const i_ptsLine[ TL_O_TI ],
-                               TL_T_REAL      const i_weightsLine[ TL_O_TI ],
-                               TL_T_REAL      const i_weightsFaces[TL_N_FACE_QUAD_POINTS],
-                               TL_T_REAL      const i_basisFaces[TL_N_FACE_QUAD_OPTS][TL_N_FACE_QUAD_POINTS][TL_N_ELEMENT_MODES],
-                               TL_T_REAL      const i_tm1[TL_N_QU][TL_N_QU],
-                               TL_T_REAL      const i_solMsJumpL[TL_N_QU][TL_N_QU],
-                               TL_T_REAL      const i_solMsFluxL[TL_N_QU][TL_N_QU],
-                               TL_T_REAL      const i_solMsFluxR[TL_N_QU][TL_N_QU],
-                               TL_T_REAL      const i_tDersL[TL_O_SP][TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                               TL_T_REAL      const i_tDersR[TL_O_SP][TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                               TL_T_REAL            o_scratch[4][TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                               TL_T_REAL            o_surfUpdateL[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                               TL_T_REAL            o_surfUpdateR[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                               TL_T_FA_DATA        *io_faData = nullptr ) {
-      // reset updates
-      for( int_qt l_qt = 0; l_qt < TL_N_QU; l_qt++ ) {
-        for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
-          for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-            o_surfUpdateL[l_qt][l_md][l_ru] = 0;
-            o_surfUpdateR[l_qt][l_md][l_ru] = 0;
-          }
-        }
-      }
-
-      // assign pointers to scratch memory
-      TL_T_REAL (*l_dofsL  )[TL_N_ELEMENT_MODES][TL_N_CRUNS] = o_scratch[0];
-      TL_T_REAL (*l_dofsR  )[TL_N_ELEMENT_MODES][TL_N_CRUNS] = o_scratch[1];
-      TL_T_REAL (*l_surfUpL)[TL_N_ELEMENT_MODES][TL_N_CRUNS] = o_scratch[2];
-      TL_T_REAL (*l_surfUpR)[TL_N_ELEMENT_MODES][TL_N_CRUNS] = o_scratch[3];
-
-      // iterate over quad points in time
-      for( unsigned short l_qp = 0; l_qp < TL_O_TI; l_qp++ ) {
-        TL_T_REAL l_ptTime[1];
-        l_ptTime[0] = i_ptsLine[l_qp] * i_dT;
-        // evaluate the time prediction at the quad point in time
-        TimePred< TL_T_EL,
-                  TL_N_QU,
-                  TL_O_SP,
-                  TL_N_CRUNS, 1 >::evalTimePrediction(                       l_ptTime,
-                                                                             i_tDersL,
-                    (TL_T_REAL (*)[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS]) l_dofsL );
-
-        TimePred< TL_T_EL,
-                  TL_N_QU,
-                  TL_O_SP,
-                  TL_N_CRUNS, 1 >::evalTimePrediction(                       l_ptTime,
-                                                                             i_tDersR,
-                    (TL_T_REAL (*)[TL_N_QU][TL_N_ELEMENT_MODES][TL_N_CRUNS]) l_dofsR );
-
-        // get the "time step" of the spatial integration (used for internal middle state pertubations)
-        TL_T_REAL l_dtPt = ( TL_O_TI == 1      ) ? 1                                   : // [0,          qp,            1]
-                           ( l_qp == 0         ) ? i_ptsLine[l_qp]                     : // [0, qp, x, x,   [...],      1]
-                           ( l_qp < TL_O_TI-1  ) ? i_ptsLine[l_qp] - i_ptsLine[l_qp-1] : // [0, x, [...], qp, x, [...], 1]
-                                                   1               - i_ptsLine[l_qp-1];  // [0, x,     [...]     x, qp, 1]
-        l_dtPt *= i_dT;
-
-        // perform quadrature in space
-        evalSpace<
-          TL_T_REAL,
-          TL_T_MS_SOLV,
-          TL_T_FA_DATA >( i_faIdL, i_faIdR, i_veIdR,
-                          i_massI, i_weightsFaces, i_basisFaces,
-                          i_tm1,
-                          i_solMsJumpL,
-                          i_solMsFluxL, i_solMsFluxR,
-                          l_dofsL, l_dofsR,
-                          l_surfUpL, l_surfUpR,
-                          l_dtPt,
-                          io_faData );
-
-        // add the the contribution of this temporal quad point to the update
-        TL_T_REAL l_scale = i_weightsLine[l_qp] *  i_dT; // scale weights (based on [0,1])
-        for( int_qt l_qt = 0; l_qt < TL_N_QU; l_qt++ ) {
-          for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
-            for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-              o_surfUpdateL[l_qt][l_md][l_ru] += l_surfUpL[l_qt][l_md][l_ru] * l_scale;
-              o_surfUpdateR[l_qt][l_md][l_ru] += l_surfUpR[l_qt][l_md][l_ru] * l_scale;
-            }
-          }
-        }
-      }
-
+                                       o_netUpsR[0][0] );
     }
 };
 
@@ -437,57 +290,55 @@ class edge::elastic::solvers::InternalBoundaryTypes {
 
   public:
     /**
-     * Initializes the data of an internal boundary faces.
+     * Initializes the data of the internal boundary faces.
      *
-     * @param i_nFaDe number of dense faces.
-     * @param i_spType sparse type of the internal boundary.
-     * @param i_charsFa characteristics of the dense faces.
-     * @param i_faEl elements adjacent to the dense faces.
-     * @param i_elFa dense faces adjacent to the dense elements.
-     * @param i_vIdElFaEl vertex ids of the shared face with respect to the dense element's adjacent dense elements.
+     * @param i_nFa number of faces.
+     * @param i_nDe number of elements.
+     * @param i_spType sparse type of faces at the internal boundary.
+     * @param i_charsFa characteristics of the faces.
+     * @param i_charsEl characteristics of the elements.
+     * @param i_faEl elements adjacent to the faces.
+     * @param i_elFa faces adjacent to the elements.
      *
-     * @paramt TL_T_INT_LID integer type of local ids.
-     * @paramt TL_T_REAL real type used in arithmetic operations.
-     * @paramt TL_T_INT_SP type of the sparse type.
-     * @paramt TL_T_CHARS_FA struct of the face characteristics. provides .spType member for comparison with the sparse type.
+     * @paramt TL_T_LID integer type of local ids.
+     * @paramt TL_T_SP the sparse type of the internal boundary.
+     * @paramt TL_T_CHARS_FA struct of the face characteristics. provides .spType.
+     * @paramt TL_T_CHARS_EL struct of element chars, provides .spType.
      **/
-    template< typename TL_T_INT_LID,
-              typename TL_T_REAL,
-              typename TL_T_INT_SP,
-              typename TL_T_CHARS_FA >
-    static void initFaces( TL_T_INT_LID               i_nFaDe,
-                           TL_T_INT_SP                i_spType,
+    template< typename TL_T_LID,
+              typename TL_T_SP,
+              typename TL_T_CHARS_FA,
+              typename TL_T_CHARS_EL >
+    static void initFaces( TL_T_LID                   i_nFa,
+                           TL_T_LID                   i_nEl,
+                           TL_T_SP                    i_spType,
                            TL_T_CHARS_FA  const     * i_charsFa,
-                           TL_T_INT_LID   const    (* i_faEl)[2],
-                           TL_T_INT_LID   const    (* i_elFa)[ TL_N_EL_FA ],
-                           unsigned short const    (* i_vIdElFaEl)[ TL_N_EL_FA ],
-                           t_InternalBoundaryFace<
-                             TL_T_REAL,
-                             TL_T_INT_SP
-                           >                        * o_intFa ) {
+                           TL_T_CHARS_EL  const     * i_charsEl,
+                           TL_T_LID       const    (* i_faEl)[2],
+                           TL_T_LID       const    (* i_elFa)[ TL_N_EL_FA ],
+                           edge::sc::ibnd::t_bfChars<
+                             TL_T_SP
+                           >                        * o_bfChars ) {
       // id of the sparse internal boundary faces
-      TL_T_INT_LID l_spId = 0;
+      TL_T_LID l_bf = 0;
 
-      // iterate over dense faces
-      for( TL_T_INT_LID l_fa = 0; l_fa < i_nFaDe; l_fa++ ) {
+      // iterate over faces
+      for( TL_T_LID l_fa = 0; l_fa < i_nFa; l_fa++ ) {
         // check if this is a face of the internal boundary
         if( (i_charsFa[l_fa].spType & i_spType) != i_spType ) continue;
 
         // set the sparse type
-        o_intFa[l_spId].spType = (TL_T_INT_SP) i_charsFa[l_fa].spType;
+        o_bfChars[l_bf].spType = (TL_T_SP) i_charsFa[l_fa].spType;
 
         // iterate over adjacent elements
         for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-          TL_T_INT_LID l_el = i_faEl[l_fa][l_sd];
-          EDGE_CHECK( l_el != std::numeric_limits< TL_T_INT_LID >::max() );
+          TL_T_LID l_el = i_faEl[l_fa][l_sd];
+          EDGE_CHECK( l_el != std::numeric_limits< TL_T_LID >::max() );
 
           // find the local face and vertex id
           for( unsigned short l_fe = 0; l_fe < TL_N_EL_FA; l_fe++ ) {
             if( i_elFa[l_el][l_fe] == l_fa ) {
-              o_intFa[l_spId].fIdFaEl[l_sd] = l_fe;
-
-              // the left element holds the right elements vertex id
-              if( l_sd == 0 ) o_intFa[l_spId].vIdFaElR = i_vIdElFaEl[l_el][l_fe];
+              o_bfChars[l_bf].fIdBfEl[l_sd] = l_fe;
               break;
             }
             // check that we found every thing
@@ -495,60 +346,7 @@ class edge::elastic::solvers::InternalBoundaryTypes {
           }
         }
 
-        l_spId++;
-      }
-    }
-
-    /**
-     * Manipulate the LTS-types to match the internal boundary requirements:
-     *   If internal boundary face is at an MPI-boundary, the adajcent elements store the
-     *   plain DOFs in the tDOFs, from which the quad points in the internal boundary solver
-     *   are assembled.
-     *   Additionally, all other surface intergration, which used this data, has to perform
-     *   an additional time integration.
-     *
-     * @param i_faLayout layout of the faces.
-     * @param i_spType sparse type of the internal boundary.
-     * @param i_faEl elements adjacent to the faces.
-     * @param io_faChars face characteristics which will be updated accordingly.
-     * @param io_elChars element characteristiscs which wil be updated accordingly.
-     **/
-    template< typename TL_T_INT_SP,
-              typename TL_T_INT_LID,
-              typename TL_T_CHARS_FA,
-              typename TL_T_CHARS_EL >
-    static void initMpi( t_enLayout   const  &i_faLayout,
-                         TL_T_INT_SP          i_spType,
-                         TL_T_INT_LID const (*i_faEl),
-                         TL_T_CHARS_FA        io_faChars,
-                         TL_T_CHARS_EL        io_elChars ) {
-      // iterate over the time groups
-      for( std::size_t l_tg = 0; l_tg < i_faLayout.timeGroups.size(); l_tg++ ) {
-        // determine first send-face
-        TL_T_INT_LID l_first  = i_faLayout.timeGroups[l_tg].inner.first;
-                     l_first += i_faLayout.timeGroups[l_tg].inner.size;
-        // determine number of send/receive faces
-        TL_T_INT_LID l_size  = i_faLayout.timeGroups[l_tg].nEntsOwn;
-                     l_size += i_faLayout.timeGroups[l_tg].nEntsNotOwn;
-                     l_size -= i_faLayout.timeGroups[l_tg].inner.size;
-
-        // iterate over send and receive faces
-        for( TL_T_INT_LID l_fa = l_first; l_fa < l_first+l_size; l_fa++ ) {
-          // check if the face is part of the internal boundary
-          if( (io_faChars.spType & i_spType) == i_spType ) {
-            // determine adjacent elements
-            TL_T_INT_LID l_el[2] = i_faEl[l_fa];
-
-            // check for extising adjacent elements
-            EDGE_CHECK( l_el[0] < std::numeric_limits< TL_T_INT_LID >::max() );
-            EDGE_CHECK( l_el[1] < std::numeric_limits< TL_T_INT_LID >::max() );
-
-            // set the elements' LTS flags for plain DOFs
-            for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-              io_elChars[l_el[l_sd]].spType |= C_LTS_EL[EL_DOFS];
-            }
-          }
-        }
+        l_bf++;
       }
     }
 };

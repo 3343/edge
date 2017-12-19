@@ -158,6 +158,19 @@ class edge::mesh::Regular {
     void getFacesAdjacentElements( int_el (*o_neighboringIds)[2] ) const;
 
     /**
+     * Gets the vertices adjacent to a single element.
+     *
+     * @param o_elementAdjacentVertices will be set to vertices adjacent to the element.
+     * @param i_px element's position in x-direction.
+     * @param i_py element's position in y-direction.
+     * @param i_pz element's position in z-direction.
+     **/
+    void getElementAdjacentVertices( int_el o_elementAdjacentVertices[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
+                                     int_el i_px,
+                                     int_el i_py = 0,
+                                     int_el i_pz = 0 ) const;
+
+    /**
      * Gets the vertices adjacent to the elements.
      * Remark: Vertces on periodic boundaries are included "redundantly".
      *

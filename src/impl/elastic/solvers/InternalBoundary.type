@@ -21,22 +21,36 @@
  * Data types of the internal boundary.
  **/
 
-#ifndef INTERNAL_BOUNDARY_TYPE
-#define INTERNAL_BOUNDARY_TYPE
+#ifndef EDGE_SEISMIC_INTERNAL_BOUNDARY_TYPE
+#define EDGE_SEISMIC_INTERNAL_BOUNDARY_TYPE
 
 namespace edge {
   namespace elastic {
     namespace solvers {
-      template< typename TL_T_REAL, typename TL_T_INT_SP >
+      template< typename TL_T_INT_LID,
+                typename TL_T_REAL,
+                typename TL_T_INT_SP >
       struct t_InternalBoundaryFace;
     }
   }
 }
 
-template< typename TL_T_REAL, typename TL_T_INT_SP >
+/**
+ * Data type of an internal boundary face.
+ *
+ * @paramt TL_T_INT_LID integral type of local ids.
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_T_INT_SP integral type of the sparse types.
+ **/
+template< typename TL_T_INT_LID,
+          typename TL_T_REAL,
+          typename TL_T_INT_SP >
 struct edge::elastic::solvers::t_InternalBoundaryFace {
   //! sparse type of the face
   TL_T_INT_SP spType;
+
+  //! adjacent limited elements
+  TL_T_INT_LID ibLi[2];
 
   //! local face ids of the two adjacent elements
   unsigned short fIdFaEl[2];

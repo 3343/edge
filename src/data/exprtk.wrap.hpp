@@ -21,4 +21,5 @@
  * Wraps exprtk and disables warnings (system header).
  **/
 #pragma GCC system_header
+//#define exprtk_disable_enhanced_features
 #include "submodules/exprtk/exprtk.hpp"

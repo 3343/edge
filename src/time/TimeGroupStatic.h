@@ -21,10 +21,9 @@
  * LTS cluster of EDGE with static, data-independent time step characterisitcs.
  **/
 
-#ifndef TIME_GROUP_STATIC_H
-#define TIME_GROUP_STATIC_H
+#ifndef EDGE_TIME_GROUP_STATIC_H
+#define EDGE_TIME_GROUP_STATIC_H
 
-#include "constants.hpp"
 #include "data/Internal.hpp"
 #include "data/layout.hpp"
 #include "io/Receivers.h"
@@ -43,6 +42,9 @@ class edge::time::TimeGroupStatic {
 
     //! fundamental time step multiple of the cluster
     const int_ts m_funMult;
+
+    //! number of performend updates since last synchronization
+    volatile int_ts m_updatesSync;
 
     //! total number of performed updates
     volatile int_ts m_updatesPer;
@@ -107,15 +109,27 @@ class edge::time::TimeGroupStatic {
      * @param io_recvsQuad receivers at quad points.
      **/
 
-      void computeStep( unsigned short                              i_step,
-                        int_el                                      i_first,
-                        int_el                                      i_size,
-                        t_timeRegion                        const * i_enSp,
-                        io::Receivers                             & io_recvs,
-                        io::ReceiversQuad< real_base,
-                                           T_SDISC.ELEMENT,
-                                           ORDER,
-                                           N_CRUNS >              & io_recvsQuad );
+    void computeStep( unsigned short                              i_step,
+                      int_el                                      i_first,
+                      int_el                                      i_size,
+                      t_timeRegion                        const * i_enSp,
+                      io::Receivers                             & io_recvs,
+                      io::ReceiversQuad< real_base,
+                                         T_SDISC.ELEMENT,
+                                         ORDER,
+                                         N_CRUNS >              & io_recvsQuad );
+
+    /**
+     * Prepare the limiter for synchronization by resetting the ids for admissibility and extrema.
+     **/
+    void limSync();
+
+    /**
+     * Gets the number of updates the time group performed since the last synchronization.
+     *
+     * @return number of updates since last synchronization
+     **/
+    int_ts getUpdatesSync() { return m_updatesSync; };
 
     /**
      * Gets the number of updates the time group performed.

@@ -205,7 +205,7 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   // output
   edge::elastic::solvers::t_LinSlipWeakGlobal<double, 8>           l_lswGlobal;
   edge::elastic::solvers::t_LinSlipWeakFace<double>                l_lswFace[3];
-  edge::elastic::solvers::t_LinSlipWeakFaceQuadPoint<double, 2, 8> l_lswQp[3][3];
+  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8> l_lswSf[3][5];
 
   // init the rupture physics
   edge::elastic::setups::RuptureInit< TRIA3, 3, 8>::linSlipWeak( l_nFaces,
@@ -221,7 +221,7 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
                                                                  l_stress,
                                                                  l_lswGlobal,
                                                                  l_lswFace,
-                                                                 l_lswQp );
+                                                                 l_lswSf );
 
   // check the resulting friction parameters
   for( unsigned short l_ru = 0; l_ru < 8; l_ru++ ) {
@@ -233,18 +233,18 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   // check the stress setup
   for( unsigned short l_ru = 0; l_ru < 8; l_ru++ ) {
     for( unsigned short l_sp = 0; l_sp < 3; l_sp++ ) {
-      for( unsigned short l_qp = 0; l_qp < 3; l_qp++ ) {
+      for( unsigned short l_sf = 0; l_sf < 5; l_sf++ ) {
         if(    (l_sp == 0 && l_ru > 2)
             || (l_sp == 1 && l_ru > 1)
             || (l_sp == 2 && l_ru > 3) ) {
-          REQUIRE( l_lswQp[l_sp][l_qp].sn0[l_ru]    == Approx(l_ru *  1.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].ss0[0][l_ru] == Approx(l_ru * -2.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
+          REQUIRE( l_lswSf[l_sp][l_sf].sn0[l_ru]    == Approx(l_ru *  1.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].ss0[0][l_ru] == Approx(l_ru * -2.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
         }
         else {
-          REQUIRE( l_lswQp[l_sp][l_qp].sn0[l_ru]    == Approx(l_ru * -3.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].ss0[0][l_ru] == Approx(l_ru *  4.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
+          REQUIRE( l_lswSf[l_sp][l_sf].sn0[l_ru]    == Approx(l_ru * -3.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].ss0[0][l_ru] == Approx(l_ru *  4.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
         }
       }
     }

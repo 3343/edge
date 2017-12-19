@@ -20,18 +20,19 @@
  * @section DESCRIPTION
  * Subcell limiter.
  **/
-#ifndef SC_LIMITER_HPP
-#define SC_LIMITER_HPP
+#ifndef EDGE_SC_LIMITER_HPP
+#define EDGE_SC_LIMITER_HPP
 
 #include "constants.hpp"
 #include "io/logging.h"
 #include "linalg/Matrix.h"
-#include "impl/advection/solvers/AderDg.hpp"
+#include "Detections.hpp"
 
 namespace edge {
   namespace sc {
     template< t_entityType   TL_T_EL,
               unsigned short TL_O_SP,
+              unsigned short TL_N_QTS,
               unsigned short TL_N_CRS >
     class Limiter;
   }
@@ -42,18 +43,17 @@ namespace edge {
  *
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP spatial order of the DG-solver.
+ * @paramt TL_N_QTS number of quantities.
  * @paramt TL_N_CRS number of fused forward runs.
  **/
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
+          unsigned short TL_N_QTS,
           unsigned short TL_N_CRS >
 class edge::sc::Limiter {
   private:
     //! number of dimensions
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
-
-    //! number of quantities
-    static unsigned short const TL_N_QTS = 1; // TODO: should be a template parameter
 
     //! number of vertices
     static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
@@ -95,6 +95,8 @@ class edge::sc::Limiter {
      *   Remark: This function assumes a limited plus element and an adjacent (face as bridge), limited element.
      *
      * @param i_dt time step.
+     * @param i_lp id of the limited plus element.
+     * @param i_fa respective face of the limited plus element.
      * @param i_admAdP admissibility of the adjacent element's DG solution for the previous solution.
      * @param i_admAdC admissibility of the adjacent element's DG solution for the candidate solution.
      * @param i_fMatDg DG flux matrix for the local contribution.
@@ -110,30 +112,42 @@ class edge::sc::Limiter {
      * @param i_dofsDgP DOFs of the element's previous DG solution.
      * @param i_dofsDgAdP DOFs of the adjacent element's previous DG solution.
      * @param io_dofsDg current candidate DG solution of the element, for which the DG surface integral is replaced with the sub-cell surface integral.
+     * @param i_mm matrix multiplication kernels.
+     * @param i_solvSc sub-cell solver.
      *
+     * @paramt TL_T_LID ingral type of local ids.
      * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_MM type of the matrix-matrix multiplication kernels.
+     * @paramt TL_T_SOLV_SC type of the sub-cell solver.
      **/
-    template< typename TL_T_REAL >
-    static void surfIntRb( TL_T_REAL         i_dt,
-                           bool      const   i_admAdP[TL_N_CRS],
-                           bool      const   i_admAdC[TL_N_CRS],
-                           TL_T_REAL const   i_fMatDg[TL_N_MDS][TL_N_MDS],
-                           TL_T_REAL const   i_fMatDgAd[TL_N_MDS][TL_N_MDS],
-                           TL_T_REAL const   i_scatterSf[TL_N_MDS][TL_N_SFS],
-                           TL_T_REAL const   i_scatterSfAd[TL_N_MDS][TL_N_SFS],
-                           TL_T_REAL const   i_sfInt[TL_N_SFS][TL_N_MDS],
-                           TL_T_REAL const   i_fluxSolver,
-                           TL_T_REAL const   i_fluxSolverAd,
-                           TL_T_REAL const   i_tDofsDgP[  TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                           TL_T_REAL const   i_tDofsDgAdP[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                           TL_T_REAL const   i_tDofsScAdP[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                           TL_T_REAL const   i_dofsDgP[   TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                           TL_T_REAL const   i_dofsDgAdP[ TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                           TL_T_REAL         io_dofsDg[   TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
+   template< typename TL_T_LID,
+             typename TL_T_REAL,
+             typename TL_T_MM,
+             typename TL_T_SOLV_SC >
+   static void surfIntRb( TL_T_REAL           i_dt,
+                          TL_T_LID            i_lp,
+                          unsigned short      i_fa,
+                          bool         const  i_admAdP[TL_N_CRS],
+                          bool         const  i_admAdC[TL_N_CRS],
+                          TL_T_REAL    const  i_fMatDg[TL_N_MDS][TL_N_MDS],
+                          TL_T_REAL    const  i_fMatDgAd[TL_N_MDS][TL_N_MDS],
+                          TL_T_REAL    const  i_scatterSf[TL_N_MDS][TL_N_SFS],
+                          TL_T_REAL    const  i_scatterSfAd[TL_N_MDS][TL_N_SFS],
+                          TL_T_REAL    const  i_sfInt[TL_N_SFS][TL_N_MDS],
+                          TL_T_REAL    const  i_fluxSolver[TL_N_QTS][TL_N_QTS],
+                          TL_T_REAL    const  i_fluxSolverAd[TL_N_QTS][TL_N_QTS],
+                          TL_T_REAL    const  i_tDofsDgP[  TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                          TL_T_REAL    const  i_tDofsDgAdP[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                          TL_T_REAL    const  i_tDofsScAdP[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                          TL_T_REAL    const  i_dofsDgP[   TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                          TL_T_REAL    const  i_dofsDgAdP[ TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                          TL_T_REAL           io_dofsDg[   TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                          TL_T_MM      const &i_mm,
+                          TL_T_SOLV_SC const &i_solvSc ) {
       // determine if a rollback is required: a single fused sim of the limited element is not admissible
       bool l_rb = false;
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-        l_rb = l_rb || (i_admAdC[l_cr] == false);
+        l_rb = l_rb || (i_admAdC[l_cr] == false );
       }
 
       // only continue if a rollback is required
@@ -163,12 +177,22 @@ class edge::sc::Limiter {
 
         // compute sub-cell FV fluxes between the two DG elements
         TL_T_REAL l_fluxes[TL_N_QTS][TL_N_SFS][TL_N_CRS];
+        i_solvSc.nuFaSf( i_dt,
+                         i_lp,
+                         i_fa,
+                         l_scFa,
+                         l_fluxes );
 
-        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            l_fluxes[0][l_sf][l_cr]  = i_fluxSolver   * l_scFa[0][0][l_sf][l_cr]; // own contrib
-            l_fluxes[0][l_sf][l_cr] += i_fluxSolverAd * l_scFa[1][0][l_sf][l_cr]; // adj contrib
-            l_fluxes[0][l_sf][l_cr] *= i_dt;
+        // scale fluxes with number of sub-faces, as this is part of the surface integral
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              l_fluxes[l_qt][l_sf][l_cr] *= TL_N_SFS;
+              l_fluxes[l_qt][l_sf][l_cr] /= TL_N_SCS;
+
+              // DG solver scaled by inverse det of surface-jac (twice the area of the triangle)
+              if( TL_T_EL == TRIA3 ) l_fluxes[l_qt][l_sf][l_cr] *= 2;
+            }
           }
         }
 
@@ -186,47 +210,57 @@ class edge::sc::Limiter {
 
         // face integral of the DG fluxes
         TL_T_REAL l_sIntDg[TL_N_QTS][TL_N_MDS][TL_N_CRS];
-        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            l_sIntDg[0][l_md][l_cr] = 0;
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+              l_sIntDg[l_qt][l_md][l_cr] = 0;
+
+        TL_T_REAL l_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS];
 
         // local
-        advection::solvers::AderDg<
-          TL_T_EL,
-          TL_O_SP,
-          TL_O_SP,
-          TL_N_CRS >::surfInt( i_fMatDg,
-                               i_fluxSolver,
-                               i_tDofsDgP[0],
-                               l_sIntDg[0] );
+        elastic::solvers::SurfInt< TL_T_EL,
+                                   TL_N_QTS,
+                                   TL_O_SP,
+                                   TL_O_SP,
+                                   TL_N_CRS >::faS( i_fMatDg,
+                                                    i_fluxSolver,
+                                                    i_tDofsDgP,
+                                                    i_mm,
+                                                    l_sIntDg,
+                                                    l_scratch );
 
         // adjacent
-        advection::solvers::AderDg<
-          TL_T_EL,
-          TL_O_SP,
-          TL_O_SP,
-          TL_N_CRS >::surfInt( i_fMatDgAd,
-                               i_fluxSolverAd,
-                               i_tDofsDgAdP[0],
-                               l_sIntDg[0] );
+        elastic::solvers::SurfInt< TL_T_EL,
+                                   TL_N_QTS,
+                                   TL_O_SP,
+                                   TL_O_SP,
+                                   TL_N_CRS >::faS( i_fMatDgAd,
+                                                    i_fluxSolverAd,
+                                                    i_tDofsDgAdP,
+                                                    i_mm,
+                                                    l_sIntDg,
+                                                    l_scratch );
 
         // update the DOFs accordingly
-        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            if( i_admAdC[l_cr] == false ) {
-              io_dofsDg[0][l_md][l_cr] -= l_sIntDg[0][l_md][l_cr];
-              io_dofsDg[0][l_md][l_cr] += l_sIntSc[0][l_md][l_cr];
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              if( i_admAdC[l_cr] == false ) {
+                io_dofsDg[l_qt][l_md][l_cr] -= l_sIntDg[l_qt][l_md][l_cr];
+                io_dofsDg[l_qt][l_md][l_cr] += l_sIntSc[l_qt][l_md][l_cr];
+              }
             }
           }
         }
 
       }
-    }
+   }
 
     /**
      * Computes the limited solution of the given element.
      *
      * @param i_dt time step.
+     * @param i_lp id of the limited plus element.
      * @param i_scSfSc sub-cells adjacent to sub-cells (sub-faces as bridge).
      * @param i_scTySf types of sub-faces adjacent to sub-cells.
      * @param i_fIdElFaEl faces ids w.r.t. the reference element of adjacent elements.
@@ -235,15 +269,22 @@ class edge::sc::Limiter {
      * @param i_admC admissiblity of the element's candidate solution.
      * @param i_scatter sub-cell scatter operator.
      * @param i_scatteSf sub-cell scatter operator for the sub-cells at the element's surface.
-     * @param i_fluxS DG flux solver.
+     * @param i_netUpSc net-updates if provided for the faces.
      * @param i_dofsDgP DOFs of the previous DG solution.
      * @param i_dofsScAdP sub-cell solution of the adjacent sub-cells (DG-faces as bridge).
      * @param i_dofsDgAdP DG solution of the adjacent DG-elements (faces as bridge).
      * @param io_dofsSc will be updated with the limited sub-cell solution.
+     * @param i_solvSc sub-cell solver.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_SOLV_SC type of the sub-cell solver.
      **/
     template< typename TL_T_LID,
-              typename TL_T_REAL >
+              typename TL_T_REAL,
+              typename TL_T_SOLV_SC >
     static void limit( TL_T_REAL              i_dt,
+                       TL_T_LID               i_lp,
                        TL_T_LID       const   i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
                        unsigned short const   i_scTySf[TL_N_SCS][TL_N_FAS],
                        unsigned short const   i_fIdElFaEl[TL_N_FAS],
@@ -252,18 +293,14 @@ class edge::sc::Limiter {
                        bool           const   i_admC[TL_N_CRS],
                        TL_T_REAL      const   i_scatter[TL_N_MDS][TL_N_SCS],
                        TL_T_REAL      const   i_scatterSf[TL_N_FAS][TL_N_MDS][TL_N_SFS],
-                       TL_T_REAL      const  *i_fluxS[TL_N_FAS*4],
+                       TL_T_REAL      const (*i_netUpSc[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
                        TL_T_REAL      const   i_dofsDgP[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                        TL_T_REAL      const (*i_dofsScAdP[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
                        TL_T_REAL      const (*i_dofsDgAdP[TL_N_FAS])[TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL              io_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
-      // TODO: outsource, scaling of the dg solver
-      TL_T_REAL l_dgSca = i_dt * TL_N_SCS;
-                l_dgSca /= TL_N_SFS;
-      // DG solver scaled by inverse det of surface-jac (twice the area of the triangle)
-      if( TL_T_EL == TRIA3 ) l_dgSca *= 2;
-
-      TL_T_REAL l_subCell[TL_N_QTS][TL_N_SCS][TL_N_CRS]; // TODO: scratch
+                       TL_T_REAL              io_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                       TL_T_SOLV_SC   const  &i_solvSc ) {
+      // TODO: Use scratch memory
+      TL_T_REAL l_subCell[TL_N_QTS][TL_N_SCS][TL_N_CRS];
 
       // derive element's sub-cell solution
       edge::sc::Kernels<
@@ -293,45 +330,43 @@ class edge::sc::Limiter {
                                                l_subCellNe[l_fa] );
       }
 
-      // assemble sub-grid
-      // TODO: replace with strides in scatter ops
+      // assemble sub-grid, TODO: replace with strides in scatter ops
       TL_T_REAL l_sg[TL_N_QTS][TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_CRS];
-      for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ )
-        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-          l_sg[0][l_sc][l_cr] = l_subCell[0][l_sc][l_cr];
-
-      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ )
-        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ )
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+        for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ )
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            l_sg[0][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = l_subCellNe[l_fa][0][l_sf][l_cr];
+            l_sg[l_qt][l_sc][l_cr] = l_subCell[l_qt][l_sc][l_cr];
 
-      // compute sub-cell solution
-      for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
-        // init with current solution
-        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-          io_dofsSc[0][l_sc][l_cr] = l_sg[0][l_sc][l_cr];
-
-        // iterate over faces of sub-cell
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          // assemble ids of the flux solvers
-          unsigned short l_fsId[2];
-          l_fsId[0] = i_scTySf[l_sc][l_fa];
-          l_fsId[1] = fsIdAd( l_fsId[0] );
-
-          // scaling of the flux-solver
-          TL_T_REAL l_fsSca = (l_fsId[0] < l_fsId[1]) ? l_dgSca : -l_dgSca;
-
-          // iterate over fused runs
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            // own contrib
-            io_dofsSc[0][l_sc][l_cr] += l_sg[0][  l_sc][l_cr] * i_fluxS[ l_fsId[0] ][0] * l_fsSca;
-
-            // neighboring contrib
-            TL_T_LID l_neSc = i_scSfSc[l_sc][l_fa];
-            io_dofsSc[0][l_sc][l_cr] += l_sg[0][l_neSc][l_cr] * i_fluxS[ l_fsId[1] ][0] * l_fsSca;
+      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              // default case: flux computation
+              if( i_netUpSc[l_fa] == nullptr ) {
+                l_sg[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = l_subCellNe[l_fa][l_qt][l_sf][l_cr];
+              }
+              // net-updates in ghost sub-cells
+              else {
+                l_sg[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = i_netUpSc[l_fa][l_qt][l_sf][l_cr];
+              }
+            }
           }
         }
       }
+
+      bool l_netUps[TL_N_FAS];
+      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+        if( i_netUpSc[l_fa] == nullptr )
+          l_netUps[l_fa] = false;
+        else l_netUps[l_fa] = true;
+      }
+      i_solvSc.tsSc( i_dt,
+                     i_lp,
+                     i_scSfSc,
+                     i_scTySf,
+                     l_netUps,
+                     l_sg,
+                     io_dofsSc );
     }
 
   public:
@@ -344,26 +379,37 @@ class edge::sc::Limiter {
      * @param i_fMat DG flux matrices.
      * @param i_scOps sub-cell operators.
      * @param i_scConn sub-cell connectivity.
-     * @param i_elChars element characteristics.
-     * @param i_fsDg DG flux solvers.
+     * @parma i_charsFa face characteristics.
+     * @param i_fsDg DG flux solvers for local contributions.
+     * @param i_fsDgAd DG flux solvers for contributions of adjacent elements.
+     * @param i_elFa DG faces adjacent to elements (no bridge).
      * @param i_elFaEl DG elements adjacent to elements (faces as bridge).
      * @param i_vIdElFaEl vertex ids of adjacent DG-elements (faces as bridge).
      * @param i_fIdElFaEl face ids of adjacent DG-elements (faces as bridge).
      * @param i_admP admissibility of the previous solution.
      * @param i_admC admissibility of the candidate solution.
      * @param o_admL will be set to admissibility of the limited solution.
+     * @param i_lock if set to true, the solution is locked in sub-cell space.
      * @param i_tDofsDg temporary DOFs of the DG-solution.
      * @param io_dofsDg will be updated with DG-projection of the limited solution.
      * @param i_tDofsSc temporary sub-cell solution for sub-cells adjacent to DG-faces.
      * @param io_dofsSc will be updated with sub-cell solution.
      * @param i_extP extrema of the previous solution.
      * @param o_extL will be set to extrema of the limited solution.
+     * @param i_mm matrix multiplication kernels.
+     * @param i_solvSc sub-cell solver.
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_CHARS_FA face characteristics, offering member .spType.
+     * @paramt TL_T_MM type of the matrix-matrix multiplication kernels.
+     * @paramt TL_T_SOLV_SC type of the sub-cell solver.
      **/
     template< typename TL_T_LID,
-              typename TL_T_REAL >
+              typename TL_T_REAL,
+              typename TL_T_CHARS_FA,
+              typename TL_T_MM,
+              typename TL_T_SOLV_SC >
     static void aPost( TL_T_LID                                     i_first,
                        TL_T_LID                                     i_nLps,
                        TL_T_REAL                                    i_dt,
@@ -376,19 +422,25 @@ class edge::sc::Limiter {
                          TL_T_LID,
                          TL_T_EL,
                          TL_O_SP >         const                    i_scConn,
-                       TL_T_REAL           const                  (*i_fsDg)[TL_N_FAS*2],
+                       TL_T_CHARS_FA       const                  (*i_charsFa),
+                       TL_T_REAL           const                  (*i_fsDg)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
+                       TL_T_REAL           const                  (*i_fsDgAd)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
+                       TL_T_LID            const                  (*i_elFa)[TL_N_FAS],
                        TL_T_LID            const                  (*i_elFaEl)[TL_N_FAS],
                        unsigned short      const                  (*i_vIdElFaEl)[TL_N_VES],
                        unsigned short      const                  (*i_fIdElFaEl)[TL_N_FAS],
                        bool                const                  (*i_admP)[TL_N_CRS],
                        bool                const                  (*i_admC)[TL_N_CRS],
                        bool                                       (*o_admL)[TL_N_CRS],
+                       bool                const                  (*i_lock)[TL_N_CRS],
                        TL_T_REAL           const (* const * const   i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
                        TL_T_REAL                                  (*io_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                        TL_T_REAL           const                  (*i_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
                        TL_T_REAL                                  (*io_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                        TL_T_REAL                                  (*i_extP)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_REAL                                  (*o_extL)[2][TL_N_QTS][TL_N_CRS] ) {
+                       TL_T_REAL                                  (*o_extL)[2][TL_N_QTS][TL_N_CRS],
+                       TL_T_MM             const                   &i_mm,
+                       TL_T_SOLV_SC        const                   &i_solvSc ) {
       // iterate over limited plus elements
       for( TL_T_LID l_lp = i_first; l_lp < i_first+i_nLps; l_lp++ ) {
         // dense id
@@ -396,14 +448,6 @@ class edge::sc::Limiter {
 
         // limited id
         TL_T_LID l_li = i_scConn.lpLi[l_lp];
-
-        // assemble pointers to flux solvers
-        TL_T_REAL const * l_fluxS[TL_N_FAS*2 + TL_N_FAS*2];
-        // TODO: place holder for homogeneous solvers
-        for( unsigned short l_fs = 0; l_fs < TL_N_FAS*2; l_fs++ ) {
-          l_fluxS[l_fs             ] = &i_fsDg[l_el][l_fs];
-          l_fluxS[l_fs + TL_N_FAS*2] = &i_fsDg[l_el][l_fs];
-        }
 
         // derive the adjacent limited elements (faces as bridge)
         TL_T_LID l_lpFaLi[TL_N_FAS];
@@ -416,8 +460,7 @@ class edge::sc::Limiter {
 
         // iterate over faces and replace DG surface integral with sub-cell surface integral if required
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
-
+          EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
           TL_T_LID l_liAd = l_lpFaLi[l_fa];
 
           // only continue if the face is adjacent to a limited element
@@ -427,8 +470,9 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
             // id of the face of adjacent element w.r.t. reference element
             unsigned short l_fId = i_fIdElFaEl[l_el][l_fa];
 
-            unsigned short l_fMatId = advection::solvers::AderDg<
+            unsigned short l_fMatId = elastic::solvers::SurfInt<
               TL_T_EL,
+              TL_N_QTS,
               TL_O_SP,
               TL_O_SP,
               TL_N_CRS >::fMatId( MESH_TYPE_NONE,
@@ -438,6 +482,8 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
 
             // rollback DG surface integration of the face and replace with sub-cell integral
             surfIntRb( i_dt,
+                       l_lp,
+                       l_fa,
                        i_admP[l_liAd],
                        i_admC[l_liAd],
                        i_fMat[l_fa],
@@ -446,13 +492,15 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
                        i_scOps.scatterSurf[TL_N_FAS+l_fId],
                        i_scOps.sfInt[l_fa],
                        i_fsDg[l_el][l_fa],
-                       i_fsDg[l_el][TL_N_FAS+l_fa],
+                       i_fsDgAd[l_el][l_fa],
                        i_tDofsDg[0][l_el],
                        i_tDofsDg[0][l_elAd],
                        i_tDofsSc[l_liAd][l_fId],
                        i_tDofsDg[1][l_el],
                        i_tDofsDg[1][l_elAd],
-                       io_dofsDg[l_el] );
+                       io_dofsDg[l_el],
+                       i_mm,
+                       i_solvSc );
           }
         }
 
@@ -470,7 +518,9 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
           if( l_lim ) {
             // admissibility of adjacent elements
             bool const *l_admAdP[TL_N_FAS];
-            // sub-cell solution of adjacent elmeents
+            // net-updates for internal boundaries
+            TL_T_REAL const (*l_netUpSc[TL_N_FAS])[TL_N_SFS][TL_N_CRS];
+            // sub-cell solution of adjacent element
             TL_T_REAL const (*l_dofsScAdP[TL_N_FAS])[TL_N_SFS][TL_N_CRS];
             // DG solution of adjacent elements
             TL_T_REAL const (*l_dofsDgAdP[TL_N_FAS])[TL_N_MDS][TL_N_CRS];
@@ -478,23 +528,40 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
             // assemble info of adjacent (face as bridge) elements
             for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
               unsigned short l_fId = i_fIdElFaEl[l_el][l_fa];
+              TL_T_LID l_adFa = i_elFa[l_el][l_fa];
               TL_T_LID l_adEl = i_elFaEl[l_el][l_fa];
               TL_T_LID l_adLi = l_lpFaLi[l_fa];
 
+              // TODO: replace with generic ibnd sp-type
+              if( ( i_charsFa[l_adFa].spType & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
+                l_netUpSc[l_fa] = i_tDofsSc[l_li][l_fa];
+              }
+              else {
+                l_netUpSc[l_fa] = nullptr;
+              }
+
+              // set adjacent DG dofs
+              if( l_adEl < std::numeric_limits< TL_T_LID >::max() ) {
+                l_dofsDgAdP[l_fa] = i_tDofsDg[1][l_adEl];
+              }
+              else {
+                l_dofsDgAdP[l_fa] = nullptr;
+              }
+
+              // set adjacent admissibility and SC dofs
               if( l_adLi < std::numeric_limits< TL_T_LID >::max() ) {
                 l_admAdP[l_fa]    = i_admP[l_adLi];
                 l_dofsScAdP[l_fa] = i_tDofsSc[l_adLi][l_fId];
-                l_dofsDgAdP[l_fa] = i_tDofsDg[1][l_adEl];
               }
               else {
                 l_admAdP[l_fa]    = nullptr;
                 l_dofsScAdP[l_fa] = nullptr;
-                l_dofsDgAdP[l_fa] = nullptr;
               }
             }
 
             // compute limited sub-cell solution
             limit( i_dt,
+                   l_lp,
                    i_scConn.scSfSc,
                    i_scConn.scTySf,
                    i_fIdElFaEl[l_el],
@@ -503,11 +570,12 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
                    i_admC[l_li],
                    i_scOps.scatter,
                    i_scOps.scatterSurf+TL_N_FAS,
-                   l_fluxS,
+                   l_netUpSc,
                    i_tDofsDg[1][l_el],
                    l_dofsScAdP,
                    l_dofsDgAdP,
-                   io_dofsSc[l_li] );
+                   io_dofsSc[l_li],
+                   i_solvSc );
 
             // DG DOFs of the projected sub-cell solution
             TL_T_REAL l_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS];
@@ -516,13 +584,15 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
                                TL_O_SP,
                                TL_N_QTS,
                                TL_N_CRS >::gatherVanilla( io_dofsSc[l_li],
-                                                               i_scOps.gather,
-                                                               l_dofsDg );
+                                                          i_scOps.gather,
+                                                          l_dofsDg );
             // copy only relevant DOFs back
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              if( i_admC[l_li][l_cr] == false ) {
-                for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
-                  io_dofsDg[l_el][0][l_md][l_cr] = l_dofsDg[0][l_md][l_cr];
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                if( i_admC[l_li][l_cr] == false ) {
+                  for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+                    io_dofsDg[l_el][l_qt][l_md][l_cr] = l_dofsDg[l_qt][l_md][l_cr];
+                  }
                 }
               }
             }
@@ -530,7 +600,7 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
             // update admissibility based on DG-projection of the sub-cell solution
             bool l_admL[TL_N_CRS];
             TL_T_REAL l_scDgL[TL_N_QTS][TL_N_SCS][TL_N_CRS];
-            TL_T_REAL l_exDgL[2][N_QUANTITIES][TL_N_CRS];
+            TL_T_REAL l_exDgL[2][TL_N_QTS][TL_N_CRS];
 
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
@@ -541,25 +611,26 @@ EDGE_CHECK_EQ( i_vIdElFaEl[l_el][l_fa], 0 );
                                                               l_exDgL[0],
                                                               l_exDgL[1] );
 
-            edge::sc::Detections< 1,
+            edge::sc::Detections< TL_N_QTS,
                                   TL_N_CRS >::dmp( i_extP[ i_scConn.liEx[l_li] ],
                                                    i_extP,
                                                    l_exDgL,
                                                    i_scConn.liVeEx[l_li+1]-i_scConn.liVeEx[l_li],
                                                    i_scConn.liVeEx[l_li],
                                                    l_admL );
+
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              // lock solution in sub-cell space if required
+              l_admL[l_cr] = l_admL[l_cr] && !i_lock[l_li][l_cr];
+
+              // set admissibility of the limited solution
               if( i_admC[l_li][l_cr] == false ) {
                 o_admL[l_li][l_cr] = l_admL[l_cr];
               }
             }
 
-//for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-//  o_admL[l_li][l_cr] = false;
-//}
-
             // update the extrema
-            TL_T_REAL l_extSc[2][1][TL_N_CRS];
+            TL_T_REAL l_extSc[2][TL_N_QTS][TL_N_CRS];
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
                                TL_N_QTS,

@@ -20,69 +20,12 @@
  * @section DESCRIPTION
  * Compile time constants for the sub-cell limiter.
  **/
-
-/**
- * Derives the number of sub-vertices used for sub-cell limiting
- *
- * @param i_et element type.
- * @param i_os order of the DG-scheme in space.
- **/
-constexpr unsigned short CE_N_SUB_VERTICES( t_entityType i_et,
-                                            unsigned     i_os ) {
-  return (i_et == LINE   ) ?    2 * i_os :
-         (i_et == QUAD4R ) ?   (2 * i_os) * (2 * i_os) :
-         (i_et == HEX8R  ) ?   (2 * i_os) * (2 * i_os) * (2 * i_os) :
-         (i_et == TRIA3  ) ? ( (2 * i_os) * (2 * i_os + 1 ) ) / 2 :
-                             ( (2 * i_os) * (2 * i_os + 1 ) * (2 * i_os + 2 ) ) / 6;
-}
-
-/**
- * Derives the number of sub-edges used for sub-cell limiting.
- *
- * @param i_dim number of dimensions.
- * @param i_os order of the DG-scheme in space.
- * @return number of sub-edges.
- **/
-constexpr unsigned short CE_N_SUB_EDGES( unsigned short i_dim, unsigned i_os ) {
-  return (i_dim == 1) ? 1 : 2 * (i_os - 1) + 1;
-}
-
-/**
- * Derives the number of sub-faces used for sub-cell limiting.
- *
- * @param i_et element type.
- * @param i_os order of the DG-scheme in space.
- * @return number of sub-faces.
- **/
-constexpr unsigned short CE_N_SUB_FACES( t_entityType i_et,
-                                         unsigned     i_os ) {
-  return C_ENT[i_et].N_DIM == 1 ?  1 : (
-           C_ENT[i_et].N_DIM == 2 ?  CE_N_SUB_EDGES(C_ENT[i_et].N_DIM, i_os) :
-             CE_N_SUB_EDGES(C_ENT[i_et].N_DIM, i_os) *  CE_N_SUB_EDGES(C_ENT[i_et].N_DIM , i_os)
-         );
-}
-
-/**
- * Derives the number of sub-cells used for sub-cell limiting.
- *
- * @param i_en element type.
- * @param i_os order of the DG-scheme in space.
- * @return number of sub-cells.
- **/
-constexpr unsigned short CE_N_SUB_CELLS( t_entityType i_et,
-                                         unsigned     i_os ) {
-  return C_ENT[i_et].N_DIM == 1 ?  2 * (i_os - 1) + 1 : (
-           C_ENT[i_et].N_DIM == 2 ?  CE_N_SUB_EDGES(C_ENT[i_et].N_DIM, i_os) *  CE_N_SUB_EDGES(C_ENT[i_et].N_DIM, i_os) :
-             CE_N_SUB_EDGES(C_ENT[i_et].N_DIM, i_os) *  CE_N_SUB_EDGES(C_ENT[i_et].N_DIM , i_os) *  CE_N_SUB_EDGES(C_ENT[i_et].N_DIM, i_os)
-         );
-}
-
 #include "src/sc/SubCell.type"
 
-#define PP_N_GLOBAL_SHARED_3 1
+#define PP_N_GLOBAL_SHARED_2 1
 typedef edge::sc::t_SubCell< int_el,
                              real_base,
                              T_SDISC.ELEMENT,
                              ORDER,
                              N_QUANTITIES,
-                             N_CRUNS > t_globalShared3;
+                             N_CRUNS > t_globalShared2;

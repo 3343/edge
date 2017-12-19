@@ -235,12 +235,14 @@ l_mesh.getGIdsEl( l_gIdsEl );
                                 l_enLayouts[2],
                                 l_mesh.getInMap(),
                                 l_internal.m_vertexChars,
+                                l_internal.m_elementChars,
                                 l_internal.m_connect.elVe,
                                 l_internal.m_elementModePrivate1 );
 
   // write setup
   EDGE_LOG_INFO << "reached synchronization point #0: " << l_simTime;
-  l_writer.write( 0 );
+  l_writer.write( 0,
+                  l_internal.m_globalShared2[0].adm[0] );
 
   // print mem stats
   edge::data::common::printMemStats();
@@ -272,7 +274,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
     EDGE_LOG_INFO << "reached synchronization point #" << l_step << ": " << l_simTime;
 
     // write this sync step
-    l_writer.write( l_stepTime );
+    l_writer.write( l_stepTime,
+                    l_internal.m_globalShared2[0].adm[0] );
   }
 
   // print time info for compute

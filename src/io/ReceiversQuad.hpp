@@ -211,22 +211,11 @@ class edge::io::ReceiversQuad: public Receivers {
                   l_refCrds[l_di] = i_qPts[l_fa][l_qp][l_di];
                 }
 
-                if( TL_T_EL == TRIA3 ) {
-                  linalg::Mappings::mapRefToPhyTria3( l_refCrds[0], l_refCrds[1],
-                                      (double (*)[3]) l_veCrds, // TODO: remove cast
-                                                      l_meshCrds );
-                }
-                else if( TL_T_EL == HEX8R ) {
-                  linalg::Mappings::mapRefToPhyHex8r( l_refCrds[0], l_refCrds[1], l_refCrds[2],
-                                      (double (*)[8]) l_veCrds, // TODO: remove cast
-                                                      l_meshCrds );
-                }
-                else if( TL_T_EL == TET4 ) {
-                  linalg::Mappings::mapRefToPhyTet4( l_refCrds[0], l_refCrds[1], l_refCrds[2],
-                                     (double (*)[4]) l_veCrds, // TODO: remove cast
-                                                     l_meshCrds );
-                }
-                else EDGE_LOG_FATAL << "TODO add templates to mappings";
+
+                linalg::Mappings::refToPhy( TL_T_EL,
+                                            l_veCrds[0],
+                                            l_refCrds,
+                                            l_meshCrds );
 
                 // iterate over receivers and determine the distance
                 for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {

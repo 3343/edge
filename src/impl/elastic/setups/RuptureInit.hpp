@@ -21,8 +21,8 @@
  * Initialization of rupture physics.
  **/
 
-#ifndef RUPTURE_INIT_HPP
-#define RUPTURE_INIT_HPP
+#ifndef EDGE_SEISMIC_RUPTURE_INIT_HPP
+#define EDGE_SEISMIC_RUPTURE_INIT_HPP
 
 #include "io/logging.h"
 #include "linalg/Geom.hpp"
@@ -60,14 +60,16 @@ class edge::elastic::setups::RuptureInit {
   private:
     //! entity type of the faces
     static t_entityType const TL_T_FA = C_ENT[TL_T_EL].TYPE_FACES;
+
     //! #vertices of the faces
     static unsigned short const TL_N_FA_VE = C_ENT[TL_T_FA].N_VERTICES;
-    //! number of quadrature points per face
-    static unsigned short const TL_N_FA_QP = CE_N_FACE_QUAD_POINTS( TL_T_EL, TL_O_SP );
+
+    //! number of sub-faces per DG-face
+    static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
   public:
     /////////////////////////////////////////////////
-    // TODO: Add support for per-quad-point setup! //
+    // TODO: Add support for per-sub-face-point setup! //
     /////////////////////////////////////////////////
 
     /**
@@ -86,7 +88,7 @@ class edge::elastic::setups::RuptureInit {
      * @param i_stressInit initial normal and shear stress values in the domains.
      * @param o_global will be initialized with global linear slip weakening parameters.
      * @param o_face will be initialized with face-local values.
-     * @param o_quadPt will be intialized with quadrature point-local values.
+     * @param o_sfs will be intialized with sub-face-local values.
      *
      * @paramt TL_T_INT_LID integer type of per-rank local ids.
      * @paramt TL_T_INT_SP integer type of the sparse type.
@@ -118,10 +120,10 @@ class edge::elastic::setups::RuptureInit {
                              std::vector< std::array< TL_T_REAL_COMP, TL_N_DIM > >      const    i_stressInit[TL_N_CRUNS],
                              solvers::t_LinSlipWeakGlobal< TL_T_REAL_COMP, TL_N_CRUNS >        & o_global,
                              solvers::t_LinSlipWeakFace< TL_T_REAL_COMP >                      * o_face,
-                             solvers::t_LinSlipWeakFaceQuadPoint<
+                             solvers::t_LinSlipWeakSubFace<
                                TL_T_REAL_COMP,
                                TL_N_DIM,
-                               TL_N_CRUNS >                                                   (* o_quadPt)[TL_N_FA_QP] ) {
+                               TL_N_CRUNS >                                                   (* o_sfs)[TL_N_SFS] ) {
       // iterate over runs and setup friction laws
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {\
         EDGE_CHECK( i_lswPars[l_ru][0] > TOL.SOLVER );
@@ -170,18 +172,18 @@ class edge::elastic::setups::RuptureInit {
 
         // iterate over fused runs
         for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-          // iterate over quad points
-          for( unsigned short l_qp = 0; l_qp < TL_N_FA_QP; l_qp++ ) {
+          // iterate over sub-faces
+          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             // set initial values invalid
-            o_quadPt[l_spId][l_qp].sn0[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
+            o_sfs[l_spId][l_sf].sn0[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             for( unsigned short l_di = 0; l_di < TL_N_DIM-1; l_di++ ) {
-              o_quadPt[l_spId][l_qp].ss0[l_di][l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
+              o_sfs[l_spId][l_sf].ss0[l_di][l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             }
-            o_quadPt[l_spId][l_qp].muf[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
+            o_sfs[l_spId][l_sf].muf[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             for( unsigned short l_di = 0; l_di < TL_N_DIM-1; l_di++ ) {
-              o_quadPt[l_spId][l_qp].dd[l_di][l_ru]  = 0;
-              o_quadPt[l_spId][l_qp].sr[l_di][l_ru]  = 0;
-              o_quadPt[l_spId][l_qp].tr[l_di][l_ru]  = 0;
+              o_sfs[l_spId][l_sf].dd[l_di][l_ru]  = 0;
+              o_sfs[l_spId][l_sf].sr[l_di][l_ru]  = 0;
+              o_sfs[l_spId][l_sf].tr[l_di][l_ru]  = 0;
             }
 
             // iterate over domains
@@ -189,12 +191,12 @@ class edge::elastic::setups::RuptureInit {
               // check if the point is inside
               if( i_doms[l_ru][l_do].inside( l_pt ) ) {
                 // set intial stress values
-                o_quadPt[l_spId][l_qp].sn0[l_ru] = i_stressInit[l_ru][l_do][0];
+                o_sfs[l_spId][l_sf].sn0[l_ru] = i_stressInit[l_ru][l_do][0];
                 for( unsigned short l_di = 0; l_di < TL_N_DIM-1; l_di++ ) {
-                  o_quadPt[l_spId][l_qp].ss0[0+l_di][l_ru] = i_stressInit[l_ru][l_do][1+l_di];
+                  o_sfs[l_spId][l_sf].ss0[0+l_di][l_ru] = i_stressInit[l_ru][l_do][1+l_di];
                 }
                 // init friction coefficient with static friction coefficient
-                o_quadPt[l_spId][l_qp].muf[l_ru] = i_lswPars[l_ru][0];
+                o_sfs[l_spId][l_sf].muf[l_ru] = i_lswPars[l_ru][0];
 
                 // abort after the first found region
                 break;

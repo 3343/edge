@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Definition of compile time constants.
  **/
-#ifndef CONSTANTS_HPP
-#define CONSTANTS_HPP
+#ifndef EDGE_CONSTANTS_HPP
+#define EDGE_CONSTANTS_HPP
 
 // entity types
 typedef enum {
@@ -687,6 +687,11 @@ static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.CRUNS,
               "crun alingnment smaller than private alignemnt" );
 static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.ELEMENT_MODES.SHARED,
                "private alignment smaller than shared alignment" );
+
+/**
+ * Constant expressions of the sub-cell limiter.
+ **/
+#include "sc/cexprs.inc"
 
 /*
  * Setups for the different equations and discretizations.

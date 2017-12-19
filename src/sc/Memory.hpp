@@ -20,47 +20,22 @@
  * @section DESCRIPTION
  * Allocates memory for sub-cell data.
  **/
-#ifndef SC_MEMORY_HPP
-#define SC_MEMORY_HPP
+#ifndef EDGE_SC_MEMORY_HPP
+#define EDGE_SC_MEMORY_HPP
 
+#include "constants.hpp"
 #include "data/Dynamic.h"
 
 namespace edge {
   namespace sc {
-    template< typename TL_T_LID,
-              typename TL_T_REAL,
-              t_entityType   TL_T_EL,
-              unsigned short TL_O_SP,
-              unsigned short TL_N_QTS,
-              unsigned short TL_N_CRS >
     class Memory;
   }
 }
 
 /**
  * Memory allocations for the sub-cell limiter.
- *
- * @paramt TL_T_LID integral types of local ids.
- * @paramt TL_T_REAL floating point type.
- * @paramt TL_T_EL element type.
- * @paramt TL_O_SP spatial order of the DG-scheme.
- * @paramt TL_N_QTS number of quantities.
- * @paramt TL_N_CRS number of fused simulations.
  **/
-template< typename       TL_T_LID,
-          typename       TL_T_REAL,
-          t_entityType   TL_T_EL,
-          unsigned short TL_O_SP,
-          unsigned short TL_N_QTS,
-          unsigned short TL_N_CRS >
 class edge::sc::Memory {
-  private:
-  //! number of sub-cells per element
-  constexpr static unsigned short TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
-
-  //! number of sub-faces per element face
-  constexpr static unsigned short TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
-
   public:
     /**
      * Allocates memory for the sub-cell limiter.
@@ -70,7 +45,20 @@ class edge::sc::Memory {
      * @param i_nExt number of elements providing extrema.
      * @param io_dynMem will be called for dynamic memory allocation.
      * @param o_lim sub-cell limiter, for which memory is allocated.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_EL element type.
+     * @paramt TL_O_SP spatial order of the DG-scheme.
+     * @paramt TL_N_QTS number of quantities.
+     * @paramt TL_N_CRS number of fused simulations.
      **/
+    template< typename       TL_T_LID,
+              typename       TL_T_REAL,
+              t_entityType   TL_T_EL,
+              unsigned short TL_O_SP,
+              unsigned short TL_N_QTS,
+              unsigned short TL_N_CRS >
     static void alloc( TL_T_LID              i_nLim,
                        TL_T_LID              i_nLimPlus,
                        TL_T_LID              i_nExt,
@@ -81,6 +69,12 @@ class edge::sc::Memory {
                                   TL_O_SP,
                                   TL_N_QTS,
                                   TL_N_CRS > &o_lim ) {
+      //! number of sub-cells per element
+      const unsigned short TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+
+      //! number of sub-faces per element face
+      const unsigned short TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
       // DOFs
       std::size_t l_dofsSize  = TL_N_QTS * (std::size_t) TL_N_SCS * TL_N_CRS;
                   l_dofsSize *= i_nLim * sizeof(TL_T_REAL);
@@ -97,6 +91,11 @@ class edge::sc::Memory {
       o_lim.adm[0] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
       o_lim.adm[1] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
       o_lim.adm[2] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
+
+      // lock for sub-cell solution
+      std::size_t l_lockSize =  TL_N_CRS;
+                  l_lockSize *= i_nLim * sizeof(bool);
+      o_lim.lock = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_lockSize );
 
       // extrema of the DG / sub-cell solution
       std::size_t l_extSize  = 2 * (std::size_t) TL_N_QTS * TL_N_CRS;

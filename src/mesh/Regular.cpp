@@ -581,7 +581,31 @@ void edge::mesh::Regular::getFaceAdjacentElements( int_el i_faceId,
 }
 
 void edge::mesh::Regular::getFaceAdjacentVertices( int_el i_fa, int_el o_faVe[C_ENT[T_SDISC.ELEMENT].N_FACE_VERTICES] ) const {
-#if defined PP_T_ELEMENTS_HEX8R
+#if defined PP_T_ELEMENTS_LINE
+  o_faVe[0] = i_fa;
+#elif defined PP_T_ELEMENTS_QUAD4R
+  // determine adjacent elements
+  int_el l_elAd[2];
+  getFaceAdjacentElements( i_fa, l_elAd );
+
+  // get vertices of right element
+  int_el l_elVe[4];
+
+  getElementAdjacentVertices( l_elVe,
+                              l_elAd[1]%m_nX,
+                              l_elAd[1]/m_nX );
+
+  // assign vertices for vertical faces
+  if( i_fa%2 == 0 ) {
+    o_faVe[0] = l_elVe[0];
+    o_faVe[1] = l_elVe[3];
+  }
+  // assign vertices for horizontal faces
+  else {
+    o_faVe[0] = l_elVe[0];
+    o_faVe[1] = l_elVe[1];
+  }
+#elif defined PP_T_ELEMENTS_HEX8R
   // derive face type. 0: z, 1: y, 2: x
   unsigned short l_type = i_fa % 3;
 
@@ -642,17 +666,17 @@ void edge::mesh::Regular::getFacesAdjacentElements( int_el (*o_neighboringIds)[2
   }
 }
 
-void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacentVertices)[C_ENT[T_SDISC.ELEMENT].N_VERTICES] ) const {
+void edge::mesh::Regular::getElementAdjacentVertices( int_el o_elementAdjacentVertices[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
+                                                      int_el i_px,
+                                                      int_el i_py,
+                                                      int_el i_pz ) const {
 #if defined PP_T_ELEMENTS_LINE
   /*
    * Sorting of vertices:
    *  |0____|1____|2____|3
    */
-
-  for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
-    o_elementAdjacentVertices[l_el][0] = l_el;
-    o_elementAdjacentVertices[l_el][1] = l_el+1;
-  }
+  o_elementAdjacentVertices[0] = i_px;
+  o_elementAdjacentVertices[1] = i_px+1;
 #elif defined PP_T_ELEMENTS_QUAD4R
 
   /*
@@ -665,24 +689,80 @@ void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacen
    *  |     |     |     |
    *  |0____|1____|2____|3
    */
+  // derive vertex ids
+  int_el l_veId0 =  i_py      * (m_nX+1) + i_px;
+  int_el l_veId1 =  i_py      * (m_nX+1) + i_px + 1;
+  int_el l_veId2 = (i_py + 1) * (m_nX+1) + i_px;
+  int_el l_veId3 = (i_py + 1) * (m_nX+1) + i_px + 1;
+
+  // set result, using counter-clockwise orientation
+  // side effect: keep this ordering for visulization purposes (no diagonals) and high-order configs
+  o_elementAdjacentVertices[0] = l_veId0;
+  o_elementAdjacentVertices[1] = l_veId1;
+  o_elementAdjacentVertices[2] = l_veId3;
+  o_elementAdjacentVertices[3] = l_veId2;
+#elif defined PP_T_ELEMENTS_HEX8R
+  /*
+   * Sorting of vertices:
+   *
+   *      32______33____34____35
+   *       /.    /.    /.    /|
+   *    28/___29/___30/___31/ |
+   *     /  .  /  .  /  .  /| |
+   * 24 /___25/___26/___27/ | |23
+   *   |    .|    .|    .| _|/|
+   *   |    .|_ _ _|_ _ _| /|_|11
+   * 12|___13|___14|___15|/ | /
+   *   |  ._ |_ _ _|_ _._| _|/
+   *   | .   | .   | .   | . 7
+   *   |.____|.____|.____|/
+   *  0      1     2      3
+   */
+  // derive vertex ids
+  int_el l_veId0 =   i_pz * (m_nX+1) * (m_nY+1)
+                   + i_py * (m_nX+1)
+                   + i_px;
+  int_el l_veId1 = l_veId0 +            1;
+  int_el l_veId2 = l_veId0 + (m_nX+1) + 1;
+  int_el l_veId3 = l_veId0 + (m_nX+1) + 0;
+
+  int_el l_veId4 = l_veId0 + (m_nX+1) * (m_nY+1);
+  int_el l_veId5 = l_veId1 + (m_nX+1) * (m_nY+1);
+  int_el l_veId6 = l_veId2 + (m_nX+1) * (m_nY+1);
+  int_el l_veId7 = l_veId3 + (m_nX+1) * (m_nY+1);
+
+  // set result
+  o_elementAdjacentVertices[0] = l_veId0;
+  o_elementAdjacentVertices[1] = l_veId1;
+  o_elementAdjacentVertices[2] = l_veId2;
+  o_elementAdjacentVertices[3] = l_veId3;
+  o_elementAdjacentVertices[4] = l_veId4;
+  o_elementAdjacentVertices[5] = l_veId5;
+  o_elementAdjacentVertices[6] = l_veId6;
+  o_elementAdjacentVertices[7] = l_veId7;
+#else
+  assert( false );
+#endif
+}
+
+void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacentVertices)[C_ENT[T_SDISC.ELEMENT].N_VERTICES] ) const {
+#if defined PP_T_ELEMENTS_LINE
+  for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+    getElementAdjacentVertices(  o_elementAdjacentVertices[l_el],
+                                 l_el );
+                                 int_el i_px,
+                                 int_el i_py,
+                                 int_el i_pz );
+  }
+#elif defined PP_T_ELEMENTS_QUAD4R
   // iterate over elements dimension-wise
   for( int_el l_y = 0; l_y < m_nY; l_y++ ) {
     for( int_el l_x = 0; l_x < m_nX; l_x++ ) {
       // derive element id
       int_el l_elId = l_y * m_nX + l_x;
 
-      // derive vertex ids
-      int_el l_veId0 =  l_y      * (m_nX+1) + l_x;
-      int_el l_veId1 =  l_y      * (m_nX+1) + l_x + 1;
-      int_el l_veId2 = (l_y + 1) * (m_nX+1) + l_x;
-      int_el l_veId3 = (l_y + 1) * (m_nX+1) + l_x + 1;
-
-      // set result, using counter-clockwise orientation
-      // side effect: keep this ordering for visulization purposes (no diagonals) and high-order configs
-      o_elementAdjacentVertices[l_elId][0] = l_veId0;
-      o_elementAdjacentVertices[l_elId][1] = l_veId1;
-      o_elementAdjacentVertices[l_elId][2] = l_veId3;
-      o_elementAdjacentVertices[l_elId][3] = l_veId2;
+      getElementAdjacentVertices( o_elementAdjacentVertices[l_elId],
+                                  l_x, l_y );
     }
   }
 #elif defined PP_T_ELEMENTS_HEX8R
@@ -711,28 +791,8 @@ void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacen
                         l_y * m_nX +
                         l_x;
 
-        // derive vertex ids
-        int_el l_veId0 =   l_z * (m_nX+1) * (m_nY+1)
-                         + l_y * (m_nX+1)
-                         + l_x;
-        int_el l_veId1 = l_veId0 +            1;
-        int_el l_veId2 = l_veId0 + (m_nX+1) + 1;
-        int_el l_veId3 = l_veId0 + (m_nX+1) + 0;
-
-        int_el l_veId4 = l_veId0 + (m_nX+1) * (m_nY+1);
-        int_el l_veId5 = l_veId1 + (m_nX+1) * (m_nY+1);
-        int_el l_veId6 = l_veId2 + (m_nX+1) * (m_nY+1);
-        int_el l_veId7 = l_veId3 + (m_nX+1) * (m_nY+1);
-
-        // set result
-        o_elementAdjacentVertices[l_elId][0] = l_veId0;
-        o_elementAdjacentVertices[l_elId][1] = l_veId1;
-        o_elementAdjacentVertices[l_elId][2] = l_veId2;
-        o_elementAdjacentVertices[l_elId][3] = l_veId3;
-        o_elementAdjacentVertices[l_elId][4] = l_veId4;
-        o_elementAdjacentVertices[l_elId][5] = l_veId5;
-        o_elementAdjacentVertices[l_elId][6] = l_veId6;
-        o_elementAdjacentVertices[l_elId][7] = l_veId7;
+        getElementAdjacentVertices( o_elementAdjacentVertices[l_elId],
+                                    l_x, l_y, l_z );
       }
     }
   }
@@ -747,9 +807,7 @@ void edge::mesh::Regular::getConnect( const t_vertexChars *i_veChars,
   // get the connectivity info
   getElementsAdjacentVertices( o_connect.elVe   );
   getElementsAdjacentFaces(    o_connect.elFa   );
-#if defined PP_T_ELEMENTS_HEX8R
   getFacesAdjacentVertices(    o_connect.faVe   );
-#endif
   getFacesAdjacentElements(    o_connect.faEl   );
   getElVeEl(                   o_connect.elVeEl );
   getElementsFaceNeighbors(    o_connect.elFaEl );

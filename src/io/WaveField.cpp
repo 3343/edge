@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,10 +24,10 @@
 #include "WaveField.h"
 
 #include <cassert>
-#include <io/logging.h>
 #include <sys/types.h>
 #include <cstring>
-#include "io/FileSystem.hpp"
+#include "logging.h"
+#include "FileSystem.hpp"
 #include "monitor/instrument.hpp"
 
 edge::io::WaveField::WaveField(       std::string      i_type,
@@ -35,12 +35,12 @@ edge::io::WaveField::WaveField(       std::string      i_type,
                                 const t_enLayout      &i_elLayout,
                                 const t_inMap         *i_inMap,
                                 const t_vertexChars   *i_veChars,
+                                const t_elementChars  *i_elChars,
                                 const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
                                 const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] ):
 
-  m_veChars(i_veChars), m_elVe(i_elVe), m_dofs(i_dofs) {
-//  if(      i_type == "netcdf"     ) m_type = netcdf;
-  if( i_type == "vtk_ascii"  )      m_type = vtkAscii;
+  m_veChars(i_veChars), m_elChars(i_elChars), m_elVe(i_elVe), m_dofs(i_dofs) {
+  if(      i_type == "vtk_ascii"  ) m_type = vtkAscii;
   else if( i_type == "vtk_binary" ) m_type = vtkBinary;
   else                              m_type = none;
 
@@ -71,9 +71,43 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   // remove duplicates
   std::sort( m_elPrint.begin(), m_elPrint.end() );
   m_elPrint.erase( unique( m_elPrint.begin(), m_elPrint.end() ), m_elPrint.end() );
+
+  /*
+   * derive sparse id of limited elements.
+   */
+  m_lePrint.resize( m_elPrint.size() );
+
+  // counter for limited elements
+  int_el l_le = 0;
+
+  // last print element
+  int_el l_lastPrint = m_elPrint.back();
+
+  // counter for print elements
+  int_el l_pe = 0;
+
+  // iterate over elements
+  for( int_el l_el = 0; l_el <= l_lastPrint; l_el++ ) {
+    // check if element is limited
+    bool l_lim = false;
+    if( ( m_elChars[l_el].spType & LIMIT ) == LIMIT ) l_lim = true;
+
+    // set info if element is print
+    if( l_el == m_elPrint[l_pe] ) {
+      if( l_lim ) m_lePrint[l_pe] = l_le;
+      else        m_lePrint[l_pe] = std::numeric_limits< int_el >::max();
+
+      // increase counter for print elements
+      l_pe++;
+    }
+
+    // increase counter for limited elements
+    if( l_lim ) l_le++;
+  }
 }
 
-void edge::io::WaveField::write( double i_time ) {
+void edge::io::WaveField::write( double   i_time,
+                                 bool   (*i_adm)[N_CRUNS] ) {
   PP_INSTR_FUN("write_wf")
 
 //  if( m_type == netcdf ) writeNetcdf( i_time, i_dofs );
@@ -87,9 +121,11 @@ void edge::io::WaveField::write( double i_time ) {
                  m_type==vtkBinary,
                  m_nVe,
                  m_elPrint,
+                 m_lePrint,
                  m_veChars,
                  m_elVe,
-                 m_dofs );
+                 m_dofs,
+                 i_adm );
   }
 
   m_writeStep++;

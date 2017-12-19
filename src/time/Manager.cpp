@@ -126,4 +126,8 @@ void edge::time::Manager::simulate( double i_time ) {
 }
 #endif
 
+  // prepare limiter for sync
+  for( int_tg l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+    m_timeGroups[l_tg]->limSync();
+  }
 }

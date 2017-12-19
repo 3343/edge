@@ -22,13 +22,90 @@
  * @section DESCRIPTION
  * Setup for elastics.
  **/
+
+// set up sparse types
+{
+  // propagate sparse info of rupture faces to elements
+  edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
+                                       2,
+                                       l_internal.m_connect.faEl[0],
+                                       t_spTypeElastic::RUPTURE,
+                                       t_spTypeElastic::RUPTURE,
+                                       l_internal.m_faceChars,
+                                       l_internal.m_elementChars );
+
+  // inherit limited from dynamic rupture elements
+  edge::data::SparseEntities::inherit(              l_internal.m_nElements,
+                                       (int_spType) t_spTypeElastic::RUPTURE,
+                                       (int_spType) t_enTypeShared::LIMIT,
+                                                    l_internal.m_elementChars );
+
+  // inherit limit plus and extrema, which are supersets of limited elements
+  int_spType l_limitSup[2] = { t_enTypeShared::LIMIT_PLUS, t_enTypeShared::EXTREMA };
+  for( unsigned short l_ih = 0; l_ih < 2; l_ih++ ) {
+    edge::data::SparseEntities::inherit(              l_internal.m_nElements,
+                                         (int_spType) t_enTypeShared::LIMIT,
+                                                      l_limitSup[l_ih],
+                                                      l_internal.m_elementChars );
+  }
+
+  // limit plus are the limited elements and their face neighbors
+  edge::data::SparseEntities::propAdj(              l_internal.m_nElements,
+                                                    C_ENT[T_SDISC.ELEMENT].N_FACES,
+                                                    l_internal.m_connect.elFaEl[0],
+                                       (int_spType) t_enTypeShared::LIMIT,
+                                       (int_spType) t_enTypeShared::LIMIT_PLUS,
+                                                    l_internal.m_elementChars,
+                                                    l_internal.m_elementChars );
+
+  // store DG DOFS for all limit plus elements
+  edge::data::SparseEntities::inherit(              l_internal.m_nElements,
+                                       (int_spType) t_enTypeShared::LIMIT_PLUS,
+                                                    C_LTS_EL[t_ltsEl::EL_DOFS],
+                                                    l_internal.m_elementChars );
+
+  // store extrema for all limited elements and those adjacent through vertices
+  edge::data::SparseEntities::propAdj(              l_internal.m_nElements,
+                                                    l_internal.m_connect.elVeEl,
+                                       (int_spType) t_enTypeShared::LIMIT,
+                                       (int_spType) t_enTypeShared::EXTREMA,
+                                                    l_internal.m_elementChars,
+                                                    l_internal.m_elementChars );
+}
+
+// allocate flex data for time buffers and DOFs
+{
+  int_spType  l_spTypes[1] = { C_LTS_EL[t_ltsEl::EL_DOFS] };
+  std::size_t l_spSizes[1] = { N_QUANTITIES };
+
+  real_base (**l_raw)[N_ELEMENT_MODES][N_CRUNS];
+
+  l_raw = l_dynMem.flex<
+    real_base [N_ELEMENT_MODES][N_CRUNS] >( l_internal.m_nElements,
+                                            1,
+                                            N_QUANTITIES,
+                                            l_spTypes,
+                                            l_spSizes,
+                                            l_internal.m_elementChars,
+                                            ALIGNMENT.BASE.HEAP,
+                                            true );
+
+  l_internal.m_globalShared6[0] = l_raw;
+  l_internal.m_globalShared6[1] = l_raw + l_internal.m_nElements;
+}
+
+// init data of limiter
+#include "sc/init.inc"
+
 #ifdef PP_USE_MPI
   // init mpi layout
   EDGE_CHECK( l_enLayouts[2].timeGroups.size() == 1 );
 
+  EDGE_LOG_FATAL << "Implement for flex data";
+
   l_mpi.initLayout( l_enLayouts[2],
-                    l_internal.m_elementModePrivate2[0][0][0],
-                    N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(t_elementModePrivate2),
+                    l_internal.m_globalShared6[0][0][0][0],
+                    N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
                     0,
                     1,
                     100 );
@@ -40,10 +117,7 @@ edge::elastic::io::Config l_elasticConf( l_config.m_doc );
 // setup initial DOFs
 EDGE_LOG_INFO << "  setting up material parameters and initial DOFs";
 for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
-  if( l_config.m_setups[l_run] == "plane_waves" ) {
-    l_internal.m_globalPrivate1[0][l_run].initialDofs = setupChars::InitialDofs::planeWaves;
-  }
-  else l_internal.m_globalPrivate1[0][l_run].initialDofs = setupChars::InitialDofs::zero;
+  l_internal.m_globalPrivate1[0][l_run].initialDofs = setupChars::InitialDofs::zero;
 }
 
 // get the initial setup
@@ -231,15 +305,6 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                               l_enLayouts[2],
                                               l_enLayouts[l_rupLayoutEl] );
 
-// propagate sparse info of rupture faces to elements
-edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
-                                     2,
-                                     l_internal.m_connect.faEl[0],
-                                     t_spTypeElastic::RUPTURE,
-                                     t_spTypeElastic::RUPTURE,
-                                     l_internal.m_faceChars,
-                                     l_internal.m_elementChars );
-
 // setup the GEMM kernels for ADER-DG
 #if defined PP_T_KERNELS_XSMM
 {
@@ -264,11 +329,16 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
                         (real_base *) l_fluxTDe );
 
   real_base l_star[N_DIM][N_QUANTITIES][N_QUANTITIES];
-  edge::elastic::solvers::AderDg::getJac( (real_base) 1.0,
-                                          (real_base) 1.0,
-                                          (real_base) 1.0,
-                                                      l_star[0][0],
-                                                      N_DIM );
+  edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
+                                  N_QUANTITIES,
+                                  ORDER,
+                                  ORDER,
+                                  N_CRUNS
+                                >::getJac( (real_base) 1.0,
+                                           (real_base) 1.0,
+                                           (real_base) 1.0,
+                                                       l_star[0][0],
+                                                       N_DIM );
   real_base l_fSolv[N_QUANTITIES][N_QUANTITIES];
   for( unsigned short l_di = 1; l_di < N_DIM; l_di++ ) {
     for( int_qt l_q1 = 0; l_q1 < N_QUANTITIES; l_q1++ ) {
@@ -510,33 +580,34 @@ l_internal.initSparse( 0, l_enLayouts[l_rupLayoutFa].nEnts, 0,
                        0, l_enLayouts[l_rupLayoutFa].nEnts, 0  );
 
 if( l_elasticConf.m_frictionLaw != "" ) {
-  EDGE_LOG_INFO << "  setting up rupture physics";
-  // link sparse rupture faces and sparse rupture elements
-  edge::data::SparseEntities::linkSpAdjDst( l_enLayouts[1].nEnts,
-                                            2,
-                                            l_internal.m_connect.faEl[0],
-                                            t_spTypeElastic::RUPTURE,
-                                            l_internal.m_faceChars,
-                                            l_internal.m_elementChars,
-                                            l_internal.m_faceSparseShared3[0] );
+  // allocate memory for the internal boundary
+  edge::sc::ibnd::Memory::alloc( l_enLayouts[l_rupLayoutFa].nEnts,
+                                 l_enLayouts[l_rupLayoutEl].nEnts,
+                                 l_dynMem,
+                                 l_internal.m_globalShared7[0] );
 
-  // link sparse rupture elements and sparse faces
-  edge::data::SparseEntities::linkSpAdjSst( l_enLayouts[2].nEnts,
-                                            C_ENT[T_SDISC.ELEMENT].N_FACES,
-                                            l_internal.m_connect.elFa[0],
-                                            t_spTypeElastic::RUPTURE,
-                                            l_internal.m_faceChars,
-                                            l_internal.m_elementSparseShared2[0][0] );
+  // init connectivity of the internal boundary
+  edge::sc::ibnd::Init::connect(              l_enLayouts[1].nEnts,
+                                              l_enLayouts[2].nEnts,
+                                 (int_spType) t_spTypeElastic::RUPTURE,
+                                 (int_spType) t_enTypeShared::LIMIT,
+                                              l_internal.m_connect.faEl,
+                                              l_internal.m_connect.elFa,
+                                              l_internal.m_faceChars,
+                                              l_internal.m_elementChars,
+                                              l_internal.m_globalShared7[0].connect );
 
+  // set up ibnd face chars
   edge::elastic::solvers::InternalBoundaryTypes<
     T_SDISC.ELEMENT
   >::initFaces( l_enLayouts[1].nEnts,
+                l_enLayouts[2].nEnts,
                 RUPTURE,
                 l_internal.m_faceChars,
+                l_internal.m_elementChars,
                 l_internal.m_connect.faEl,
                 l_internal.m_connect.elFa,
-                l_internal.m_connect.vIdElFaEl,
-                l_internal.m_faceSparseShared6[0] );
+                l_internal.m_globalShared7[0].bfChars );
 
   // set up rupture solvers
   edge::elastic::solvers::InternalBoundarySolvers<
@@ -548,10 +619,11 @@ if( l_elasticConf.m_frictionLaw != "" ) {
            l_internal.m_vertexChars,
            l_internal.m_faceChars,
            l_internal.m_elementShared1[0],
-           l_internal.m_faceSparseShared5,
+           l_internal.m_globalShared7[0].mss,
            l_elasticConf.m_faultCrds );
 
-  // init rupture properties
+  // set up rupture physics
+  EDGE_LOG_INFO << "  setting up rupture physics";
   edge::elastic::setups::RuptureInit<
     T_SDISC.ELEMENT,
     ORDER,
@@ -567,18 +639,23 @@ if( l_elasticConf.m_frictionLaw != "" ) {
       l_elasticConf.m_lsw,
       l_elasticConf.m_rupDoms,
       l_elasticConf.m_stressInit,
-      l_internal.m_globalShared2[0],
+      l_internal.m_globalShared5[0],
       l_internal.m_faceSparseShared1[0],
       l_internal.m_faceSparseShared2[0] );
 }
 
 #if PP_ORDER > 1
 // setup star matrices
-edge::elastic::solvers::AderDg::setupStarM( l_internal.m_nElements,
-                                            l_internal.m_vertexChars,
-                                            l_internal.m_connect.elVe,
-                                            l_internal.m_elementShared1,
-                                            l_internal.m_elementShared4 );
+edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
+                                N_QUANTITIES,
+                                ORDER,
+                                ORDER,
+                                N_CRUNS
+                              >::setupStarM( l_internal.m_nElements,
+                                             l_internal.m_vertexChars,
+                                             l_internal.m_connect.elVe,
+                                             l_internal.m_elementShared1,
+                                             l_internal.m_elementShared4 );
 #endif
 
 // setup solvers
@@ -596,6 +673,19 @@ edge::elastic::solvers::common::setupSolvers( l_internal.m_nElements,
                                               l_internal.m_elementShared2,
                                               l_internal.m_elementShared3 );
 
+// set up sub-cell local lax-friedrichs solvers
+l_internal.m_globalShared8[0].alloc( l_enLayouts[l_limPlusLayout].nEnts,
+                                     l_dynMem );
+l_internal.m_globalShared8[0].init( 0,
+                                    l_enLayouts[l_limPlusLayout].nEnts,
+                                    l_internal.m_globalShared2[0].connect.lpEl,
+                                    l_internal.m_connect.elFa,
+                                    l_internal.m_connect.elFaEl,
+                                    l_internal.m_faceChars,
+                                    l_internal.m_elementChars,
+                                    l_internal.m_elementShared1[0] );
+
+// get time step stats
 edge::elastic::common::getTimeStepStatsCFL( l_internal.m_nElements,
                                             l_internal.m_elementChars,
                                             l_internal.m_elementShared1,
@@ -603,7 +693,7 @@ edge::elastic::common::getTimeStepStatsCFL( l_internal.m_nElements,
 
 // setup shared memory parallelization
 for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
-  int_spType l_spType[3] = { RECEIVER, SOURCE, RUPTURE };
+  int_spType l_spType[4] = { RECEIVER, SOURCE, LIMIT, EXTREMA };
 
   // local inner-elements
   l_shared.regWrkRgn( l_tg,
@@ -632,7 +722,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_tg,
-                      1, l_spType+2, l_internal.m_elementChars );
+                      2, l_spType+2, l_internal.m_elementChars );
 
   // neigh send-elements
   l_shared.regWrkRgn( l_tg,
@@ -643,7 +733,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_enLayouts[2].timeGroups.size() + l_tg,
-                      1, l_spType+2, l_internal.m_elementChars );
+                      2, l_spType+2, l_internal.m_elementChars );
 
   if( l_elasticConf.m_frictionLaw == "" ) {
     // src inner-elements
@@ -674,7 +764,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.first,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.size,
                         l_tg,
-                        1, l_spType, l_internal.m_faceSparseShared6[0] );
+                        1, l_spType, l_internal.m_globalShared7[0].bfChars );
 
     // rupture physics send- and receive-faces
     l_shared.regWrkRgn( l_tg,
@@ -686,6 +776,40 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.size+
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].nEntsNotOwn,
                         l_enLayouts[l_rupLayoutFa].timeGroups.size() + l_tg,
-                        1, l_spType, l_internal.m_faceSparseShared6[0] );
+                        1, l_spType, l_internal.m_globalShared7[0].bfChars );
+  }
+
+  // limit, inner-elements
+  l_shared.regWrkRgn( l_tg,
+                      3,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 8,
+                      l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.first,
+                      l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
+                      l_tg );
+
+  // limit, send-elements
+  l_shared.regWrkRgn( l_tg,
+                      3,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 9,
+                      l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.first+
+                      l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
+                      l_enLayouts[l_limPlusLayout].timeGroups[l_tg].nEntsOwn-
+                      l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
+                      l_enLayouts[l_limPlusLayout].timeGroups.size() + l_tg );
+}
+
+// TODO: work on initialization
+// init admissibity to true
+int_el l_li = 0;
+for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
+  if( (l_internal.m_elementChars[l_el].spType & LIMIT) == LIMIT ) {
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+      l_internal.m_globalShared2[0].adm[0][l_li][l_cr] = true;
+      l_internal.m_globalShared2[0].adm[1][l_li][l_cr] = true;
+      l_internal.m_globalShared2[0].adm[2][l_li][l_cr] = true;
+
+      l_internal.m_globalShared2[0].lock[l_li][l_cr] = false;
+    }
+    l_li++;
   }
 }

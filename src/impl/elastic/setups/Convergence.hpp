@@ -154,7 +154,11 @@ class edge::elastic::setups::Convergence {
       PP_INSTR_FUN("get_pwav_qp")
 
       // get elements vertices
-      real_mesh l_veCoords[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
+      real_mesh l_veCoords[3][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
+      for( unsigned short l_di = 0; l_di < 3; l_di++ )
+        for( unsigned short l_ve = 0; l_ve < C_ENT[T_SDISC.ELEMENT].N_VERTICES; l_ve++ )
+          l_veCoords[l_di][l_ve] = 0;
+
       mesh::common< T_SDISC.ELEMENT >::getElVeCrds( i_el, i_connElVe, i_vertexChars, l_veCoords );
 
       // get gaussian quadrature points and their weigths

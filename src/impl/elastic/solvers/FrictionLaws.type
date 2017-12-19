@@ -21,20 +21,23 @@
  * Data types of the friction laws.
  **/
 
-#ifndef FRICTION_LAWS_TYPE
-#define FRICTION_LAWS_TYPE
+#ifndef EDGE_SEISMIC_FRICTION_LAWS_TYPE
+#define EDGE_SEISMIC_FRICTION_LAWS_TYPE
 
 namespace edge {
   namespace elastic {
     namespace solvers {
-      template< typename TL_T_REAL, unsigned short TL_N_CRUNS >
+      template< typename       TL_T_REAL,
+                unsigned short TL_N_CRUNS >
       struct t_LinSlipWeakGlobal;
 
       template< typename TL_T_REAL >
       struct t_LinSlipWeakFace;
 
-      template< typename TL_T_REAL, unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
-      struct t_LinSlipWeakFaceQuadPoint;
+      template< typename       TL_T_REAL,
+                unsigned short TL_N_DIM,
+                unsigned short TL_N_CRUNS >
+      struct t_LinSlipWeakSubFace;
     }
   }
 }
@@ -72,14 +75,16 @@ struct edge::elastic::solvers::t_LinSlipWeakFace {
 };
 
 /**
- * Linear slip weakening: Per quad point data
+ * Linear slip weakening: Per sub-face data.
  *
  * @paramt TL_T_REAL floating point type.
  * @paramt TL_N_DIM number of dimension.
  * @paramt TL_N_CRUNS number of fused simulations.
  **/
-template< typename TL_T_REAL, unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
-struct edge::elastic::solvers::t_LinSlipWeakFaceQuadPoint {
+template< typename       TL_T_REAL,
+          unsigned short TL_N_DIM,
+          unsigned short TL_N_CRUNS >
+struct edge::elastic::solvers::t_LinSlipWeakSubFace {
   //! initial normal stress
   TL_T_REAL sn0[TL_N_CRUNS];
   //! initial shear stress

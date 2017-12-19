@@ -21,6 +21,6 @@
  * Setup for the sub-cell limiter.
  **/
 
-edge::sc::Init< T_SDISC.ELEMENT, ORDER >::connect( l_internal.m_globalShared3[0].connect );
-edge::sc::Init< T_SDISC.ELEMENT, ORDER >::svChars( l_internal.m_globalShared3[0].svChars );
-edge::sc::Init< T_SDISC.ELEMENT, ORDER >::ops(     l_internal.m_globalShared3[0].ops     );
+edge::sc::Init< T_SDISC.ELEMENT, ORDER >::connect( l_internal.m_globalShared2[0].connect );
+edge::sc::Init< T_SDISC.ELEMENT, ORDER >::svChars( l_internal.m_globalShared2[0].svChars );
+edge::sc::Init< T_SDISC.ELEMENT, ORDER >::ops(     l_internal.m_globalShared2[0].ops     );
