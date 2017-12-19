@@ -161,7 +161,7 @@ def csvToCpp( target, source, env ):
   l_ot  = env['edge_pre'][source[0].get_abspath()]['ot']
   l_out = target[0].get_abspath()
 
-  l_comm = [ 'python3', 'tools/edge_pre/cpp.py',
+  l_comm = [ 'tools/edge_pre/cpp.py',
              '-i', l_in,
              '-s', l_ons,
              '-n', l_on,
@@ -176,9 +176,22 @@ def csvToCpp( target, source, env ):
 edgePre = {}
 edgePre['src'] = []
 env['edge_pre'] = {}
-for l_pre in ['svcrds', 'scsv', 'scsfsc', 'sctysf', 'gather', 'scatter', 'scattersurf', 'sfint']:
+
+# EDGEpre's DG data
+l_dgPre =  ['stiffT', 'stiffV', 'fluxL', 'fluxN', 'fluxT']
+# EDGEpre's SC data
+l_scPre = ['svcrds', 'scsv', 'scsfsc', 'sctysf', 'gather', 'scatter', 'scattersurf', 'sfint']
+
+# add EDGEpre's data
+for l_pre in l_dgPre+l_scPre:
+  # set type
+  if l_pre in l_dgPre:
+    l_ty = 'dg'
+  else:
+    l_ty = 'sc'
+
   # generate file names
-  l_dir = 'edge_pre/sc/' + env['element_type'] + '/' + str( int(env['order'])-1 ) + '/'
+  l_dir = 'edge_pre/' + l_ty + '/' + env['element_type'] + '/' + str( int(env['order'])-1 ) + '/'
   l_base = l_dir + env['element_type'] +\
              '_' +str( int(env['order'])-1 ) + '_' + l_pre
   l_csv = File( l_scriptDir + '/' + l_base + '.csv' )
@@ -186,10 +199,10 @@ for l_pre in ['svcrds', 'scsv', 'scsfsc', 'sctysf', 'gather', 'scatter', 'scatte
 
   # set info
   env['edge_pre'][l_csv.get_abspath()] = {}
-  env['edge_pre'][l_csv.get_abspath()]['ons'] = 'sc'
+  env['edge_pre'][l_csv.get_abspath()]['ons'] = l_ty
   env['edge_pre'][l_csv.get_abspath()]['on']  = l_pre
 
-  if l_pre in ['svcrds', 'gather', 'scatter', 'scattersurf', 'sfint']:
+  if l_pre in ['svcrds', 'gather', 'scatter', 'scattersurf', 'sfint']+l_dgPre:
     env['edge_pre'][l_csv.get_abspath()]['ot']  = 'double'
   elif l_pre in ['scsv', 'scsfsc', 'sctysf']:
     env['edge_pre'][l_csv.get_abspath()]['ot']  = 'unsigned short'
