@@ -59,7 +59,7 @@ class edge::elastic::solvers::SurfInt {
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 
     //! number of vertices
-    static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
+    static unsigned short const TL_N_FVES = C_ENT[TL_T_EL].N_FACE_VERTICES;
 
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
@@ -92,7 +92,7 @@ class edge::elastic::solvers::SurfInt {
           l_fId  = TL_N_FAS;
 
           // only jump over vertex combinations for 3D elements
-          unsigned short l_veJump = (TL_N_DIS == 3) ? TL_N_VES : 1;      
+          unsigned short l_veJump = (TL_N_DIS == 3) ? TL_N_FVES : 1;
 
           // jump over local face
           l_fId += i_fa * TL_N_FAS * l_veJump;
