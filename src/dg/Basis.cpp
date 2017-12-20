@@ -30,269 +30,42 @@
 #include "data/common.hpp"
 #include "monitor/instrument.hpp"
 
-void edge::dg::Basis::computeMassMatrix() {
-  // get order #quadrature points and weights
-  std::vector< real_mesh > l_ptsXi, l_ptsEta, l_ptsZeta, l_weights;
+namespace edge {
+  namespace pre {
+    namespace dg {
+      // mass matrix
+      extern double const * g_massRaw;
+      extern std::size_t const g_massSize;
 
-  dg::QuadraturePoints::getQpts( m_entType,
-                                 m_order,
-                                 C_REF_ELEMENT.VE.ENT[m_entType],
-                                 l_ptsXi, l_ptsEta, l_ptsZeta, l_weights );
+      // stiffness matrices, premultiplied by the inverse mass matrix
+      extern double const * g_stiffVRaw;
+      extern std::size_t const g_stiffVSize;
 
-  // rows of the mass matrix
-  for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-    // cols of the mass matrix
-    for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-      // value of the mass matrix at this position
-      real_base l_val = 0;
-
-      // iterate over quadrature points and integrate
-      for( unsigned int l_qp = 0; l_qp < l_ptsXi.size(); l_qp++ ) {
-        // evaluate basis at quad point
-        real_base l_bValRo = 0;
-        real_base l_bValCo = 0;
-        if( m_entType == LINE ) {
-          evalBasisLine( l_ro, l_ptsXi[l_qp], l_bValRo );
-          evalBasisLine( l_co, l_ptsXi[l_qp], l_bValCo );
-        }
-        else if( m_entType == QUAD4R ) {
-          assert( m_nBaseFuncs == m_order * m_order );
-
-          evalBasisQuad( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo,
-                         -1, m_order );
-
-          evalBasisQuad( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo,
-                         -1, m_order );
-        }
-        else if( m_entType == TRIA3 ) {
-          evalBasisTria( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo );
-
-          evalBasisTria( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo );
-        }
-        else if( m_entType == HEX8R ) {
-          evalBasisHex( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo,
-                        -1, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo,
-                        -1, m_order );
-        }
-        else if( m_entType == TET4 ) {
-          evalBasisTet( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo );
-        }
-        else assert( false );
-
-        // add this quad point
-        l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-      }
-
-      // inexact integration, we ignore almost zero values
-      // this respects hierarchical basis and leads to sparse matrix patterns as intended by this choice
-      if( std::abs( l_val ) > TOL.BASIS ) {
-        m_mass.nz.push_back( l_val );
-        m_mass.ro.push_back( l_ro  );
-        m_mass.co.push_back( l_co  );
-      }
+      // transposed stiffness matrices, premultiplied by the inverse mass matrix (after transpose)
+      extern double const * g_stiffTRaw;
+      extern std::size_t const g_stiffTSize;
     }
   }
 }
 
-void edge::dg::Basis::computeStiffMatrices() {
-  // get order #quadrature points and weights
-  std::vector< real_mesh > l_ptsXi, l_ptsEta, l_ptsZeta, l_weights;
+void edge::dg::Basis::initMassMatrix() {
+  // check that the size matches
+  EDGE_CHECK_EQ( pre::dg::g_massSize, m_nBaseFuncs*m_nBaseFuncs );
 
-  dg::QuadraturePoints::getQpts( m_entType,
-                                 m_order,
-                                 C_REF_ELEMENT.VE.ENT[m_entType],
-                                 l_ptsXi, l_ptsEta, l_ptsZeta, l_weights );
+  real_base *l_mass;
+  l_mass = new real_base[ pre::dg::g_massSize ];
 
-  m_stiff.resize(C_ENT[m_entType].N_DIM);
+  // set values
+  for( std::size_t l_va = 0; l_va < pre::dg::g_massSize; l_va++ )
+    l_mass[l_va] = pre::dg::g_massRaw[l_va];
 
-  // rows of the stiffness matrices
-  for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-    // cols of the stiffness matrices
-    for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-      // value of the stiffness matrices at this position
-      real_base l_val[3] = { 0, 0, 0 };
+  // convert to coordinate format
+  linalg::Matrix::denseToCrd( m_nBaseFuncs,
+                              m_nBaseFuncs,
+                              l_mass,
+                              m_mass );
 
-      // iterate over quadrature points and integrate
-      for( unsigned int l_qp = 0; l_qp < l_ptsXi.size(); l_qp++ ) {
-        if( m_entType == LINE ) {
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasisLine(    l_ro, l_ptsXi[l_qp], l_bValRo );
-          evalBasisDerLine( l_co, l_ptsXi[l_qp], l_bValCo );
-
-          // add this quad point
-          l_val[0] += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-        }
-        else if( m_entType == QUAD4R ) {
-          assert( m_nBaseFuncs == m_order * m_order );
-
-          real_base l_bValRo, l_bValCo[2];
-
-          evalBasisQuad( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo,
-                         -1, m_order );
-
-          evalBasisQuad( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[0],
-                         0, m_order );
-
-          evalBasisQuad( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[1],
-                         1, m_order );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-        }
-        else if( m_entType == TRIA3 ) {
-          real_base l_bValRo, l_bValCo[2];
-
-          evalBasisTria( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo );
-
-          evalBasisTria( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[0],
-                         0 );
-
-          evalBasisTria( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[1],
-                         1 );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-        }
-        else if( m_entType == HEX8R ) {
-          real_base l_bValRo, l_bValCo[3];
-
-          evalBasisHex( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo,
-                        -1, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[0],
-                        0, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[1],
-                        1, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[2],
-                        2, m_order );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-          l_val[2] +=   l_bValRo * l_bValCo[2] * l_weights[l_qp];
-        }
-        else if( m_entType == TET4 ) {
-          real_base l_bValRo, l_bValCo[3];
-
-          evalBasisTet( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[0],
-                        0 );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[1],
-                        1 );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[2],
-                        2 );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-          l_val[2] +=   l_bValRo * l_bValCo[2] * l_weights[l_qp];
-        }
-        else assert( false );
-      }
-
-      // inexact integration, we ignore almost zero values
-      // this respects hierarchical basis and leads to sparse matrix patterns as intended by this choice
-      for( unsigned int l_dim = 0; l_dim < 3; l_dim++ ) {
-        if( std::abs( l_val[l_dim] ) > TOL.BASIS ) {
-          m_stiff[l_dim].nz.push_back( l_val[l_dim] );
-          m_stiff[l_dim].ro.push_back( l_ro     );
-          m_stiff[l_dim].co.push_back( l_co     );
-        }
-      }
-    }
-  }
+  delete[] l_mass;
 }
 
 void edge::dg::Basis::computeFluxMatricesLine() {
@@ -817,11 +590,8 @@ edge::dg::Basis::Basis( t_entityType   i_entityType,
  m_order(i_order) {
   m_nBaseFuncs = CE_N_ELEMENT_MODES( i_entityType, i_order );
 
-  // compute the mass matrix
-  computeMassMatrix();
-
-  // compute the stiffness matrices
-  computeStiffMatrices();
+  // init the mass matrix
+  initMassMatrix();
 
   // compute the flux matrices
   computeFluxMatrices();
@@ -837,14 +607,6 @@ void edge::dg::Basis::print() const {
     linalg::Matrix::printMatrixCrd( m_nBaseFuncs,
                                     m_nBaseFuncs,
                                     m_mass );
-  }
-  for( unsigned int l_stiff = 0; l_stiff < m_stiff.size(); l_stiff++ ) {
-    EDGE_VLOG(2) << "  stiffness matrix #" << l_stiff << ": ";
-    if( EDGE_VLOG_IS_ON(2) ) {
-      linalg::Matrix::printMatrixCrd( m_nBaseFuncs,
-                                      m_nBaseFuncs,
-                                      m_stiff[l_stiff] );
-    }
   }
   for( unsigned int l_flux = 0; l_flux < m_flux.size(); l_flux++ ) {
     EDGE_VLOG(2) << "  flux matrix #" << l_flux << ": ";
@@ -1006,57 +768,22 @@ void edge::dg::Basis::getMassInvDense( int_md     i_nModes,
 
 void edge::dg::Basis::getStiffMm1Dense( int_md      i_nModes,
                                         real_base  *o_matrices,
-                                        bool        i_tStiff,
-                                        bool        i_rowMajor ) const {
-  // check that we have enough basis functions
-  CHECK( i_nModes <= m_nBaseFuncs );
+                                        bool        i_tStiff ) const {
+  if( i_tStiff == false ) {
+    // check that the size matches
+    EDGE_CHECK_EQ( pre::dg::g_stiffVSize, i_nModes*i_nModes*C_ENT[m_entType].N_DIM );
 
-  for( unsigned int l_dim = 0; l_dim < C_ENT[m_entType].N_DIM; l_dim++ ) {
-    // non-zero entry of stiffness matrix
-    unsigned int l_nzId = 0;
+    // set values
+    for( std::size_t l_va = 0; l_va < pre::dg::g_stiffVSize; l_va++ )
+      o_matrices[l_va] = pre::dg::g_stiffVRaw[l_va];
+  }
+  else {
+    // check that size matches
+    EDGE_CHECK_EQ( pre::dg::g_stiffTSize, i_nModes*i_nModes*C_ENT[m_entType].N_DIM );
 
-    // iterate dense entries
-    for( unsigned int l_ro = 0; l_ro < i_nModes; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < i_nModes; l_co++ ) {
-        unsigned int l_mId = l_dim * (i_nModes*i_nModes) + l_ro * i_nModes + l_co;
-
-        // check for a match
-        if( m_stiff[l_dim].nz.size() > l_nzId &&
-            m_stiff[l_dim].ro[l_nzId] == l_ro &&
-            m_stiff[l_dim].co[l_nzId] == l_co ) {
-
-          o_matrices[l_mId] = m_stiff[l_dim].nz[l_nzId];
-          l_nzId++;
-        }
-        else
-          o_matrices[l_mId] = 0;
-      }
-    }
-
-    // transpose stiffness matrix prior to multiplication with inverse mass matrix if requested
-    if( i_tStiff == true ) {
-        linalg::Matrix::transposeDense( i_nModes, o_matrices+(l_dim * (i_nModes*i_nModes)) );
-    }
-
-    // multiply with inverse mass matrix from the right. Note this happens after transposing the stiffness matrix
-    // since we do not transpose the application of the mass matrix.
-    for( unsigned int l_ro = 0; l_ro < i_nModes; l_ro++ ) {
-      // check for a diagonal mass matrix
-      CHECK( m_mass.nz.size() >= i_nModes && m_mass.ro[l_ro] == m_mass.co[l_ro] && m_mass.ro[l_ro] == l_ro );
-
-      for( unsigned int l_co = 0; l_co < i_nModes; l_co++ ) {
-        unsigned int l_mId = l_dim * (i_nModes*i_nModes) + l_ro * i_nModes + l_co;
-
-        // divide by entry of diagonal mass matrix
-        assert( m_mass.nz[l_ro] > TOL.BASIS );
-        o_matrices[l_mId] /= m_mass.nz[l_co];
-      }
-    }
-
-    // change from row major to column major if requested
-    if( i_rowMajor == false ) {
-      linalg::Matrix::transposeDense( i_nModes, o_matrices+(l_dim * (i_nModes*i_nModes)) );
-    }
+    // set values
+    for( std::size_t l_va = 0; l_va < pre::dg::g_stiffTSize; l_va++ )
+      o_matrices[l_va] = pre::dg::g_stiffTRaw[l_va];
   }
 }
 

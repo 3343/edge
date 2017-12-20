@@ -65,9 +65,6 @@ class edge::dg::Basis {
     //! mass matrix
     t_matCrd m_mass;
 
-    //! stiffnes matrix / matrices
-    std::vector< t_matCrd > m_stiff;
-
     //! flux matrices
     std::vector< t_matCrd > m_flux;
 
@@ -88,14 +85,9 @@ class edge::dg::Basis {
     void initEvalQpRefEl( unsigned short i_order );
 
     /**
-     * Computes the mass matrix using numerical integration.
+     * Inits the mass matrix using numerical integration.
      **/
-    void computeMassMatrix();
-
-    /**
-     * Computes the stiffness matrix/matrices using numerical integration.
-     **/
-    void computeStiffMatrices();
+    void initMassMatrix();
 
     /**
      * Computes the flux matrices for line elements.
@@ -339,18 +331,16 @@ class edge::dg::Basis {
     /**
      * Gets the stiffness matrices multiplied with the inverse mass matrix.
      * Format is dense (including zero entries).
-     * Storage is row-major or column-major w.r.t. to the i-th basis function phi[i] in:
+     * Storage is row-major w.r.t. to the i-th basis function phi[i] in:
      * Int[Ref. element] ( phi[row] * phi[col]_x )
      *
      * @param i_nModes number of modes.
      * @param o_matrices will be set to stiffness matrices in dense storage: [ndim][nmodes][nmodes].
-     * @param i_tStiff true if the stiffness matrix should be transposed before multiplying with the inverse mass matrix.
-     * @param i_rowMajor true if row major storage is requested.
+     * @param i_tStiff true if the stiffness matrix should be transposed before multiplication with the inverse mass matrix.
      **/
     void getStiffMm1Dense( int_md     i_nModes,
                            real_base *o_matrices,
-                           bool       i_tStiff=false,
-                           bool       i_rowMajor=true ) const;
+                           bool       i_tStiff ) const;
 
     /**
      * Gets the flux matrices multiplied with the inverse mass matrix.

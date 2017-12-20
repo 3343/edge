@@ -248,9 +248,9 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
   real_base l_stiffTDense[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   real_base l_stiffDense[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   real_base l_fluxDense[N_FLUX_MATRICES][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDense, true,  true );
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDense,  false, true );
-  l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_fluxDense,          true );
+  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDense, true  );
+  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDense,  false );
+  l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_fluxDense,   true  );
 
   real_base l_star[N_DIM][N_QUANTITIES][N_QUANTITIES];
   edge::elastic::solvers::AderDg::getJac( (real_base) 1.0,

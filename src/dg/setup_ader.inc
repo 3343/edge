@@ -47,18 +47,18 @@ edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER>::faces( l_internal.m_globalShar
 }
 
 #if defined PP_T_KERNELS_VANILLA || defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiffT, true,  true );
-l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiff,  false, true );
-l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.flux,          true );
+l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiffT, true  );
+l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiff,  false );
+l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.flux,   true );
 #elif defined PP_T_KERNELS_XSMM
 {
   // get matrices as dense
   real_base l_stiffTDense[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   real_base l_stiffDense[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   real_base l_fluxDense[N_FLUX_MATRICES][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDense, true,  true );
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDense,  false, true );
-  l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_fluxDense,          true );
+  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDense, true  );
+  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDense,  false );
+  l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_fluxDense,   true );
 
   // non-zero entries of the matices
   std::vector< real_base > *l_globalMat = new std::vector< real_base >();
