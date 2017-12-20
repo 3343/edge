@@ -178,7 +178,7 @@ edgePre['src'] = []
 env['edge_pre'] = {}
 
 # EDGEpre's DG data
-l_dgPre =  ['stiffT', 'stiffV', 'fluxL', 'fluxN', 'fluxT']
+l_dgPre =  ['mass', 'stiffT', 'stiffV', 'fluxL', 'fluxN', 'fluxT']
 # EDGEpre's SC data
 l_scPre = []
 
