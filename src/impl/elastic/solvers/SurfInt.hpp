@@ -67,8 +67,8 @@ class edge::elastic::solvers::SurfInt {
     //! number of DG modes
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
-    //! number of neighboring flux matrices
-    static unsigned short const TL_N_FMS = CE_N_FLUX_MATRICES( TL_T_EL ) - TL_N_FAS;
+    //! number of flux matrices
+    static unsigned short const TL_N_FMS = CE_N_FLUX_MATRICES( TL_T_EL );
 
   public:
     /**
@@ -309,8 +309,7 @@ class edge::elastic::solvers::SurfInt {
                                                    i_fInt[l_fa],
                                                    o_scratch[0][0] );
 
-
-        i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FMS]( i_fSol[0][0],
+        i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FMS]( i_fSol[l_fa][0],
                                                        o_scratch[0][0],
                                                        io_dofs[0][0] );
       }
@@ -422,7 +421,7 @@ class edge::elastic::solvers::SurfInt {
                                                     i_fInt,
                                                     o_scratch[0][0] );
 
-      // // multiply with flux solver
+      // multiply with flux solver
       i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1) + TL_N_FMS+1]( i_fSol[0],
                                                          o_scratch[0][0],
                                                          io_dofs[0][0],
