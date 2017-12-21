@@ -30,6 +30,7 @@ import edge_pre.int.Matrices
 import edge_pre.sc.ops.Project
 import edge_pre.io.ArrStr
 import edge_pre.io.Matrices
+import edge_pre.dg.basis.Mod
 import edge_pre.dg.basis.Line
 import edge_pre.sc.grid.Line
 import edge_pre.dg.basis.Quad
@@ -164,6 +165,9 @@ for l_ty in l_conf.m_types:
       # get element basis
       l_symsEl, l_basisEl = edge_pre.dg.basis.Quad.gen( l_de )
 
+      # unify bases
+      l_symsEl, l_basisEl = edge_pre.dg.basis.Mod.unify( l_symsFa, l_basisFa, l_symsEl, l_basisEl )
+
       # get face integration interval
       l_intFa = edge_pre.types.Line.Line( l_de ).intEl( l_symsFa )
 
@@ -229,6 +233,9 @@ for l_ty in l_conf.m_types:
 
       # get basis
       l_symsEl, l_basisEl = edge_pre.dg.basis.Tria.gen( l_de )
+
+      # unify bases
+      l_symsEl, l_basisEl = edge_pre.dg.basis.Mod.unify( l_symsFa, l_basisFa, l_symsEl, l_basisEl )
 
       # get face integration interval
       l_intFa = edge_pre.types.Line.Line( l_de ).intEl( l_symsFa )
@@ -299,6 +306,9 @@ for l_ty in l_conf.m_types:
       # get face integration intervals
       l_intFa = edge_pre.types.Quad.Quad( l_de ).intEl( l_symsFa )
 
+      # unify bases
+      l_symsEl, l_basisEl = edge_pre.dg.basis.Mod.unify( l_symsFa, l_basisFa, l_symsEl, l_basisEl )
+
       # get element integration interval
       l_intEl = l_elTy.intEl( l_symsEl )
 
@@ -353,6 +363,9 @@ for l_ty in l_conf.m_types:
 
       # get element basis
       l_symsEl, l_basisEl = edge_pre.dg.basis.Tet.gen( l_de )
+
+      # unify bases
+      l_symsEl, l_basisEl = edge_pre.dg.basis.Mod.unify( l_symsFa, l_basisFa, l_symsEl, l_basisEl )
 
       # get face integration interval
       l_intFa = edge_pre.types.Tria.Tria( l_de ).intEl( l_symsFa )
