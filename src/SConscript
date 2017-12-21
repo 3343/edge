@@ -33,6 +33,7 @@ l_kernels = [ 'time/TimeGroupStatic.cpp' ]
 
 l_sources = [ 'data/Dynamic.cpp',
               'data/EntityLayout.cpp',
+              'data/Expression.cpp',
               'mesh/Regular.cpp',
               'dg/Basis.cpp',
               'io/OptionParser.cpp',
@@ -66,20 +67,29 @@ if env['tests']:
   l_tests = ['tests.cpp',
              'data/EntityLayout.test.cpp',
              'data/SparseEntities.test.cpp',
+             'data/Dynamic.test.cpp',
+             'data/Expression.test.cpp',
              'dg/Basis.test.cpp',
              'dg/QuadratureEval.test.cpp',
+             'sc/Init.test.cpp',
+             'sc/SubGrid.test.cpp',
+             'sc/Kernels.test.cpp',
+             'sc/Detections.test.cpp',
              'mesh/regular/Base.test.cpp',
-             'parallel/Mpi.test.cpp',
              'mesh/common.test.cpp',
+             'parallel/Mpi.test.cpp',
              'linalg/Geom.test.cpp',
              'linalg/Matrix.test.cpp',
              'linalg/Mappings.test.cpp',
              'linalg/HalfSpace.test.cpp',
              'linalg/Domain.test.cpp',
              'linalg/Series.test.cpp',
+             'setups/InitialDofs.test.cpp',
              'io/Config.test.cpp',
              'io/Receivers.test.cpp',
              'io/ReceiversQuad.test.cpp' ]
+  if env['moab'] != False:
+    l_tests = l_tests + [ 'mesh/Moab.test.cpp' ]
 
   if env['element_type'] == 'tet4':
     l_tests = l_tests + ['mesh/regular/Tet.test.cpp']
@@ -91,7 +101,7 @@ if env['tests']:
                        'impl/elastic/solvers/FrictionLaws.test.cpp',
                        'impl/elastic/setups/KinematicsInit.test.cpp' ]
 
-  if env['netcdf'] == True:
+  if env['netcdf'] != False:
     l_tests = l_tests + ['impl/elastic/io/Nrf.test.cpp' ]
     if 'elastic' in env['equations']:
       l_tests = l_tests + ['impl/elastic/solvers/Kinematics.test.cpp']

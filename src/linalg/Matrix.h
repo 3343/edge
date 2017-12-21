@@ -278,6 +278,9 @@ class edge::linalg::Matrix {
      * @param i_m blas identifier M.
      * @param i_n blas identifier N.
      * @param i_k blas identifier K.
+     * @param i_ldA leading dimension of matrix A.
+     * @param i_ldB leading dimension of matrix B.
+     * @param i_ldC leading dimension of matrix C.
      * @param i_a matrix A.
      * @param i_b matrix B.
      * @param o_c matrix C, will bet set to A.B.
@@ -291,6 +294,9 @@ class edge::linalg::Matrix {
                                        unsigned int    i_m,
                                        unsigned int    i_n,
                                        unsigned int    i_k,
+                                       unsigned int    i_ldA,
+                                       unsigned int    i_ldB,
+                                       unsigned int    i_ldC,
                                  const TL_T_REAL_A    *i_a,
                                  const TL_T_REAL_B    *i_b,
                                        TL_T_REAL_C    *o_c ) {
@@ -298,7 +304,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_n*i_r + l_n*i_r + l_r] = 0;
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = 0;
           }
         }
       }
@@ -307,7 +313,7 @@ class edge::linalg::Matrix {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k + l_k] * i_b[l_k*i_n*i_r + l_n*i_r + l_r];
+              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA + l_k] * i_b[l_k*i_ldB*i_r + l_n*i_r + l_r];
             }
           }
         }
@@ -322,6 +328,9 @@ class edge::linalg::Matrix {
      * @param i_m blas identifier M.
      * @param i_n blas identifier N.
      * @param i_k blas identifier K.
+     * @param i_ldA leading dimension of matrix A.
+     * @param i_ldB leading dimension of matrix B.
+     * @param i_ldC leading dimension of matrix C.
      * @param i_a matrix A.
      * @param i_b matrix B.
      * @param o_c matrix C, will bet set to A.B.
@@ -335,6 +344,9 @@ class edge::linalg::Matrix {
                                        unsigned int    i_m,
                                        unsigned int    i_n,
                                        unsigned int    i_k,
+                                       unsigned int    i_ldA,
+                                       unsigned int    i_ldB,
+                                       unsigned int    i_ldC,
                                  const TL_T_REAL_A    *i_a,
                                  const TL_T_REAL_B    *i_b,
                                        TL_T_REAL_C    *o_c ) {
@@ -342,7 +354,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_n*i_r + l_n*i_r + l_r] = 0;
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = 0;
           }
         }
       }
@@ -351,7 +363,7 @@ class edge::linalg::Matrix {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k*i_r + l_k*i_r + l_r] * i_b[l_k*i_n + l_n];
+              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA*i_r + l_k*i_r + l_r] * i_b[l_k*i_ldB + l_n];
             }
           }
         }
@@ -366,6 +378,9 @@ class edge::linalg::Matrix {
      * @param i_m blas identifier M.
      * @param i_n blas identifier N.
      * @param i_k blas identifier K.
+     * @param i_ldA leading dimension of matrix A.
+     * @param i_ldB leading dimension of matrix B.
+     * @param i_ldC leading dimension of matrix C.
      * @param i_a matrix A.
      * @param i_b matrix B.
      * @param o_c matrix C, will bet set to A.B.
@@ -379,6 +394,9 @@ class edge::linalg::Matrix {
                                        unsigned int    i_m,
                                        unsigned int    i_n,
                                        unsigned int    i_k,
+                                       unsigned int    i_ldA,
+                                       unsigned int    i_ldB,
+                                       unsigned int    i_ldC,
                                  const TL_T_REAL_A    *i_a,
                                  const TL_T_REAL_B    *i_b,
                                        TL_T_REAL_C    *o_c ) {
@@ -386,7 +404,7 @@ class edge::linalg::Matrix {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k + l_k] * i_b[l_k*i_n*i_r + l_n*i_r + l_r];
+              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA + l_k] * i_b[l_k*i_ldB*i_r + l_n*i_r + l_r];
             }
           }
         }
