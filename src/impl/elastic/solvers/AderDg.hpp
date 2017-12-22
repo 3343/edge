@@ -476,7 +476,7 @@ class edge::elastic::solvers::AderDg {
       unsigned int l_enRe = i_firstSpRe;
 
       // temporary data structurre for product for two-way mult and receivers
-      TL_T_REAL (*l_tmp)[N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->tRes;
+      TL_T_REAL (*l_tmpEl)[N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->tRes;
 
       // buffer for derivatives
       TL_T_REAL (*l_derBuffer)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->dBuf;
@@ -507,7 +507,7 @@ class edge::elastic::solvers::AderDg {
                                             &(i_starM[l_el][0].mat), // TODO: fix struct
                                               io_dofs[l_el],
                                               i_mm,
-                                              l_tmp,
+                                              l_tmpEl,
                                               l_derBuffer,
                                               o_tInt[l_el] );
 
@@ -529,10 +529,10 @@ class edge::elastic::solvers::AderDg {
                         N_CRUNS >::evalTimePrediction( 1,
                                                        l_rePt,
                                                        l_derBuffer,
-                          (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmp );
+                          (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmpEl );
 
               // write this time prediction
-              io_recvs.writeRecvAll( l_enRe, l_tmp );
+              io_recvs.writeRecvAll( l_enRe, l_tmpEl );
             }
           }
           l_enRe++;
@@ -549,7 +549,7 @@ class edge::elastic::solvers::AderDg {
                                     o_tInt[l_el],
                                     i_mm,
                                     io_dofs[l_el],
-                                    l_tmp );
+                                    l_tmpEl );
 
         /*
          * prefetches for next iteration
@@ -570,16 +570,21 @@ class edge::elastic::solvers::AderDg {
          /*
           * compute local surface contribution
           */
+        // reuse derivative buffer
+        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
+          (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
+        // call kernel
         SurfInt< T_SDISC.ELEMENT,
                  N_QUANTITIES,
                  ORDER,
                  ORDER,
-                 N_CRUNS >::local( i_dg.mat.flux,
+                 N_CRUNS >::local( i_dg.mat.fluxL,
+                                   i_dg.mat.fluxT,
                                    ( TL_T_REAL (*)[N_QUANTITIES][N_QUANTITIES] )  ( i_fluxSolvers[l_el][0].solver[0] ), // TODO: fix struct
                                    o_tInt[l_el],
                                    i_mm,
                                    io_dofs[l_el],
-                                   l_tmp,
+                                   l_tmpFa,
                                    l_preDofs,
                                    l_preTint );
       }
@@ -698,8 +703,9 @@ class edge::elastic::solvers::AderDg {
       (void) __builtin_assume_aligned(io_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
 #endif
 
-      // temporary product for two-way mult
-      TL_T_REAL (*l_tmpProd)[N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->tRes;
+      // temporary product for three-way mult
+        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
+          (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
 
       // iterate over elements
       for( TL_T_INT_LID l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
@@ -714,9 +720,7 @@ class edge::elastic::solvers::AderDg {
                                           N_QUANTITIES,
                                           ORDER,
                                           ORDER,
-                                          N_CRUNS >::fMatId( i_faChars[l_faId].spType,
-                                                             l_fa,
-                                                             i_vIdElFaEl[l_el][l_fa],
+                                          N_CRUNS >::fMatId( i_vIdElFaEl[l_el][l_fa],
                                                              i_fIdElFaEl[l_el][l_fa] );
 
           if( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW ) {
@@ -750,14 +754,17 @@ class edge::elastic::solvers::AderDg {
                      N_QUANTITIES,
                      ORDER,
                      ORDER,
-                     N_CRUNS >::neigh( i_dg.mat.flux[l_fId],
+                     N_CRUNS >::neigh( ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? i_dg.mat.fluxN[l_fId] :
+                                                                                                      i_dg.mat.fluxL[l_fa],
+                                       i_dg.mat.fluxT[l_fa],
                                        ( TL_T_REAL (*)[N_QUANTITIES] )  ( i_fluxSolvers[l_el][l_fa].solver[0] ), // TODO: fix struct
                                        i_tInt[l_ne],
                                        i_mm,
                                        io_dofs[l_el],
-                                       l_tmpProd,
+                                       l_tmpFa,
                                        l_pre,
-                                       l_fId );
+                                       l_fa,
+                                       ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? l_fId : l_fa );
         }
       }
     }
