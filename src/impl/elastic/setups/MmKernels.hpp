@@ -64,7 +64,8 @@ class edge::elastic::setups::MmKernels {
       // check for non-fused setup
       EDGE_CHECK( i_nCrs == 1 );
 
-      unsigned short l_nMds = CE_N_ELEMENT_MODES( i_tEl, i_order ); 
+      unsigned short l_nMdsFa = CE_N_ELEMENT_MODES( C_ENT[i_tEl].TYPE_FACES, i_order );
+      unsigned short l_nMdsEl = CE_N_ELEMENT_MODES( i_tEl,                   i_order );
 
       // (O-1)*2 kernels for time integration
       // (multiplication with transposed stiffness matrix and star matrix)
@@ -73,9 +74,9 @@ class edge::elastic::setups::MmKernels {
         io_mm.add( CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ),    // m
                    i_nQts,                                           // n
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de-1 ),  // k
-                   l_nMds,                                           // ldA
-                   l_nMds,                                           // ldB
-                   l_nMds,                                           // ldC
+                   l_nMdsEl,                                         // ldA
+                   l_nMdsEl,                                         // ldB
+                   l_nMdsEl,                                         // ldC
                    static_cast<real_base>(1.0),                      // alpha
                    static_cast<real_base>(0.0),                      // beta
                    LIBXSMM_PREFETCH_NONE );
@@ -84,9 +85,9 @@ class edge::elastic::setups::MmKernels {
         io_mm.add( CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ), // m
                    i_nQts,                                        // n
                    i_nQts,                                        // k
-                   l_nMds,                                        // ldA
+                   l_nMdsEl,                                      // ldA
                    i_nQts,                                        // ldB
-                   l_nMds,                                        // ldC
+                   l_nMdsEl,                                      // ldC
                    static_cast<real_base>(1.0),                   // alpha
                    static_cast<real_base>(1.0),                   // beta
                    LIBXSMM_PREFETCH_NONE );
@@ -94,54 +95,55 @@ class edge::elastic::setups::MmKernels {
 
       // add two volume integration kernels
       // (multiplication with stiffness matrix and star matrix)
-      io_mm.add( l_nMds,                                     // m
+      io_mm.add( l_nMdsEl,                                   // m
                  i_nQts,                                     // n
                  CE_N_ELEMENT_MODES_CK( i_tEl, i_order, 1 ), // k
-                 l_nMds,                                     // ldA
-                 l_nMds,                                     // ldB
-                 l_nMds,                                     // ldC
+                 l_nMdsEl,                                   // ldA
+                 l_nMdsEl,                                   // ldB
+                 l_nMdsEl,                                   // ldC
                  static_cast<real_base>(1.0),                // alpha
                  static_cast<real_base>(0.0),                // beta
                  LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2
 
-      io_mm.add( l_nMds,                      // m
+      io_mm.add( l_nMdsEl,                    // m
                  i_nQts,                      // n
                  i_nQts,                      // k
-                 l_nMds,                      // ldA
+                 l_nMdsEl,                    // ldA
                  i_nQts,                      // ldB
-                 l_nMds,                      // ldC
+                 l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
                  LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+1
 
-      // add two flux integration kernels 
-      // (multiplication with flux matrix (prefetch, no-prefetch) and flux solver)
-      io_mm.add( l_nMds,                      // m
+      // add first flux matrix
+      io_mm.add( l_nMdsFa,                    // m
                  i_nQts,                      // n
-                 l_nMds,                      // k
-                 l_nMds,                      // ldA
-                 l_nMds,                      // ldB
-                 l_nMds,                      // ldC
+                 l_nMdsEl,                    // k
+                 l_nMdsFa,                    // ldA
+                 l_nMdsEl,                    // ldB
+                 l_nMdsFa,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(0.0), // beta
-                 LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+2
+                 LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+2
 
-      io_mm.add( l_nMds,                      // m
+      // add flux solver
+      io_mm.add( l_nMdsFa,                    // m
                  i_nQts,                      // n
-                 l_nMds,                      // k
-                 l_nMds,                      // ldA
-                 l_nMds,                      // ldB
-                 l_nMds,                      // ldC
+                 i_nQts,                      // k
+                 l_nMdsFa,                    // ldA
+                 i_nQts,                      // ldB
+                 l_nMdsFa,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(0.0), // beta
                  LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+3
 
-      io_mm.add( l_nMds,                      // m
+      // add second flux matrix
+      io_mm.add( l_nMdsEl,                    // m
                  i_nQts,                      // n
-                 i_nQts,                      // k
-                 l_nMds,                      // ldA
-                 i_nQts,                      // ldB
-                 l_nMds,                      // ldC
+                 l_nMdsFa,                    // k
+                 l_nMdsEl,                    // ldA
+                 l_nMdsFa,                    // ldB
+                 l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
                  LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+4
@@ -166,7 +168,8 @@ class edge::elastic::setups::MmKernels {
                      unsigned short                i_nQts,
                      unsigned short                i_nCrs,
                      data::MmVanilla< TL_T_REAL > &io_mm ) {
-      unsigned short l_nMds = CE_N_ELEMENT_MODES( i_tEl, i_order ); 
+      unsigned short l_nMdsFa = CE_N_ELEMENT_MODES( C_ENT[i_tEl].TYPE_FACES, i_order );
+      unsigned short l_nMdsEl = CE_N_ELEMENT_MODES( i_tEl, i_order );
 
       // (O-1)*2 kernels for time integration
       // (multiplication with transposed stiffness matrix and star matrix)
@@ -175,11 +178,13 @@ class edge::elastic::setups::MmKernels {
         io_mm.add( i_nQts,                                           // m
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de-1 ),  // n
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ),    // k
-                   l_nMds,                                           // ldA
-                   l_nMds,                                           // ldB
-                   l_nMds,                                           // ldC
+                   l_nMdsEl,                                         // ldA
+                   l_nMdsEl,                                         // ldB
+                   l_nMdsEl,                                         // ldC
                    static_cast<real_base>(1.0),                      // alpha
                    static_cast<real_base>(0.0),                      // beta
+                   true,                                             // fused AC
+                   false,                                            // fused BC
                    i_nCrs );
       
         // // multiplication with star matrix
@@ -187,56 +192,79 @@ class edge::elastic::setups::MmKernels {
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ), // n
                    i_nQts,                                        // k
                    i_nQts,                                        // ldA
-                   l_nMds,                                        // ldB
-                   l_nMds,                                        // ldC
+                   l_nMdsEl,                                      // ldB
+                   l_nMdsEl,                                      // ldC
                    static_cast<real_base>(1.0),                   // alpha
                    static_cast<real_base>(1.0),                   // beta
+                   false,                                         // fused AC
+                   true,                                          // fused BC
                    i_nCrs );
       }
 
       // add two volume integration kernels
       // (multiplication with stiffness matrix and star matrix)
       io_mm.add( i_nQts,                                     // m
-                 l_nMds,                                     // n
+                 l_nMdsEl,                                   // n
                  CE_N_ELEMENT_MODES_CK( i_tEl, i_order, 1 ), // k
-                 l_nMds,                                     // ldA
-                 l_nMds,                                     // ldB
-                 l_nMds,                                     // ldC
+                 l_nMdsEl,                                   // ldA
+                 l_nMdsEl,                                   // ldB
+                 l_nMdsEl,                                   // ldC
                  static_cast<real_base>(1.0),                // alpha
                  static_cast<real_base>(0.0),                // beta
+                 true,                                       // fused AC
+                 false,                                      // fused BC
                  i_nCrs ); // (ORDER-1)*2
 
       io_mm.add( i_nQts,                      // m
-                 l_nMds,                      // n
+                 l_nMdsEl,                    // n
                  i_nQts,                      // k
                  i_nQts,                      // ldA
-                 l_nMds,                      // ldB
-                 l_nMds,                      // ldC
+                 l_nMdsEl,                    // ldB
+                 l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
+                 false,                       // fused AC
+                 true,                        // fused BC
                  i_nCrs ); // (ORDER-1)*2+1
 
-      // add two flux integration kernels 
-      // (multiplication with flux matrix and flux solver)
+      // add first flux matrix
       io_mm.add( i_nQts,                      // m
-                 l_nMds,                      // n
-                 l_nMds,                      // k
-                 l_nMds,                      // ldA
-                 l_nMds,                      // ldB
-                 l_nMds,                      // ldC
+                 l_nMdsFa,                    // n
+                 l_nMdsEl,                    // k
+                 l_nMdsEl,                    // ldA
+                 l_nMdsFa,                    // ldB
+                 l_nMdsFa,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(0.0), // beta
-                 i_nCrs ); // (ORDER-1)*2+3
+                 true,                        // fused AC
+                 false,                       // fused BC
+                 i_nCrs);                     // (ORDER-1)*2+2
 
+      // add flux solver
       io_mm.add( i_nQts,                      // m
-                 l_nMds,                      // n
+                 l_nMdsFa,                    // n
                  i_nQts,                      // k
                  i_nQts,                      // ldA
-                 l_nMds,                      // ldB
-                 l_nMds,                      // ldC
+                 l_nMdsFa,                    // ldB
+                 l_nMdsFa,                    // ldC
+                 static_cast<real_base>(1.0), // alpha
+                 static_cast<real_base>(0.0), // beta
+                 false,                       // fused AC
+                 true,                        // fused BC
+                 i_nCrs );                    // (ORDER-1)*2+3
+
+      // add second flux matrix
+      io_mm.add( i_nQts,                      // m
+                 l_nMdsEl,                    // n
+                 l_nMdsFa,                    // k
+                 l_nMdsFa,                    // ldA
+                 l_nMdsEl,                    // ldB
+                 l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
-                 i_nCrs ); // (ORDER-1)*2+4
+                 true,                        // fused AC
+                 false,                       // fused BC
+                 i_nCrs );                    // (ORDER-1)*2+4
     }
 #endif
 
