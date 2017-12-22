@@ -32,8 +32,10 @@
 #define PP_N_GLOBAL_SHARED_1 1
 
 // derive number of flux matrices
-const unsigned short N_FLUX_MATRICES = CE_N_FLUX_MATRICES( T_SDISC.ELEMENT );
+const unsigned short N_FLUXN_MATRICES = CE_N_FLUXN_MATRICES( T_SDISC.ELEMENT );
 const unsigned short N_FACE_QUAD_POINTS = CE_N_FACE_QUAD_POINTS( T_SDISC.ELEMENT, ORDER );
+
+const unsigned short N_FACE_MODES = CE_N_ELEMENT_MODES( T_SDISC.FACE, ORDER );
 
 // human-readable access of LTS-types
 typedef enum {
@@ -127,28 +129,29 @@ const int_spType C_LTS_AD[6][3] = { // LTS relations with adjacent elements
 typedef struct {
   //! inverse mass matrix
   real_base massI[N_ELEMENT_MODES];
-#if defined PP_T_KERNELS_VANILLA
+#if defined PP_T_KERNELS_VANILLA || defined PP_T_KERNELS_XSMM_DENSE_SINGLE
   //! transposed stiffness matrices (multiplied with inverse mass matrix)
   real_base stiffT[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   //! stiffness matrices (multiplied with inverse mass matrix).
   real_base stiff[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  //! flux matrices (multplied with inverse mass matrix)
-  real_base flux[N_FLUX_MATRICES][N_ELEMENT_MODES][N_ELEMENT_MODES];
+  //! local contribution flux matrices
+  real_base fluxL[ C_ENT[T_SDISC.ELEMENT].N_FACES ][N_ELEMENT_MODES][N_FACE_MODES];
+  //! neighboring contribution flux matrix
+  real_base fluxN[ N_FLUXN_MATRICES               ][N_ELEMENT_MODES][N_FACE_MODES];
+  //! `transposed` flux matrices (2D->3D + inverse mass)
+  real_base fluxT[ C_ENT[T_SDISC.ELEMENT].N_FACES ][N_FACE_MODES][N_ELEMENT_MODES];
 #elif defined PP_T_KERNELS_XSMM
   //! transposed stiffness matrices (multiplied with inverse mass matrix)
   //! for a hierarchical basis, the stiffness of orders ORDER..2 are stored.
   real_base *stiffT[(ORDER-1)*N_DIM];
   //! stiffness matrices (multiplied with inverse mass matrix)
   real_base *stiff[N_DIM];
-  //! flux matrices (multiplied with inverse mass matrix)
-  real_base *flux[N_FLUX_MATRICES];
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-  //! transposed stiffness matrices (multiplied with inverse mass matrix)
-  real_base stiffT[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  //! stiffness matrices (multiplied with inverse mass matrix).
-  real_base stiff[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  //! flux matrices (multplied with inverse mass matrix)
-  real_base flux[N_FLUX_MATRICES][N_ELEMENT_MODES][N_ELEMENT_MODES];
+  //! local contribution flux matrices
+  real_base *fluxL[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
+  //! neighboring contribution flux matrix
+  real_base *fluxN[ N_FLUXN_MATRICES               ];
+  //! "transposed" flux matrices (2D->3D + inverse mass)
+  real_base *fluxT[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 #else
 #error undefined kernels, aborting!
 #endif

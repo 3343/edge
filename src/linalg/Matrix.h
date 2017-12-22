@@ -186,7 +186,7 @@ class edge::linalg::Matrix {
     static void inv2x2( const T i_mat[2][2],
                               T o_inv[2][2] ) {
       T l_det = det2x2( i_mat );
-      assert( l_det > TOL.LINALG );
+      EDGE_CHECK_GT( std::abs(l_det), TOL.LINALG );
 
       o_inv[0][0] =  i_mat[1][1];
       o_inv[0][1] = -i_mat[0][1];
@@ -211,7 +211,7 @@ class edge::linalg::Matrix {
                               T o_inv[3][3] ) {
       // get the determinant
       T l_det = det3x3( i_mat );
-      assert( std::abs(l_det) > TOL.LINALG );
+      EDGE_CHECK_GT( std::abs(l_det), TOL.LINALG );
 
       // compute the inverse
       o_inv[0][0] = i_mat[1][1]*i_mat[2][2] - i_mat[1][2]*i_mat[2][1];
@@ -271,6 +271,8 @@ class edge::linalg::Matrix {
     }
 
     /**
+     * @DEPRECATED Replaced by version with support for beta.
+     *
      * Performs the operation C[r] = A.B[r], for all 0 =< r =< #matrices.
      * Here, B and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
      *
@@ -278,9 +280,6 @@ class edge::linalg::Matrix {
      * @param i_m blas identifier M.
      * @param i_n blas identifier N.
      * @param i_k blas identifier K.
-     * @param i_ldA leading dimension of matrix A.
-     * @param i_ldB leading dimension of matrix B.
-     * @param i_ldC leading dimension of matrix C.
      * @param i_a matrix A.
      * @param i_b matrix B.
      * @param o_c matrix C, will bet set to A.B.
@@ -294,9 +293,6 @@ class edge::linalg::Matrix {
                                        unsigned int    i_m,
                                        unsigned int    i_n,
                                        unsigned int    i_k,
-                                       unsigned int    i_ldA,
-                                       unsigned int    i_ldB,
-                                       unsigned int    i_ldC,
                                  const TL_T_REAL_A    *i_a,
                                  const TL_T_REAL_B    *i_b,
                                        TL_T_REAL_C    *o_c ) {
@@ -304,7 +300,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = 0;
+            o_c[l_m*i_n*i_r + l_n*i_r + l_r] = 0;
           }
         }
       }
@@ -313,7 +309,7 @@ class edge::linalg::Matrix {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA + l_k] * i_b[l_k*i_ldB*i_r + l_n*i_r + l_r];
+              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k + l_k] * i_b[l_k*i_n*i_r + l_n*i_r + l_r];
             }
           }
         }
@@ -321,6 +317,8 @@ class edge::linalg::Matrix {
     }
 
     /**
+     * @DEPRECATED Replaced by version with support for beta.
+     * 
      * Performs the operation C[r] = A[r].B, for all 0 =< r =< #matrices.
      * Here, A and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
      *
@@ -328,9 +326,6 @@ class edge::linalg::Matrix {
      * @param i_m blas identifier M.
      * @param i_n blas identifier N.
      * @param i_k blas identifier K.
-     * @param i_ldA leading dimension of matrix A.
-     * @param i_ldB leading dimension of matrix B.
-     * @param i_ldC leading dimension of matrix C.
      * @param i_a matrix A.
      * @param i_b matrix B.
      * @param o_c matrix C, will bet set to A.B.
@@ -344,9 +339,6 @@ class edge::linalg::Matrix {
                                        unsigned int    i_m,
                                        unsigned int    i_n,
                                        unsigned int    i_k,
-                                       unsigned int    i_ldA,
-                                       unsigned int    i_ldB,
-                                       unsigned int    i_ldC,
                                  const TL_T_REAL_A    *i_a,
                                  const TL_T_REAL_B    *i_b,
                                        TL_T_REAL_C    *o_c ) {
@@ -354,7 +346,94 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = 0;
+            o_c[l_m*i_n*i_r + l_n*i_r + l_r] = 0;
+          }
+        }
+      }
+
+      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+        for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+          for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+            for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
+              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k*i_r + l_k*i_r + l_r] * i_b[l_k*i_n + l_n];
+            }
+          }
+        }
+      }
+    }
+
+    /**
+     * @DEPRECATED Replaced by version with support for beta.
+     *
+     * Performs the operation C[r] += A.B[r], for all 0 =< r =< #matrices.
+     * Here, B and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
+     *
+     * @param i_r number of B and C matrices.
+     * @param i_m blas identifier M.
+     * @param i_n blas identifier N.
+     * @param i_k blas identifier K.
+     * @param i_a matrix A.
+     * @param i_b matrix B.
+     * @param o_c matrix C, will bet set to A.B.
+     *
+     * @paramt TL_T_REAL_A precision of matrix A.
+     * @paramt TL_T_REAL_B precision of matrix B.
+     * @paramt TL_T_REAL_C precision of matrix C.
+     **/
+    template <typename TL_T_REAL_A, typename TL_T_REAL_B, typename TL_T_REAL_C>
+    static void matMulB1FusedBC(       unsigned short  i_r,
+                                       unsigned int    i_m,
+                                       unsigned int    i_n,
+                                       unsigned int    i_k,
+                                 const TL_T_REAL_A    *i_a,
+                                 const TL_T_REAL_B    *i_b,
+                                       TL_T_REAL_C    *o_c ) {
+      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+        for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+          for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+            for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
+              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k + l_k] * i_b[l_k*i_n*i_r + l_n*i_r + l_r];
+            }
+          }
+        }
+      }
+    }
+
+    /**
+     * Performs the operation C[r] * beta += A[r].B, for all 0 =< r =< #matrices.
+     * Here, A and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
+     *
+     * @param i_r number of A and C matrices.
+     * @param i_m blas identifier M.
+     * @param i_n blas identifier N.
+     * @param i_k blas identifier K.
+     * @param i_ldA leading dimension of matrix A.
+     * @param i_ldB leading dimension of matrix B.
+     * @param i_ldC leading dimension of matrix C.
+     * @param i_beta scalar beta.
+     * @param i_a matrix A.
+     * @param i_b matrix B.
+     * @param o_c matrix C, will bet set to A.B.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template< typename TL_T_REAL >
+    static void matMulFusedAC(       unsigned short  i_r,
+                                     unsigned int    i_m,
+                                     unsigned int    i_n,
+                                     unsigned int    i_k,
+                                     unsigned int    i_ldA,
+                                     unsigned int    i_ldB,
+                                     unsigned int    i_ldC,
+                                     TL_T_REAL       i_beta,
+                               const TL_T_REAL      *i_a,
+                               const TL_T_REAL      *i_b,
+                                     TL_T_REAL      *o_c ) {
+      // init result matrix
+      for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+        for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+          for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta;
           }
         }
       }
@@ -371,7 +450,7 @@ class edge::linalg::Matrix {
     }
 
     /**
-     * Performs the operation C[r] += A.B[r], for all 0 =< r =< #matrices.
+     * Performs the operation C[r] * beta += A.B[r], for all 0 =< r =< #matrices.
      * Here, B and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
      *
      * @param i_r number of B and C matrices.
@@ -381,25 +460,34 @@ class edge::linalg::Matrix {
      * @param i_ldA leading dimension of matrix A.
      * @param i_ldB leading dimension of matrix B.
      * @param i_ldC leading dimension of matrix C.
+     * @param i_beta scalar beta.
      * @param i_a matrix A.
      * @param i_b matrix B.
      * @param o_c matrix C, will bet set to A.B.
      *
-     * @paramt TL_T_REAL_A precision of matrix A.
-     * @paramt TL_T_REAL_B precision of matrix B.
-     * @paramt TL_T_REAL_C precision of matrix C.
+     * @paramt TL_T_REAL floating point precision.
      **/
-    template <typename TL_T_REAL_A, typename TL_T_REAL_B, typename TL_T_REAL_C>
-    static void matMulB1FusedBC(       unsigned short  i_r,
-                                       unsigned int    i_m,
-                                       unsigned int    i_n,
-                                       unsigned int    i_k,
-                                       unsigned int    i_ldA,
-                                       unsigned int    i_ldB,
-                                       unsigned int    i_ldC,
-                                 const TL_T_REAL_A    *i_a,
-                                 const TL_T_REAL_B    *i_b,
-                                       TL_T_REAL_C    *o_c ) {
+    template< typename TL_T_REAL >
+    static void matMulFusedBC(        unsigned short  i_r,
+                                      unsigned int    i_m,
+                                      unsigned int    i_n,
+                                      unsigned int    i_k,
+                                      unsigned int    i_ldA,
+                                      unsigned int    i_ldB,
+                                      unsigned int    i_ldC,
+                                      TL_T_REAL       i_beta,
+                                const TL_T_REAL      *i_a,
+                                const TL_T_REAL      *i_b,
+                                      TL_T_REAL      *o_c ) {
+      // init result matrix
+      for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+        for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+          for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta;
+          }
+        }
+      }
+
       for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {

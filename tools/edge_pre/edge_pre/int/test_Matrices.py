@@ -1632,37 +1632,37 @@ class TestMatrices( unittest.TestCase ):
     l_symsTria = [l_chi1, l_chi2]
     l_symsTet  = [l_xi1, l_xi2, l_xi3]
 
-    # l_proj, l_massTria, l_ori = Matrices.flux( l_basisTria,
-    #                                            l_basisTet,
-    #                                            l_symsTria,
-    #                                            l_symsTet,
-    #                                            l_intTria,
-    #                                            l_faToFa,
-    #                                            l_faToVol )
+    l_proj, l_massTria, l_ori = Matrices.flux( l_basisTria,
+                                               l_basisTet,
+                                               l_symsTria,
+                                               l_symsTet,
+                                               l_intTria,
+                                               l_faToFa,
+                                               l_faToVol )
 
-    # # compute local flux matrices
-    # l_fmL = []
-    # for l_fa in range(4):
-    #   l_fmL = l_fmL + [ l_proj[l_fa] * l_massTria * l_proj[l_fa].transpose() ]
+    # compute local flux matrices
+    l_fmL = []
+    for l_fa in range(4):
+      l_fmL = l_fmL + [ l_proj[l_fa] * l_massTria * l_proj[l_fa].transpose() ]
 
-    # # check the local flux matrices
-    # for l_fa in range(4):
-    #   self.assertEqual( l_fmL[l_fa], l_ref['fm'+str(l_fa)] )
+    # check the local flux matrices
+    for l_fa in range(4):
+      self.assertEqual( l_fmL[l_fa], l_ref['fm'+str(l_fa)] )
 
-    # # compute neighboring flux matrices
-    # l_fmN = []
-    # for l_f1 in range(4):
-    #   for l_f2 in range(4):
-    #     for l_ve in range(3):
-    #       l_fmN = l_fmN + [ l_proj[l_f2] * l_ori[l_ve] * l_proj[l_f1].transpose() ]
+    # compute neighboring flux matrices
+    l_fmN = []
+    for l_f1 in range(4):
+      for l_f2 in range(4):
+        for l_ve in range(3):
+          l_fmN = l_fmN + [ l_proj[l_f2] * l_ori[l_ve] * l_proj[l_f1].transpose() ]
 
-    # # check the neighboring flux matrices match
-    # for l_f1 in range(4):
-    #   for l_f2 in range(4):
-    #     for l_ve in range(3):
-    #       # generate index
-    #       l_id =        l_f1*12
-    #       l_id = l_id + l_f2*3
-    #       l_id = l_id + l_ve
+    # check the neighboring flux matrices match
+    for l_f1 in range(4):
+      for l_f2 in range(4):
+        for l_ve in range(3):
+          # generate index
+          l_id =        l_f1*12
+          l_id = l_id + l_f2*3
+          l_id = l_id + l_ve
 
-    #       self.assertEqual( l_fmN[l_id], l_ref['fp'+str(l_f1)+str(l_f2)+str(l_ve) ] )
+          self.assertEqual( l_fmN[l_id], l_ref['fp'+str(l_f1)+str(l_f2)+str(l_ve) ] )

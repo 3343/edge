@@ -59,60 +59,30 @@ class edge::elastic::solvers::SurfInt {
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 
     //! number of vertices
-    static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
+    static unsigned short const TL_N_FVES = C_ENT[TL_T_EL].N_FACE_VERTICES;
 
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
-    //! number of DG modes
-    static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
+    //! number of DG face mods
+    static unsigned short const TL_N_MDS_FA = CE_N_ELEMENT_MODES( C_ENT[TL_T_EL].TYPE_FACES, TL_O_SP );
 
-    //! number of neighboring flux matrices
-    static unsigned short const TL_N_FMS = CE_N_FLUX_MATRICES( TL_T_EL ) - TL_N_FAS;
+    //! number of DG element modes
+    static unsigned short const TL_N_MDS_EL = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
+
+    //! number of neigboring contribution flux matrices
+    static unsigned short const TL_N_FMNS = CE_N_FLUXN_MATRICES( TL_T_EL );
 
   public:
     /**
      * Determines the flux matrix id for neighboring contribution of the quadrature-free face integral.
      *
-     * @param i_spType sparse type of the face.
-     * @param i_fa id of the face from the perspective of the element itself w.r.t. to the reference element.
      * @param i_vIdElFaEl id of the vertex, matching the element's vertex 0, from the perspective of the adjacent element w.r.t. to the reference element.
      * @param i_fIdElFaEl id of the face from the perspective of the adjacent element w.r.t. to the reference element.
      **/
-    static unsigned short inline fMatId( int_spType     i_spType,
-                                         unsigned short i_fa,
-                                         unsigned short i_vIdElFaEl,
+    static unsigned short inline fMatId( unsigned short i_vIdElFaEl,
                                          unsigned short i_fIdElFaEl ) {
-      // id of the flux matrix
-      unsigned short l_fId;
-
-      if( (i_spType & FREE_SURFACE) != FREE_SURFACE ) {
-        if( TL_T_EL != HEX8R) {
-          // jump over local flux matrices
-          l_fId  = TL_N_FAS;
-
-          // only jump over vertex combinations for 3D elements
-          unsigned short l_veJump = (TL_N_DIS == 3) ? TL_N_VES : 1;      
-
-          // jump over local face
-          l_fId += i_fa * TL_N_FAS * l_veJump;
-
-          // jump over neighboring face
-          l_fId += i_fIdElFaEl * l_veJump;
-
-          // jump over vertices
-          l_fId += i_vIdElFaEl;
-        }
-        else {
-          l_fId  = TL_N_FAS + i_fa;          
-        }
-      }
-      else {
-        // free surface boundary conditions
-        l_fId = i_fa;
-      }
-
-      return l_fId;
+      return i_vIdElFaEl*TL_N_FAS+i_fIdElFaEl;
     }
 
 #ifdef PP_T_KERNELS_VANILLA
@@ -131,14 +101,15 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline faS( TL_T_REAL                    const   i_fInt[TL_N_MDS][TL_N_MDS],
+    static void inline faS( TL_T_REAL                    const   i_fInt[TL_N_MDS_EL][TL_N_MDS_EL],
                             TL_T_REAL                    const   i_fSol[TL_N_QTS][TL_N_QTS],
-                            TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                            TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                             data::MmVanilla< TL_T_REAL > const & i_mm,
-                            TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                            TL_T_REAL                            o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                            TL_T_REAL                    const   i_dofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr,
+                            TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                            TL_T_REAL                            o_scratch[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                            TL_T_REAL                    const   i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
                             unsigned short                       i_fId = std::numeric_limits< unsigned short >::max() ) {
+      EDGE_LOG_FATAL << "TODO";
       // multiply with face integration matrix
       i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_tDofs[0][0],
                                          i_fInt[0],
@@ -166,14 +137,15 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline faS( TL_T_REAL                       const   i_fInt[TL_N_MDS][TL_N_MDS],
+    static void inline faS( TL_T_REAL                       const   i_fInt[TL_N_MDS_EL][TL_N_MDS_EL],
                             TL_T_REAL                       const   i_fSol[TL_N_QTS][TL_N_QTS],
-                            TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                            TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                             data::MmXsmmSingle< TL_T_REAL > const & i_mm,
-                            TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                            TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                            TL_T_REAL                       const   i_dofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr,
+                            TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                            TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                            TL_T_REAL                       const   i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
                             unsigned short                          i_fId = std::numeric_limits< unsigned short >::max() ) {
+      EDGE_LOG_FATAL << "TODO";
       // multiply with flux matrix
       i_mm.m_kernels[((TL_O_TI-1)*2)+3]( i_fInt[0],
                                          i_tDofs[0][0],
@@ -191,7 +163,8 @@ class edge::elastic::solvers::SurfInt {
     /**
      * Element local contribution using vanilla matrix-matrix multiplication kernels.
      *
-     * @param i_fInt face integration matrices (pre-computed, quadrature-free surface integration).
+     * @param i_fIntL local face integration matrices (pre-computed, quadrature-free surface integration).
+     * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).
      * @param i_fSol flux solvers.
      * @param i_tDofs time integerated DG-DOFs.
      * @param i_mm matrix-matrix multiplication kernels.
@@ -203,23 +176,30 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline local( TL_T_REAL                    const   i_fInt[TL_N_FAS][TL_N_MDS][TL_N_MDS],
+    static void inline local( TL_T_REAL                    const   i_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
+                              TL_T_REAL                    const   i_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL],
                               TL_T_REAL                    const   i_fSol[TL_N_FAS][TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               data::MmVanilla< TL_T_REAL > const & i_mm,
-                              TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                            o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                    const   i_dofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr,
-                              TL_T_REAL                    const   i_tDofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr ) {
+                              TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                            o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
+                              TL_T_REAL                    const   i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
+                              TL_T_REAL                    const   i_tDofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr ) {
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-        // multiply with face integration matrix
+        // multiply with first face integration matrix
         i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_tDofs[0][0],
-                                           i_fInt[l_fa][0],
-                                           o_scratch[0][0] );
+                                           i_fIntL[l_fa][0],
+                                           o_scratch[0][0][0] );
+
         // multiply with flux solver
         i_mm.m_kernels[((TL_O_TI-1)*2)+3]( i_fSol[l_fa][0],
-                                           o_scratch[0][0],
+                                           o_scratch[0][0][0],
+                                           o_scratch[1][0][0] );
+
+        // multiply with second face integration matrix
+        i_mm.m_kernels[((TL_O_TI-1)*2)+4]( o_scratch[1][0][0],
+                                           i_fIntT[l_fa][0],
                                            io_dofs[0][0] );
       }
     }
@@ -229,7 +209,8 @@ class edge::elastic::solvers::SurfInt {
     /**
      * Element local contribution using non-fused LIBXSMM matrix-matrix multiplication kernels.
      *
-     * @param i_fInt face integration matrices (pre-computed, quadrature-free surface integration).
+     * @param i_fIntL local face integration matrices (pre-computed, quadrature-free surface integration).
+     * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).
      * @param i_fSol flux solvers.
      * @param i_tDofs time integerated DG-DOFs.
      * @param i_mm matrix-matrix multiplication kernels.
@@ -241,41 +222,32 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline local( TL_T_REAL                       const   i_fInt[TL_N_FAS][TL_N_MDS][TL_N_MDS],
+    static void inline local( TL_T_REAL                       const   i_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
+                              TL_T_REAL                       const   i_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL],
                               TL_T_REAL                       const   i_fSol[TL_N_FAS][TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               data::MmXsmmSingle< TL_T_REAL > const & i_mm,
-                              TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                       const   i_dofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                       const   i_tDofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
+                              TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                               o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
+                              TL_T_REAL                       const   i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                       const   i_tDofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] ) {
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-        // multiply with face integration matrix
-        if( l_fa == 0 )
-          i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fInt[l_fa][0],
-                                             i_tDofs[0][0],
-                                             o_scratch[0][0],
-                                             nullptr,
-                                             i_dofsP,
-                                             nullptr );
-        else if( l_fa == 1 )
-          i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fInt[l_fa][0],
-                                             i_tDofs[0][0],
-                                             o_scratch[0][0],
-                                             nullptr,
-                                             i_tDofsP,
-                                             nullptr );
-        else
-          i_mm.m_kernels[((TL_O_TI-1)*2)+3]( i_fInt[l_fa][0],
-                                             i_tDofs[0][0],
-                                             o_scratch[0][0] );
+        // multiply with first face integration matrix
+        i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fIntL[l_fa][0],
+                                           i_tDofs[0][0],
+                                           o_scratch[0][0][0] );
 
         // multiply with flux solver
-        i_mm.m_kernels[((TL_O_TI-1)*2)+4]( o_scratch[0][0],
+        i_mm.m_kernels[((TL_O_TI-1)*2)+3]( o_scratch[0][0][0],
                                            i_fSol[l_fa][0],
+                                           o_scratch[1][0][0] );
+
+        // multiply with second face integration matrix
+        i_mm.m_kernels[((TL_O_TI-1)*2)+4]( i_fIntT[l_fa][0],
+                                           o_scratch[1][0][0],
                                            io_dofs[0][0] );
-      }      
+      }
     }
 #endif
 
@@ -283,7 +255,8 @@ class edge::elastic::solvers::SurfInt {
     /**
     * Element local contribution using fused LIBXSMM matrix-matrix multiplication kernels.
     *
-    * @param i_fInt face integration matrices (pre-computed, quadrature-free surface integration).
+    * @param i_fIntL local face integration matrices (pre-computed, quadrature-free surface integration).
+    * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).
     * @param i_fSol flux solvers.
     * @param i_tDofs time integerated DG-DOFs.
     * @param i_mm matrix-matrix multiplication kernels.
@@ -295,24 +268,31 @@ class edge::elastic::solvers::SurfInt {
     * @paramt TL_T_REAL floating point precision.
     **/
     template< typename TL_T_REAL >
-    static void inline local( TL_T_REAL                      const *  const i_fInt[TL_N_FAS],
+    static void inline local( TL_T_REAL                      const *  const i_fIntL[TL_N_FAS],
+                              TL_T_REAL                      const *  const i_fIntT[TL_N_FAS],
                               TL_T_REAL                      const          i_fSol[TL_N_FAS][TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                      const          i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                      const          i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               data::MmXsmmFused< TL_T_REAL > const &        i_mm,
-                              TL_T_REAL                                     io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                                     o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                      const          i_dofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr,
-                              TL_T_REAL                      const          i_tDofsP[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr ) {
+                              TL_T_REAL                                     io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                                     o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
+                              TL_T_REAL                      const          i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
+                              TL_T_REAL                      const          i_tDofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr ) {
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+        // local flux matrix
         i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+l_fa]( i_tDofs[0][0],
-                                                   i_fInt[l_fa],
-                                                   o_scratch[0][0] );
+                                                   i_fIntL[l_fa],
+                                                   o_scratch[0][0][0] );
 
+        // flux solver
+        i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+TL_N_FAS]( i_fSol[l_fa][0],
+                                                                          o_scratch[0][0][0],
+                                                                          o_scratch[1][0][0] );
 
-        i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FMS]( i_fSol[0][0],
-                                                       o_scratch[0][0],
-                                                       io_dofs[0][0] );
+        // transposed flux matrix
+        i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+l_fa]( o_scratch[1][0][0],
+                                                                      i_fIntT[l_fa],
+                                                                      io_dofs[0][0] );
       }
     }
 #endif
@@ -322,8 +302,8 @@ class edge::elastic::solvers::SurfInt {
     /**
      * Neighboring contribution of a single adjacent element using vanilla matrix-matrix multiplication kernels.
      *
-     * @param i_fInt face integration matrices (pre-computed, quadrature-free surface integration).
-     * @param i_fSol flux solvers.
+     * @param i_fIntLN local or neighboring face integration matrix (pre-computed, quadrature-free surface integration).
+     * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).     * @param i_fSol flux solvers.
      * @param i_tDofs time integerated DG-DOFs.
      * @param i_mm matrix-matrix multiplication kernels.
      * @param io_dofs will be updated with the contribution of the adjacent element to the surface integral.
@@ -334,23 +314,29 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline neigh( TL_T_REAL                    const   i_fInt[TL_N_MDS][TL_N_MDS],
+    static void inline neigh( TL_T_REAL                    const   i_fIntLN[TL_N_MDS_EL][TL_N_MDS_FA],
+                              TL_T_REAL                    const   i_fIntT[TL_N_MDS_FA][TL_N_MDS_EL],
                               TL_T_REAL                    const   i_fSol[TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               data::MmVanilla< TL_T_REAL > const & i_mm,
-                              TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                            o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                    const   i_pre[TL_N_QTS][TL_N_MDS][TL_N_CRS] = nullptr,
+                              TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                            o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
+                              TL_T_REAL                    const   i_pre[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
                               unsigned short                       i_fId = std::numeric_limits< unsigned short >::max() ) {
-      // multiply with flux matrix
-      i_mm.m_kernels[TL_O_TI*2 + 0]( i_tDofs[0][0],
-                                     i_fInt[0],
-                                     o_scratch[0][0] );
+      // multiply with first face integration matrix
+      i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_tDofs[0][0],
+                                         i_fIntLN[0],
+                                         o_scratch[0][0][0] );
 
-      // // multiply with flux solver
-      i_mm.m_kernels[TL_O_TI*2 + 1]( i_fSol[0],
-                                     o_scratch[0][0],
-                                     io_dofs[0][0] );
+      // multiply with flux solver
+      i_mm.m_kernels[((TL_O_TI-1)*2)+3]( i_fSol[0],
+                                         o_scratch[0][0][0],
+                                         o_scratch[1][0][0] );
+
+      // multiply with second face integration matrix
+      i_mm.m_kernels[((TL_O_TI-1)*2)+4]( o_scratch[1][0][0],
+                                         i_fIntT[0],
+                                         io_dofs[0][0] );
     }
 #endif
 
@@ -358,7 +344,8 @@ class edge::elastic::solvers::SurfInt {
     /**
      * Neighboring contribution of a single adjacent element using non-fused LIBXSMM matrix-matrix multiplication kernels.
      *
-     * @param i_fInt face integration matrices (pre-computed, quadrature-free surface integration).
+     * @param i_fIntLN local or neighboring face integration matrix (pre-computed, quadrature-free surface integration).
+     * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).
      * @param i_fSol flux solvers.
      * @param i_tDofs time integerated DG-DOFs.
      * @param i_mm matrix-matrix multiplication kernels.
@@ -370,26 +357,29 @@ class edge::elastic::solvers::SurfInt {
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline neigh( TL_T_REAL                       const   i_fInt[TL_N_MDS][TL_N_MDS],
+    static void inline neigh( TL_T_REAL                       const   i_fIntLN[TL_N_MDS_EL][TL_N_MDS_FA],
+                              TL_T_REAL                       const   i_fIntT[TL_N_MDS_FA][TL_N_MDS_EL],
                               TL_T_REAL                       const   i_fSol[TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               data::MmXsmmSingle< TL_T_REAL > const & i_mm,
-                              TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                       const   i_pre[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                               o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
+                              TL_T_REAL                       const   i_pre[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               unsigned short                          i_fId = std::numeric_limits< unsigned short >::max() ) {
-      // multiply with flux matrix
-      i_mm.m_kernels[TL_O_TI*2 + 0]( i_fInt[0],
-                                     i_tDofs[0][0],
-                                     o_scratch[0][0],
-                                     nullptr,
-                                     i_pre[0][0],
-                                     nullptr );
+      // multiply with first face integration matrix
+      i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fIntLN[0],
+                                         i_tDofs[0][0],
+                                         o_scratch[0][0][0] );
 
-      // // multiply with flux solver
-      i_mm.m_kernels[TL_O_TI*2 + 2]( o_scratch[0][0],
-                                     i_fSol[0],
-                                     io_dofs[0][0] );
+      // multiply with flux solver
+      i_mm.m_kernels[((TL_O_TI-1)*2)+3]( o_scratch[0][0][0],
+                                         i_fSol[0],
+                                         o_scratch[1][0][0] );
+
+      // multiply with second face integration matrix
+      i_mm.m_kernels[((TL_O_TI-1)*2)+4]( i_fIntT[0],
+                                         o_scratch[1][0][0],
+                                         io_dofs[0][0] );
     }
 #endif
 
@@ -404,31 +394,36 @@ class edge::elastic::solvers::SurfInt {
      * @param io_dofs will be updated with the contribution of the adjacent element to the surface integral.
      * @param o_scratch will be used as scratch space for the computations.
      * @param i_pre DOFs or tDOFs for prefetching.
-     * @param i_fId flux matrix id.
+     * @param i_fa local face.
+     * @param i_fId flux matrix id of the local or neighboring flux matrix.
      *
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline neigh( TL_T_REAL                      const  * i_fInt,
+    static void inline neigh( TL_T_REAL                      const  * i_fIntLN,
+                              TL_T_REAL                      const  * i_fIntT,
                               TL_T_REAL                      const    i_fSol[TL_N_QTS][TL_N_QTS],
-                              TL_T_REAL                      const    i_tDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                      const    i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               data::MmXsmmFused< TL_T_REAL > const  & i_mm,
-                              TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                              TL_T_REAL                      const    i_pre[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                              TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              TL_T_REAL                               o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
+                              TL_T_REAL                      const    i_pre[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              unsigned short                          i_fa,
                               unsigned short                          i_fId ) {
-      // multiply with flux matrix
-      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1) + i_fId]( i_tDofs[0][0],
-                                                    i_fInt,
-                                                    o_scratch[0][0] );
+      // local or neighboring flux matrix
+      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+i_fId]( i_tDofs[0][0],
+                                                           i_fIntLN,
+                                                           o_scratch[0][0][0] );
 
-      // // multiply with flux solver
-      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1) + TL_N_FMS+1]( i_fSol[0],
-                                                         o_scratch[0][0],
-                                                         io_dofs[0][0],
-                                                         nullptr,
-                                                         i_pre[0][0],
-                                                         nullptr );
+      // flux solver
+      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+TL_N_FAS]( i_fSol[0],
+                                                                        o_scratch[0][0][0],
+                                                                        o_scratch[1][0][0] );
+
+      // transposed flux matrix
+     i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+i_fa]( o_scratch[1][0][0],
+                                                                   i_fIntT,
+                                                                   io_dofs[0][0] );
     }
 #endif
 

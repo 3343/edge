@@ -31,6 +31,8 @@
 #include "mesh/common.hpp"
 #include "linalg/Mappings.hpp"
 #include "TimePred.hpp"
+#include "VolInt.hpp"
+#include "SurfInt.hpp"
 #include "io/Receivers.h"
 #include "InternalBoundary.hpp"
 #include "FrictionLaws.hpp"
@@ -439,9 +441,11 @@ class edge::elastic::solvers::AderDg {
      *
      * @paramt TL_T_INT_LID integer type of local entity ids.
      * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_MM matrix-matrix multiplication kernels.
      **/
     template < typename TL_T_INT_LID,
-               typename TL_T_REAL >
+               typename TL_T_REAL,
+               typename TL_T_MM >
     static void local( TL_T_INT_LID                     i_first,
                        TL_T_INT_LID                     i_nElements,
                        double                           i_time,
@@ -457,15 +461,8 @@ class edge::elastic::solvers::AderDg {
                        TL_T_REAL                     (* io_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
                        TL_T_REAL                     (* o_tInt)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
                        TL_T_REAL                     (* o_tRup)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                       edge::io::Receivers            & io_recvs
-#if defined (PP_T_KERNELS_XSMM) || defined (PP_T_KERNELS_XSMM_DENSE_SINGLE)
-#if PP_PRECISION == 64
-                      ,const libxsmm_dmmfunction *i_kernels
-#else
-                      ,const libxsmm_smmfunction *i_kernels
-#endif
-#endif
-                     ) {
+                       edge::io::Receivers            & io_recvs,
+                       TL_T_MM const                  & i_mm ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler
       (void) __builtin_assume_aligned(io_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
@@ -479,7 +476,7 @@ class edge::elastic::solvers::AderDg {
       unsigned int l_enRe = i_firstSpRe;
 
       // temporary data structurre for product for two-way mult and receivers
-      TL_T_REAL (*l_tmp)[N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->tRes;
+      TL_T_REAL (*l_tmpEl)[N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->tRes;
 
       // buffer for derivatives
       TL_T_REAL (*l_derBuffer)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->dBuf;
@@ -501,45 +498,18 @@ class edge::elastic::solvers::AderDg {
         /*
          * compute ader time integration
          */
-        // TODO: replace preprocessor by single function call
-#if defined PP_T_KERNELS_VANILLA
         TimePred< T_SDISC.ELEMENT,
                   N_QUANTITIES,
                   ORDER,
-                  N_CRUNS >::ckVanilla( (TL_T_REAL)   i_dT,
-                                                      i_dg.mat.stiffT,
-                                                    &(i_starM[l_el][0].mat), // TODO: fix struct
-                                                      io_dofs[l_el],
-                                                      l_tmp,
-                                                      l_derBuffer,
-                                                      o_tInt[l_el] );
-#elif defined PP_T_KERNELS_XSMM
-        TimePred< T_SDISC.ELEMENT,
-                  N_QUANTITIES,
                   ORDER,
-                  N_CRUNS >::ckXsmmFused( (TL_T_REAL)   i_dT,
-                                                        i_dg.mat.stiffT,
-                                                      &(i_starM[l_el][0].mat), // TODO: fix struct
-                                                        io_dofs[l_el],
-                                                        i_kernels,
-                                                        l_tmp,
-                                                        l_derBuffer,
-                                                        o_tInt[l_el] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-        TimePred< T_SDISC.ELEMENT,
-                  N_QUANTITIES,
-                  ORDER,
-                  N_CRUNS >::ckXsmmSingle( (TL_T_REAL)   i_dT,
-                                                         i_dg.mat.stiffT,
-                                                       &(i_starM[l_el][0].mat), // TODO: fix struct
-                                                         io_dofs[l_el],
-                                                         i_kernels,
-                                                         l_tmp,
-                                                         l_derBuffer,
-                                                         o_tInt[l_el] );
-#else
-         EDGE_LOG_FATAL << "kernels not supported";
-#endif
+                  N_CRUNS >::ck( (TL_T_REAL)  i_dT,
+                                              i_dg.mat.stiffT,
+                                            &(i_starM[l_el][0].mat), // TODO: fix struct
+                                              io_dofs[l_el],
+                                              i_mm,
+                                              l_tmpEl,
+                                              l_derBuffer,
+                                              o_tInt[l_el] );
 
         /*
          * Write receivers (if required)
@@ -555,13 +525,14 @@ class edge::elastic::solvers::AderDg {
               TimePred< T_SDISC.ELEMENT,
                         N_QUANTITIES,
                         ORDER,
-                        N_CRUNS,
-                        1 >::evalTimePrediction(                                 l_rePt,
-                                                                                 l_derBuffer,
-                          (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmp );
+                        ORDER,
+                        N_CRUNS >::evalTimePrediction( 1,
+                                                       l_rePt,
+                                                       l_derBuffer,
+                          (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmpEl );
 
               // write this time prediction
-              io_recvs.writeRecvAll( l_enRe, l_tmp );
+              io_recvs.writeRecvAll( l_enRe, l_tmpEl );
             }
           }
           l_enRe++;
@@ -570,74 +541,52 @@ class edge::elastic::solvers::AderDg {
         /*
          * compute volume contribution
          */
-        for( unsigned int l_dim = 0; l_dim < N_DIM; l_dim++ ) {
-          // multiply with stiffness and inverse mass matrix
-#if   defined PP_T_KERNELS_VANILLA
-          matMulB0( o_tInt[l_el], i_dg.mat.stiff[l_dim], l_tmp );
-#elif defined PP_T_KERNELS_XSMM
-          i_kernels[(ORDER-1)*(N_DIM+1)+N_DIM]( i_starM[l_el][l_dim].mat, o_tInt[l_el][0][0], l_tmp[0][0] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-          i_kernels[((ORDER-1)*2)]( i_dg.mat.stiff[l_dim][0], o_tInt[l_el][0][0], l_tmp[0][0] );
-#endif
-
-          // multiply with star matrix
-#if   defined PP_T_KERNELS_VANILLA
-          matMulB1( i_starM[l_el][l_dim].mat, l_tmp, io_dofs[l_el] );
-#elif defined PP_T_KERNELS_XSMM
-          i_kernels[(ORDER-1)*(N_DIM+1)+l_dim]( l_tmp[0][0], i_dg.mat.stiff[l_dim], io_dofs[l_el][0][0] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-          i_kernels[((ORDER-1)*2)+1]( l_tmp[0][0], i_starM[l_el][l_dim].mat[0], io_dofs[l_el][0][0] );
-#endif
-        }
+        VolInt< T_SDISC.ELEMENT,
+                N_QUANTITIES,
+                ORDER,
+                N_CRUNS >::apply(   i_dg.mat.stiff,
+                                  & i_starM[l_el][0].mat, // TODO: fix struct
+                                    o_tInt[l_el],
+                                    i_mm,
+                                    io_dofs[l_el],
+                                    l_tmpEl );
 
         /*
          * prefetches for next iteration
          */
+        const TL_T_REAL (* l_preDofs)[N_ELEMENT_MODES][N_CRUNS] = nullptr;
+        const TL_T_REAL (* l_preTint)[N_ELEMENT_MODES][N_CRUNS] = nullptr;
 #if defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-        const TL_T_REAL* l_preDofs = nullptr;
-        const TL_T_REAL* l_preTint = nullptr;
         if( l_el < i_first+i_nElements-1 ) {
-          l_preDofs = io_dofs[l_el+1][0][0];
-          l_preTint = o_tInt[l_el+1][0][0];
+          l_preDofs = io_dofs[l_el+1];
+          l_preTint = o_tInt[l_el+1];
         }
         else {
-          l_preDofs = io_dofs[l_el][0][0];
-          l_preTint = o_tInt[l_el][0][0];
+          l_preDofs = io_dofs[l_el];
+          l_preTint = o_tInt[l_el];
         }
 #endif
 
          /*
           * compute local surface contribution
           */
-        for( unsigned int l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fa++ ) {
-          // default handling for non-rupture elements
-          if( (i_elChars[l_el].spType                 & RUPTURE) != RUPTURE || // linear access
-              (i_faChars[ i_elFa[l_el][l_fa] ].spType & RUPTURE) != RUPTURE ) { // unstructured access
-            // multiply with flux matrix
-#if   defined PP_T_KERNELS_VANILLA
-            matMulB0( o_tInt[l_el], i_dg.mat.flux[l_fa], l_tmp );
-#elif defined PP_T_KERNELS_XSMM
-            i_kernels[ORDER*(N_DIM+1)+l_fa]( o_tInt[l_el][0][0], i_dg.mat.flux[l_fa], l_tmp[0][0] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-            if(      l_fa == 0 ) i_kernels[((ORDER-1)*2)+2]( i_dg.mat.flux[l_fa][0], o_tInt[l_el][0][0], l_tmp[0][0],
-                                                             nullptr,                l_preDofs,          nullptr      );
-            else if( l_fa == 1 ) i_kernels[((ORDER-1)*2)+2]( i_dg.mat.flux[l_fa][0], o_tInt[l_el][0][0], l_tmp[0][0],
-                                                             nullptr,                l_preTint,          nullptr      );
-            else                 i_kernels[((ORDER-1)*2)+3]( i_dg.mat.flux[l_fa][0], o_tInt[l_el][0][0], l_tmp[0][0]  );
-#endif
-
-          // multiply with flux solver
-#if   defined PP_T_KERNELS_VANILLA
-            matMulB1( i_fluxSolvers[l_el][l_fa].solver, l_tmp, io_dofs[l_el] );
-#elif defined PP_T_KERNELS_XSMM
-            i_kernels[ORDER*(N_DIM+1)+N_FLUX_MATRICES]( i_fluxSolvers[l_el][l_fa].solver[0],
-                                                        l_tmp[0][0],
-                                                        io_dofs[l_el][0][0] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-            i_kernels[((ORDER-1)*2)+4]( l_tmp[0][0], i_fluxSolvers[l_el][l_fa].solver[0], io_dofs[l_el][0][0] );
-#endif
-          }
-        }
+        // reuse derivative buffer
+        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
+          (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
+        // call kernel
+        SurfInt< T_SDISC.ELEMENT,
+                 N_QUANTITIES,
+                 ORDER,
+                 ORDER,
+                 N_CRUNS >::local( i_dg.mat.fluxL,
+                                   i_dg.mat.fluxT,
+                                   ( TL_T_REAL (*)[N_QUANTITIES][N_QUANTITIES] )  ( i_fluxSolvers[l_el][0].solver[0] ), // TODO: fix struct
+                                   o_tInt[l_el],
+                                   i_mm,
+                                   io_dofs[l_el],
+                                   l_tmpFa,
+                                   l_preDofs,
+                                   l_preTint );
       }
     }
 
@@ -703,130 +652,7 @@ class edge::elastic::solvers::AderDg {
 #endif
 #endif
                      ) {
-
-      // store sparse receiver id
-      TL_T_INT_LID l_faRe = i_firstSpRe;
-
-      // scratch memory
-      TL_T_REAL l_scratch[4][N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS];
-
-      // struct for the pertubation of the middle states
-      struct {
-        TL_T_FRI_GL  *gl;
-        TL_T_FRI_FA  *fa;
-        TL_T_FRI_QP (*qp)[N_FACE_QUAD_POINTS];
-      } l_faData;
-      l_faData.gl = &i_frictionGlobal;
-      l_faData.fa =  i_frictionFace+i_first;
-      l_faData.qp =  i_frictionQuadPoint+i_first;
-
-      // iterate over the rupture faces
-      for( TL_T_INT_LID l_fa = i_first; l_fa < i_first+i_nFaces; l_fa++ ) {
-        // compute derivatives
-        TL_T_REAL l_der[2][ORDER][N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS];
-
-        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-          // get sparse rupture elements at the left and right side of the face
-          TL_T_INT_LID l_el = i_faElSpRp[l_fa][l_sd];
-
-          // TODO: replace preprocessor by single function call
-#if defined PP_T_KERNELS_VANILLA
-          TimePred< T_SDISC.ELEMENT,
-                    N_QUANTITIES,
-                    ORDER,
-                    N_CRUNS >::ckVanilla( (TL_T_REAL)   i_dT,
-                                                        i_dg.mat.stiffT,
-                                                      &(i_starM[l_el][0].mat), // TODO: fix struct
-                                                        i_tDofs[l_el],
-                                                        l_scratch[0],
-                                                        l_der[l_sd],
-                                                        l_scratch[1] );
-#elif defined PP_T_KERNELS_XSMM
-          TimePred< T_SDISC.ELEMENT,
-                    N_QUANTITIES,
-                    ORDER,
-                    N_CRUNS >::ckXsmmFused( (TL_T_REAL)   i_dT,
-                                                          i_dg.mat.stiffT,
-                                                        &(i_starM[l_el][0].mat), // TODO: fix struct
-                                                          i_tDofs[l_el],
-                                                          i_kernels,
-                                                          l_scratch[0],
-                                                          l_der[l_sd],
-                                                          l_scratch[1] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-          TimePred< T_SDISC.ELEMENT,
-                    N_QUANTITIES,
-                    ORDER,
-                    N_CRUNS >::ckXsmmSingle( (TL_T_REAL)   i_dT,
-                                                           i_dg.mat.stiffT,
-                                                         &(i_starM[l_el][0].mat), // TODO: fix struct
-                                                           i_tDofs[l_el],
-                                                           i_kernels,
-                                                           l_scratch[0],
-                                                           l_der[l_sd],
-                                                           l_scratch[1] );
-#else
-           EDGE_LOG_FATAL << "kernels not supported";
-#endif
-        }
-
-        // call internal boundary solver
-        InternalBoundary<
-          T_SDISC.ELEMENT,
-          N_QUANTITIES,
-          ORDER,
-          N_CRUNS >::template evalSpaceTime<
-            TL_T_REAL,
-            FrictionLaws< N_DIM, N_CRUNS >
-          >(  i_iBnd[l_fa].fIdFaEl[0],
-              i_iBnd[l_fa].fIdFaEl[1],
-              i_iBnd[l_fa].vIdFaElR,
-              i_dg.mat.massI,
-              i_dT,
-              i_dg.quadEval.ptsLine,
-              i_dg.quadEval.weightsLine,
-              i_dg.quadEval.weightsFaces,
-              i_dg.quadEval.basisFaces,
-              i_solvers[l_fa][0],
-              i_solvers[l_fa][1],
-              i_solvers[l_fa][2],
-              i_solvers[l_fa][3],
-              l_der[0],
-              l_der[1],
-              l_scratch,
-              o_updates[l_fa][0],
-              o_updates[l_fa][1],
-             &l_faData );
-
-        // check if this face requires receiver output
-        if( (i_iBnd[l_fa].spType & RECEIVER) != RECEIVER ){}
-        else {
-          // check if the receiver requires output
-          if( io_recvsQuad.getRecvTimeRel( l_faRe, i_time, i_dT ) >= -TOL.TIME ) {
-            // gather receiver data, TODO: outsource
-            TL_T_REAL l_buff[ (N_DIM-1)*3 ][N_FACE_QUAD_POINTS][N_CRUNS];
-
-            for( unsigned short l_qp = 0; l_qp < N_FACE_QUAD_POINTS; l_qp++ ) {
-              for( unsigned short l_di = 0; l_di < N_DIM-1; l_di++ ) {
-                for( unsigned short l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
-                  l_buff[          0+l_di][l_qp][l_ru] = i_frictionQuadPoint[l_fa][l_qp].tr[l_di][l_ru];
-                  l_buff[  (N_DIM-1)+l_di][l_qp][l_ru] = i_frictionQuadPoint[l_fa][l_qp].sr[l_di][l_ru];
-                  l_buff[2*(N_DIM-1)+l_di][l_qp][l_ru] = i_frictionQuadPoint[l_fa][l_qp].dd[l_di][l_ru];
-                }
-              }
-            }
-
-            // write the receiver info
-            io_recvsQuad.writeRecvAll( i_time, i_dT, l_faRe, l_buff );
-          }
-
-          l_faRe++;
-        }
-
-        // update pointers
-        l_faData.fa++;
-        l_faData.qp++;
-      }
+      EDGE_LOG_FATAL << "removed quadrature-based rupture physics";
     }
 
     /**
@@ -850,9 +676,11 @@ class edge::elastic::solvers::AderDg {
      *
      * @paramt TL_T_INT_LID integer type of local entity ids.
      * @paramt TL_T_REAL type used for floating point arithmetic.
+     * @paramt TL_T_MM type of the matrix-matrix multiplication kernels.
      **/
     template< typename TL_T_INT_LID,
-              typename TL_T_REAL >
+              typename TL_T_REAL,
+              typename TL_T_MM >
     static void neigh( TL_T_INT_LID            i_first,
                        TL_T_INT_LID            i_nElements,
                        TL_T_INT_LID            i_firstSpRp,
@@ -867,78 +695,45 @@ class edge::elastic::solvers::AderDg {
                        unsigned short const (* i_vIdElFaEl)[C_ENT[T_SDISC.ELEMENT].N_FACES],
                        TL_T_REAL      const (* i_tInt)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
                        TL_T_REAL      const (* i_updatesSpRp)[2][N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                       TL_T_REAL            (* io_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS]
-#if defined (PP_T_KERNELS_XSMM) || defined (PP_T_KERNELS_XSMM_DENSE_SINGLE)
-#if PP_PRECISION == 64
-                      ,const libxsmm_dmmfunction *i_kernels
-#else
-                      ,const libxsmm_smmfunction *i_kernels
-#endif
-#endif
-                     ) {
+                       TL_T_REAL            (* io_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+                       TL_T_MM const         & i_mm ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler
       (void) __builtin_assume_aligned(i_tInt,  ALIGNMENT.ELEMENT_MODES.PRIVATE);
       (void) __builtin_assume_aligned(io_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
 #endif
 
-      // counter of elements with faces having rupture physics
-      TL_T_INT_LID l_elRp = i_firstSpRp;
-
-      // temporary product for two-way mult
-      TL_T_REAL (*l_tmpProd)[N_ELEMENT_MODES][N_CRUNS] = parallel::g_scratchMem->tRes;
-
-#if !defined PP_T_ELEMENTS_HEX8R
-      unsigned short l_veJump = std::max( (N_DIM / 3) * C_ENT[T_SDISC.FACE].N_VERTICES, 1);
-#endif
+      // temporary product for three-way mult
+        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
+          (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
 
       // iterate over elements
       for( TL_T_INT_LID l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
-        // will be set to true if one of the faces enforces rupture physics
-        bool l_rp = false;
 
         // add neighboring contribution
         for( TL_T_INT_LID l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fa++ ) {
           TL_T_INT_LID l_faId = i_elFa[l_el][l_fa];
           TL_T_INT_LID l_ne;
-          unsigned short l_fId;
 
-          if( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW &&
-              (i_faChars[l_faId].spType & RUPTURE) != RUPTURE ) {
-             if( (i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) {
-              // derive neighbor
+          // determine flux matrix id
+          unsigned short l_fId = SurfInt< T_SDISC.ELEMENT,
+                                          N_QUANTITIES,
+                                          ORDER,
+                                          ORDER,
+                                          N_CRUNS >::fMatId( i_vIdElFaEl[l_el][l_fa],
+                                                             i_fIdElFaEl[l_el][l_fa] );
+
+          if( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW ) {
+            // derive neighbor
+            if( (i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE )
               l_ne = i_elFaEl[l_el][l_fa];
-
-              /*
-               * derive id of flux matrix
-               */
-#if defined PP_T_ELEMENTS_HEX8R
-              // shortcut for rectangular, 8-node hexes, having only four 12 flux matrices
-              l_fId  = C_ENT[T_SDISC.ELEMENT].N_FACES + l_fa;
-#else
-              // jump over local flux matrices
-              l_fId  = C_ENT[T_SDISC.ELEMENT].N_FACES;
-              // jump over local face
-              l_fId += l_fa * C_ENT[T_SDISC.ELEMENT].N_FACES * l_veJump;
-
-              // jump over neighboring face
-              l_fId += i_fIdElFaEl[l_el][l_fa] * l_veJump;
-
-              // jump over vertices
-              l_fId += i_vIdElFaEl[l_el][l_fa];
-#endif
-            }
-            else {
-              // free surface boundary conditions
-              l_fId = l_fa;
+            else
               l_ne = l_el;
-            }
 
             /*
              * prefetches
              */
-#if defined PP_T_KERNELS_XSMM || defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-            const TL_T_REAL* l_pre = nullptr;
+            const TL_T_REAL (* l_pre)[N_ELEMENT_MODES][N_CRUNS] = nullptr;
             TL_T_INT_LID l_neUp = std::numeric_limits<TL_T_INT_LID>::max();
             // prefetch for the upcoming surface integration of this element
             if( l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES-1 ) l_neUp = i_elFaEl[l_el][l_fa+1];
@@ -946,65 +741,34 @@ class edge::elastic::solvers::AderDg {
             else if( l_el < i_first+i_nElements-1 ) l_neUp = i_elFaEl[l_el+1][0];
 
             // only proceed with adjacent data if the element exists
-            if( l_neUp != std::numeric_limits<TL_T_INT_LID>::max() ) l_pre = i_tInt[l_neUp][0][0];
+            if( l_neUp != std::numeric_limits<TL_T_INT_LID>::max() ) l_pre = i_tInt[l_neUp];
             // next element data in case of boundary conditions
-            else if( l_el < i_first+i_nElements-1 )                  l_pre = io_dofs[l_el+1][0][0];
+            else if( l_el < i_first+i_nElements-1 )              l_pre = io_dofs[l_el+1];
             // default to element data to avoid performance penality
-            else                                                     l_pre = io_dofs[l_el][0][0];
-#endif
+            else                                                 l_pre = io_dofs[l_el];
 
             /*
              * solve
              */
-            // multiply with flux matrix
-#if   defined PP_T_KERNELS_VANILLA
-            matMulB0( i_tInt[l_ne], i_dg.mat.flux[l_fId], l_tmpProd );
-#elif defined PP_T_KERNELS_XSMM
-            i_kernels[l_fId]( i_tInt[l_ne][0][0], i_dg.mat.flux[l_fId], l_tmpProd[0][0] );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-            i_kernels[((ORDER-1)*2)+2]( i_dg.mat.flux[l_fId][0], i_tInt[l_ne][0][0], l_tmpProd[0][0], nullptr, l_pre, nullptr );
-#endif
-
-            // multiply with flux solver
-#if   defined PP_T_KERNELS_VANILLA
-            matMulB1( i_fluxSolvers[l_el][l_fa].solver, l_tmpProd, io_dofs[l_el] );
-#elif defined PP_T_KERNELS_XSMM
-            i_kernels[N_FLUX_MATRICES+1]( i_fluxSolvers[l_el][l_fa].solver[0], l_tmpProd[0][0], io_dofs[l_el][0][0], nullptr, l_pre, nullptr );
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-            i_kernels[((ORDER-1)*2)+4]( l_tmpProd[0][0], i_fluxSolvers[l_el][l_fa].solver[0], io_dofs[l_el][0][0] );
-#endif
-          }
-          // apply updates of the flux computation directly if this is a rupture face
-          else if( (i_faChars[l_faId].spType & RUPTURE) == RUPTURE ) {
-            // get the sparse index of the rupture face
-            TL_T_INT_LID l_faIdRp = i_elFaSpRp[l_elRp][l_fa];
-
-            // determine if this is the left or right side element
-            TL_T_INT_LID l_elL = i_faElSpRp[l_faIdRp][0];
-            TL_T_INT_LID l_sd  = (l_elRp == l_elL) ? 0 : 1;
-
-            // update the DOFs
-            for( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
-              for( unsigned short l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-                for( unsigned short l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
-                  io_dofs[l_el][l_qt][l_md][l_ru] += i_updatesSpRp[l_faIdRp][l_sd][l_qt][l_md][l_ru];
-                }
-              }
-            }
-
-            // remember this rupture face to increase the rupture element counter
-            l_rp = true;
-          }
+            SurfInt< T_SDISC.ELEMENT,
+                     N_QUANTITIES,
+                     ORDER,
+                     ORDER,
+                     N_CRUNS >::neigh( ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? i_dg.mat.fluxN[l_fId] :
+                                                                                                      i_dg.mat.fluxL[l_fa],
+                                       i_dg.mat.fluxT[l_fa],
+                                       ( TL_T_REAL (*)[N_QUANTITIES] )  ( i_fluxSolvers[l_el][l_fa].solver[0] ), // TODO: fix struct
+                                       i_tInt[l_ne],
+                                       i_mm,
+                                       io_dofs[l_el],
+                                       l_tmpFa,
+                                       l_pre,
+                                       l_fa,
+                                       ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? l_fId : l_fa );
         }
-
-        if( l_rp == false ){}
-        else {
-          // increase the sparse counter for the rupture elements
-          l_elRp++;
-        }
-
       }
     }
+  }
 };
 
 #endif
