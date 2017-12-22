@@ -69,8 +69,14 @@ class edge::data::MmVanilla {
         //! leading dimension of column-major C
         const unsigned int m_ldC;
 
-        //! beta parameter (needs to be 1.0 for now)
-        const unsigned short m_beta;
+        //! beta parameter
+        const TL_T_REAL m_beta;
+
+        //! true if matrices A and C carry fused simulations
+        const bool m_fusedAC;
+
+        //! true if matrices B and C carry fused simulations
+        const bool m_fusedBC;
 
         //! number of fused runs
         const unsigned short m_nCrs;
@@ -94,7 +100,9 @@ class edge::data::MmVanilla {
                  unsigned int   i_ldA,
                  unsigned int   i_ldB,
                  unsigned int   i_ldC,
-                 unsigned short i_beta,
+                 TL_T_REAL      i_beta,
+                 bool           i_fusedAC,
+                 bool           i_fusedBC,
                  unsigned short i_nCrs ): m_m( i_m ),
                                           m_n( i_n ),
                                           m_k( i_k ),
@@ -102,6 +110,8 @@ class edge::data::MmVanilla {
                                           m_ldB( i_ldB ),
                                           m_ldC( i_ldC ),
                                           m_beta( i_beta ),
+                                          m_fusedAC( i_fusedAC ),
+                                          m_fusedBC( i_fusedBC ),
                                           m_nCrs( i_nCrs ) {};
 
           /**
@@ -114,19 +124,21 @@ class edge::data::MmVanilla {
           void operator()( TL_T_REAL const * i_a,
                            TL_T_REAL const * i_b,
                            TL_T_REAL       * io_c ) const {
-            if( m_beta == 0 ) {
-              linalg::Matrix::matMulB0FusedAC( m_nCrs,
-                                               m_m,   m_n,   m_k,
-                                               m_ldA, m_ldB, m_ldC,
-                                               i_a,   i_b,   io_c );
+            if( m_fusedAC ) {
+              linalg::Matrix::matMulFusedAC( m_nCrs,
+                                             m_m,   m_n,   m_k,
+                                             m_ldA, m_ldB, m_ldC,
+                                             m_beta,
+                                             i_a,   i_b,   io_c );
             }
-            else if( m_beta == 1 ) {
-              linalg::Matrix::matMulB1FusedBC( m_nCrs,
-                                               m_m,   m_n,   m_k,
-                                               m_ldA, m_ldB, m_ldC,
-                                               i_a,   i_b,   io_c );
+            else if( m_fusedBC ) {
+              linalg::Matrix::matMulFusedBC( m_nCrs,
+                                             m_m,   m_n,   m_k,
+                                             m_ldA, m_ldB, m_ldC,
+                                             m_beta,
+                                             i_a,   i_b,   io_c );
             }
-            else EDGE_LOG_FATAL << m_beta;
+            else EDGE_LOG_FATAL << "matrix structure not supported";
           };
     };
 
@@ -154,17 +166,23 @@ class edge::data::MmVanilla {
               unsigned int   i_ldC,
               TL_T_REAL      i_alpha,
               TL_T_REAL      i_beta,
+              bool           i_fusedAC,
+              bool           i_fusedBC,
               unsigned short i_nCfr ) {
       // verbose output
       EDGE_VLOG(1) << "  adding vanilla-kernel #" << m_kernels.size() << " (dense)"
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
-                   << " alpha=" << i_alpha << " beta=" << i_beta << " cfr=1";
+                   << " alpha=" << i_alpha << " beta=" << i_beta
+                   << " fusedAC=" << i_fusedAC << " fusedBC=" << i_fusedBC
+                   << " cfr=" << i_nCfr;
 
       // add kernel
       m_kernels.push_back( Vanilla( i_m, i_n, i_k,
                                     i_ldA, i_ldB, i_ldC,
-                                    ( i_beta == TL_T_REAL(0) ) ? 0 : 1,
+                                    i_beta,
+                                    i_fusedAC,
+                                    i_fusedBC,
                                     i_nCfr ) );
     }
 
