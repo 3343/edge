@@ -377,10 +377,11 @@ before_install:
 
   # clone EDGE's asset repository
   - git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
-  - cd edge_opt; git lfs fetch -I cont; cd ..
+  - cd edge_opt; git lfs fetch -I cont tools/edge_pre; cd ..
 
   - cd edge
   - ln -s ../edge_opt/cont .
+  - ln -s ../edge_opt/tools/edge_pre submodules
 
    # set up compilers
   - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
