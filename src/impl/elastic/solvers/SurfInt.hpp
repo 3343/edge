@@ -309,6 +309,7 @@ class edge::elastic::solvers::SurfInt {
      * @param io_dofs will be updated with the contribution of the adjacent element to the surface integral.
      * @param o_scratch will be used as scratch space for the computations.
      * @param i_pre DOFs or tDOFs for prefetching (not used).
+     * @param i_fa local face (not used).
      * @param i_fId flux matrix id (not used).
      *
      * @paramt TL_T_REAL floating point precision.
@@ -322,6 +323,7 @@ class edge::elastic::solvers::SurfInt {
                               TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               TL_T_REAL                            o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
                               TL_T_REAL                    const   i_pre[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
+                              unsigned short                       i_fa = std::numeric_limits< unsigned short >::max(),
                               unsigned short                       i_fId = std::numeric_limits< unsigned short >::max() ) {
       // multiply with first face integration matrix
       i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_tDofs[0][0],
@@ -352,6 +354,7 @@ class edge::elastic::solvers::SurfInt {
      * @param io_dofs will be updated with the contribution of the adjacent element to the surface integral.
      * @param o_scratch will be used as scratch space for the computations.
      * @param i_pre DOFs or tDOFs for prefetching (not used).
+     * @param i_fa local face (not used).
      * @param i_fId flux matrix id (not used).
      *
      * @paramt TL_T_REAL floating point precision.
@@ -365,6 +368,7 @@ class edge::elastic::solvers::SurfInt {
                               TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                               TL_T_REAL                               o_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS],
                               TL_T_REAL                       const   i_pre[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                              unsigned short                          i_fa = std::numeric_limits< unsigned short >::max(),
                               unsigned short                          i_fId = std::numeric_limits< unsigned short >::max() ) {
       // multiply with first face integration matrix
       i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fIntLN[0],
