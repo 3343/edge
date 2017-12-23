@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # Copyright (c) 2017-2018, Intel Corporation
+# Copyright (c) 2017, Regents of the University of California
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -27,13 +28,40 @@
 #
 
 # global build group variables
-EDGE_CXX=mpiicpc
-EDGE_PAR_COMPILE=16
-EDGE_ARCH=avx512
-EDGE_PARALLEL=mpi+omp
-EDGE_ELEMENT=tet4
-EDGE_EQUATION=elastic
-EDGE_BIN_DIR=./bin/
+if [[ -z $EDGE_CXX  ]]
+then
+  EDGE_CXX=mpiCC
+fi
+
+if [[ -z $EDGE_PAR_COMPILE ]]
+then
+  EDGE_PAR_COMPILE=4
+fi
+
+if [[ -z $EDGE_ARCH ]]
+then
+  EDGE_ARCH=avx512
+fi
+
+if [[ -z $EDGE_PARALLEL ]]
+then
+  EDGE_PARALLEL=mpi+omp
+fi
+
+if [[ -z $EDGE_ELEMENT ]]
+then
+  EDGE_ELEMENT=tet4
+fi
+
+if [[ -z $EDGE_EQUATION ]]
+then
+  EDGE_EQUATION=elastic
+fi
+
+if [[ -z $EDGE_BIN_DIR ]]
+then
+  EDGE_BIN_DIR=./bin/
+fi
 
 # configs to build, $order_$precision_$cfr
 EDGE_CONFIGS="2_64_1 2_32_1 2_64_8 2_32_16 3_64_1 3_32_1 3_64_8 3_32_16 4_64_1 4_32_1 4_64_8 4_32_16 5_64_1 5_32_1 5_64_8 5_32_16 6_64_1 6_32_1 6_64_8 6_32_16 7_64_1 7_32_1 7_64_8 7_32_16"
