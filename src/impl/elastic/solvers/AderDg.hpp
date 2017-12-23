@@ -764,7 +764,7 @@ class edge::elastic::solvers::AderDg {
                                        l_tmpFa,
                                        l_pre,
                                        l_fa,
-                                       ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? l_fId : l_fa );
+                                       ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? l_fId + C_ENT[T_SDISC.ELEMENT].N_FACES: l_fa );
         }
       }
     }

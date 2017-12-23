@@ -399,7 +399,7 @@ class edge::elastic::solvers::SurfInt {
      * @param o_scratch will be used as scratch space for the computations.
      * @param i_pre DOFs or tDOFs for prefetching.
      * @param i_fa local face.
-     * @param i_fId flux matrix id of the local or neighboring flux matrix.
+     * @param i_fId flux matrix id of the local or neighboring flux matrix (+ TL_N_FAS if neighboring).
      *
      * @paramt TL_T_REAL floating point precision.
      **/
@@ -415,9 +415,9 @@ class edge::elastic::solvers::SurfInt {
                               unsigned short                          i_fa,
                               unsigned short                          i_fId ) {
       // local or neighboring flux matrix
-      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+i_fId]( i_tDofs[0][0],
-                                                           i_fIntLN,
-                                                           o_scratch[0][0][0] );
+      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+i_fId]( i_tDofs[0][0],
+                                                  i_fIntLN,
+                                                  o_scratch[0][0][0] );
 
       // flux solver
       i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+TL_N_FAS]( i_fSol[0],
