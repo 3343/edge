@@ -53,7 +53,9 @@ def svs( i_deg ):
 # @return three lists (inner, send, recv sub-cells) containing the vertex ids of the sub-cells.
 ##
 def scSv( i_deg ):
-  assert( i_deg > 0 )
+  # special handling for degree 0
+  if( i_deg == 0 ):
+    return [], [ [0,1] ], [ [-1,0], [1, -1] ]
 
   l_ty = edge_pre.types.Line.Line( i_deg )
 
@@ -77,7 +79,9 @@ def scSv( i_deg ):
 # @return three lists (inner, send, recv sub-cells) containing the ids of adjacent sub-cells.
 ##
 def scSfSc( i_deg ):
-  assert( i_deg > 0 )
+  # special handling for deg 0
+  if( i_deg == 0 ):
+    return [], [ [1, 2] ], [ [0, -1], [0, -1] ]
 
   l_ty = edge_pre.types.Line.Line( i_deg )
 
@@ -127,7 +131,9 @@ def scSfSc( i_deg ):
 # @return two (inner, send) lists of lists. [*][]: sub-cell, [][*]: face of sub-cell.
 ##
 def scTySf( i_deg ):
-  assert( i_deg >= 1 )
+  # special handling for degree 0 elements
+  if( i_deg == 0 ):
+    return [], [ [0, 1] ]
 
   # get type
   l_ty = edge_pre.types.Line.Line( i_deg )
@@ -155,6 +161,10 @@ def intSc( i_deg, i_syms ):
   # inc from one vertex to the next
   l_inc = l_ty.ves[1][0] - l_ty.ves[0][0]
   l_inc = fractions.Fraction( l_inc, l_ty.n_scs )
+
+  # special handling for degree 0
+  if( i_deg == 0 ):
+    return [], [ [(i_syms[0], 0, l_inc)] ],  [ [[ (i_syms[0], 0, l_inc) ]], [[ (i_syms[0], 0, l_inc) ]] ]
 
   # integration intervals
   l_intIn = []
