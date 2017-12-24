@@ -35,12 +35,13 @@ fi
 
 if [[ -z $EDGE_PAR_COMPILE ]]
 then
-  EDGE_PAR_COMPILE=4
+  EDGE_PAR_COMPILE=16
 fi
 
 if [[ -z $EDGE_ARCH ]]
 then
   EDGE_ARCH=avx512
+#  EDGE_ARCH=hsw
 fi
 
 if [[ -z $EDGE_PARALLEL ]]
@@ -65,6 +66,7 @@ fi
 
 # configs to build, $order_$precision_$cfr
 EDGE_CONFIGS="2_64_1 2_32_1 2_64_8 2_32_16 3_64_1 3_32_1 3_64_8 3_32_16 4_64_1 4_32_1 4_64_8 4_32_16 5_64_1 5_32_1 5_64_8 5_32_16 6_64_1 6_32_1 6_64_8 6_32_16 7_64_1 7_32_1 7_64_8 7_32_16"
+#EDGE_CONFIGS="2_64_1 2_32_1 2_64_4 2_32_8 3_64_1 3_32_1 3_64_4 3_32_8 4_64_1 4_32_1 4_64_4 4_32_8 5_64_1 5_32_1 5_64_4 5_32_8 6_64_1 6_32_1 6_64_4 6_32_8 7_64_1 7_32_1 7_64_4 7_32_8"
 
 # save current location
 PWD_JUMP_BACK=`pwd`
@@ -98,7 +100,10 @@ do
 
   # copy binary
   cp ./build/edge ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
-  unlink ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
+  if [ -f ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR} ]
+   then
+    unlink ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
+  fi
   ln -s edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR} ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
 done
 
