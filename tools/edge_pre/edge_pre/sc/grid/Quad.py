@@ -58,8 +58,6 @@ def svs( i_deg ):
 # @return three lists (inner, send, recv sub-cells) containing the vertex ids of the sub-cells.
 ##
 def scSv( i_deg ):
-  assert( i_deg > 0 )
-
   l_ty = edge_pre.types.Quad.Quad( i_deg )
 
   ##
@@ -137,8 +135,6 @@ def scSv( i_deg ):
 # @param i_deg polynomial degree.
 ##
 def scSfSv( i_deg ):
-  assert( i_deg > 0 )
-
   # determine sub-vertices adjacent to sub-cells
   l_scSv = scSv( i_deg )
 
@@ -168,8 +164,6 @@ def scSfSv( i_deg ):
 # @return three lists (inner, send, recv sub-cells) containing the ids of adjacent sub-cells.
 ##
 def scSfSc( i_deg ):
-  assert( i_deg > 0 )
-
   # determine sub-vertices adjacent to sub-cells (faces as bridge)
   l_scSfSvIn, l_scSfSvSend, l_scSfSvRecv = scSfSv( i_deg )
 
