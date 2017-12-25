@@ -64,6 +64,9 @@ class edge::elastic::solvers::SurfInt {
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
+    //! half the number of faces
+    static unsigned short const TL_N_FAS_DIV2 =  TL_N_FAS / 2;
+
     //! number of DG face mods
     static unsigned short const TL_N_MDS_FA = CE_N_ELEMENT_MODES( C_ENT[TL_T_EL].TYPE_FACES, TL_O_SP );
 
@@ -236,7 +239,10 @@ class edge::elastic::solvers::SurfInt {
         // multiply with first face integration matrix
         i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fIntL[l_fa][0],
                                            i_tDofs[0][0],
-                                           o_scratch[0][0][0] );
+                                           o_scratch[0][0][0],
+                                           nullptr,
+                                           i_dofsP[0][0],
+                                           nullptr );
 
         // multiply with flux solver
         i_mm.m_kernels[((TL_O_TI-1)*2)+3]( o_scratch[0][0][0],
@@ -246,7 +252,10 @@ class edge::elastic::solvers::SurfInt {
         // multiply with second face integration matrix
         i_mm.m_kernels[((TL_O_TI-1)*2)+4]( i_fIntT[l_fa][0],
                                            o_scratch[1][0][0],
-                                           io_dofs[0][0] );
+                                           io_dofs[0][0],
+                                           nullptr,
+                                           i_tDofsP[0][0],
+                                           nullptr );
       }
     }
 #endif
@@ -287,7 +296,10 @@ class edge::elastic::solvers::SurfInt {
         // flux solver
         i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+TL_N_FAS]( i_fSol[l_fa][0],
                                                                           o_scratch[0][0][0],
-                                                                          o_scratch[1][0][0] );
+                                                                          o_scratch[1][0][0],
+                                                                          nullptr,
+                                                                          (l_fa < TL_N_FAS_DIV2) ? i_dofsP[0][0] : i_tDofsP[0][0],
+                                                                          nullptr );
 
         // transposed flux matrix
         i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+l_fa]( o_scratch[1][0][0],
@@ -373,7 +385,10 @@ class edge::elastic::solvers::SurfInt {
       // multiply with first face integration matrix
       i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_fIntLN[0],
                                          i_tDofs[0][0],
-                                         o_scratch[0][0][0] );
+                                         o_scratch[0][0][0],
+                                         nullptr,
+                                         i_pre[0][0],
+                                         nullptr );
 
       // multiply with flux solver
       i_mm.m_kernels[((TL_O_TI-1)*2)+3]( o_scratch[0][0][0],
@@ -383,7 +398,10 @@ class edge::elastic::solvers::SurfInt {
       // multiply with second face integration matrix
       i_mm.m_kernels[((TL_O_TI-1)*2)+4]( i_fIntT[0],
                                          o_scratch[1][0][0],
-                                         io_dofs[0][0] );
+                                         io_dofs[0][0],
+                                         nullptr,
+                                         i_pre[0][0],
+                                         nullptr );
     }
 #endif
 
@@ -422,12 +440,15 @@ class edge::elastic::solvers::SurfInt {
       // flux solver
       i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+TL_N_FAS]( i_fSol[0],
                                                                         o_scratch[0][0][0],
-                                                                        o_scratch[1][0][0] );
+                                                                        o_scratch[1][0][0],
+                                                                        nullptr,
+                                                                        i_pre[0][0],
+                                                                        nullptr );
 
       // transposed flux matrix
-     i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+i_fa]( o_scratch[1][0][0],
-                                                                   i_fIntT,
-                                                                   io_dofs[0][0] );
+      i_mm.m_kernels[TL_O_TI*(TL_N_DIS+1)+TL_N_FAS+TL_N_FMNS+i_fa]( o_scratch[1][0][0],
+                                                                    i_fIntT,
+                                                                    io_dofs[0][0] );
     }
 #endif
 

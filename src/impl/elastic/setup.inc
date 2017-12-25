@@ -432,18 +432,11 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
                           LIBXSMM_PREFETCH_NONE );
   }
 
-  // flux solver without and with prefetches
+  // flux solver
   t_matCsr l_fSolvCsr;
   edge::linalg::Matrix::denseToCsr< real_base >( N_QUANTITIES, N_QUANTITIES,
                                                  l_fSolv[0], l_fSolvCsr, TOL.BASIS );
   EDGE_CHECK( l_fSolvCsr.val.size() == N_QUANTITIES*N_QUANTITIES );
-
-  l_internal.m_mm.add(  true,
-                       &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
-                        N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
-                        0, N_FACE_MODES, N_FACE_MODES,
-                        real_base(1.0), real_base(0.0),
-                        LIBXSMM_PREFETCH_NONE );
 
   l_internal.m_mm.add(  true,
                        &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
