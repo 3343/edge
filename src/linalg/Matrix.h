@@ -900,7 +900,7 @@ class edge::linalg::Matrix {
       while ( l_nProcessed < l_maxCols ) {
         // first pass look for qmadds and potential qmadds in the same rows
         for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
-          if( l_i >= i_nRows-3 ) continue;
+          if( l_i+3 >= i_nRows ) continue;
           l_foundQmadd = 0;
           for( unsigned int l_j = l_nProcessed; l_j < l_nLimit - l_nProcessed; ++l_j ) {
             if( (l_fill[(l_j*i_nRows)+(l_i+0)] == 1) &&
@@ -933,7 +933,7 @@ class edge::linalg::Matrix {
         }
         // second pass look out for consecutive 4 rows which have 3 nnz in a specifc column
         for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
-          if( l_i >= i_nRows-3 ) continue;
+          if( l_i+3 >= i_nRows ) continue;
           l_foundQmadd = 0;
           /* first check if already a qmadd in that row */
           for( unsigned int l_j = l_nProcessed; l_j < l_nLimit - l_nProcessed; ++l_j ) {
