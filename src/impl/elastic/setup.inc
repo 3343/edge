@@ -310,19 +310,21 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
 
     // generate libxsmm kernel for transposed stiffness matrices
     for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-      t_matCsr l_stiffTCsr;
-      edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                     l_stiffTDe[l_di][0], l_stiffTCsr, TOL.BASIS,
+      t_matCsc l_stiffTCsc;
+      edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
+                                                     l_stiffTDe[l_di][0], l_stiffTCsc, TOL.BASIS,
                                                      l_nzBl[0][0][1]+1, l_maxNzCol+1 );
 
-      l_internal.m_mm.add( &l_stiffTCsr.rowPtr[0],  &l_stiffTCsr.colIdx[0], &l_stiffTCsr.val[0],
+      l_internal.m_mm.add(  false,
+                           &l_stiffTCsc.colPtr[0],  &l_stiffTCsc.rowIdx[0], &l_stiffTCsc.val[0],
                             N_QUANTITIES, l_maxNzCol+1, l_nzBl[0][0][1]+1,
                             N_ELEMENT_MODES, 0, l_maxNzCol+1,
                             real_base(1.0), real_base(0.0),
                             LIBXSMM_PREFETCH_NONE );
     }
     // generate libxsmm kernel for star matrix
-    l_internal.m_mm.add( &l_starCsr.rowPtr[0],  &l_starCsr.colIdx[0], &l_starCsr.val[0],
+    l_internal.m_mm.add(  true,
+                         &l_starCsr.rowPtr[0],  &l_starCsr.colIdx[0], &l_starCsr.val[0],
                           N_QUANTITIES, l_maxNzCol+1, N_QUANTITIES,
                           0, l_maxNzCol+1, N_ELEMENT_MODES,
                           real_base(1.0), real_base(1.0),
@@ -363,11 +365,12 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
 #endif
 
   for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-    t_matCsr l_stiffCsr;
-    edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffDe[l_di][0],  l_stiffCsr, TOL.BASIS );
+    t_matCsc l_stiffCsc;
+    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
+                                                   l_stiffDe[l_di][0],  l_stiffCsc, TOL.BASIS );
 
-    l_internal.m_mm.add( &l_stiffCsr.rowPtr[0], &l_stiffCsr.colIdx[0], &l_stiffCsr.val[0],
+    l_internal.m_mm.add(  false,
+                         &l_stiffCsc.colPtr[0], &l_stiffCsc.rowIdx[0], &l_stiffCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, l_maxNzRow+1,
                           l_maxNzRow+1, 0, N_ELEMENT_MODES,
                           real_base(1.0), real_base(1.0),
@@ -375,7 +378,8 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
   }
 
   // star matrix
-  l_internal.m_mm.add( &l_starCsr.rowPtr[0], &l_starCsr.colIdx[0], &l_starCsr.val[0],
+  l_internal.m_mm.add(  true,
+                       &l_starCsr.rowPtr[0], &l_starCsr.colIdx[0], &l_starCsr.val[0],
                         N_QUANTITIES, l_maxNzRow+1, N_QUANTITIES,
                         0, N_ELEMENT_MODES, l_maxNzRow+1,
                         real_base(1.0), real_base(0.0),
@@ -386,12 +390,13 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
    */
   // local contribution flux matrices
   for( unsigned short l_fl = 0; l_fl < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fl++ ) {
-    t_matCsr l_fluxCsr;
+    t_matCsc l_fluxCsc;
 
-    edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxLDe[l_fl][0], l_fluxCsr, TOL.BASIS );
+    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
+                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS );
 
-    l_internal.m_mm.add( &l_fluxCsr.rowPtr[0],  &l_fluxCsr.colIdx[0], &l_fluxCsr.val[0],
+    l_internal.m_mm.add(  false,
+                         &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
                           real_base(1.0), real_base(0.0),
@@ -400,12 +405,13 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
 
   // neighboring contribution flux matrices
   for( unsigned short l_fn = 0; l_fn < N_FLUXN_MATRICES; l_fn++ ) {
-    t_matCsr l_fluxCsr;
+    t_matCsc l_fluxCsc;
 
-    edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxNDe[l_fn][0], l_fluxCsr, TOL.BASIS );
+    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
+                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS );
 
-    l_internal.m_mm.add( &l_fluxCsr.rowPtr[0],  &l_fluxCsr.colIdx[0], &l_fluxCsr.val[0],
+    l_internal.m_mm.add(  false,
+                         &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
                           real_base(1.0), real_base(0.0),
@@ -414,11 +420,12 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
 
   // transposed flux matrices
   for( unsigned short l_ft = 0; l_ft < C_ENT[T_SDISC.ELEMENT].N_FACES; l_ft++ ) {
-    t_matCsr l_fluxCsr;
+    t_matCsc l_fluxCsc;
 
-    edge::linalg::Matrix::denseToCsr< real_base >( N_FACE_MODES, N_ELEMENT_MODES,
-                                                   l_fluxTDe[l_ft][0], l_fluxCsr, TOL.BASIS );
-    l_internal.m_mm.add( &l_fluxCsr.rowPtr[0],  &l_fluxCsr.colIdx[0], &l_fluxCsr.val[0],
+    edge::linalg::Matrix::denseToCsc< real_base >( N_FACE_MODES, N_ELEMENT_MODES,
+                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS );
+    l_internal.m_mm.add(  false,
+                         &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
                           N_FACE_MODES, 0, N_ELEMENT_MODES,
                           real_base(1.0), real_base(1.0),
@@ -431,13 +438,15 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
                                                  l_fSolv[0], l_fSolvCsr, TOL.BASIS );
   EDGE_CHECK( l_fSolvCsr.val.size() == N_QUANTITIES*N_QUANTITIES );
 
-  l_internal.m_mm.add( &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
+  l_internal.m_mm.add(  true,
+                       &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
                         N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
                         0, N_FACE_MODES, N_FACE_MODES,
                         real_base(1.0), real_base(0.0),
                         LIBXSMM_PREFETCH_NONE );
 
-  l_internal.m_mm.add( &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
+  l_internal.m_mm.add(  true,
+                       &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
                         N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
                         0, N_FACE_MODES, N_FACE_MODES,
                         real_base(1.0), real_base(0.0),
