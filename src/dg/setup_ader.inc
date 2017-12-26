@@ -54,6 +54,13 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
                       (real_base *) l_internal.m_globalShared1[0].mat.fluxT );
 #elif defined PP_T_KERNELS_XSMM
 {
+  // determine CSC fill-in strategy
+  std::string l_cscFillIn = "none";
+  // if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+  l_cscFillIn = "qfma";
+  // }
+  EDGE_LOG_INFO << "  using the following CSC fill-in strategy for DG matrices: " << l_cscFillIn;
+
   // get matrices as dense
   real_base l_stiffTDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   real_base l_stiffDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
@@ -101,7 +108,8 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
     for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
       edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
                                                      l_stiffTDe[l_di][0], l_stiffTCsc[l_di], TOL.BASIS,
-                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1 );
+                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1,
+                                                     l_cscFillIn );
     }
 
     // add data for the first CK-stiff matrix or shrinking stiff matrices
@@ -135,7 +143,9 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
     t_matCsc l_stiffCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffDe[l_di][0], l_stiffCsc, TOL.BASIS );
+                                                   l_stiffDe[l_di][0], l_stiffCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_stiffCsc.val.size(); l_nz++ ) {
       l_globalMat->push_back( l_stiffCsc.val[l_nz] );
@@ -151,7 +161,9 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
     t_matCsc l_fluxCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS );
+                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
       l_globalMat->push_back( l_fluxCsc.val[l_nz] );
@@ -164,7 +176,9 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
     t_matCsc l_fluxCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS );
+                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
       l_globalMat->push_back( l_fluxCsc.val[l_nz] );
@@ -177,7 +191,9 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
     t_matCsc l_fluxCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_FACE_MODES, N_ELEMENT_MODES,
-                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS );
+                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
       l_globalMat->push_back( l_fluxCsc.val[l_nz] );

@@ -244,6 +244,12 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
 {
   EDGE_LOG_INFO << "  setting up libxsmm, sparse";
 
+  // determine CSC fill-in strategy
+  std::string l_cscFillIn = "none";
+  // if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+   l_cscFillIn = "qfma";
+  // }
+
   // get matrices as dense
   real_base l_stiffTDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
   real_base l_stiffDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
@@ -313,7 +319,8 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
       t_matCsc l_stiffTCsc;
       edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
                                                      l_stiffTDe[l_di][0], l_stiffTCsc, TOL.BASIS,
-                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1 );
+                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1,
+                                                     l_cscFillIn );
 
       l_internal.m_mm.add(  false,
                            &l_stiffTCsc.colPtr[0],  &l_stiffTCsc.rowIdx[0], &l_stiffTCsc.val[0],
@@ -367,7 +374,9 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
   for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
     t_matCsc l_stiffCsc;
     edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffDe[l_di][0],  l_stiffCsc, TOL.BASIS );
+                                                   l_stiffDe[l_di][0],  l_stiffCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     l_internal.m_mm.add(  false,
                          &l_stiffCsc.colPtr[0], &l_stiffCsc.rowIdx[0], &l_stiffCsc.val[0],
@@ -393,7 +402,9 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
     t_matCsc l_fluxCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS );
+                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     l_internal.m_mm.add(  false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
@@ -408,7 +419,9 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
     t_matCsc l_fluxCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS );
+                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
     l_internal.m_mm.add(  false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
@@ -423,7 +436,9 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
     t_matCsc l_fluxCsc;
 
     edge::linalg::Matrix::denseToCsc< real_base >( N_FACE_MODES, N_ELEMENT_MODES,
-                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS );
+                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
     l_internal.m_mm.add(  false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
