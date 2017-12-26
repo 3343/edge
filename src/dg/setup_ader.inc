@@ -56,9 +56,9 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
 {
   // determine CSC fill-in strategy
   std::string l_cscFillIn = "none";
-  // if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-  l_cscFillIn = "qfma";
-  // }
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+    l_cscFillIn = "qfma";
+  }
   EDGE_LOG_INFO << "  using the following CSC fill-in strategy for DG matrices: " << l_cscFillIn;
 
   // get matrices as dense

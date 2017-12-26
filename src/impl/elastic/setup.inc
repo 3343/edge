@@ -246,9 +246,9 @@ edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
 
   // determine CSC fill-in strategy
   std::string l_cscFillIn = "none";
-  // if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-   l_cscFillIn = "qfma";
-  // }
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+    l_cscFillIn = "qfma";
+  }
 
   // get matrices as dense
   real_base l_stiffTDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
