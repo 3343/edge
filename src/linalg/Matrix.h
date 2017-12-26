@@ -736,7 +736,7 @@ class edge::linalg::Matrix {
                                 unsigned int  i_nCols,
                           const T            *i_a,
                                 t_matCrd     &o_crd,
-                                T             i_tol = 0.000001 ) {
+                                T             i_tol = T(0.000001) ) {
       EDGE_CHECK( i_tol > 0 );
 
       // reset the matrix
@@ -857,7 +857,7 @@ class edge::linalg::Matrix {
                             unsigned int      i_nCols,
                             TL_T_REAL const * i_mat,
                             TL_T_REAL       * o_fill,
-                            TL_T_REAL         i_tol=0.000001 ) {
+                            TL_T_REAL         i_tol=TL_T_REAL(0.000001) ) {
       unsigned int l_maxRegBlock = 28;
       unsigned int l_maxCols     = 0;
       unsigned int l_nChunks     = 0;
@@ -872,7 +872,7 @@ class edge::linalg::Matrix {
       // set all values in copy to 1 or 0
       for( unsigned int l_j = 0; l_j < i_nCols; ++l_j ) {
         for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
-          l_fill[(l_j*i_nRows)+l_i] = ( i_mat[(l_i*i_nCols)+l_j] > i_tol ) ? 1 : 0;
+          l_fill[(l_j*i_nRows)+l_i] = ( std::abs(i_mat[(l_i*i_nCols)+l_j]) > i_tol ) ? 1 : 0;
         }
       }
 
@@ -891,7 +891,6 @@ class edge::linalg::Matrix {
 
       // abort fill-in if chunk size is zero
       if( l_nChunks == 0 ) return;
-
       l_nChunkSize = ( (l_maxCols % l_nChunks) == 0 ) ? (l_maxCols / l_nChunks) : (l_maxCols / l_nChunks) + 1;
 
       // qmadd padding
@@ -968,14 +967,11 @@ class edge::linalg::Matrix {
       // perform the actual fill-in
       for( unsigned int l_j = 0; l_j < i_nCols; ++l_j ) {
         for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
-          // init with zero
-          o_fill[ (l_i*i_nCols)+l_j ] = 0;
+          // init with original matrix
+          o_fill[ (l_i*i_nCols)+l_j ] = i_mat[ (l_i*i_nCols)+l_j ];
 
-          // set non-zeros
-          if( l_fill[(l_j*i_nRows)+l_i] > 0 ) {
-            if( std::abs( i_mat[(l_i*i_nCols)+l_j] ) > i_tol )
-              o_fill[ (l_i*i_nCols)+l_j  ] = i_mat[(l_i*i_nCols)+l_j];
-            else
+          // fill ins
+          if( l_fill[(l_j*i_nRows)+l_i] > 0 && std::abs( i_mat[(l_i*i_nCols)+l_j] ) < i_tol ) {
               o_fill[ (l_i*i_nCols)+l_j  ] = std::numeric_limits< TL_T_REAL >::max();
           }
         }
@@ -1003,7 +999,7 @@ class edge::linalg::Matrix {
                             unsigned int        i_nCols,
                             TL_T_REAL    const *i_a,
                             t_matCsr           &o_csr,
-                            TL_T_REAL           i_tol = 0.000001,
+                            TL_T_REAL           i_tol = TL_T_REAL(0.000001),
                             unsigned int        i_subMatRows = std::numeric_limits< unsigned int >::max(),
                             unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max() ) {
       // temporary coord matrix
@@ -1041,7 +1037,7 @@ class edge::linalg::Matrix {
                             unsigned int        i_nCols,
                             TL_T_REAL    const *i_a,
                             t_matCsc           &o_csc,
-                            TL_T_REAL           i_tol = 0.000001,
+                            TL_T_REAL           i_tol = TL_T_REAL(0.000001),
                             unsigned int        i_subMatRows = std::numeric_limits< unsigned int >::max(),
                             unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max(),
                             std::string         i_fillIn = "none" ) {
