@@ -53,11 +53,11 @@ class edge::data::MmXsmmFused< float > {
     std::vector< libxsmm_smmfunction > m_kernels;
  
     /**
-     * Adds a sparse libxsmm-kernel for the given matrix in CSR-format.
+     * Adds a sparse libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
-     * @param i_rowPtr row-pointer of CSR; last element holds the number of non-zero entries.
-     * @param i_colIdx column index of CSR.
-     * @param i_val non-zero values.
+     * @param i_csr true for CSR, false for CSC.
+     * @param i_ptr row-pointer of CSR or column pointer of CSC; last element holds the number of non-zero entries.
+     * @param i_idx column index of CSR or row index of CSC.
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
      * @param i_k number of columns/rows in column-major A/B.
@@ -68,8 +68,9 @@ class edge::data::MmXsmmFused< float > {
      * @param i_beta beta parameter (need to be 0.0/1.0 for now).
      * @param i_prefetch prefetch strategy.
      **/
-    void add( unsigned int               const *i_rowPtr,
-              unsigned int               const *i_colIdx,
+    void add( bool                              i_csr,
+              unsigned int               const *i_ptr,
+              unsigned int               const *i_idx,
               float                      const *i_val,
               unsigned int                      i_m,
               unsigned int                      i_n,
@@ -100,8 +101,11 @@ class edge::data::MmXsmmFused< float > {
       m_descs.push_back( l_desc );
  
       // generate and store function for this kernels
-      m_kernels.push_back( libxsmm_create_xcsr_soa( &m_descs.back(), i_rowPtr, i_colIdx, i_val ).smm );
- 
+      if( i_csr )
+        m_kernels.push_back( libxsmm_create_xcsr_soa( &m_descs.back(), i_ptr, i_idx, i_val ).smm );
+      else
+        m_kernels.push_back( libxsmm_create_xcsc_soa( &m_descs.back(), i_ptr, i_idx, i_val ).smm );
+
       // check that we generated a kernel
       EDGE_CHECK( m_kernels.back() != 0 );
     }
@@ -121,10 +125,11 @@ class edge::data::MmXsmmFused< double > {
     std::vector< libxsmm_dmmfunction > m_kernels;
  
     /**
-     * Adds a sparse libxsmm-kernel for the given matrix in CSR-format.
+     * Adds a sparse libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
-     * @param i_rowPtr row-pointer of CSR; last element holds the number of non-zero entries.
-     * @param i_colIdx column index of CSR.
+     * @param i_csr true for CSR, false for CSC.
+     * @param i_ptr row-pointer of CSR or column pointer of CSC; last element holds the number of non-zero entries.
+     * @param i_idx column index of CSR or row index of CSC.
      * @param i_val non-zero values.
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
@@ -136,8 +141,9 @@ class edge::data::MmXsmmFused< double > {
      * @param i_beta beta parameter (need to be 0.0/1.0 for now).
      * @param i_prefetch prefetch strategy.
      **/
-    void add( unsigned int               const *i_rowPtr,
-              unsigned int               const *i_colIdx,
+    void add( bool                              i_csr,
+              unsigned int               const *i_ptr,
+              unsigned int               const *i_idx,
               double                     const *i_val,
               unsigned int                      i_m,
               unsigned int                      i_n,
@@ -169,8 +175,11 @@ class edge::data::MmXsmmFused< double > {
       m_descs.push_back( l_desc );
  
       // generate and store function for this kernels
-      m_kernels.push_back( libxsmm_create_xcsr_soa( &m_descs.back(), i_rowPtr, i_colIdx, i_val ).dmm );
- 
+      if( i_csr )
+        m_kernels.push_back( libxsmm_create_xcsr_soa( &m_descs.back(), i_ptr, i_idx, i_val ).dmm );
+      else
+        m_kernels.push_back( libxsmm_create_xcsc_soa( &m_descs.back(), i_ptr, i_idx, i_val ).dmm );
+
       // check that we generated a kernel
       EDGE_CHECK( m_kernels.back() != 0 );
     }

@@ -556,7 +556,6 @@ class edge::elastic::solvers::AderDg {
          */
         const TL_T_REAL (* l_preDofs)[N_ELEMENT_MODES][N_CRUNS] = nullptr;
         const TL_T_REAL (* l_preTint)[N_ELEMENT_MODES][N_CRUNS] = nullptr;
-#if defined PP_T_KERNELS_XSMM_DENSE_SINGLE
         if( l_el < i_first+i_nElements-1 ) {
           l_preDofs = io_dofs[l_el+1];
           l_preTint = o_tInt[l_el+1];
@@ -565,7 +564,6 @@ class edge::elastic::solvers::AderDg {
           l_preDofs = io_dofs[l_el];
           l_preTint = o_tInt[l_el];
         }
-#endif
 
          /*
           * compute local surface contribution

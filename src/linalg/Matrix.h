@@ -2,9 +2,11 @@
  * @file This file is part of EDGE.
  *
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2017 Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -734,7 +736,7 @@ class edge::linalg::Matrix {
                                 unsigned int  i_nCols,
                           const T            *i_a,
                                 t_matCrd     &o_crd,
-                                T             i_tol = 0.000001 ) {
+                                T             i_tol = T(0.000001) ) {
       EDGE_CHECK( i_tol > 0 );
 
       // reset the matrix
@@ -842,6 +844,144 @@ class edge::linalg::Matrix {
     }
 
     /**
+     * Performs fill-ins, targeting QFMA instructions.
+     *
+     * @param i_nRows number of rows.
+     * @param i_nCols number of columns.
+     * @param i_mat input matrix for which fill-ins are performed.
+     * @param o_fill output matrix, values filled in are set to std::numeric_limits< TL_T_REAL >::max().
+     * @param i_tol zero tolerance.
+     **/
+    template< typename TL_T_REAL >
+    static void fillInQfma( unsigned int      i_nRows,
+                            unsigned int      i_nCols,
+                            TL_T_REAL const * i_mat,
+                            TL_T_REAL       * o_fill,
+                            TL_T_REAL         i_tol=TL_T_REAL(0.000001) ) {
+      unsigned int l_maxRegBlock = 28;
+      unsigned int l_maxCols     = 0;
+      unsigned int l_nChunks     = 0;
+      unsigned int l_nChunkSize  = 0;
+      unsigned int l_nLimit      = 0;
+      unsigned int l_nProcessed  = 0;
+      unsigned int l_foundQmadd  = 0;
+
+      // allocate temporary matrix for the (transposed fill-ins)
+      unsigned short *l_fill = new unsigned short[i_nRows*i_nCols];
+
+      // set all values in copy to 1 or 0
+      for( unsigned int l_j = 0; l_j < i_nCols; ++l_j ) {
+        for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
+          l_fill[(l_j*i_nRows)+l_i] = ( std::abs(i_mat[(l_i*i_nCols)+l_j]) > i_tol ) ? 1 : 0;
+        }
+      }
+
+      // finding max. active columns
+      l_maxCols = 0;
+      for( unsigned int l_j = 0; l_j < i_nCols; ++l_j ) {
+        for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
+          if(l_fill[(l_j*i_nRows) + l_i] > 0) {
+            l_maxCols = l_j+1;
+          }
+        }
+      }
+
+      // calculate i_nCols blocking as in the generator
+      l_nChunks = ( (l_maxCols % l_maxRegBlock) == 0 ) ? (l_maxCols / l_maxRegBlock) : (l_maxCols / l_maxRegBlock) + 1;
+
+      // abort fill-in if chunk size is zero
+      if( l_nChunks == 0 ) return;
+      l_nChunkSize = ( (l_maxCols % l_nChunks) == 0 ) ? (l_maxCols / l_nChunks) : (l_maxCols / l_nChunks) + 1;
+
+      // qmadd padding
+      l_nProcessed = 0;
+      l_nLimit = l_nChunkSize;
+      while ( l_nProcessed < l_maxCols ) {
+        // first pass look for qmadds and potential qmadds in the same rows
+        for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
+          if( l_i+3 >= i_nRows ) continue;
+          l_foundQmadd = 0;
+          for( unsigned int l_j = l_nProcessed; l_j < l_nLimit - l_nProcessed; ++l_j ) {
+            if( (l_fill[(l_j*i_nRows)+(l_i+0)] == 1) &&
+                (l_fill[(l_j*i_nRows)+(l_i+1)] == 1) &&
+                (l_fill[(l_j*i_nRows)+(l_i+2)] == 1) &&
+                (l_fill[(l_j*i_nRows)+(l_i+3)] == 1)    ) {
+              l_fill[(l_j*i_nRows)+(l_i+0)] = 10;
+              l_fill[(l_j*i_nRows)+(l_i+1)] = 10;
+              l_fill[(l_j*i_nRows)+(l_i+2)] = 10;
+              l_fill[(l_j*i_nRows)+(l_i+3)] = 10;
+              l_foundQmadd = 1;
+            }
+          }
+          // if we found qmadd in at least one column, let's check the other columns in the current block for 3 nnz
+          // -> let's pad them to 4 nnz
+          if( l_foundQmadd == 1) {
+            for( unsigned int l_j = l_nProcessed; l_j < l_nLimit - l_nProcessed; ++l_j ) {
+              if( (l_fill[(l_j*i_nRows)+(l_i+0)] +
+                   l_fill[(l_j*i_nRows)+(l_i+1)] +
+                   l_fill[(l_j*i_nRows)+(l_i+2)] +
+                   l_fill[(l_j*i_nRows)+(l_i+3)]) == 3 ) {
+                l_fill[(l_j*i_nRows)+(l_i+0)] = 10;
+                l_fill[(l_j*i_nRows)+(l_i+1)] = 10;
+                l_fill[(l_j*i_nRows)+(l_i+2)] = 10;
+                l_fill[(l_j*i_nRows)+(l_i+3)] = 10;
+              }
+            }
+            l_i += 3;
+          }
+        }
+        // second pass look out for consecutive 4 rows which have 3 nnz in a specifc column
+        for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
+          if( l_i+3 >= i_nRows ) continue;
+          l_foundQmadd = 0;
+          /* first check if already a qmadd in that row */
+          for( unsigned int l_j = l_nProcessed; l_j < l_nLimit - l_nProcessed; ++l_j ) {
+            if( l_fill[(l_j*i_nRows)+(l_i+0)] == 10 ) {
+              l_foundQmadd = 1;
+            }
+          }
+          // we are in a potential candidate row for padding 0 for qmadd
+          if( l_foundQmadd == 0 ) {
+            for( unsigned int l_j = l_nProcessed; l_j < l_nLimit - l_nProcessed; ++l_j ) {
+              if( (l_fill[(l_j*i_nRows)+(l_i+0)] +
+                   l_fill[(l_j*i_nRows)+(l_i+1)] +
+                   l_fill[(l_j*i_nRows)+(l_i+2)] +
+                   l_fill[(l_j*i_nRows)+(l_i+3)]) == 3 ) {
+                l_fill[(l_j*i_nRows)+(l_i+0)] = 10;
+                l_fill[(l_j*i_nRows)+(l_i+1)] = 10;
+                l_fill[(l_j*i_nRows)+(l_i+2)] = 10;
+                l_fill[(l_j*i_nRows)+(l_i+3)] = 10;
+                l_foundQmadd = 1;
+              }
+            }
+          }
+          if( l_foundQmadd > 0 ) {
+            l_i += 3;
+          }
+        }
+        // adjust i_nCols progression
+        l_nProcessed += l_nChunkSize;
+        l_nLimit = std::min(l_nProcessed + l_nChunkSize, l_maxCols);
+      }
+
+      // perform the actual fill-in
+      for( unsigned int l_j = 0; l_j < i_nCols; ++l_j ) {
+        for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
+          // init with original matrix
+          o_fill[ (l_i*i_nCols)+l_j ] = i_mat[ (l_i*i_nCols)+l_j ];
+
+          // fill ins
+          if( l_fill[(l_j*i_nRows)+l_i] > 0 && std::abs( i_mat[(l_i*i_nCols)+l_j] ) < i_tol ) {
+              o_fill[ (l_i*i_nCols)+l_j  ] = std::numeric_limits< TL_T_REAL >::max();
+          }
+        }
+      }
+
+      // free memory
+      delete[] l_fill;
+    }
+
+    /**
      * Converts a dense matrix in row-major format to compressed-sparse-row format.
      *
      * @param i_nRows number of rows.
@@ -859,7 +999,7 @@ class edge::linalg::Matrix {
                             unsigned int        i_nCols,
                             TL_T_REAL    const *i_a,
                             t_matCsr           &o_csr,
-                            TL_T_REAL           i_tol = 0.000001,
+                            TL_T_REAL           i_tol = TL_T_REAL(0.000001),
                             unsigned int        i_subMatRows = std::numeric_limits< unsigned int >::max(),
                             unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max() ) {
       // temporary coord matrix
@@ -888,6 +1028,7 @@ class edge::linalg::Matrix {
      * @param i_tol tolerance/delta which is considered to be zero for the matrix entries.
      * @param i_subMatRows numeber of rows in the sub-matrix extracted.
      * @param i_subMatCols numeber of cols in the sub-matrix extracted.
+     * @param i_fillIn fill in strategy.
      *
      * @paramt TL_T_REAL floating point precision.
      **/
@@ -896,14 +1037,27 @@ class edge::linalg::Matrix {
                             unsigned int        i_nCols,
                             TL_T_REAL    const *i_a,
                             t_matCsc           &o_csc,
-                            TL_T_REAL           i_tol = 0.000001,
+                            TL_T_REAL           i_tol = TL_T_REAL(0.000001),
                             unsigned int        i_subMatRows = std::numeric_limits< unsigned int >::max(),
-                            unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max() ) {
+                            unsigned int        i_subMatCols = std::numeric_limits< unsigned int >::max(),
+                            std::string         i_fillIn = "none" ) {
+      // temporary dense matrix
+      TL_T_REAL *l_tmpDe = new TL_T_REAL[i_nRows*i_nCols];
+
+      // init temporary matrix
+      for( unsigned int l_va = 0; l_va < i_nRows*i_nCols; l_va++ )
+        l_tmpDe[l_va] = i_a[l_va];
+
+      // perform fill-in if requested
+      if( i_fillIn == "qfma" ) {
+        fillInQfma( i_nRows, i_nCols, i_a, l_tmpDe, i_tol );
+      }
+
       // temporary coord matrix
       t_matCrd l_tmpCrd;
 
       // convert to coordinate format
-      denseToCrd< TL_T_REAL >( i_nRows, i_nCols, i_a, l_tmpCrd, i_tol );
+      denseToCrd< TL_T_REAL >( i_nRows, i_nCols, l_tmpDe, l_tmpCrd, i_tol );
 
       // adjust submatrix size if not defined
       unsigned int l_nRows = i_subMatRows;
@@ -913,6 +1067,17 @@ class edge::linalg::Matrix {
 
       // do the conversion to csc
       crdToCsc( l_nRows, l_nCols, l_tmpCrd, o_csc );
+
+      // replace max-values, generated by fill-in with zeros
+      for( std::size_t l_nz = 0; l_nz < o_csc.val.size(); l_nz++ ) {
+        if( o_csc.val[l_nz] == std::numeric_limits< TL_T_REAL >::max() ) {
+          EDGE_CHECK_NE( i_fillIn, "none" );
+          o_csc.val[l_nz] = 0;
+        }
+      }
+
+      // free temporary dense matrix
+      delete[] l_tmpDe;
     }
 };
 

@@ -124,7 +124,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsFa,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(0.0), // beta
-                 LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+2
+                 LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+2
 
       // add flux solver
       io_mm.add( l_nMdsFa,                    // m
@@ -146,7 +146,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
-                 LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+4
+                 LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+4
     }
 #endif
 

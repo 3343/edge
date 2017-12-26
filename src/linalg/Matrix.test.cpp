@@ -158,6 +158,98 @@ TEST_CASE( "Matrix: Tests the dense to compressed sparse column format conversio
   REQUIRE( l_res.rowIdx[5] == 2 );
 }
 
+TEST_CASE( "Matrix: Tests the qfma fill-in strategy", "[matrix][qfmaFillIn]") {
+  // dense test matrix
+  double l_mat[5][29];
+  for( unsigned short l_ro = 0; l_ro < 5; l_ro++ ) {
+    for( unsigned short l_co = 0; l_co < 29; l_co++ ) {
+      l_mat[l_ro][l_co] = 0;
+    }
+  }
+
+  /* set non-zero values, shown as x (o are the expected fill-ins)
+   *    __                     __
+   *  0| x        o     x        |
+   *  1| x  x     x  x  x        |
+   *  2| x  x     x  x  o        |
+   *  3| x  x     x     x        |
+   *  4|__        x  x         __|
+   *     0  1  2  3  4  5 ... 28
+   */
+  l_mat[0][0] = 1.0;
+  l_mat[1][0] = 2.0;
+  l_mat[2][0] = 3.0;
+  l_mat[3][0] = 4.0;
+
+  l_mat[1][1] = 5.0;
+  l_mat[2][1] = 6.0;
+  l_mat[3][1] = 7.0;
+
+  l_mat[1][3] = 8.0;
+  l_mat[2][3] = 9.0;
+  l_mat[3][3] = 10.0;
+  l_mat[4][3] = 11.0;
+
+  l_mat[1][4] = 12.0;
+  l_mat[2][4] = 13.0;
+  l_mat[4][4] = 15.0;
+
+  l_mat[0][5] = 16.0;
+  l_mat[1][5] = 17.0;
+  l_mat[3][5] = 18.0;
+
+  double l_res[5][29];
+
+  edge::linalg::Matrix::fillInQfma( 5,
+                                    29,
+                                    l_mat[0],
+                                    l_res[0] );
+
+  // check the results in 5x6 block
+  REQUIRE( l_res[0][0] == 1.0 );
+  REQUIRE( l_res[1][0] == 2.0 );
+  REQUIRE( l_res[2][0] == 3.0 );
+  REQUIRE( l_res[3][0] == 4.0 );
+  REQUIRE( l_res[4][0] == 0.0 );
+
+  REQUIRE( l_res[0][1] == std::numeric_limits< double >::max() );
+  REQUIRE( l_res[1][1] == 5.0 );
+  REQUIRE( l_res[2][1] == 6.0 );
+  REQUIRE( l_res[3][1] == 7.0 );
+  REQUIRE( l_res[4][1] == 0.0 );
+
+  REQUIRE( l_res[0][2] == 0.0 );
+  REQUIRE( l_res[1][2] == 0.0 );
+  REQUIRE( l_res[2][2] == 0.0 );
+  REQUIRE( l_res[3][2] == 0.0 );
+  REQUIRE( l_res[4][2] == 0.0 );
+
+  REQUIRE( l_res[0][3] == std::numeric_limits< double >::max() );
+  REQUIRE( l_res[1][3] == 8.0 );
+  REQUIRE( l_res[2][3] == 9.0 );
+  REQUIRE( l_res[3][3] == 10.0 );
+  REQUIRE( l_res[4][3] == 11.0 );
+
+  REQUIRE( l_res[0][4] == 0.0 );
+  REQUIRE( l_res[1][4] == 12.0 );
+  REQUIRE( l_res[2][4] == 13.0 );
+  REQUIRE( l_res[3][4] == 0.0 );
+  REQUIRE( l_res[4][4] == 15.0 );
+
+  REQUIRE( l_res[0][5] == 16.0 );
+  REQUIRE( l_res[1][5] == 17.0 );
+  REQUIRE( l_res[2][5] == std::numeric_limits< double >::max() );
+  REQUIRE( l_res[3][5] == 18.0 );
+  REQUIRE( l_res[4][5] == 0.0 );
+
+  // check remainder for zeroes
+  for( unsigned short l_ro = 0; l_ro < 5; l_ro++ ) {
+    for( unsigned short l_co = 6; l_co < 29; l_co++ ) {
+      REQUIRE( l_res[l_ro][l_co] == 0.0 );
+    }
+  }
+}
+
 TEST_CASE( "Matrix: Derivation of non-zero blocks in matrices", "[matrix][getBlockNz]" ) {
   // dense test matrix
   real_base l_matDense[9][9];
