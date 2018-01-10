@@ -18,7 +18,7 @@ Edge-V works with the following operating sysetms and software stacks.
 *  Autotools build software for Linux
 *  Unified Community Velocity Model C-language (UCVMC) library: http://scec.usc.edu/scecpedia/UCVMC/ 
 *  Proj.4 projection library: http://trac.osgeo.org/proj/ (provided in UCVMC)
-*  Mesh-Oriented dAtABase (MOAB) library: http://sigma.mcs.anl.gov/moab-library/ (contained in submodules of EDGE)
+*  Mesh-Oriented datABase (MOAB) library: http://sigma.mcs.anl.gov/moab-library/ (contained in submodules of EDGE)
 
 
 ## Build Instructions
