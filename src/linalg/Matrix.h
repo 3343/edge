@@ -435,7 +435,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta;
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != TL_T_REAL(0)) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
           }
         }
       }
@@ -485,7 +485,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta;
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != TL_T_REAL(0)) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
           }
         }
       }
