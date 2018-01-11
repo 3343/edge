@@ -25,6 +25,7 @@ import logging
 import argparse
 import os
 import sympy
+from sympy.core.cache import *
 import edge_pre.io.Config
 import edge_pre.int.Matrices
 import edge_pre.sc.ops.Project
@@ -90,6 +91,11 @@ for l_ty in l_conf.m_types:
       l_dir = l_conf.m_out[l_out] + l_dirExt
       if not os.path.exists(l_dir):
         os.makedirs(l_dir)
+
+    #
+    # clear sympy cache to avoid memory issues
+    #
+    clear_cache()
 
     #
     # line elements
