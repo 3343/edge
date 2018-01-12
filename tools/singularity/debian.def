@@ -68,6 +68,7 @@ Include:
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y scons=2.3.1-2
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y am-utils
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y python
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y python3
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y git
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y vim
