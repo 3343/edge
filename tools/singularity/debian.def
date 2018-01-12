@@ -21,11 +21,17 @@
 #
 # Debian bootstrap for EDGE and supporting software.
 #
-# Assumes that /edge.tar.gz in the image already contains EDGE:
+# Assumes that /edge.tar.gz in the image already contains EDGE and EDGEpre's assets:
+#   git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
+#   cd edge_opt
+#   git lfs fetch -I tools/edge_pre
+#   git lfs checkout tools/edge_pre
+#   cd ..
 #   git clone --recursive git@github.com:3343/edge.git
 #   cd edge
 #   git checkout develop
 #   get submodule update
+#   cp -r ../edge_opt/tools/edge_pre/* submodules/edge_pre
 #   cd ..
 #   tar -czf /tmp/edge.tar.gz edge
 #   sudo singularity import YOUR_IMAGE.img /tmp/edge.tar.gz

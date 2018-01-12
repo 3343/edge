@@ -386,7 +386,7 @@ before_install:
 
   - cd edge
   - ln -s $(pwd)/../edge_opt/cont .
-  - ln -s $(pwd)/../edge_opt/tools/edge_pre/* submodules/edge_pre
+  - cp -r $(pwd)/../edge_opt/tools/edge_pre/* submodules/edge_pre
 
    # set up compilers
   - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
