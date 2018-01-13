@@ -185,6 +185,7 @@ class edge::linalg::Mappings {
                                real_mesh     i_zeta = 0 ) {
       // derivatives of the shape functions, we use 3 dims and 8 nodes as current upper bound
       real_mesh l_evalSfDer[3*8];
+      for( unsigned short l_en = 0; l_en < 3*8; l_en++ ) l_evalSfDer[l_en] = std::numeric_limits< real_mesh >::max();
       EDGE_CHECK_LE( C_ENT[i_entType].N_VERTICES, 8 );
 
       if( i_entType == LINE ) {

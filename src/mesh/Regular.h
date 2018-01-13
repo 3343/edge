@@ -107,8 +107,8 @@ class edge::mesh::Regular {
      * @param i_elementId id of the element.
      * @param o_neighboringIds will be set to ids of the face neighbors.
      **/
-    void getElementFaceNeighbors( int_el i_elementId,
-                                  int_el o_neighboringIds[C_ENT[T_SDISC.ELEMENT].N_FACES] ) const;
+    void getElementFaceNeighbors( int_el  i_elementId,
+                                  int_el *o_neighboringIds ) const;
 
     /**
      * Initializes the given array with the face neighbor ids for all elements.

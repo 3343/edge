@@ -216,7 +216,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
   assert( l_sets.size() > 0 );
 
   // find the periodic boundary set
-  moab::EntityHandle l_periodicSet;
+  moab::EntityHandle l_periodicSet = std::numeric_limits< moab::EntityHandle >::max();
   for( std::size_t l_set = 0; l_set < l_sets.size(); l_set++ ) {
     // get value of material set w.r.t. to set
     int l_matVal;
@@ -236,6 +236,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
       return;
     }
   }
+  EDGE_CHECK_NE( l_periodicSet, std::numeric_limits< moab::EntityHandle >::max() );
 
   // get boundary faces
   moab::Range l_bndFaces;
@@ -254,6 +255,9 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
   real_mesh (*l_bndPos)[2] =  (real_mesh(*)[2]) new real_mesh[2*l_bndFaces.size()];
 
   for( std::size_t l_fa = 0; l_fa < l_bndFaces.size(); l_fa++ ) {
+    // init with invalid values
+    l_bndPos[l_fa][0] = l_bndPos[l_fa][1] = std::numeric_limits< real_mesh >::max();
+
     // get vertices of the face
     moab::EntityHandle l_face = l_bndFaces[l_fa];
     moab::Range l_vertices;
@@ -312,6 +316,10 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
         else assert(false);
       }
     }
+
+    // check for valid entries
+    EDGE_CHECK( l_bndPos[l_fa][0] != std::numeric_limits< real_mesh >::max() );
+    EDGE_CHECK( l_bndPos[l_fa][1] != std::numeric_limits< real_mesh >::max() );
   }
 
   EDGE_LOG_INFO << "  #periodic faces:";

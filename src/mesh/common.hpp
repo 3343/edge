@@ -108,6 +108,7 @@ class edge::mesh::common {
           l_locFaCoords[l_dim][2] = i_veChars[ i_elVe[i_elIdLoc][3] ].coords[l_dim];
           l_normalPt[l_dim] = i_veChars[ i_elVe[i_elIdLoc][0] ].coords[l_dim];
         }
+        else EDGE_LOG_FATAL << i_localFace;
       }
 
       // get outer point normal of local face
