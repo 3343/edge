@@ -132,6 +132,10 @@ TEST_CASE( "Test adjacency of elements through vertices.", "[moab][elVeEl]" ) {
     l_nElVeEl1 += l_elVeEl1[l_el+1] - l_elVeEl1[l_el];
   REQUIRE( l_moab1.getNelVeEl() == l_nElVeEl1 );
 
+  // return for MPI-builds, not supporting periodic boundaries
+#ifdef PP_USE_MPI
+  return;
+#endif
 
   // create periodic moab database
   int l_bndVals1[1] = {106};

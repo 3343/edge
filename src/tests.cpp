@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,9 +20,45 @@
  * @section DESCRIPTION
  * Unit tests of EDGE.
  **/
+#ifdef PP_USE_MPI
+#include <mpi.h>
+#endif
 
+#include <string>
 #include "io/logging.h"
 INITIALIZE_EASYLOGGINGPP
 
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 #include <catch.hpp>
+
+// directory for files of the unit tests
+namespace edge {
+  namespace test {
+    std::string g_files = "cont/unit_tests";
+  }
+}
+
+int main( int i_argc, char* i_argv[] ) {
+#ifdef PP_USE_MPI
+  // init MPI for unit tests calling MPI-functions
+  MPI_Init( &i_argc, &i_argv );
+#endif
+
+  // disable logging file-IO
+  edge::io::logging::config();
+
+  // disable file-based unit tests if the UT directory does not exist
+  if( !std::ifstream(edge::test::g_files) ) {
+    edge::test::g_files = "";
+  }
+
+  // run unit tests
+  int l_result = Catch::Session().run( i_argc, i_argv );
+
+#ifdef PP_USE_MPI
+  MPI_Finalize();
+#endif
+
+  // return result
+  return ( l_result < 0xff ? l_result : 0xff );
+}
