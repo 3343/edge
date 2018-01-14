@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -71,11 +71,11 @@ void edge::mesh::Moab::initEn( const std::vector< moab::EntityHandle > &i_ents,
 
     // get the current id
     int_el l_curId;
-    l_error = m_core.tag_get_data( m_tagLId, &l_enHan, 1, &l_curId ); checkError( l_error );
+    l_error = m_core.tag_get_data( m_tagLId, &l_enHan, 1, &l_curId ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // we haven't touched this
     if( l_curId == m_defaultTagLId ) {
-      l_error = m_core.tag_set_data( m_tagLId, &l_enHan, 1, &l_en ); checkError( l_error );
+      l_error = m_core.tag_set_data( m_tagLId, &l_enHan, 1, &l_en ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
       o_enDaMe.push_back( l_meshId );
       o_enMeDa.push_back( l_en );
@@ -99,11 +99,11 @@ void edge::mesh::Moab::init() {
                                     m_tagLId,
                                     moab::MB_TAG_CREAT|moab::MB_TAG_EXCL|moab::MB_TAG_DENSE,
                                    &m_defaultTagLId );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // get the size of the tag and check with internal definition
   int l_lIdSize = 0;
-  l_error = m_core.tag_get_bytes( m_tagLId, l_lIdSize ); checkError( l_error );
+  l_error = m_core.tag_get_bytes( m_tagLId, l_lIdSize ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   CHECK( l_lIdSize == sizeof( int_el ) );
 
   initEn( m_vertices, m_inMap.veMeDa, m_inMap.veDaMe );
@@ -172,7 +172,7 @@ void edge::mesh::Moab::setPeriodicAdjacenciesDim( const std::vector< int_el >  &
                                            true,
                                            l_element,
                                            moab::Interface::UNION );
-        checkError( l_error );
+        EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
         assert( l_element.size() == 1 );
 
         moab::Range        l_elementP;
@@ -184,7 +184,7 @@ void edge::mesh::Moab::setPeriodicAdjacenciesDim( const std::vector< int_el >  &
                                            true,
                                            l_elementP,
                                            moab::Interface::UNION );
-        checkError( l_error );
+        EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
         assert( l_elementP.size() == 1 );
 
         // store the adjacencies between the two elements in a custom lookup table.. urgh.. finally!
@@ -212,7 +212,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
   // get the entity sets with material sets defined
   moab::Range l_sets;
   l_error = m_core.get_entities_by_type_and_tag(  0, moab::MBENTITYSET, &m_tagMat, NULL, 1, l_sets );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_sets.size() > 0 );
 
   // find the periodic boundary set
@@ -225,7 +225,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
                                    &l_periodicSet,
                                     1,
                                    &l_matVal );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // success for periodic value
     if( l_matVal == i_tagValue ) break;
@@ -241,7 +241,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
   // get boundary faces
   moab::Range l_bndFaces;
   l_error = m_core.get_entities_by_dimension( l_periodicSet, m_dim-1, l_bndFaces );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // assert every face has a partner
   assert( l_bndFaces.size() % 2 == 0 );
@@ -262,7 +262,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
     moab::EntityHandle l_face = l_bndFaces[l_fa];
     moab::Range l_vertices;
     l_error = m_core.get_adjacencies( &l_face, 1, 0, true, l_vertices, moab::Interface::UNION );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
     // assert we have a enough vertices for a face
     assert( l_vertices.size() > m_dim-1 );
 
@@ -277,7 +277,7 @@ void edge::mesh::Moab::setPeriodicAdjacencies( int i_tagValue ) {
       real_mesh l_coords[3];
       moab::EntityHandle l_vertex = l_vertices[l_ve];
       // get coordinates of vertex
-      l_error = m_core.get_coords( &l_vertex, 1, l_coords ); checkError( l_error );
+      l_error = m_core.get_coords( &l_vertex, 1, l_coords ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
       // add value to face-mid points
       l_midX += l_coords[0]; l_midY += l_coords[1]; l_midZ += l_coords[2];
@@ -350,7 +350,7 @@ void edge::mesh::Moab::fixPeriodicTagIds() {
                                    &l_validFace,
                                     1,
                                    &l_validId );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // copy over
     moab::EntityHandle l_invalidFace = m_periodicFaces[l_fa+1];
@@ -358,7 +358,7 @@ void edge::mesh::Moab::fixPeriodicTagIds() {
                                    &l_invalidFace,
                                     1,
                                    &l_validId );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   }
 }
 
@@ -371,7 +371,7 @@ unsigned short edge::mesh::Moab::getEnMpiType( moab::EntityHandle i_en,
 
   // get the parallel status of the entity
   unsigned char l_ps;
-  l_err = m_pcomm.get_pstatus( i_en, l_ps ); checkError( l_err );
+  l_err = m_pcomm.get_pstatus( i_en, l_ps ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // check if the entity is owned
   bool l_own = !(l_ps & PSTATUS_NOT_OWNED);
@@ -401,12 +401,12 @@ unsigned short edge::mesh::Moab::getEnMpiType( moab::EntityHandle i_en,
   if( l_dim == 0 ) {
     // deterime adjacent elements
     std::vector< moab::EntityHandle > l_veEl;
-    l_err = m_core.get_adjacencies( &i_en, 1, m_dim, true, l_veEl ); checkError( l_err );
+    l_err = m_core.get_adjacencies( &i_en, 1, m_dim, true, l_veEl ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
     EDGE_CHECK_GE( l_veEl.size(), 1 );
 
     // determine faces of these elements
     l_err = m_core.get_adjacencies( &l_veEl[0], l_veEl.size(), m_dim-1, true, l_enFa, moab::Core::UNION );
-    checkError( l_err );
+    EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
   }
   // faces
   else if( l_dim == m_dim-1 ) {
@@ -417,7 +417,7 @@ unsigned short edge::mesh::Moab::getEnMpiType( moab::EntityHandle i_en,
     // it has to be a vertex, face or element
     EDGE_CHECK_EQ( l_dim, m_dim );
 
-    l_err = m_core.get_adjacencies( &i_en, 1, m_dim-1, true, l_enFa ); checkError( l_err );
+    l_err = m_core.get_adjacencies( &i_en, 1, m_dim-1, true, l_enFa ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
   }
 
   // check that we found an adjacent face
@@ -436,7 +436,7 @@ unsigned short edge::mesh::Moab::getEnMpiType( moab::EntityHandle i_en,
   for( unsigned short l_fa = 0; l_fa < l_enFa.size(); l_fa++ ) {
     // get adjacent elements
     std::vector< moab::EntityHandle > l_enFaEl;
-    l_err = m_core.get_adjacencies( &l_enFa[l_fa], 1, m_dim, true, l_enFaEl ); checkError( l_err );
+    l_err = m_core.get_adjacencies( &l_enFa[l_fa], 1, m_dim, true, l_enFaEl ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
     // check that there's at least one adjacent element
     EDGE_CHECK_GE( l_enFaEl.size(), 1 );
@@ -445,7 +445,7 @@ unsigned short edge::mesh::Moab::getEnMpiType( moab::EntityHandle i_en,
     if( l_enFaEl.size() == 1 ) {
       // get the parallel status of the one element
       unsigned char l_psAdj;
-      l_err = m_pcomm.get_pstatus( l_enFaEl[0], l_psAdj ); checkError( l_err );
+      l_err = m_pcomm.get_pstatus( l_enFaEl[0], l_psAdj ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
       // non-relevant if this is ghost element
       if( l_psAdj & PSTATUS_NOT_OWNED ) {
         l_mpiStatus[2] = true;
@@ -456,8 +456,8 @@ unsigned short edge::mesh::Moab::getEnMpiType( moab::EntityHandle i_en,
     else {
       // get the ranks owning the two elements
       int l_neRanks[2];
-      l_err = m_pcomm.get_owner( l_enFaEl[0], l_neRanks[0] ); checkError( l_err );
-      l_err = m_pcomm.get_owner( l_enFaEl[1], l_neRanks[1] ); checkError( l_err );
+      l_err = m_pcomm.get_owner( l_enFaEl[0], l_neRanks[0] ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+      l_err = m_pcomm.get_owner( l_enFaEl[1], l_neRanks[1] ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
       // [0]: #local ranks, [2]: #valid remote ranks
       int l_count[2] = {0,0};
@@ -516,7 +516,7 @@ void edge::mesh::Moab::setupEnLayout( int_tg                             i_tg,
 
   // get neighboring ranks (sets are sorted)
   std::set< unsigned int > l_neRanks;
-  l_error = m_pcomm.get_comm_procs( l_neRanks ); checkError( l_error );
+  l_error = m_pcomm.get_comm_procs( l_neRanks ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // parallel status for everything MPI-releated
   unsigned char l_psMpi = PSTATUS_GHOST | PSTATUS_SHARED | PSTATUS_MULTISHARED| PSTATUS_INTERFACE;
@@ -527,7 +527,7 @@ void edge::mesh::Moab::setupEnLayout( int_tg                             i_tg,
   for( std::set< unsigned int >::iterator l_nr = l_neRanks.begin(); l_nr != l_neRanks.end(); ) {
     // get the entities shared with this processor
     moab::Range l_enMpi;
-    l_error = m_pcomm.filter_pstatus( i_ents, l_psMpi, PSTATUS_OR, *l_nr, &l_enMpi ); checkError( l_error );
+    l_error = m_pcomm.filter_pstatus( i_ents, l_psMpi, PSTATUS_OR, *l_nr, &l_enMpi ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     bool l_realMpi = false;
     // iterate over the shared ents and check for send-/receive-ents
@@ -558,7 +558,7 @@ void edge::mesh::Moab::setupEnLayout( int_tg                             i_tg,
   for( std::set< unsigned int >::iterator l_nr = l_neRanks.begin(); l_nr != l_neRanks.end(); l_nr++ ) {
     // get the entities shared with this processor
     moab::Range l_enMpi;
-    l_error = m_pcomm.filter_pstatus( i_ents, l_psMpi, PSTATUS_OR, *l_nr, &l_enMpi ); checkError( l_error );
+    l_error = m_pcomm.filter_pstatus( i_ents, l_psMpi, PSTATUS_OR, *l_nr, &l_enMpi ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // derive send entities
     std::vector< moab::EntityHandle > l_enSe;
@@ -594,7 +594,7 @@ void edge::mesh::Moab::setupEnLayout( int_tg                             i_tg,
   for( std::set< unsigned int >::iterator l_nr = l_neRanks.begin(); l_nr != l_neRanks.end(); l_nr++) {
     // get the entities shared with this processor
     moab::Range l_enMpi;
-    l_error = m_pcomm.filter_pstatus( i_ents, l_psMpi, PSTATUS_OR, *l_nr, &l_enMpi ); checkError( l_error );
+    l_error = m_pcomm.filter_pstatus( i_ents, l_psMpi, PSTATUS_OR, *l_nr, &l_enMpi ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // derive receive entities
     std::vector< moab::EntityHandle > l_enRe;
@@ -640,33 +640,33 @@ void edge::mesh::Moab::setupDataLayout() {
   // get ghost entities
 #ifdef PP_USE_MPI
   // higher-dimensional (>0) bridges in MOAB do not work in parallel; use vertices and derive face-adjacency manually
-  l_error = m_pcomm.exchange_ghost_cells( m_dim, 0, 1, m_dim-1, true, true ); checkError( l_error );
+  l_error = m_pcomm.exchange_ghost_cells( m_dim, 0, 1, m_dim-1, true, true ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 #endif
 
   // elements, faces and vertices
   moab::Range l_elements, l_faces, l_vertices;
 
   // get elements
-  l_error = m_core.get_entities_by_dimension( 0, m_dim, l_elements ); checkError( l_error );
+  l_error = m_core.get_entities_by_dimension( 0, m_dim, l_elements ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   EDGE_CHECK( l_elements.size() != 0 );
 
   // get vertices
-  l_error = m_core.get_entities_by_dimension( 0, 0, l_vertices ); checkError( l_error );
+  l_error = m_core.get_entities_by_dimension( 0, 0, l_vertices ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   EDGE_CHECK( l_vertices.size() != 0 );
 
   // create & get faces
   l_error = m_core.get_adjacencies( l_elements, m_dim-1, true, l_faces, moab::Interface::UNION );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   EDGE_CHECK_NE( l_faces.size(), 0 );
 
-  // create gloabl id tag of entities
+  // create global id tag of entities
   l_error = m_core.tag_get_handle(  "global_id",
                                     1,
                                     moab::MB_TYPE_INTEGER,
                                     m_tagGId,
                                     moab::MB_TAG_CREAT|moab::MB_TAG_EXCL|moab::MB_TAG_DENSE,
                                    &m_defaultTagGId );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // check that our gid fits into int
   CHECK_EQ( sizeof(int), sizeof( int_gid ) );
@@ -678,37 +678,37 @@ void edge::mesh::Moab::setupDataLayout() {
                                    moab::MB_TYPE_INTEGER,
                                    l_tagMoabGId,
                                    moab::MB_TAG_DENSE|moab::MB_TAG_CREAT );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // get the size of the tag and check with internal definition
   int l_gIdSize = 0;
-  l_error = m_core.tag_get_bytes( l_tagMoabGId, l_gIdSize ); checkError( l_error );
+  l_error = m_core.tag_get_bytes( l_tagMoabGId, l_gIdSize ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   CHECK( l_gIdSize == sizeof( int_gid ) );
 
   // MPI: create a consistent view of global id tag w.r.t. ghost elements and vertices
 #ifdef PP_USE_MPI
-  l_error = m_pcomm.exchange_tags( l_tagMoabGId, l_vertices ); checkError( l_error );
-  l_error = m_pcomm.exchange_tags( l_tagMoabGId, l_elements ); checkError( l_error );
+  l_error = m_pcomm.exchange_tags( l_tagMoabGId, l_vertices ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+  l_error = m_pcomm.exchange_tags( l_tagMoabGId, l_elements ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 #endif
 
   // store mesh's global ids of els and ves before they get overwritten by assign_global_ids
   std::vector< int_gid > l_tmpGId( l_vertices.size() );
-  l_error = m_core.tag_get_data( l_tagMoabGId, l_vertices, &l_tmpGId[0] ); checkError( l_error );
-  l_error = m_core.tag_set_data( m_tagGId,     l_vertices, &l_tmpGId[0] ); checkError( l_error );
+  l_error = m_core.tag_get_data( l_tagMoabGId, l_vertices, &l_tmpGId[0] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+  l_error = m_core.tag_set_data( m_tagGId,     l_vertices, &l_tmpGId[0] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   l_tmpGId.resize( l_elements.size() );
-  l_error = m_core.tag_get_data( l_tagMoabGId, l_elements, &l_tmpGId[0] ); checkError( l_error );
-  l_error = m_core.tag_set_data( m_tagGId,     l_elements, &l_tmpGId[0] ); checkError( l_error );
+  l_error = m_core.tag_get_data( l_tagMoabGId, l_elements, &l_tmpGId[0] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+  l_error = m_core.tag_set_data( m_tagGId,     l_elements, &l_tmpGId[0] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
 #ifdef PP_USE_MPI
   // assign global ids to the entities
-  l_error = m_pcomm.assign_global_ids( 0, m_dim-1 ); checkError( l_error );
+  l_error = m_pcomm.assign_global_ids( 0, m_dim-1 ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 #endif
 
   // global ids for faces as determined by moab
   l_tmpGId.resize( l_faces.size() );
-  l_error = m_core.tag_get_data( l_tagMoabGId, l_faces, &l_tmpGId[0] ); checkError( l_error );
-  l_error = m_core.tag_set_data( m_tagGId,     l_faces, &l_tmpGId[0] ); checkError( l_error );
+  l_error = m_core.tag_get_data( l_tagMoabGId, l_faces, &l_tmpGId[0] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+  l_error = m_core.tag_set_data( m_tagGId,     l_faces, &l_tmpGId[0] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // setup the data layout for the entities
   for( int_tg l_tg = 0; l_tg < l_nTimeGroups; l_tg++ ) {
@@ -732,7 +732,7 @@ void edge::mesh::Moab::sortGId( std::vector< moab::EntityHandle > &io_ents ) {
                                  &io_ents[0],
                                   io_ents.size(),
                                  &l_gIds[0] );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // sort the entities by their id
   for( std::size_t l_en = 0; l_en < io_ents.size(); l_en++ ) {
@@ -768,11 +768,11 @@ void edge::mesh::Moab::sortElFaEntities( std::vector< moab::EntityHandle > &io_f
     moab::Range l_verts;
     moab::EntityHandle l_faHan = io_faHas[l_fa];
     l_error = m_core.get_adjacencies( &l_faHan, 1, 0, true, l_verts, moab::Interface::UNION );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
     assert( l_verts.size() == C_ENT[T_SDISC.FACE].N_VERTICES );
 
     // get the global ids of the vertices
-    l_error = m_core.tag_get_data( m_tagGId, l_verts, l_faVes[l_fa] ); checkError( l_error );
+    l_error = m_core.tag_get_data( m_tagGId, l_verts, l_faVes[l_fa] ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // sort them for this face
     for( unsigned int l_ve = 0; l_ve < C_ENT[T_SDISC.FACE].N_VERTICES; l_ve++ ) {
@@ -824,7 +824,7 @@ void edge::mesh::Moab::read( const std::string &i_pathToMesh,
   moab::ErrorCode l_error;
   // load the mesh
   EDGE_LOG_INFO << "  loading mesh";
-  l_error = m_core.load_file( i_pathToMesh.c_str(), 0, i_optRead.c_str() ); checkError( l_error );
+  l_error = m_core.load_file( i_pathToMesh.c_str(), 0, i_optRead.c_str() ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   EDGE_LOG_INFO << "  processing mesh info";
   // get tags defined by the mesh
@@ -841,7 +841,7 @@ void edge::mesh::Moab::read( const std::string &i_pathToMesh,
 
   // get name of material tag
   std::string l_matName;
-  l_error = m_core.tag_get_name( m_tagMat, l_matName ); checkError( l_error );
+  l_error = m_core.tag_get_name( m_tagMat, l_matName ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // double-check that this is the right one
   if( l_matName != "MATERIAL_SET" ) {
@@ -849,7 +849,7 @@ void edge::mesh::Moab::read( const std::string &i_pathToMesh,
   }
   // get the size of the tag and check with internal definition
   int l_matSize = 0;
-  l_error = m_core.tag_get_bytes( m_tagMat, l_matSize ); checkError( l_error );
+  l_error = m_core.tag_get_bytes( m_tagMat, l_matSize ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // check that the tag has the size of an int
   EDGE_CHECK_EQ( (std::size_t) l_matSize, sizeof( int ) );
@@ -865,12 +865,12 @@ void edge::mesh::Moab::read( const std::string &i_pathToMesh,
 
     // get all meshsets
     l_error = m_core.get_entities_by_type( 0, moab::MBENTITYSET, l_mSets );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // get mat-tag data
     std::vector< int > l_matData; l_matData.resize( l_mSets.size() );
     l_error = m_core.tag_get_data( m_tagMat, l_mSets, &l_matData[0] );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     for( std::size_t l_se = 0; l_se < l_mSets.size(); l_se++ ) {
       // add to boundary sets if it matches input data
@@ -894,6 +894,92 @@ void edge::mesh::Moab::read( const std::string &i_pathToMesh,
   // hack in ids for removed periodic faces
   fixPeriodicTagIds();
 #endif
+}
+
+void edge::mesh::Moab::addPeriodicVertices( moab::EntityHandle  i_ve,
+                                            moab::Range        &io_ves ) {
+
+  // return if no periodic faces are available
+  if( m_periodicFaces.size() == 0 ) return;
+
+  // vertices to test for
+  moab::Range l_test; l_test.insert( i_ve );
+
+  // error code
+  moab::ErrorCode l_err;
+
+  // go through the process multiple times to allow for multi-hops crossing all dimensions
+  for( unsigned short l_rp = 0; l_rp < m_dim; l_rp++ ) {
+    // iterate over test vertices
+    for( std::size_t l_te = 0; l_te < l_test.size(); l_te++ ) {
+      // test entity
+      moab::EntityHandle l_teEn = l_test[l_te];
+
+      // query coordinates of the test vertex
+      double l_veCrds[3];
+      l_err = m_core.get_coords( &l_teEn, 1, l_veCrds );
+      EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+      // determine adjacent faces
+      moab::Range l_veFa;
+      l_err = m_core.get_adjacencies( &l_teEn, 1, m_dim-1, true, l_veFa, moab::Interface::UNION );
+      EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+      // determine periodic equivalents
+      moab::Range l_veFaP;
+
+      for( std::size_t l_fa = 0; l_fa < m_periodicFaces.size(); l_fa++ ) {
+        for( std::size_t l_vf = 0; l_vf < l_veFa.size(); l_vf++ ) {
+          if( m_periodicFaces[l_fa] == l_veFa[l_vf] ) {
+            // add periodic face
+            if( l_fa%2 == 0 ) l_veFaP.insert( m_periodicFaces[l_fa+1] );
+            else              l_veFaP.insert( m_periodicFaces[l_fa-1] );
+          }
+        }
+      }
+
+      // determine face-vertices, which match the queried one
+      moab::Range l_fpVe;
+      l_err = m_core.get_adjacencies( l_veFaP, 0, true, l_fpVe, moab::Interface::UNION );
+      EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+      if( l_fpVe.size() > 0 ) {
+        std::vector< double > l_veCrdsP( 3*l_fpVe.size() );
+        l_err = m_core.get_coords( l_fpVe, &l_veCrdsP[0] );
+        EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+        // iterate over vertices
+        for( std::size_t l_ve = 0; l_ve < l_fpVe.size(); l_ve++ ) {
+          // check for the number of matching dimensions
+          unsigned l_nDi = 0;
+
+          for( unsigned short l_di = 0; l_di < m_dim; l_di++ ) {
+            if( std::abs( l_veCrds[l_di] - l_veCrdsP[l_ve*3 + l_di] ) < TOL.MESH )
+              l_nDi++;
+          }
+
+          // check that at most #dims-1 dimensions match
+          EDGE_CHECK_LT( l_nDi, m_dim );
+
+          // if only one dim doesnt match, we have our periodic vertex
+          if( l_nDi == m_dim-1 ) {
+            l_test.insert( l_fpVe[l_ve] );
+          }
+        }
+      }
+
+    }
+  }
+
+  // remove the input vertex
+  l_test.erase( i_ve );
+
+  // check number of found periodic vertices
+  if(      m_dim == 2 ) { EDGE_CHECK_LE( l_test.size(), 3 ); }
+  else if( m_dim == 3 ) { EDGE_CHECK_LE( l_test.size(), 7 ); }
+
+  // save results
+  io_ves.merge( l_test );
 }
 
 void edge::mesh::Moab::addPeriodicElement( moab::EntityHandle  i_face,
@@ -924,7 +1010,94 @@ void edge::mesh::Moab::write( const std::string &i_pathToMesh ) {
   // write mesh to disk
   EDGE_LOG_INFO_ALL << "writing mesh " << l_pathToMesh;
   l_error = m_core.write_mesh( l_pathToMesh.c_str() );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
+}
+
+void edge::mesh::Moab::getElVeEl( int_el  &o_nElVeEl,
+                                  int_el **o_elVeEl ) {
+  // init element counter
+  o_nElVeEl = 0;
+
+  // raw ptr to adjaceny info
+  int_el *l_raw = nullptr;
+  if( o_elVeEl != nullptr ) l_raw = o_elVeEl[0];
+
+  // moab error code
+  moab::ErrorCode l_err;
+
+  // vertices
+  std::vector< moab::EntityHandle > l_ves;
+
+  // elements
+  std::vector< moab::EntityHandle > l_els;
+
+  // iterate over elements
+  for( std::size_t l_el = 0; l_el < m_elements.size(); l_el++ ) {
+    // get entity
+    moab::EntityHandle l_elEnt = m_elements[l_el];
+
+    // get adjacent vertices
+    l_ves.clear();
+    l_err = m_core.get_adjacencies( &l_elEnt, 1, 0, true, l_ves, moab::Interface::UNION );
+    EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS ); EDGE_CHECK_GT( l_ves.size(), m_dim );
+
+    // take care of periodic boundaries
+    moab::Range l_vesP;
+    for( std::size_t l_ve = 0; l_ve < l_ves.size(); l_ve++ ) {
+      addPeriodicVertices( l_ves[l_ve], l_vesP );
+    }
+    // add to vector
+    for( std::size_t l_vp = 0; l_vp < l_vesP.size(); l_vp++ ) {
+      l_ves.push_back( l_vesP[l_vp] );
+    }
+
+    // get elements adjacent to the vertices
+    l_els.clear();
+    l_err = m_core.get_adjacencies( &l_ves[0], l_ves.size(), m_dim, true, l_els, moab::Interface::UNION );
+    EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS ); EDGE_CHECK_GT( l_els.size(), m_dim );
+
+    // sort elements by their global id
+    sortGId( l_els );
+
+    // store entries
+    for( std::size_t l_ad = 0; l_ad < l_els.size(); l_ad++ ) {
+      if( l_els[l_ad] != l_elEnt ) {
+        // query local id
+        if( l_raw != nullptr ) {
+          l_err = m_core.tag_get_data( m_tagLId, &l_els[l_ad], 1, l_raw );
+          EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+          l_raw++;
+        }
+
+        // increase element count
+        o_nElVeEl++;
+      }
+    }
+
+    // assign next pointer
+    if( l_raw != nullptr ) o_elVeEl[l_el+1] = l_raw;
+  }
+}
+
+void edge::mesh::Moab::getElVeEl( int_el **o_elVeEl ) {
+  // number of adjacent elements
+  int_el l_nElVeEl;
+
+  // get adjacent elements
+  getElVeEl( l_nElVeEl, o_elVeEl );
+
+  // check size
+  EDGE_CHECK_EQ( o_elVeEl[ m_elements.size() ] - o_elVeEl[0], l_nElVeEl );
+}
+
+int_el edge::mesh::Moab::getNelVeEl() {
+  // number of adjacent elements
+  int_el l_nElVeEl;
+
+  getElVeEl( l_nElVeEl, nullptr );
+
+  return l_nElVeEl;
 }
 
 void edge::mesh::Moab::getElementFaceNeighbors( moab::EntityHandle i_element,
@@ -934,7 +1107,7 @@ void edge::mesh::Moab::getElementFaceNeighbors( moab::EntityHandle i_element,
   // get the faces
   std::vector< moab::EntityHandle > l_faces;
   l_error = m_core.get_adjacencies( &i_element, 1, m_dim-1, true, l_faces, moab::Interface::UNION  );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_faces.size() == C_ENT[T_SDISC.ELEMENT].N_FACES );
 
   // sort the faces by the global ids of their vertices
@@ -947,7 +1120,7 @@ void edge::mesh::Moab::getElementFaceNeighbors( moab::EntityHandle i_element,
     // get the face neighbor
     moab::EntityHandle l_face = l_faces[l_fa];
     l_error = m_core.get_adjacencies( &l_face, 1, m_dim, true, l_faceNeighbor, moab::Interface::UNION  );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // remove current element
     l_faceNeighbor.erase( i_element );
@@ -959,7 +1132,7 @@ void edge::mesh::Moab::getElementFaceNeighbors( moab::EntityHandle i_element,
     if( l_faceNeighbor.size() != 0 ) {
       // get local id of the face neighbor
       l_error = m_core.tag_get_data(  m_tagLId, l_faceNeighbor, &o_neighboringIds[l_fa] );
-      checkError( l_error );
+      EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
     }
     else {
       o_neighboringIds[l_fa] = std::numeric_limits<int_el>::max();
@@ -984,14 +1157,14 @@ void edge::mesh::Moab::getMeshRegions( std::vector<int> &o_values ) {
   // get the entity sets with material tags
   moab::Range l_sets;
   l_error = m_core.get_entities_by_type_and_tag(0, moab::MBENTITYSET, &m_tagMat, NULL, 1, l_sets);
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // resize output values to match the #sets
   o_values.resize( l_sets.size() );
 
   // get material values
   l_error = m_core.tag_get_data( m_tagMat, l_sets, &o_values[0] );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::getElVe( int_el (*o_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES] ) {
@@ -1002,7 +1175,7 @@ void edge::mesh::Moab::getElVe( int_el (*o_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTIC
     moab::EntityHandle l_elHan = m_elements[l_el];
     std::vector< moab::EntityHandle > l_vertices;
     l_error = m_core.get_adjacencies( &l_elHan, 1, 0, true, l_vertices, moab::Interface::UNION );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
     // check that we have everybody
     EDGE_CHECK_EQ( l_vertices.size(), C_ENT[T_SDISC.ELEMENT].N_VERTICES );
 
@@ -1011,7 +1184,7 @@ void edge::mesh::Moab::getElVe( int_el (*o_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTIC
 
     // now get the local ids of the vertices
     l_error = m_core.tag_get_data(  m_tagLId, &l_vertices[0], l_vertices.size(), o_elVe[l_el] );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   }
 }
 
@@ -1021,7 +1194,7 @@ void edge::mesh::Moab::getElementAdjacentFaces( moab::EntityHandle i_element,
   // get the faces
   std::vector< moab::EntityHandle > l_faces;
   l_error = m_core.get_adjacencies( &i_element, 1, m_dim-1, true, l_faces, moab::Interface::UNION  );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   EDGE_CHECK_EQ( l_faces.size(), C_ENT[T_SDISC.ELEMENT].N_FACES );
 
   // sort the faces ascending by their vertices' global ids
@@ -1029,7 +1202,7 @@ void edge::mesh::Moab::getElementAdjacentFaces( moab::EntityHandle i_element,
 
   // get their local ids
   l_error = m_core.tag_get_data( m_tagLId, &l_faces[0], l_faces.size(), o_elementAdjacentFaces );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // get mpi type of the element
   unsigned short l_mpiType = 0;
@@ -1066,12 +1239,12 @@ void edge::mesh::Moab::getFacesAdjacentElements( int_el (*o_neighboringIds)[2] )
 
     // get id of the face (precaution)
     int_el l_localId;
-    l_error = m_core.tag_get_data( m_tagLId, &l_faHan, 1, &l_localId ); checkError( l_error );
+    l_error = m_core.tag_get_data( m_tagLId, &l_faHan, 1, &l_localId ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // get parallel status for MPI-"elements" which might be duplicated.
     unsigned char l_pstatus = 0;
 #ifdef PP_USE_MPI
-    l_error = m_pcomm.get_pstatus( l_faHan, l_pstatus ); checkError( l_error );
+    l_error = m_pcomm.get_pstatus( l_faHan, l_pstatus ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 #endif
 
     // check it matches the local id or is send-/receive-ent
@@ -1080,7 +1253,7 @@ void edge::mesh::Moab::getFacesAdjacentElements( int_el (*o_neighboringIds)[2] )
     // get adjacent elements
     std::vector< moab::EntityHandle > l_elements;
     l_error = m_core.get_adjacencies( &l_faHan, 1, m_dim, true, l_elements, moab::Interface::UNION );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
     assert( l_elements.size() > 0 && l_elements.size() <= 2 );
 
     // try to find second face neighbor for periodic faces
@@ -1092,11 +1265,11 @@ void edge::mesh::Moab::getFacesAdjacentElements( int_el (*o_neighboringIds)[2] )
 
     // get local ids of neighboring elements
     l_error = m_core.tag_get_data( m_tagLId, &l_elements[0], l_elements.size(), o_neighboringIds[l_fa] );
-    checkError ( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // get global ids of neighboring elements
     int_gid l_gId[2];
-    l_error = m_core.tag_get_data( m_tagGId, &l_elements[0], l_elements.size(), l_gId ); checkError ( l_error );
+    l_error = m_core.tag_get_data( m_tagGId, &l_elements[0], l_elements.size(), l_gId ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
 
     // enforce an ascending ordering
@@ -1118,19 +1291,19 @@ void edge::mesh::Moab::getFacesAdjacentVertices( int_el (*o_neighVeIds)[C_ENT[T_
 
     // get id of the face (pre caution)
     int_el l_localId;
-    l_error = m_core.tag_get_data( m_tagLId, &l_faHan, 1, &l_localId ); checkError( l_error );
+    l_error = m_core.tag_get_data( m_tagLId, &l_faHan, 1, &l_localId ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // get parallel status for MPI-"elements" which might be duplicated.
     unsigned char l_pstatus = 0;
 #ifdef PP_USE_MPI
-    l_error = m_pcomm.get_pstatus( l_faHan, l_pstatus ); checkError( l_error );
+    l_error = m_pcomm.get_pstatus( l_faHan, l_pstatus ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 #endif
     assert( l_localId == (int_el) l_fa || l_pstatus != 0 );
 
     // get neighboring vertices
     std::vector< moab::EntityHandle > l_verts;
     l_error = m_core.get_adjacencies( &l_faHan, 1, 0, true, l_verts, moab::Interface::UNION );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
     // check that we have our verts
     assert( l_verts.size() == C_ENT[T_SDISC.FACE].N_VERTICES );
@@ -1142,7 +1315,7 @@ void edge::mesh::Moab::getFacesAdjacentVertices( int_el (*o_neighVeIds)[C_ENT[T_
                                    &l_verts[0],
                                     C_ENT[T_SDISC.FACE].N_VERTICES,
                                     o_neighVeIds[l_fa] );
-    checkError ( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   }
 }
 
@@ -1156,11 +1329,11 @@ void edge::mesh::Moab::getElementVerticesCoords( int_el i_element,
   moab::EntityHandle l_element = m_elements[i_element];
   moab::Range l_vertices;
   l_error = m_core.get_adjacencies( &l_element, 1, 0, true, l_vertices, moab::Interface::UNION );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_vertices.size() == C_ENT[T_SDISC.ELEMENT].N_VERTICES );
 
   // get the coordinates
-  l_error = m_core.get_coords( l_vertices, o_x, o_y, o_z ); checkError( l_error );
+  l_error = m_core.get_coords( l_vertices, o_x, o_y, o_z ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::getGIdsVe( std::vector< int_gid > &o_gIds ) const {
@@ -1169,7 +1342,7 @@ void edge::mesh::Moab::getGIdsVe( std::vector< int_gid > &o_gIds ) const {
 
   // get the global ids
   l_error = m_core.tag_get_data(  m_tagGId, &m_vertices[0], m_vertices.size(), &o_gIds[0] );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::getGIdsFa( std::vector< int_gid > &o_gIds ) const {
@@ -1178,7 +1351,7 @@ void edge::mesh::Moab::getGIdsFa( std::vector< int_gid > &o_gIds ) const {
 
   // get the global ids
   l_error = m_core.tag_get_data(  m_tagGId, &m_faces[0], m_faces.size(), &o_gIds[0] );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::getGIdsEl( std::vector< int_gid > &o_gIds ) const {
@@ -1187,7 +1360,7 @@ void edge::mesh::Moab::getGIdsEl( std::vector< int_gid > &o_gIds ) const {
 
   // get the global ids
   l_error = m_core.tag_get_data(  m_tagGId, &m_elements[0], m_elements.size(), &o_gIds[0] );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::syncTags( std::vector< unsigned short > const &i_tids,
@@ -1256,7 +1429,7 @@ void edge::mesh::Moab::getMatVal( unsigned short  i_dim,
   // get the entity sets with material tags
   moab::Range l_sets;
   l_error = m_core.get_entities_by_type_and_tag( 0, moab::MBENTITYSET, &m_tagMat, NULL, 1, l_sets );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // check if the entity is part of one of sets
   unsigned int l_conSet = std::numeric_limits<unsigned int>::max();
@@ -1277,7 +1450,7 @@ void edge::mesh::Moab::getMatVal( unsigned short  i_dim,
 
     int l_val;
     l_error = m_core.tag_get_data( m_tagMat, &l_setHa, 1, &l_val );
-    checkError( l_error );
+    EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
     o_val = l_val; // change type of value
   }
 
@@ -1293,7 +1466,7 @@ void edge::mesh::Moab::getVeCoords( int_el  i_vertex,
 
   moab::EntityHandle l_veHan = m_vertices[i_vertex];
   double l_coords[3];
-  l_error = m_core.get_coords( &l_veHan, 1, l_coords ); checkError( l_error );
+  l_error = m_core.get_coords( &l_veHan, 1, l_coords ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   o_x = l_coords[0]; o_y = l_coords[1]; o_z = l_coords[2];
 }
@@ -1308,12 +1481,12 @@ void edge::mesh::Moab::getFaceVerticesCoords( int_el i_face,
   moab::EntityHandle l_face = m_faces[i_face];
   moab::Range l_vertices;
   l_error = m_core.get_adjacencies( &l_face, 1, 0, true, l_vertices, moab::Interface::UNION );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_vertices.size() == C_ENT[T_SDISC.FACE].N_VERTICES );
 
   // get the coordinates
   l_error = m_core.get_coords( l_vertices, o_x, o_y, o_z );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::getNormalPointCoords( int_el  i_face,
@@ -1321,9 +1494,9 @@ void edge::mesh::Moab::getNormalPointCoords( int_el  i_face,
                                              double &o_x,
                                              double &o_y,
                                              double &o_z ) {
+#if defined PP_T_ELEMENTS_TRIA3 || defined PP_T_ELEMENTS_TET4
   moab::ErrorCode l_error;
 
-#if defined PP_T_ELEMENTS_TRIA3 || defined PP_T_ELEMENTS_TET4
   // get adjacent elements
   std::vector< moab::EntityHandle > l_elements;
 
@@ -1331,7 +1504,7 @@ void edge::mesh::Moab::getNormalPointCoords( int_el  i_face,
 
   moab::EntityHandle l_faHan = m_faces[i_face];
   l_error = m_core.get_adjacencies( &l_faHan, 1, m_dim, true, l_elements, moab::Interface::UNION );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_elements.size() >= 1 );
 
   addPeriodicElement( m_faces[i_face], l_elements );
@@ -1343,7 +1516,7 @@ void edge::mesh::Moab::getNormalPointCoords( int_el  i_face,
   // get global ids and sort ascending
   int_gid l_gIds[2];
   l_error = m_core.tag_get_data( m_tagGId, &l_elements[0], l_elements.size(), l_gIds );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   if( l_elements.size() == 2 ) o_left = l_gIds[0] < l_gIds[1];
   else                         o_left = true; // boundary elements are left by default
@@ -1355,13 +1528,13 @@ void edge::mesh::Moab::getNormalPointCoords( int_el  i_face,
   // get vertices of first element
   moab::Range l_veFirst;
   l_error = m_core.get_adjacencies( &l_elFirst, 1, 0, true, l_veFirst, moab::Interface::UNION );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_veFirst.size() == C_ENT[T_SDISC.ELEMENT].N_VERTICES );
 
   // get the vertices of the face
   moab::Range l_veFace;
   l_error = m_core.get_adjacencies( &l_faHan, 1, 0, true, l_veFace, moab::Interface::UNION );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
   assert( l_veFace.size() == C_ENT[T_SDISC.FACE].N_VERTICES );
 
   // get remaining vertex
@@ -1370,7 +1543,7 @@ void edge::mesh::Moab::getNormalPointCoords( int_el  i_face,
 
   // get the coordinates and out of here!
   l_error = m_core.get_coords( l_veFirst, &o_x, &o_y, &o_z );
-  checkError( l_error );
+  EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 #else
   assert( false );
 #endif

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -136,7 +136,16 @@ class edge::mesh::Moab {
     bool isBnd( moab::EntityHandle i_ent );
 
     /**
-     * Adds the periodic element (if existing) to the vector, which is adjacent to the given face.
+     * Adds the periodic vertices (if existing), which are equivalent to the given vertex.
+     *
+     * @param i_ve vertex for which the periodic equivalents are determined.
+     * @param io_ves will be updated with ids of the periodic vertices.
+     **/
+    void addPeriodicVertices( moab::EntityHandle  i_ve,
+                              moab::Range        &io_ves );
+
+    /**
+     * Adds the periodic element (if existing), which is adjacent to the given face.
      *
      * @param i_face entity handle of the face.
      * @param io_elements entity handle of the range to which the element will be added to.
@@ -145,24 +154,13 @@ class edge::mesh::Moab {
                              moab::Range        &io_elements );
 
     /**
-     * Adds the periodic element (if existing) to the vector, which is adjacent to the given face.
+     * Adds the periodic element (if existing), which is adjacent to the given face.
      *
      * @param i_face entity handle of the face.
      * @param io_elements vector to which the element will be added to (at the end).
      **/
     void addPeriodicElement( moab::EntityHandle                 i_face,
                              std::vector< moab::EntityHandle > &io_elements );
-
-    /**
-     * Checks for an MOAB error.
-     *
-     * @param i_error MOAB error code.
-     **/
-    void checkError( moab::ErrorCode i_error ) const {
-      if( i_error != moab::MB_SUCCESS ) {
-        EDGE_LOG_FATAL << "moab error: " << i_error;
-      }
-    }
 
     /**
      * Sets the periodic adjacencies for a single dimension.
@@ -254,6 +252,16 @@ class edge::mesh::Moab {
     void sortElFaEntities( std::vector< moab::EntityHandle > &io_faHas );
 
     /**
+     * Gets the elements adjacent to elements through vertices.
+     * Remark: Order with respect to vertices is ascending.
+     *
+     * @param o_nElVeEl will be set to number of adjacent elements.
+     * @param o_elVeEl will be set to elements adjacent to elements through vertices; optional, nullptr ignores the argument.
+     **/
+    void getElVeEl( int_el  &o_nElVeEl,
+                    int_el **o_elVeEl );
+
+    /**
      * Gets the ids of the face neighboring elements.
      *
      * Remark: Ordering w.r.t. to the global ids of the vertices of the shared face is guaranteed to be ascending.
@@ -297,6 +305,7 @@ class edge::mesh::Moab {
      * Prints MOAB information.
      **/
     void printMoab();
+
   public:
     /**
      * Sets up a new MOAB interface.
@@ -409,6 +418,21 @@ class edge::mesh::Moab {
      **/
     void getElementsAdjacentFaces( int_el (*o_elementsAdjacentFaces)[C_ENT[T_SDISC.ELEMENT].N_FACES] );
 
+
+    /**
+     * Gets the elements adjacent to elements through vertices.
+     * Remark: Order with respect to vertices is ascending.
+     *
+     * @param o_elVeEl will be set to element adjacent to elements through vertices.
+     **/
+    void getElVeEl( int_el **o_elVeEl );
+
+    /**
+     * Gets the number of elements adjacent to the elements through vertices.
+     *
+     * @return number of adjacent elements (vertices as bridge).
+     **/
+    int_el getNelVeEl();
 
     /**
      * Gets the local ids of all face neighbors of all elements.
