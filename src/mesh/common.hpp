@@ -46,6 +46,15 @@ class edge::mesh::common {
     //! face type
     static const t_entityType TL_T_FA = C_ENT[TL_T_EL].TYPE_FACES;
 
+    //! number of face vertices
+    static unsigned short const TL_N_FA_VES = C_ENT[TL_T_FA].N_VERTICES;
+
+    //! number of element vertices
+    static unsigned short const TL_N_EL_VES = C_ENT[TL_T_EL].N_VERTICES;
+
+    //! number of element faces
+    static unsigned short const TL_N_EL_FAS = C_ENT[TL_T_EL].N_FACES;
+
     /**
      * Sets global vertex ids to dummy values for use in periodic boundaries.
      *
@@ -66,7 +75,7 @@ class edge::mesh::common {
                                            int_el                 i_elIdLoc,
                                            int_el                 i_elIdNeg,
                                            unsigned short         i_localFace,
-                                     const int_el               (*i_elVe)[C_ENT[TL_T_EL].N_VERTICES],
+                                     const int_el               (*i_elVe)[TL_N_EL_VES],
                                      const t_vertexChars         *i_veChars,
                                            int_gid                o_vIds[4] ) {
       // remark: periodic faces have outer-pointing normals pointing in opposite directions
@@ -99,6 +108,7 @@ class edge::mesh::common {
           l_locFaCoords[l_dim][2] = i_veChars[ i_elVe[i_elIdLoc][3] ].coords[l_dim];
           l_normalPt[l_dim] = i_veChars[ i_elVe[i_elIdLoc][0] ].coords[l_dim];
         }
+        else EDGE_LOG_FATAL << i_localFace;
       }
 
       // get outer point normal of local face
@@ -209,17 +219,17 @@ class edge::mesh::common {
      * @param i_vertices vertices of the element.
      * @param o_baryCtr will be set to barycenter of the element.
      **/
-    static void computeBaryCtr( const real_mesh i_vertices[3][C_ENT[TL_T_EL].N_VERTICES],
+    static void computeBaryCtr( const real_mesh i_vertices[3][TL_N_EL_VES],
                                       real_mesh o_baryCtr[3] ) {
 #if defined PP_T_ELEMENTS_LINE || defined PP_T_ELEMENTS_QUAD4R || defined PP_T_ELEMENTS_TRIA3 || defined PP_T_ELEMENTS_HEX8R
       // reset baryctr;
       o_baryCtr[0] = o_baryCtr[1] = o_baryCtr[2] = 0;
 
       // derive  bary ctr
-      for( int_md l_ve = 0; l_ve < C_ENT[TL_T_EL].N_VERTICES; l_ve++ ) {
-        o_baryCtr[0] += i_vertices[0][l_ve] / C_ENT[TL_T_EL].N_VERTICES;
-        o_baryCtr[1] += i_vertices[1][l_ve] / C_ENT[TL_T_EL].N_VERTICES;
-        o_baryCtr[2] += i_vertices[2][l_ve] / C_ENT[TL_T_EL].N_VERTICES;
+      for( int_md l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
+        o_baryCtr[0] += i_vertices[0][l_ve] / TL_N_EL_VES;
+        o_baryCtr[1] += i_vertices[1][l_ve] / TL_N_EL_VES;
+        o_baryCtr[2] += i_vertices[2][l_ve] / TL_N_EL_VES;
       }
 #else
     assert(false);
@@ -480,8 +490,8 @@ class edge::mesh::common {
                               const t_faceChars           *i_faChars,
                               const std::vector< int_el > &i_faMeDa,
                               const std::vector< int_el > &i_faDaMe,
-                              const int_el               (*i_elFaEl)[C_ENT[TL_T_EL].N_FACES],
-                              const int_el               (*i_elFa)[C_ENT[TL_T_EL].N_FACES],
+                              const int_el               (*i_elFaEl)[TL_N_EL_FAS],
+                              const int_el               (*i_elFa)[TL_N_EL_FAS],
                               const int_el               (*i_faEl)[2] ) {
       // iterate over faces
       for( int_el l_fa = 0; l_fa < i_faLayout.nEnts; l_fa++ ) {
@@ -504,7 +514,7 @@ class edge::mesh::common {
         // get unique id
         int_el l_faUId = i_faMeDa[ i_faDaMe[l_fa] ];
 
-        for( unsigned int l_locFa = 0; l_locFa < C_ENT[TL_T_EL].N_FACES; l_locFa++ ) {
+        for( unsigned int l_locFa = 0; l_locFa < TL_N_EL_FAS; l_locFa++ ) {
           if( i_elFa[l_elL][l_locFa] == l_faUId ) l_faL = l_locFa;
           if( i_elFa[l_elR][l_locFa] == l_faUId ) l_faR = l_locFa;
         }
@@ -549,10 +559,10 @@ class edge::mesh::common {
                               const std::vector< int_gid > &i_gIdsVe,
                               const std::vector< int_gid > &i_gIdsFa,
                               const std::vector< int_gid > &i_gIdsEl,
-                              const int_el                (*i_elVe)[C_ENT[TL_T_EL].N_VERTICES],
-                              const int_el                (*i_elFa)[C_ENT[TL_T_EL].N_FACES],
+                              const int_el                (*i_elVe)[TL_N_EL_VES],
+                              const int_el                (*i_elFa)[TL_N_EL_FAS],
                               const int_el                (*i_faEl)[2],
-                              const int_el                (*i_faVe)[C_ENT[TL_T_FA].N_VERTICES],
+                              const int_el                (*i_faVe)[TL_N_FA_VES],
                                     bool                    i_periodic = true  ) {
        // check size of global ids
        EDGE_CHECK( i_faLayout.nEnts == (int_el) i_gIdsFa.size() );
@@ -575,7 +585,7 @@ class edge::mesh::common {
          }
 
          // check order of adjacent verts
-         for( unsigned int l_ve = 1; l_ve < C_ENT[TL_T_FA].N_VERTICES; l_ve++ ) {
+         for( unsigned int l_ve = 1; l_ve < TL_N_FA_VES; l_ve++ ) {
            int_gid l_gIdsVe[2];
            l_gIdsVe[0] =  i_gIdsVe[ i_faVe[l_fa][l_ve-1] ];
            l_gIdsVe[1] =  i_gIdsVe[ i_faVe[l_fa][l_ve  ] ];
@@ -589,7 +599,7 @@ class edge::mesh::common {
          /*
           * check ascending order of vertices
           */
-         for( unsigned l_ve = 1; l_ve < C_ENT[TL_T_EL].N_VERTICES; l_ve++ ) {
+         for( unsigned l_ve = 1; l_ve < TL_N_EL_VES; l_ve++ ) {
            // get global ids of the vertices
            int_gid l_gIdsVe[2];
            l_gIdsVe[0] =  i_gIdsVe[ i_elVe[l_el][l_ve-1] ];
@@ -609,19 +619,19 @@ class edge::mesh::common {
 
          for( int_el l_el = l_first; l_el < l_first+l_size; l_el++ ) {
            // get the vertices of the adjacent faces
-           int_el l_faVes[C_ENT[TL_T_EL].N_FACES][C_ENT[TL_T_FA].N_VERTICES];
+           int_el l_faVes[TL_N_EL_FAS][TL_N_FA_VES];
 
-           for( unsigned int l_fa = 0; l_fa < C_ENT[TL_T_EL].N_FACES; l_fa++ ) {
+           for( unsigned int l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
              int_el l_faId = i_elFa[l_el][l_fa];
-             for( unsigned int l_ve = 0; l_ve < C_ENT[TL_T_FA].N_VERTICES; l_ve++ ) {
+             for( unsigned int l_ve = 0; l_ve < TL_N_FA_VES; l_ve++ ) {
                l_faVes[l_fa][l_ve] = i_faVe[l_faId][l_ve];
              }
            }
 
            // check if the faces are ascending
            bool l_asc = true;
-           for( unsigned int l_fa = 1; l_fa < C_ENT[TL_T_EL].N_FACES; l_fa++ ) {
-             for( unsigned int l_ve = 0; l_ve < C_ENT[TL_T_FA].N_VERTICES; l_ve++ ) {
+           for( unsigned int l_fa = 1; l_fa < TL_N_EL_FAS; l_fa++ ) {
+             for( unsigned int l_ve = 0; l_ve < TL_N_FA_VES; l_ve++ ) {
                // get global ids of the vertices
                int_gid l_gIdsVe[2];
                l_gIdsVe[0] =  i_gIdsVe[ l_faVes[l_fa-1][l_ve] ];
@@ -637,7 +647,7 @@ class edge::mesh::common {
                  break;
                }
                // equal: continue searching
-               else if( l_ve == C_ENT[TL_T_FA].N_VERTICES - 1) {
+               else if( l_ve == TL_N_FA_VES - 1) {
                  EDGE_LOG_FATAL << "two faces of an element have identical vertices "
                                 << l_el << " " << l_fa << " " << i_elFa[l_el][l_fa];
                }
@@ -647,15 +657,15 @@ class edge::mesh::common {
            // are all the faces' vertices covered by the element's vertices?
            // -> we can identify an issue only if we are not on a periodic boundary
            bool l_covered = true;
-           for( unsigned short l_fa = 0; l_fa < C_ENT[TL_T_EL].N_FACES; l_fa++ ) {
-             for( unsigned short l_faVe = 0; l_faVe < C_ENT[TL_T_FA].N_VERTICES; l_faVe++ ) {
-               for( unsigned short l_elVe = 0; l_elVe < C_ENT[TL_T_EL].N_VERTICES; l_elVe++ ) {
+           for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
+             for( unsigned short l_faVe = 0; l_faVe < TL_N_FA_VES; l_faVe++ ) {
+               for( unsigned short l_elVe = 0; l_elVe < TL_N_EL_VES; l_elVe++ ) {
                  // continue with next vertex of the faces if its part of the elemnt
                  if( l_faVes[l_fa][l_faVe] == i_elVe[l_el][l_elVe] ) {
                    break;
                  }
                  // this face's vertex is not part of the element
-                 else if( l_elVe == C_ENT[TL_T_EL].N_VERTICES-1 ) {
+                 else if( l_elVe == TL_N_EL_VES-1 ) {
                    l_covered = false;
                  }
                }
@@ -681,11 +691,11 @@ class edge::mesh::common {
      * @param o_veCoords will be set to coordinates of the vertices.
      **/
     static void getElVeCoords(       int_el         i_el,
-                               const int_el       (*i_elVe)[C_ENT[TL_T_EL].N_VERTICES],
+                               const int_el       (*i_elVe)[TL_N_EL_VES],
                                const t_vertexChars *i_vertexChars,
-                                     real_mesh      o_veCoords[3][C_ENT[TL_T_EL].N_VERTICES] ) {
+                                     real_mesh      o_veCoords[3][TL_N_EL_VES] ) {
       // get elements vertices
-      for( int_md l_ve = 0; l_ve < C_ENT[TL_T_EL].N_VERTICES; l_ve++ ) {
+      for( int_md l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
         int_el l_veId       = i_elVe[i_el][l_ve];
         o_veCoords[0][l_ve] = i_vertexChars[l_veId].coords[0];
         o_veCoords[1][l_ve] = i_vertexChars[l_veId].coords[1];
@@ -717,9 +727,9 @@ class edge::mesh::common {
      **/
     static void getFIdsElFaEl( const t_enLayout             &i_elLayout,
                                const std::vector< int_gid > &i_gIdsEl,
-                               const int_el                (*i_elFa)[C_ENT[TL_T_EL].N_FACES],
-                               const int_el                (*i_elFaEl)[C_ENT[TL_T_EL].N_FACES],
-                                     unsigned short        (*o_fIdElFaEl)[C_ENT[TL_T_EL].N_FACES] ) {
+                               const int_el                (*i_elFa)[TL_N_EL_FAS],
+                               const int_el                (*i_elFaEl)[TL_N_EL_FAS],
+                                     unsigned short        (*o_fIdElFaEl)[TL_N_EL_FAS] ) {
       // iterate over own entities
       for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
         int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
@@ -730,7 +740,7 @@ class edge::mesh::common {
           assert( l_el < (int_el) i_gIdsEl.size() );
           int_gid l_gIdEl = i_gIdsEl[l_el];
 
-          for( unsigned int l_fa = 0; l_fa < C_ENT[TL_T_EL].N_FACES; l_fa++ ) {
+          for( unsigned int l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
             // assert an existing face
             EDGE_CHECK( i_elFa[l_el][l_fa] != std::numeric_limits<int_el>::max() );
 
@@ -749,7 +759,7 @@ class edge::mesh::common {
             EDGE_CHECK( l_lIdElNe < (int_el) i_gIdsEl.size() );
 
             // find the local face mapping back to our element
-            for( unsigned int l_nFa = 0; l_nFa < C_ENT[TL_T_EL].N_FACES; l_nFa++ ) {
+            for( unsigned int l_nFa = 0; l_nFa < TL_N_EL_FAS; l_nFa++ ) {
               // continue for receive-elements pointing further out
               if( i_elFaEl[l_lIdElNe][l_nFa] == std::numeric_limits< int_el >::max() ) {
                 continue;
@@ -786,10 +796,10 @@ class edge::mesh::common {
      **/
     static void getVIdsElFaEl( const t_enLayout             &i_elLayout,
                                const std::vector< int_gid > &i_gIdsVe,
-                               const int_el                (*i_elFaEl)[C_ENT[TL_T_EL].N_FACES],
-                               const int_el                (*i_elVe)[C_ENT[TL_T_EL].N_VERTICES],
-                               const unsigned short        (*i_fIdElFaEl)[C_ENT[TL_T_EL].N_FACES],
-                                     unsigned short        (*o_vIdElFaEl)[C_ENT[TL_T_EL].N_FACES],
+                               const int_el                (*i_elFaEl)[TL_N_EL_FAS],
+                               const int_el                (*i_elVe)[TL_N_EL_VES],
+                               const unsigned short        (*i_fIdElFaEl)[TL_N_EL_FAS],
+                                     unsigned short        (*o_vIdElFaEl)[TL_N_EL_FAS],
                                      bool                    i_periodic=false,
                                const t_vertexChars          *i_veChars=NULL ) {
       for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
@@ -798,13 +808,13 @@ class edge::mesh::common {
 
         for( int_el l_el = l_first; l_el < l_first+l_size; l_el++ ) {
 #if defined PP_T_MESH_REGULAR || defined PP_T_ELEMENTS_TRIA3
-          for( unsigned short l_fa = 0; l_fa < C_ENT[TL_T_EL].N_FACES; l_fa++ ) {
+          for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
             // no rotation possible.
             o_vIdElFaEl[l_el][l_fa] = 0;
           }
 #elif defined PP_T_ELEMENTS_TET4
           // iterate over element's faces
-          for( unsigned short l_fa = 0; l_fa < C_ENT[TL_T_EL].N_FACES; l_fa++ ) {
+          for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
             // neighboring element
             int_el l_ne = i_elFaEl[l_el][l_fa];
 
@@ -1019,7 +1029,7 @@ class edge::mesh::common {
       o_gId = std::numeric_limits< int_gid >::max();
       o_tg  = std::numeric_limits< int_tg  >::max();
 
-      EDGE_CHECK( C_ENT[TL_T_EL].N_VERTICES*C_ENT[TL_T_EL].N_DIM <= 8*3 );
+      EDGE_CHECK( TL_N_EL_VES*C_ENT[TL_T_EL].N_DIM <= 8*3 );
       real_mesh l_veCoords[8*3];
 
       // iterate over time groups
@@ -1033,9 +1043,9 @@ class edge::mesh::common {
         for( int_el l_en = l_first; l_en < l_first+l_size; l_en++ ) {
           // get the vertices
           for( unsigned short l_dim = 0; l_dim < C_ENT[TL_T_EL].N_DIM; l_dim++ ) {
-            for( unsigned short l_ve = 0; l_ve < C_ENT[TL_T_EL].N_VERTICES; l_ve++ ) {
-              int_el l_veId = i_enVe[l_en*C_ENT[TL_T_EL].N_VERTICES + l_ve];
-              l_veCoords[ l_dim*C_ENT[TL_T_EL].N_VERTICES + l_ve ] = i_veChars[l_veId].coords[l_dim];
+            for( unsigned short l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
+              int_el l_veId = i_enVe[l_en*TL_N_EL_VES + l_ve];
+              l_veCoords[ l_dim*TL_N_EL_VES + l_ve ] = i_veChars[l_veId].coords[l_dim];
             }
           }
           // check if the point is inside the entity

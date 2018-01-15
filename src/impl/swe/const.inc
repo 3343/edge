@@ -41,17 +41,11 @@ const unsigned short N_QUANTITIES=2;
 // DOFs are h and hu
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
 
-// FV for now
-#define PP_N_ELEMENT_MODES 1
-
 // bathymetry
 #define PP_N_ELEMENT_MODE_SHARED_1 1
 
 // dx
 #define PP_N_ELEMENT_SHARED_1 1
-
-// net-update are stored for 1 mode per face
-const unsigned short N_FACE_MODES=1;
 
 // left- and right-going net-updates for h and hu
 #define PP_N_FACE_MODE_PRIVATE_1 4
@@ -62,7 +56,6 @@ const unsigned short N_FACE_MODES=1;
 const unsigned short N_QUANTITIES=3;
 
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
-#define PP_N_ELEMENT_MODES 1
 #define PP_N_ELEMENT_MODE_SHARED_1 1
 #define PP_N_ELEMENT_SHARED_1 1
 const unsigned short N_FACE_MODES=1;

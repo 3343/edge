@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2017, Regents of the University of California
+ * Copyright (c) 2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,47 +18,29 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Unit tests of EDGE.
+ * This file contains definition of compile time constants for Edge-V.
  **/
-#ifdef PP_USE_MPI
-#include <mpi.h>
-#endif
 
-#include <string>
-#include "io/logging.h"
-INITIALIZE_EASYLOGGINGPP
+#ifndef VM_CONSTANTS_H
+#define VM_CONSTANTS_H
 
-#define CATCH_CONFIG_RUNNER
-#include <catch.hpp>
+#define EDGE_V_OUT (std::cout << "EDGE-V INFO: ")
+#define EDGE_V_ERR (std::cerr << "EDGE-V ERR : ")
 
-// directory for files of the unit tests
-namespace edge {
-  namespace test {
-    std::string g_files = "cont/unit_tests";
-  }
-}
+#define ELMTTYPE 4  //TODO
 
-int main( int i_argc, char* i_argv[] ) {
-#ifdef PP_USE_MPI
-  // init MPI for unit tests calling MPI-functions
-  MPI_Init( &i_argc, &i_argv );
-#endif
+#define UCVMCMODE UCVM_COORD_GEO_ELEV
+#define UCVMTYPE  2 //TODO
 
-  // disable logging file-IO
-  edge::io::logging::config();
+#define MIN_VP          1500.0
+#define MIN_VS          500.0
+#define MIN_VS2         1200.0
+#define MAX_VP_VS_RATIO 3.0
 
-  // disable file-based unit tests if the UT directory does not exist
-  if( !std::ifstream(edge::test::g_files) ) {
-    edge::test::g_files = "";
-  }
+#define CENTERICLON -117.916
+#define CENTERICLAT 33.933
 
-  // run unit tests
-  int l_result = Catch::Session().run( i_argc, i_argv );
+typedef int     int_v;
+typedef double  real;
 
-#ifdef PP_USE_MPI
-  MPI_Finalize();
-#endif
-
-  // return result
-  return ( l_result < 0xff ? l_result : 0xff );
-}
+#endif //! VM_CONSTANTS_H

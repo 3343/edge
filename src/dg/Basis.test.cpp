@@ -26,7 +26,7 @@
 #undef private
 
 TEST_CASE( "Tests the precomputation of the basis values and quad points.", "[basis][evalQpRefEl]" ) {
-  edge::dg::Basis l_basis( TET4, 2 );
+  edge::dg::Basis l_basis( TET4, PP_ORDER );
 
   for( unsigned short l_pq = 0; l_pq < 2+1; l_pq++ ) {
     REQUIRE( l_basis.m_qpEval[l_pq].xi1.size()     == (l_pq+1) * (l_pq+1) * (l_pq+1) );

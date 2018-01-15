@@ -435,7 +435,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta;
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != TL_T_REAL(0)) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
           }
         }
       }
@@ -485,7 +485,7 @@ class edge::linalg::Matrix {
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
           for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta;
+            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != TL_T_REAL(0)) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
           }
         }
       }
@@ -880,7 +880,7 @@ class edge::linalg::Matrix {
       l_maxCols = 0;
       for( unsigned int l_j = 0; l_j < i_nCols; ++l_j ) {
         for( unsigned int l_i = 0; l_i < i_nRows; ++l_i ) {
-          if(l_fill[(l_j*i_nRows) + l_i] > 0) {
+          if( l_fill[(l_j*i_nRows) + l_i] > 0 ) {
             l_maxCols = l_j+1;
           }
         }
@@ -890,7 +890,10 @@ class edge::linalg::Matrix {
       l_nChunks = ( (l_maxCols % l_maxRegBlock) == 0 ) ? (l_maxCols / l_maxRegBlock) : (l_maxCols / l_maxRegBlock) + 1;
 
       // abort fill-in if chunk size is zero
-      if( l_nChunks == 0 ) return;
+      if( l_nChunks == 0 ) {
+        delete[] l_fill;
+        return;
+      }
       l_nChunkSize = ( (l_maxCols % l_nChunks) == 0 ) ? (l_maxCols / l_nChunks) : (l_maxCols / l_nChunks) + 1;
 
       // qmadd padding

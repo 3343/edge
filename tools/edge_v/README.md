@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg)](LICENSE.md) 
 
 
-EDGE Velocity (EDGE-V) is a tool used to annotate the meshes with velocity model data. It is developed based on [Unified Community Velocity Model](http://scec.usc.edu/scecpedia/UCVMC)(UCVM), which is the data source, and [Mesh-Oriented dAtABase](http://sigma.mcs.anl.gov/moab-library)(MOAB).
+EDGE Velocity (EDGE-V) is a tool used to annotate the meshes with velocity model data. It is developed based on [Unified Community Velocity Model](http://scec.usc.edu/scecpedia/UCVMC)(UCVM), which is the data source, and [Mesh-Oriented datABase](http://sigma.mcs.anl.gov/moab-library)(MOAB).
 
 EDGE-V is released as an open-source scientific software under the BSD3 software license.
 
@@ -18,7 +18,7 @@ Edge-V works with the following operating sysetms and software stacks.
 *  Autotools build software for Linux
 *  Unified Community Velocity Model C-language (UCVMC) library: http://scec.usc.edu/scecpedia/UCVMC/ 
 *  Proj.4 projection library: http://trac.osgeo.org/proj/ (provided in UCVMC)
-*  Mesh-Oriented dAtABase (MOAB) library: http://sigma.mcs.anl.gov/moab-library/ (contained in submodules of EDGE)
+*  Mesh-Oriented datABase (MOAB) library: http://sigma.mcs.anl.gov/moab-library/ (contained in submodules of EDGE)
 
 
 ## Build Instructions

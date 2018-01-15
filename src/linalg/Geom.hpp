@@ -562,6 +562,7 @@ class edge::linalg::Geom {
       assert(  C_ENT[i_entType].N_FACE_VERTICES < 4 ||
               (C_ENT[i_entType].N_FACE_VERTICES == 4 && i_entType == HEX8R) );
       TL_T_REAL l_directed[3*4];
+      for( unsigned short l_dv = 0; l_dv < 3*4; l_dv++ ) l_directed[l_dv] = std::numeric_limits< TL_T_REAL >::max();
 
       unsigned short l_nDims     = C_ENT[i_entType].N_DIM;
       unsigned short l_nEnVes    = C_ENT[i_entType].N_VERTICES;

@@ -36,6 +36,12 @@ namespace edge {
   namespace data {
     template< typename TL_T_REAL >
     class MmXsmmSingle;
+
+    template<>
+    class MmXsmmSingle< float >;
+
+    template<>
+    class MmXsmmSingle< double >;
   }
 }
  
