@@ -50,15 +50,14 @@
 }
 
 {
-   iomp_kmp_init
+   iomp_sched_setaffinity
    Memcheck:Param
    sched_setaffinity(mask)
    ...
-   fun:*kmpc_fork_call
-   fun:*edge*parallel*Shared*init*
+   fun:*kmpc_*
+   ...
    fun:main
 }
-
 
 {
    start_thread
