@@ -152,6 +152,7 @@
       <params>
         <param name="toolchain">intel</param>
       </params>
+      <timer onlyOnChanges="true">0 * * ? * *</timer>
       <environmentvariables>
         <variable name="GMSH_EXEC">
             <value>gmsh</value>
@@ -515,6 +516,7 @@
            * Dependencies *
            **************************** -->
       <stage name="deps" cleanWorkingDir="true">
+        <approval type="manual" />
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
