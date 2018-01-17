@@ -84,6 +84,6 @@ class Quad:
     l_chi = i_symsFa[0]
 
     return [ (l_chi,   0       ),
-             (0,       l_chi   ),
+             (1,       l_chi   ),
              (1-l_chi, 1,      ),
              (0,       1-l_chi ) ]
