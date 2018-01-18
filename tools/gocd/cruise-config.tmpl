@@ -69,16 +69,19 @@
     </authorization>
 
     <pipeline name="deps_clang" template="Deps">
+      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
     </pipeline>
     <pipeline name="deps_gnu" template="Deps">
+      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
     </pipeline>
     <pipeline name="deps_intel" template="Deps">
+      <timer onlyOnChanges="true">0 * * ? * *</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
@@ -96,7 +99,6 @@
       <params>
         <param name="toolchain">clang</param>
       </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
       <environmentvariables>
         <variable name="GMSH_EXEC">
             <value>gmsh</value>
@@ -127,7 +129,6 @@
       <params>
         <param name="toolchain">gnu</param>
       </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
       <environmentvariables>
         <variable name="GMSH_EXEC">
             <value>gmsh</value>
@@ -303,6 +304,7 @@
     <pipeline name="Deps">
       <!-- standalone libraries (no dependencies) -->
       <stage name="standalone">
+        <approval type="manual" />
         <jobs>
           <!-- LIBXSMM -->
           <job name="build_xsmm">
