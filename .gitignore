@@ -1,7 +1,7 @@
 *.dblite
 config.log
 .sconf_temp/
-build/
+/build/
 
 ##
 # Python

@@ -380,13 +380,10 @@ before_install:
   - cd edge_opt
   - git lfs fetch -I cont/advection; git lfs fetch -I cont/elastic; git lfs fetch -I cont/swe
   - git lfs checkout cont/advection cont/elastic cont/swe
-  - git lfs fetch -I tools/edge_pre
-  - git lfs checkout tools/edge_pre
   - cd ..
 
   - cd edge
   - ln -s $(pwd)/../edge_opt/cont .
-  - cp -r $(pwd)/../edge_opt/tools/edge_pre/* submodules/edge_pre
 
    # set up compilers
   - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;

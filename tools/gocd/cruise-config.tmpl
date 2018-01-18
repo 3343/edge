@@ -532,21 +532,6 @@
                 <arg>ln -s ../edge_opt/cont .</arg>
                 <runif status="passed" />
               </exec>
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs fetch -I tools/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs checkout tools/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>ln -s $(pwd)/../edge_opt/tools/edge_pre/* submodules/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
             </tasks>
           </job>
         </jobs>
@@ -2296,21 +2281,6 @@
                 <arg>ln -s ../edge_opt/bench .</arg>
                 <runif status="passed" />
               </exec>
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs fetch -I tools/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs checkout tools/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>ln -s $(pwd)/../edge_opt/tools/edge_pre/* submodules/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
             </tasks>
           </job>
         </jobs>
@@ -2640,23 +2610,6 @@
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
                 <arg>ln -s ../edge_opt/bench .</arg>
-                <runif status="passed" />
-              </exec>
-
-              <!-- edge_opt: EDGEpre -->
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs fetch -I tools/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs checkout tools/edge_pre</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>ln -s $(pwd)/../edge_opt/tools/edge_pre/* submodules/edge_pre</arg>
                 <runif status="passed" />
               </exec>
             </tasks>

@@ -31,7 +31,7 @@ l_scriptDir = Dir('.').srcnode().abspath
 
 import os
 from sys import path
-path.append(l_scriptDir + '/edge_pre' )
+path.append(l_scriptDir + '/../tools/build' )
 import csvToCpp
 
 Import('env')
