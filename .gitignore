@@ -1,4 +1,10 @@
 *.dblite
 config.log
 .sconf_temp/
-build/
+/build/
+
+##
+# Python
+##
+__pycache__/
+*.py[cod]

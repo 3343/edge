@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -83,6 +83,12 @@ class edge::mesh::Moab {
     //! mapping of indices from mesh to data and data to mesh
     t_inMap m_inMap;
 
+    //! tags in the mesh
+    std::vector< moab::Tag > m_tagsMesh;
+
+    //! names of the tags
+    std::vector< std::string > m_tagsNames;
+
     //! material tag, as defined in MATERIAL_SET of MOAB.
     // While we use this to define true material regions w.r.t to elements, this tag is also used to define boundary conditions on faces.
     moab::Tag m_tagMat;
@@ -111,6 +117,15 @@ class edge::mesh::Moab {
     std::vector< moab::EntityHandle > m_periodicElementsRemote;
 
     /**
+     * Gets the entity handle for the given entity.
+     *
+     * @param i_nDim number of dimensions of the entity.
+     * @param i_en local id of the entity.
+     **/
+    moab::EntityHandle getEnHandle( unsigned short i_nDim,
+                                    int_el         i_en );
+
+    /**
      * Determines if the given entity is at the boundary.
      * Supported are faces only.
      * For faces (dim-1) this is true if the face is a boundary face.
@@ -121,7 +136,16 @@ class edge::mesh::Moab {
     bool isBnd( moab::EntityHandle i_ent );
 
     /**
-     * Adds the periodic element (if existing) to the vector, which is adjacent to the given face.
+     * Adds the periodic vertices (if existing), which are equivalent to the given vertex.
+     *
+     * @param i_ve vertex for which the periodic equivalents are determined.
+     * @param io_ves will be updated with ids of the periodic vertices.
+     **/
+    void addPeriodicVertices( moab::EntityHandle  i_ve,
+                              moab::Range        &io_ves );
+
+    /**
+     * Adds the periodic element (if existing), which is adjacent to the given face.
      *
      * @param i_face entity handle of the face.
      * @param io_elements entity handle of the range to which the element will be added to.
@@ -130,24 +154,13 @@ class edge::mesh::Moab {
                              moab::Range        &io_elements );
 
     /**
-     * Adds the periodic element (if existing) to the vector, which is adjacent to the given face.
+     * Adds the periodic element (if existing), which is adjacent to the given face.
      *
      * @param i_face entity handle of the face.
      * @param io_elements vector to which the element will be added to (at the end).
      **/
     void addPeriodicElement( moab::EntityHandle                 i_face,
                              std::vector< moab::EntityHandle > &io_elements );
-
-    /**
-     * Checks for an MOAB error.
-     *
-     * @param i_error MOAB error code.
-     **/
-    void checkError( moab::ErrorCode i_error ) const {
-      if( i_error != moab::MB_SUCCESS ) {
-        EDGE_LOG_FATAL << "moab error: " << i_error;
-      }
-    }
 
     /**
      * Sets the periodic adjacencies for a single dimension.
@@ -239,6 +252,16 @@ class edge::mesh::Moab {
     void sortElFaEntities( std::vector< moab::EntityHandle > &io_faHas );
 
     /**
+     * Gets the elements adjacent to elements through vertices.
+     * Remark: Order with respect to vertices is ascending.
+     *
+     * @param o_nElVeEl will be set to number of adjacent elements.
+     * @param o_elVeEl will be set to elements adjacent to elements through vertices; optional, nullptr ignores the argument.
+     **/
+    void getElVeEl( int_el  &o_nElVeEl,
+                    int_el **o_elVeEl );
+
+    /**
      * Gets the ids of the face neighboring elements.
      *
      * Remark: Ordering w.r.t. to the global ids of the vertices of the shared face is guaranteed to be ascending.
@@ -282,6 +305,7 @@ class edge::mesh::Moab {
      * Prints MOAB information.
      **/
     void printMoab();
+
   public:
     /**
      * Sets up a new MOAB interface.
@@ -396,6 +420,21 @@ class edge::mesh::Moab {
 
 
     /**
+     * Gets the elements adjacent to elements through vertices.
+     * Remark: Order with respect to vertices is ascending.
+     *
+     * @param o_elVeEl will be set to element adjacent to elements through vertices.
+     **/
+    void getElVeEl( int_el **o_elVeEl );
+
+    /**
+     * Gets the number of elements adjacent to the elements through vertices.
+     *
+     * @return number of adjacent elements (vertices as bridge).
+     **/
+    int_el getNelVeEl();
+
+    /**
      * Gets the local ids of all face neighbors of all elements.
      *
      * Remark: Order with respect to the faces' vertices is ascending.
@@ -443,6 +482,44 @@ class edge::mesh::Moab {
      * @param o_gIds will bet set to reference to the global element ids.
      **/
     void getGIdsEl( std::vector< int_gid > &o_gIds ) const;
+
+    /**
+     * Gets the the names of the tags in the mesh.
+     * The positions in the vector are identical to local ids for querying the tags.
+     *
+     * @param o_tagsNames will be set to names of tags.
+     **/
+    void getTagsNames( std::vector< std::string > &o_tagsNames );
+
+    /**
+     * Synchronizes the given tags for shared entitities in distributed memory settings.
+     *
+     * @param i_tids local ids of the tags.
+     * @param i_nDim number of entity dimensions. 0: vertex, m_dim-1: face, m_dim: element.
+     **/
+    void syncTags( std::vector< unsigned short > const &i_tids,
+                   unsigned short                       i_nDim  );
+
+    /**
+     *  Gets the number of bytes for a tag.
+     *
+     *  @param i_tid local id of the tag.
+     *  @return size of the tag in bytes.
+     **/
+    int getTagBytes( unsigned short i_tid );
+
+    /**
+     * Gets tag data for the given entity.
+     *
+     * @param i_tid local id of the tag.
+     * @param i_nDim number of entity dimensions. 0: vertex, m_dim-1: face, m_dim: element.
+     * @param i_en local id of the entity.
+     * @param o_val will be set to the value of the tag.
+     **/
+    void getTagData( unsigned short  i_tid,
+                     unsigned short  i_nDim,
+                     int_el          i_en,
+                     void           *o_val );
 
     /**
      * Gets the material tag value for the given entity.

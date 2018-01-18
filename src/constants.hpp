@@ -147,21 +147,15 @@ constexpr unsigned int CE_N_FACE_QUAD_POINTS( t_entityType   i_enType,
 }
 
 /**
- * Derives the number of possible flux matrices two adjacent elements might have
- * w.r.t. the reference element.
+ * Derives the number of neighboring flux matrices for a given entity type.
  *
  * @param i_enType entity type.
  * @return number of flux matrices.
  **/
-constexpr unsigned short CE_N_FLUX_MATRICES( t_entityType i_enType ) {
-  return (C_ENT[i_enType].N_DIM == 1) ? C_ENT[i_enType].N_FACES + C_ENT[i_enType].N_FACES * 2 : (
-           (C_ENT[i_enType].N_DIM == 2) ? C_ENT[i_enType].N_FACES +
-                                          C_ENT[i_enType].N_FACES * C_ENT[i_enType].N_FACES : (
-             (i_enType == HEX8R) ? 12 : (
-               (i_enType == TET4) ? C_ENT[i_enType].N_FACES +
-                                    C_ENT[i_enType].N_FACES * C_ENT[i_enType].N_FACES
-                                                            * C_ENT[i_enType].N_FACE_VERTICES : (unsigned short) -1
-             )
+constexpr unsigned short CE_N_FLUXN_MATRICES( t_entityType i_enType ) {
+  return (C_ENT[i_enType].N_DIM < 3) ? C_ENT[i_enType].N_FACES : (
+           (i_enType == HEX8R) ? 6 : (
+             (i_enType == TET4) ? 12 : (unsigned short) -1
            )
          );
 }

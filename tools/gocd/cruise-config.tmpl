@@ -25,6 +25,7 @@
 
     TEMPLATE_AGENT_AUTO_REGISTER_KEY
     TEMPLATE_SERVER_ID
+    TEMPLATE_TOKEN_GENERATION_KEY
 
     TEMPLATE_GIT_EDGE_CORE
     TEMPLATE_GIT_EDGE_OPT
@@ -39,8 +40,8 @@
     TEMPLATE_REVENGE_2_UUID
     TEMPLATE_REVENGE_3_UUID
 -->
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="93">
-  <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="100">
+  <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
     <security>
       <!-- Authentification -->
       <authConfigs>
@@ -68,16 +69,19 @@
     </authorization>
 
     <pipeline name="deps_clang" template="Deps">
+      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
     </pipeline>
     <pipeline name="deps_gnu" template="Deps">
+      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
     </pipeline>
     <pipeline name="deps_intel" template="Deps">
+      <timer onlyOnChanges="true">0 * * ? * *</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
@@ -179,7 +183,7 @@
       </view>
     </authorization>
     <!-- 64 bit precision -->
-    <pipeline name="conv_develop_intel_64_cfr1_xsmm" isLocked="false" template="Conv">
+    <pipeline name="conv_develop_intel_64_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">64</param>
@@ -194,7 +198,7 @@
       </materials>
     </pipeline>
 
-    <pipeline name="conv_develop_intel_64_cfr8_xsmm" isLocked="false" template="Conv">
+    <pipeline name="conv_develop_intel_64_cfr8_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">64</param>
@@ -209,7 +213,7 @@
       </materials>
     </pipeline>
 
-    <pipeline name="conv_develop_gnu_64_cfr1_xsmm" isLocked="false" template="Conv">
+    <pipeline name="conv_develop_gnu_64_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">gnu</param>
         <param name="EDGE_PRECISION">64</param>
@@ -225,7 +229,7 @@
     </pipeline>
 
     <!-- 32 bit precision -->
-    <pipeline name="conv_develop_intel_32_cfr1_xsmm" isLocked="false" template="Conv">
+    <pipeline name="conv_develop_intel_32_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">32</param>
@@ -240,7 +244,7 @@
       </materials>
     </pipeline>
 
-    <pipeline name="conv_develop_intel_32_cfr16_xsmm" isLocked="false" template="Conv">
+    <pipeline name="conv_develop_intel_32_cfr16_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">32</param>
@@ -255,7 +259,7 @@
       </materials>
     </pipeline>
 
-    <pipeline name="conv_develop_gnu_32_cfr1_xsmm" isLocked="false" template="Conv">
+    <pipeline name="conv_develop_gnu_32_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">gnu</param>
         <param name="EDGE_PRECISION">32</param>
@@ -278,7 +282,7 @@
         <user>edgebot</user>
       </view>
     </authorization>
-    <pipeline name="wp_develop_intel_xsmm" isLocked="false" template="WaveProp">
+    <pipeline name="wp_develop_intel_xsmm" lockBehavior="none" template="WaveProp">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_XSMM">1</param>
@@ -300,6 +304,7 @@
     <pipeline name="Deps">
       <!-- standalone libraries (no dependencies) -->
       <stage name="standalone">
+        <approval type="manual" />
         <jobs>
           <!-- LIBXSMM -->
           <job name="build_xsmm">
@@ -477,7 +482,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --with-pnetcdf=no --with-metis=yes --download-metis --prefix=$(pwd)/moab_seq</arg>
+                <arg>CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
@@ -1468,155 +1473,6 @@
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
                 <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-            </tasks>
-          </job>
-
-          <!-- Elastics, rupture physics, tria3, unstructured -->
-          <job name="elastic_rp_tria3_uns">
-            <environmentvariables>
-              <variable name="EDGE_CONFIG">
-                  <value>cont/elastic/rupture/branch_fail_tria3.xml</value>
-              </variable>
-              <variable name="GMSH_CONFIG">
-                  <value>cont/elastic/rupture/branch_fail_tria3.geo</value>
-              </variable>
-              <variable name="MESH_FILE">
-                  <value>branch_fail_tria3.msh</value>
-              </variable>
-            </environmentvariables>
-            <tasks>
-              <!-- generate mesh -->
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${GMSH_EXEC} -2 ${GMSH_CONFIG} -o ${MESH_FILE}</arg>
-                <runif status="passed" />
-              </exec>
-
-              <!-- debug, o=1,2 cfr=4 -->
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=1 cfr=2 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${DEBUGGER} ${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=2 cfr=2 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${DEBUGGER} ${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-
-              <!-- release, o=1,..5, cfr=1 -->
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-
-              <!-- release, o=1,..5, cfr=8 -->
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>${EDGE_EXEC} -x ${EDGE_CONFIG}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge">
-                <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2740,7 +2596,17 @@
                 <runif status="passed" />
               </exec>
 
-              <!-- edge_opt -->
+              <!-- edge_opt: HSP1a -->
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs fetch -I bench/seismic/wp/hsp1a</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs checkout bench/seismic/wp/hsp1a</arg>
+                <runif status="passed" />
+              </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
                 <arg>ln -s ../edge_opt/bench .</arg>
@@ -2773,7 +2639,7 @@
                   <value>bench/seismic/wp/hsp1a/reg_src.xml</value>
               </variable>
               <variable name="EDGE_CONFIG">
-                  <value>bench/seismic/wp/hsp1a/reg.xml</value>
+                  <value>bench/seismic/wp/hsp1a/configs/reg_96.xml</value>
               </variable>
               <variable name="EDGE_ELEMENT_TYPE">
                   <value>tet4</value>
@@ -2789,7 +2655,7 @@
                   <value>libs/netcdf_seq</value>
               </variable>
               <variable name="BENCH_RECVS">
-                  <value>hsp1a_reg_recvs</value>
+                  <value>hsp1a_reg_recvs_96</value>
               </variable>
             </environmentvariables>
 

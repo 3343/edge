@@ -99,8 +99,9 @@ int_el edge::mesh::regular::Tet::getNFaInner() const {
 
   // check that there's either two or no MPI at periodic boundaries
   if( m_periodic ) {
-    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
       EDGE_CHECK( m_mpiNe[l_di][0] ==m_mpiNe[l_di][1] );
+    }
   }
 
   // periodic, non-MPI faces are only counted once
@@ -1457,8 +1458,9 @@ void edge::mesh::regular::Tet::getGIdsEl( std::vector< int_gid > &o_gIds ) {
   }
 
   // check that every element has an assigned global id
-  for( std::size_t l_id = 0; l_id < o_gIds.size(); l_id++ )
+  for( std::size_t l_id = 0; l_id < o_gIds.size(); l_id++ ) {
     EDGE_CHECK( o_gIds[l_id] != std::numeric_limits<int_gid>::max() );
+  }
 }
 
 const t_inMap* edge::mesh::regular::Tet::getInMap() const {

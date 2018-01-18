@@ -563,7 +563,7 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
   //! #vertices of the elements
   static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
 
-#ifndef __INTEL_COMPILER
+#if !defined(__INTEL_COMPILER) && !defined(__COVERITY__)
   static_assert( C_ENT[TL_T_EL].N_DIM==2, "template type and dimensions don't match" );
 #endif
 
@@ -810,7 +810,7 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 3> {
   //! #vertices of the elements
   static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
 
-#ifndef __INTEL_COMPILER
+#if !defined(__INTEL_COMPILER) && !defined(__COVERITY__)
   static_assert( C_ENT[TL_T_EL].N_DIM==3, "template type and dimensions don't match" );
 #endif
 

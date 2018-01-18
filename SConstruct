@@ -161,7 +161,7 @@ vars.AddVariables(
   EnumVariable( 'arch',
                 'architecture to compile for',
                 'host',
-                 allowed_values=('host', 'snb', 'hsw', 'knl', 'skx')
+                 allowed_values=('host', 'snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
@@ -294,13 +294,13 @@ env['compilers']=compilers
 print '  using', compilers, 'as compiler suite'
 
 if env['PLATFORM'] == 'darwin':
-  opSys = 'macos'
+  env['op_sys'] = 'macos'
 else:
-  opSys = 'linux'
-print '  using', opSys, 'as operating system'
+  env['op_sys'] = 'linux'
+print '  using', env['op_sys'], 'as operating system'
 
 # use static linking for EDGE's direct dependencies (if possible) and dynamic for the rest
-if opSys != 'macos': # not supported by mac's ld
+if env['op_sys'] != 'macos': # not supported by mac's ld
   env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
   env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
 
@@ -312,8 +312,8 @@ if( env['xsmm'] ):
   if( env['order'] == '1' ):
     warnings.warn( '  Warning: LIBXSMM is not supported for first order runs, continuing without' )
     env['xsmm'] = False
-  if( int(env['cfr']) > 1 and ( env['arch'] != 'knl' and env['arch'] != 'skx' )  ):
-    warnings.warn( '  Warning: LIBXSMM is not supported for CFR>1 and arch!=knl or skx, continuing without' )
+  if( int(env['cfr']) > 1 and ( env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512')  ):
+    warnings.warn( '  Warning: LIBXSMM not supported for fused simulations and arch != (snb, hsw, knl, skx or avx512), continuing without' )
     env['xsmm'] = False
 
 # forward number of forward runs to compiler
@@ -334,11 +334,16 @@ if env['arch'] == 'snb':
   env.Append( CPPFLAGS = ['-mavx'] )
 elif env['arch'] == 'hsw':
   env.Append( CPPFLAGS = ['-march=core-avx2'] )
-elif env['arch'] == 'skx':
+elif env['arch'] == 'avx512':
   if compilers=='gnu':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd'] )
   elif compilers=='intel':
     env.Append( CPPFLAGS = ['-xCOMMON-AVX512'] )
+elif env['arch'] == 'skx':
+  if compilers=='gnu':
+    env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512bw', '-mavx512dq', '-mavx512vl'] )
+  elif compilers=='intel':
+    env.Append( CPPFLAGS = ['-xCORE-AVX512'] )
 elif env['arch'] == 'knl':
   if compilers=='gnu':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512er', '-mavx512pf'] )

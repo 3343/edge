@@ -23,16 +23,20 @@
  * Internal data structures in EDGE.
  **/
 
-#ifndef INTERNAL_HPP
-#define INTERNAL_HPP
+#ifndef EDGE_DATA_INTERNAL_HPP
+#define EDGE_DATA_INTERNAL_HPP
 
 #include "constants.hpp"
 #include "common.hpp"
 #include "io/logging.h"
 #include "parallel/Shared.h"
 
-#if defined (PP_T_KERNELS_XSMM) || defined (PP_T_KERNELS_XSMM_DENSE_SINGLE)
-#include "data/Xsmm.hpp"
+#if defined PP_T_KERNELS_VANILLA
+#include "data/MmVanilla.hpp"
+#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
+#include "data/MmXsmmSingle.hpp"
+#else
+#include "data/MmXsmmFused.hpp"
 #endif
 
 namespace edge {
@@ -44,10 +48,14 @@ namespace edge {
 class edge::data::Internal {
   public:
     /**
-     * XSMM kernels
+     * Matrix-matrix multiplication kernels
      **/
-#if defined (PP_T_KERNELS_XSMM) || defined (PP_T_KERNELS_XSMM_DENSE_SINGLE)
-    data::Xsmm m_xsmm;
+#if defined PP_T_KERNELS_VANILLA
+    data::MmVanilla< real_base > m_mm;
+#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
+    data::MmXsmmSingle< real_base > m_mm;
+#else
+    data::MmXsmmFused< real_base > m_mm;
 #endif
 
     /**
@@ -155,6 +163,18 @@ class edge::data::Internal {
 #endif
 #ifdef PP_N_GLOBAL_SHARED_4
     t_globalShared4 m_globalShared4[PP_N_GLOBAL_SHARED_4] __attribute__ ((aligned (ALIGNMENT.BASE.STACK)));
+#endif
+#ifdef PP_N_GLOBAL_SHARED_5
+    t_globalShared5 m_globalShared5[PP_N_GLOBAL_SHARED_5] __attribute__ ((aligned (ALIGNMENT.BASE.STACK)));
+#endif
+#ifdef PP_N_GLOBAL_SHARED_6
+    t_globalShared6 m_globalShared6[PP_N_GLOBAL_SHARED_6] __attribute__ ((aligned (ALIGNMENT.BASE.STACK)));
+#endif
+#ifdef PP_N_GLOBAL_SHARED_7
+    t_globalShared7 m_globalShared7[PP_N_GLOBAL_SHARED_7] __attribute__ ((aligned (ALIGNMENT.BASE.STACK)));
+#endif
+#ifdef PP_N_GLOBAL_SHARED_8
+    t_globalShared8 m_globalShared8[PP_N_GLOBAL_SHARED_8] __attribute__ ((aligned (ALIGNMENT.BASE.STACK)));
 #endif
 
     // sparse vertex data for every concurrent forward run

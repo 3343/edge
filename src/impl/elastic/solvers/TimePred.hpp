@@ -23,16 +23,27 @@
  * Time predictions through the ADER scheme for the elastic wave equations.
  **/
 
-#ifndef TIME_PRED_HPP
-#define TIME_PRED_HPP
+#ifndef EDGE_SEISMIC_TIME_PRED_HPP
+#define EDGE_SEISMIC_TIME_PRED_HPP
 
 #include "constants.hpp"
-#include "linalg/Matrix.h"
+
+#if defined PP_T_KERNELS_VANILLA
+#include "data/MmVanilla.hpp"
+#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
+#include "data/MmXsmmSingle.hpp"
+#else
+#include "data/MmXsmmFused.hpp"
+#endif
 
 namespace edge {
   namespace elastic {
     namespace solvers {
-      template <t_entityType TL_TYPE_ELEMENT, unsigned short TL_N_QUANTITIES, unsigned short TL_ORDER, unsigned short TL_N_CRUNS, unsigned short TL_N_POINTS_TIME>
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_N_QTS,
+                unsigned short TL_O_SP,
+                unsigned short TL_O_TI,
+                unsigned short TL_N_CRS >
       class TimePred;
     }
   }
@@ -43,20 +54,24 @@ namespace edge {
  *   1) Computation of time predictions (time derivatives and time integrated DOFs) through the Cauchy–Kowalevski procedure.
  *   2) Evaluation of time prediction at specific points in time.
  *
- * @paramt TL_TYPE_ELEMENT element type.
- * @paramt TL_N_QUANTITIES number of quantities.
- * @paramt TL_ORDER order of the ADER scheme.
- * @paramt TL_N_CRUNS number of concurrent forward runs (fused simulations)
- * @paramt TL_N_POINTS_TIME number of points in the evaluation of the time predictor.
+ * @paramt TL_T_EL element type.
+ * @paramt TL_N_QTS number of quantities.
+ * @paramt TL_O_SP order in space.
+ * @paramt TL_O_TI order in time.
+ * @paramt TL_N_CRS number of concurrent forward runs (fused simulations)
  **/
-template <t_entityType TL_TYPE_ELEMENT, unsigned short TL_N_QUANTITIES, unsigned short TL_ORDER, unsigned short TL_N_CRUNS, unsigned short TL_N_POINTS_TIME=1>
+template< t_entityType   TL_T_EL,
+          unsigned short TL_N_QTS,
+          unsigned short TL_O_SP,
+          unsigned short TL_O_TI,
+          unsigned short TL_N_CRS >
 class edge::elastic::solvers::TimePred {
   private:
     // assemble derived template parameters
     //! dimension of the element
-    static unsigned short const TL_N_DIM           = C_ENT[TL_TYPE_ELEMENT].N_DIM;
+    static unsigned short const TL_N_DIM = C_ENT[TL_T_EL].N_DIM;
     //! number of element modes
-    static unsigned short const TL_N_ELEMENT_MODES = CE_N_ELEMENT_MODES( TL_TYPE_ELEMENT, TL_ORDER );
+    static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
     /**
      * Sets the given matrix to zero.
@@ -66,11 +81,11 @@ class edge::elastic::solvers::TimePred {
      * @paramt floating point precision of the matrix.
      **/
     template < typename TL_T_REAL >
-    static void zero( TL_T_REAL o_mat[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS] ) {
+    static void inline zero( TL_T_REAL o_mat[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // reset result to zero
-      for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
-        for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
-          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRUNS; l_cfr++ ) {
+      for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+        for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
             o_mat[l_qt][l_md][l_cfr] = 0;
           }
         }
@@ -78,6 +93,8 @@ class edge::elastic::solvers::TimePred {
     }
 
   public:
+
+#if defined PP_T_KERNELS_VANILLA
     /**
      * Applies the Cauchy–Kowalevski procedure (vanilla implementation) and computes time derivatives and time integrated DOFs.
      *
@@ -85,25 +102,29 @@ class edge::elastic::solvers::TimePred {
      * @param i_stiffT transposed stiffness matrix (multiplied with inverse mass matrix).
      * @param i_star star matrices.
      * @param i_dofs DOFs.
+     * @param i_mm vanilla matrix-matrix multiplication kernels.
      * @param o_scratch will be used as scratch memory.
      * @param o_der will be set to time derivatives.
      * @param o_tInt will be set to time integrated DOFs.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    template <typename TL_T_PRECISION>
-    static void inline ckVanilla( TL_T_PRECISION       i_dT,
-                                  TL_T_PRECISION const i_stiffT[TL_N_DIM][TL_N_ELEMENT_MODES][TL_N_ELEMENT_MODES],
-                                  TL_T_PRECISION const i_star[TL_N_DIM][TL_N_QUANTITIES][TL_N_QUANTITIES],
-                                  TL_T_PRECISION const i_dofs[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                  TL_T_PRECISION       o_scratch[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                  TL_T_PRECISION       o_der[TL_ORDER][TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                  TL_T_PRECISION       o_tInt[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS] ) {
+    template< typename TL_T_REAL >
+    static void inline ck( TL_T_REAL                            i_dT,
+                           TL_T_REAL                    const   i_stiffT[TL_N_DIM][TL_N_MDS][TL_N_MDS],
+                           TL_T_REAL                    const   i_star[TL_N_DIM][TL_N_QTS][TL_N_QTS],
+                           TL_T_REAL                    const   i_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           data::MmVanilla< TL_T_REAL > const & i_mm,
+                           TL_T_REAL                            o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL                            o_der[TL_O_TI][TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL                            o_tInt[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // scalar for the time integration
-      TL_T_PRECISION l_scalar = i_dT;
+      TL_T_REAL l_scalar = i_dT;
 
       // initialize zero-derivative, reset time integrated dofs
-      for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
-        for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
-          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRUNS; l_cfr++ ) {
+      for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+        for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
             o_der[0][l_qt][l_md][l_cfr] = i_dofs[l_qt][l_md][l_cfr];
             o_tInt[l_qt][l_md][l_cfr]   = l_scalar * i_dofs[l_qt][l_md][l_cfr];
           }
@@ -111,46 +132,39 @@ class edge::elastic::solvers::TimePred {
       }
 
       // iterate over time derivatives
-      for( unsigned int l_de = 1; l_de < TL_ORDER; l_de++ ) {
+      for( unsigned int l_de = 1; l_de < TL_O_TI; l_de++ ) {
         // reset this derivative
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ )
-          for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ )
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRUNS; l_cr++ ) o_der[l_de][l_qt][l_md][l_cr] = 0;
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_der[l_de][l_qt][l_md][l_cr] = 0;
 
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
           // multiply with transposed stiffness matrices and inverse mass matrix
-          linalg::Matrix::matMulB0FusedAC( TL_N_CRUNS,
-                                           TL_N_QUANTITIES,
-                                           TL_N_ELEMENT_MODES,
-                                           TL_N_ELEMENT_MODES,
-                                           o_der[l_de-1][0][0],
-                                           i_stiffT[l_di][0],
-                                           o_scratch[0][0] );
-
+          i_mm.m_kernels[(l_de-1)*2]( o_der[l_de-1][0][0],
+                                      i_stiffT[l_di][0],
+                                      o_scratch[0][0] );
           // multiply with star matrices
-          linalg::Matrix::matMulB1FusedBC( TL_N_CRUNS,
-                                           TL_N_QUANTITIES,
-                                           TL_N_ELEMENT_MODES,
-                                           TL_N_QUANTITIES,
-                                           i_star[l_di][0],
-                                           o_scratch[0][0],
-                                           o_der[l_de][0][0] );
+          i_mm.m_kernels[((l_de-1)*2)+1]( i_star[l_di][0],
+                                          o_scratch[0][0],
+                                          o_der[l_de][0][0] );
         }
 
         // update scalar
         l_scalar *= -i_dT / (l_de+1);
 
         // update time integrated dofs
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
-          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_TYPE_ELEMENT, TL_ORDER, l_de ); l_md++ ) {
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRUNS; l_cr++ )
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
+            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               o_tInt[l_qt][l_md][l_cr] += l_scalar * o_der[l_de][l_qt][l_md][l_cr];
           }
         }
       }
     }
+#endif
 
+#if defined PP_T_KERNELS_XSMM
     /**
      * Applies the Cauchy–Kowalevski procedure (fused LIBXSMM version) and computes time derivatives and time integrated DOFs.
      *
@@ -158,28 +172,30 @@ class edge::elastic::solvers::TimePred {
      * @param i_stiffT transposed stiffness matrix (multiplied with inverse mass matrix).
      * @param i_star star matrices.
      * @param i_dofs DOFs.
-     * @param i_kernels generated LIBXSMM kernels.
+     * @param i_mm matrix-matrix multiplication kernels LIBXSMM kernels.
      * @param o_scratch will be used as scratch memory.
      * @param o_der will be set to time derivatives.
      * @param o_tInt will be set to time integrated DOFs.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    template <typename TL_T_PRECISION, typename TL_T_XSMM_KERNEL >
-    static void inline ckXsmmFused( TL_T_PRECISION                 i_dT,
-                                    TL_T_PRECISION   const * const i_stiffT[(TL_ORDER>1) ? (TL_ORDER-1)*TL_N_DIM : TL_N_DIM],
-                                    TL_T_PRECISION   const         i_star[TL_N_DIM][(TL_N_DIM==2) ? 10 : 24],
-                                    TL_T_PRECISION   const         i_dofs[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                    TL_T_XSMM_KERNEL const *       i_kernels,
-                                    TL_T_PRECISION                 o_scratch[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                    TL_T_PRECISION                 o_der[TL_ORDER][TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                    TL_T_PRECISION                 o_tInt[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS] ) {
+    template< typename TL_T_REAL >
+    static void inline ck( TL_T_REAL                                    i_dT,
+                           TL_T_REAL                      const * const i_stiffT[(TL_O_TI>1) ? (TL_O_TI-1)*TL_N_DIM : TL_N_DIM],
+                           TL_T_REAL                      const         i_star[TL_N_DIM][(TL_N_DIM==2) ? 10 : 24],
+                           TL_T_REAL                      const         i_dofs[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           data::MmXsmmFused< TL_T_REAL > const &       i_mm,
+                           TL_T_REAL                                    o_scratch[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL                                    o_der[TL_O_TI][TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL                                    o_tInt[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // scalar for the time integration
-      TL_T_PRECISION l_scalar = i_dT;
+      TL_T_REAL l_scalar = i_dT;
 
       // initialize zero-derivative, reset time integrated dofs
-      for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
-        for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
+      for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+        for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ ) {
 #pragma omp simd
-          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRUNS; l_cfr++ ) {
+          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
             o_der[0][l_qt][l_md][l_cfr] = i_dofs[l_qt][l_md][l_cfr];
             o_tInt[l_qt][l_md][l_cfr]   = l_scalar * i_dofs[l_qt][l_md][l_cfr];
           }
@@ -187,45 +203,47 @@ class edge::elastic::solvers::TimePred {
       }
 
       // iterate over time derivatives
-      for( unsigned int l_de = 1; l_de < TL_ORDER; l_de++ ) {
+      for( unsigned int l_de = 1; l_de < TL_O_TI; l_de++ ) {
         // reset this derivative
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ )
-          for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ )
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ )
 #pragma omp simd
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRUNS; l_cr++ ) o_der[l_de][l_qt][l_md][l_cr] = 0;
+            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_der[l_de][l_qt][l_md][l_cr] = 0;
 
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
           // reset to zero for basis in non-hierarchical storage
-          if( TL_TYPE_ELEMENT == TET4 || TL_TYPE_ELEMENT == TRIA3 ) {}
+          if( TL_T_EL == TET4 || TL_T_EL == TRIA3 ) {}
           else {
             zero( o_scratch );
           }
 
           // multiply with transposed stiffness matrices and inverse mass matrix
-          i_kernels[(l_de-1)*(TL_N_DIM+1)+l_di]( o_der[l_de-1][0][0],
-                                                 i_stiffT[(l_de-1)*TL_N_DIM+l_di],
-                                                 o_scratch[0][0] );
+          i_mm.m_kernels[(l_de-1)*(TL_N_DIM+1)+l_di]( o_der[l_de-1][0][0],
+                                                      i_stiffT[(l_de-1)*TL_N_DIM+l_di],
+                                                      o_scratch[0][0] );
           // multiply with star matrices
-          i_kernels[(l_de-1)*(TL_N_DIM+1)+TL_N_DIM]( i_star[l_di],
-                                                     o_scratch[0][0],
-                                                     o_der[l_de][0][0] );
+          i_mm.m_kernels[(l_de-1)*(TL_N_DIM+1)+TL_N_DIM]( i_star[l_di],
+                                                          o_scratch[0][0],
+                                                          o_der[l_de][0][0] );
         }
 
         // update scalar
         l_scalar *= -i_dT / (l_de+1);
 
         // update time integrated dofs
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
-          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_TYPE_ELEMENT, TL_ORDER, l_de ); l_md++ ) {
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
 #pragma omp simd
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRUNS; l_cr++ )
+            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               o_tInt[l_qt][l_md][l_cr] += l_scalar * o_der[l_de][l_qt][l_md][l_cr];
           }
         }
       }
     }
+#endif
 
+#if defined PP_T_KERNELS_XSMM_DENSE_SINGLE
     /**
      * Applies the Cauchy–Kowalevski procedure (single forward run LIBXSMM version) and computes time derivatives and time integrated DOFs.
      *
@@ -233,63 +251,66 @@ class edge::elastic::solvers::TimePred {
      * @param i_stiffT transposed stiffness matrix (multiplied with inverse mass matrix).
      * @param i_star star matrices.
      * @param i_dofs DOFs.
-     * @param i_kernels LIBXSMM kernels.
+     * @param i_mm matrix-matrix multiplication kernels.
      * @param o_scratch will be used as scratch memory.
      * @param o_der will be set to time derivatives.
      * @param o_tInt will be set to time integrated DOFs.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    template <typename TL_T_PRECISION, typename TL_T_XSMM_KERNEL >
-    static void inline ckXsmmSingle( TL_T_PRECISION           i_dT,
-                                     TL_T_PRECISION   const   i_stiffT[TL_N_DIM][TL_N_ELEMENT_MODES][TL_N_ELEMENT_MODES],
-                                     TL_T_PRECISION   const   i_star[TL_N_DIM][TL_N_QUANTITIES][TL_N_QUANTITIES],
-                                     TL_T_PRECISION   const   i_dofs[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][1],
-                                     TL_T_XSMM_KERNEL const * i_kernels,
-                                     TL_T_PRECISION           o_scratch[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][1],
-                                     TL_T_PRECISION           o_der[TL_ORDER][TL_N_QUANTITIES][TL_N_ELEMENT_MODES][1],
-                                     TL_T_PRECISION           o_tInt[TL_N_QUANTITIES][TL_N_ELEMENT_MODES][1] ) {
+    template <typename TL_T_REAL >
+    static void inline ck( TL_T_REAL                               i_dT,
+                           TL_T_REAL                       const   i_stiffT[TL_N_DIM][TL_N_MDS][TL_N_MDS],
+                           TL_T_REAL                       const   i_star[TL_N_DIM][TL_N_QTS][TL_N_QTS],
+                           TL_T_REAL                       const   i_dofs[TL_N_QTS][TL_N_MDS][1],
+                           data::MmXsmmSingle< TL_T_REAL > const & i_mm,
+                           TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS][1],
+                           TL_T_REAL                               o_der[TL_O_TI][TL_N_QTS][TL_N_MDS][1],
+                           TL_T_REAL                               o_tInt[TL_N_QTS][TL_N_MDS][1] ) {
       // scalar for the time integration
-      TL_T_PRECISION l_scalar = i_dT;
+      TL_T_REAL l_scalar = i_dT;
 
       // initialize zero-derivative, reset time integrated dofs
-      for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
+      for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
 #pragma omp simd
-        for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) {
+        for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ ) {
           o_der[0][l_qt][l_md][0] = i_dofs[l_qt][l_md][0];
           o_tInt[l_qt][l_md][0]   = l_scalar * i_dofs[l_qt][l_md][0];
         }
       }
 
       // iterate over time derivatives
-      for( unsigned int l_de = 1; l_de < TL_ORDER; l_de++ ) {
+      for( unsigned int l_de = 1; l_de < TL_O_TI; l_de++ ) {
         // reset this derivative
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ )
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
 #pragma omp simd
-          for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ ) o_der[l_de][l_qt][l_md][0] = 0;
+          for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ ) o_der[l_de][l_qt][l_md][0] = 0;
 
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
           // multiply with transposed stiffness matrices and inverse mass matrix
-          i_kernels[(l_de-1)*2]( i_stiffT[l_di][0],
-                                 o_der[l_de-1][0][0],
-                                 o_scratch[0][0] );
+          i_mm.m_kernels[(l_de-1)*2]( i_stiffT[l_di][0],
+                                      o_der[l_de-1][0][0],
+                                      o_scratch[0][0] );
           // multiply with star matrices
-          i_kernels[((l_de-1)*2)+1]( o_scratch[0][0],
-                                     i_star[l_di][0],
-                                     o_der[l_de][0][0] );
+          i_mm.m_kernels[((l_de-1)*2)+1]( o_scratch[0][0],
+                                          i_star[l_di][0],
+                                          o_der[l_de][0][0] );
         }
 
         // update scalar
         l_scalar *= -i_dT / (l_de+1);
 
         // update time integrated dofs
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
 #pragma omp simd
-          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_TYPE_ELEMENT, TL_ORDER, l_de ); l_md++ ) {
+          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
             o_tInt[l_qt][l_md][0] += l_scalar * o_der[l_de][l_qt][l_md][0];
           }
         }
       }
     }
+#endif
 
     /**
      * Evaluates the time prediction, given by the time derivatives at the given points in time.
@@ -301,37 +322,42 @@ class edge::elastic::solvers::TimePred {
      *       time
      *    prediction
      *
+     * @param i_nPts number of points.
      * @param i_pts relative pts in time.
      * @param i_der time prediction given through the time derivatives.
      * @param o_preDofs will be set to the predicted DOFs at the points in time.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    template <typename TL_T_PRECISION >
-    static void inline evalTimePrediction( TL_T_PRECISION const i_pts[TL_N_POINTS_TIME],
-                                           TL_T_PRECISION const i_der[TL_ORDER][TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS],
-                                           TL_T_PRECISION       o_preDofs[TL_N_POINTS_TIME][TL_N_QUANTITIES][TL_N_ELEMENT_MODES][TL_N_CRUNS] ) {
-      for( unsigned short l_pt = 0; l_pt < TL_N_POINTS_TIME; l_pt++ ) {
+    template <typename TL_T_REAL >
+    static void inline evalTimePrediction( unsigned short   i_nPts,
+                                           TL_T_REAL const *i_pts,
+                                           TL_T_REAL const  i_der[TL_O_TI][TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                                           TL_T_REAL       (*o_preDofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
+      for( unsigned short l_pt = 0; l_pt < i_nPts; l_pt++ ) {
         // init dofs
-        for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ )
-          for( int_md l_md = 0; l_md < TL_N_ELEMENT_MODES; l_md++ )
-            for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) o_preDofs[l_pt][l_qt][l_md][l_ru] = i_der[0][l_qt][l_md][l_ru];
+        for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( int_cfr l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) o_preDofs[l_pt][l_qt][l_md][l_ru] = i_der[0][l_qt][l_md][l_ru];
 
         // evaluate time derivatives at given point in time
         real_base l_scalar = 1.0;
 
         // iterate over derivatives
-        for( unsigned short l_de = 1; l_de < TL_ORDER; l_de++ ) {
+        for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
           // update scalar
           l_scalar *= -i_pts[l_pt] / l_de;
 
-          for( int_qt l_qt = 0; l_qt < TL_N_QUANTITIES; l_qt++ ) {
-            for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_TYPE_ELEMENT, TL_ORDER, l_de ); l_md++ ) {
-              for( int_cfr l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ )
+          for( int_qt l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+            for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
+              for( int_cfr l_ru = 0; l_ru < TL_N_CRS; l_ru++ )
                 o_preDofs[l_pt][l_qt][l_md][l_ru] += l_scalar * i_der[l_de][l_qt][l_md][l_ru];
             }
           }
         }
       }
     }
+
 };
 
 #endif

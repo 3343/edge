@@ -22,6 +22,7 @@
  **/
 
 #include "impl/elastic/io/Config.h"
+#include "impl/elastic/setups/MmKernels.hpp"
 #if PP_ORDER > 1
 #include "impl/elastic/solvers/AderDg.hpp"
 #endif

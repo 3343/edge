@@ -172,8 +172,8 @@ int_el edge::mesh::Regular::getNVertices() const {
   return m_nRequestedVertices;
 }
 
-void edge::mesh::Regular::getElementFaceNeighbors( int_el i_elementId,
-                                                   int_el o_neighboringIds[C_ENT[T_SDISC.ELEMENT].N_FACES] ) const {
+void edge::mesh::Regular::getElementFaceNeighbors( int_el  i_elementId,
+                                                   int_el *o_neighboringIds ) const {
   // line element
   if( m_elementType == Line ) {
     // left boundary

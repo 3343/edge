@@ -64,6 +64,9 @@ then
   # add local bin directory
   export PATH="/var/go/bin:$PATH"
 
+  # disable Git LFS checkout by default
+  export GIT_LFS_SKIP_SMUDGE=1
+
   echo "Go-agent is using the following as \$PATH: $PATH"
   echo "Go-agent has the following ulimits:"
   ulimit -a

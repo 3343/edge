@@ -27,6 +27,7 @@
 #include <cassert>
 #include "constants.hpp"
 #include "mesh/common.hpp"
+#include "linalg/Matrix.h"
 #include "linalg/Mappings.hpp"
 #include "TimePred.hpp"
 
@@ -39,62 +40,6 @@ namespace edge {
 }
 
 class edge::advection::solvers::AderDg {
-  //private:
-    /**
-     * Performs the operation C = A.B with private per-run data in C and B.
-     *
-     * @param i_a vector A.
-     * @param i_b matrix B.
-     * @param o_c vector C, will bet set to A.B.
-     **/
-    static void matMulB0( const real_base i_a[N_ELEMENT_MODES][N_CRUNS],
-                          const real_base i_b[N_ELEMENT_MODES][N_ELEMENT_MODES],
-                                real_base o_c[N_ELEMENT_MODES][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_a, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(o_c, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
-
-      // reset result to zero
-      for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-        for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-          o_c[l_md][l_cfr] = 0;
-        }
-      }
-
-      for( unsigned int l_i = 0; l_i < N_ELEMENT_MODES; l_i++ ) {
-        for( unsigned int l_j = 0; l_j < N_ELEMENT_MODES; l_j++ ) {
-          for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-            o_c[l_j][l_cfr] += i_a[l_i][l_cfr] * i_b[l_i][l_j];
-          }
-        }
-      }
-    }
-
-    /**
-     * Performs the operation C += A.B with private per-run data in C and B.
-     *
-     * @param i_a scalar A.
-     * @param i_b vector B.
-     * @param i_c vector C.
-     **/
-    static void matMulB1( const real_base i_a,
-                          const real_base i_b[N_ELEMENT_MODES][N_CRUNS],
-                                real_base o_c[N_ELEMENT_MODES][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_b, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(o_c, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
-
-      for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-        for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-          o_c[l_md][l_cfr] += i_a * i_b[l_md][l_cfr];
-        }
-      }
-    }
-
   public:
     /**
      * Sets up the star matrices, which are a linear combination of the Jacobians.
@@ -165,19 +110,13 @@ class edge::advection::solvers::AderDg {
                        const real_base (*i_fluxSolvers)[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],
                              real_base (*io_dofs)[1][N_ELEMENT_MODES][N_CRUNS],
                              real_base (*o_tInt)[1][N_ELEMENT_MODES][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(io_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(o_tInt,  ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
-
       // iterate over all elements
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
       for( int_el l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
         // temporary product for two-way mult
-        real_base l_tmpProd[N_ELEMENT_MODES][N_CRUNS]  __attribute__ ((aligned (ALIGNMENT.BASE.STACK)));
+        real_base l_tmpProd[N_ELEMENT_MODES][N_CRUNS];
 
         /*
          * compute ader time integration
@@ -204,13 +143,31 @@ class edge::advection::solvers::AderDg {
         /*
          * compute volume contribution
          */
-         for( unsigned int l_dim = 0; l_dim < N_DIM; l_dim++ ) {
+         for( unsigned int l_di = 0; l_di < N_DIM; l_di++ ) {
 #if defined PP_T_KERNELS_VANILLA
-           // multiply with stiffness and inverse mass matrix
-           matMulB0( o_tInt[l_el][0], i_dg.mat.stiff[l_dim], l_tmpProd );
+            linalg::Matrix::matMulFusedAC( N_CRUNS,                     // #fused
+                                           1,                           // m
+                                           N_ELEMENT_MODES,             // n
+                                           N_ELEMENT_MODES,             // k
+                                           N_ELEMENT_MODES,             // ldA
+                                           N_ELEMENT_MODES,             // ldB
+                                           N_ELEMENT_MODES,             // ldC
+                                           static_cast<real_base>(0.0), // beta
+                                           o_tInt[l_el][0][0],          // A
+                                           i_dg.mat.stiff[l_di][0],     // B
+                                           l_tmpProd[0]  );             // C
 
-           // multiply with star "matrix"
-           matMulB1( i_starM[l_el][l_dim], l_tmpProd, io_dofs[l_el][0] );
+            linalg::Matrix::matMulFusedBC( N_CRUNS,                     // #fused
+                                           1,                           // m
+                                           N_ELEMENT_MODES,             // n
+                                           1,                           // k
+                                           1,                           // ldA
+                                           N_ELEMENT_MODES,             // ldB
+                                           N_ELEMENT_MODES,             // ldC
+                                           static_cast<real_base>(1.0), // beta
+                                           i_starM[l_el]+l_di,          // A
+                                           l_tmpProd[0],                // B
+                                           io_dofs[l_el][0][0] );       // C
 #else
            EDGE_LOG_FATAL << "not implemented;"
 #endif
@@ -221,90 +178,49 @@ class edge::advection::solvers::AderDg {
           */
          for( unsigned int l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fa++ ) {
 #if defined PP_T_KERNELS_VANILLA
-           // multiply with flux matrix
-           matMulB0( o_tInt[l_el][0], i_dg.mat.flux[l_fa], l_tmpProd );
+           // scratch space for three-way product
+           real_base l_scratch[2][N_FACE_MODES][N_CRUNS];
 
-           // multiply with flux solver
-           matMulB1( i_fluxSolvers[l_el][l_fa], l_tmpProd, io_dofs[l_el][0] );
+           linalg::Matrix::matMulFusedAC( N_CRUNS,                     // #fused
+                                          1,                           // m
+                                          N_FACE_MODES,                // n
+                                          N_ELEMENT_MODES,             // k
+                                          N_ELEMENT_MODES,             // ldA
+                                          N_FACE_MODES,                // ldB
+                                          N_FACE_MODES,                // ldC
+                                          static_cast<real_base>(0.0), // beta
+                                          o_tInt[l_el][0][0],          // A
+                                          i_dg.mat.fluxL[l_fa][0],     // B
+                                          l_scratch[0][0]  );          // C
+
+           linalg::Matrix::matMulFusedBC( N_CRUNS,                     // #fused
+                                          1,                           // m
+                                          N_FACE_MODES,                // n
+                                          1,                           // k
+                                          1,                           // ldA
+                                          N_FACE_MODES,                // ldB
+                                          N_FACE_MODES,                // ldC
+                                          static_cast<real_base>(0.0), // beta
+                                          i_fluxSolvers[l_el]+l_fa,    // A
+                                          l_scratch[0][0],             // B
+                                          l_scratch[1][0] );           // C
+
+           linalg::Matrix::matMulFusedAC( N_CRUNS,                     // #fused
+                                          1,                           // m
+                                          N_ELEMENT_MODES,             // n
+                                          N_FACE_MODES,                // k
+                                          N_FACE_MODES,                // ldA
+                                          N_ELEMENT_MODES,             // ldB
+                                          N_ELEMENT_MODES,             // ldC
+                                          static_cast<real_base>(1.0), // beta
+                                          l_scratch[1][0],             // A
+                                          i_dg.mat.fluxT[l_fa][0],     // B
+                                          io_dofs[l_el][0][0]  );      // C
 #else
            EDGE_LOG_FATAL << "not implemented;"
 #endif
          }
       }
-    }
-
-    /**
-     * Quadrature-free computation of the surface intergral (neighboring contribution) for the given face.
-     *
-     * @param i_fa element local id of the face.
-     * @param i_fIdElFaEl local face id of the face-neighboring element.
-     * @param i_vIdElFaEl local vertex id w.r.t. the shared face from the neighboring element's perspective.
-     * @param i_dgMat DG matrices.
-     * @param i_faChars characteristics of the face.
-     * @param i_fluxSolvers flux solvers of the face.
-     * @param i_tIntNe time integrated DOFs of the adjacent element.
-     * @param io_dofs will be updated with neighboring contribution of the face to the surface integral.
-     */
-    static void surfIntNeQuadFree( unsigned short        i_fa,
-                                   unsigned short        i_fIdElFaEl,
-                                   unsigned short        i_vIdElFaEl,
-                                   t_dgMat        const &i_dgMat,
-                                   t_faceChars    const &i_faChars,
-                                   real_base      const  i_fluxSolvers[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],
-                                   real_base      const  i_tIntNe[N_ELEMENT_MODES][N_CRUNS],
-                                   real_base             io_dofs[N_ELEMENT_MODES][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_tIntNe, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(io_dofs,  ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
-
-      // temporary product for two-way mult
-      real_base (*l_tmpProd)[N_CRUNS] = parallel::g_scratchMem->tRes;
-
-      // id of the flux matrix
-      unsigned short l_fId;
-
-      if( (i_faChars.spType & OUTFLOW) != OUTFLOW ) {
-        /*
-         * derive id of flux matrix
-         */
-  #if defined PP_T_ELEMENTS_HEX8R
-        // shortcut for rectangular, 8-node hexes, having only six flux matrices
-        l_fId  = C_ENT[T_SDISC.ELEMENT].N_FACES + i_fa;
-  #else
-        // only jump over vertex combinations for 3D elements
-        unsigned short l_vertexJump = std::max( (N_DIM / 3) * C_ENT[T_SDISC.FACE].N_VERTICES, 1);
-
-        // jump over local flux matrices
-        l_fId  = C_ENT[T_SDISC.ELEMENT].N_FACES;
-        // jump over local face
-        l_fId += i_fa * C_ENT[T_SDISC.ELEMENT].N_FACES * l_vertexJump;
-
-        // jump over neighboring face
-        l_fId += i_fIdElFaEl * l_vertexJump;
-
-        // jump over vertices
-        l_fId += i_vIdElFaEl;
-  #endif
-      }
-      // outflow boundary conditions
-      else {
-        l_fId = i_fa;
-      }
-
-      /*
-       * solve
-       */
-  #if defined PP_T_KERNELS_VANILLA
-      // multiply with flux matrix
-      matMulB0( i_tIntNe, i_dgMat.flux[l_fId], l_tmpProd );
-
-      // multiply with flux solver
-      matMulB1( i_fluxSolvers[ C_ENT[T_SDISC.ELEMENT].N_FACES + i_fa ], l_tmpProd, io_dofs );
-  #else
-      EDGE_LOG_FATAL << "not implemented;"
-  #endif
     }
 
     /**
@@ -354,15 +270,50 @@ class edge::advection::solvers::AderDg {
             l_ne = l_el;
           }
 
-          // compute quadrature free neighboring contribution to the face's surface integral
-          surfIntNeQuadFree( l_fa,
-                             i_fIdElFaEl[l_el][l_fa],
-                             i_vIdElFaEl[l_el][l_fa],
-                             i_dg.mat,
-                             i_faChars[l_faId],
-                             i_fluxSolvers[l_el],
-                             i_tInt[l_ne][0],
-                             io_dofs[l_el][0] );
+          unsigned short l_fId =  i_vIdElFaEl[l_el][l_fa] * C_ENT[T_SDISC.ELEMENT].N_FACES;
+                         l_fId += i_fIdElFaEl[l_el][l_fa];
+
+          // scratch space for three-way product
+          real_base l_scratch[2][N_FACE_MODES][N_CRUNS];
+
+          linalg::Matrix::matMulFusedAC( N_CRUNS,                                                                          // #fused
+                                         1,                                                                                // m
+                                         N_FACE_MODES,                                                                     // n
+                                         N_ELEMENT_MODES,                                                                  // k
+                                         N_ELEMENT_MODES,                                                                  // ldA
+                                         N_FACE_MODES,                                                                     // ldB
+                                         N_FACE_MODES,                                                                     // ldC
+                                         static_cast<real_base>(0.0),                                                      // beta
+                                         i_tInt[l_ne][0][0],                                                               // A
+                                         ( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW ) ? i_dg.mat.fluxN[l_fId][0] :
+                                                                                               i_dg.mat.fluxL[l_fa][0],    // B
+                                         l_scratch[0][0]  );                                                               // C
+
+          linalg::Matrix::matMulFusedBC( N_CRUNS,                           // #fused
+                                         1,                                 // m
+                                         N_FACE_MODES,                      // n
+                                         1,                                 // k
+                                         1,                                 // ldA
+                                         N_FACE_MODES,                      // ldB
+                                         N_FACE_MODES,                      // ldC
+                                         static_cast<real_base>(0.0),       // beta
+                                         i_fluxSolvers[l_el] +
+                                           C_ENT[T_SDISC.ELEMENT].N_FACES +
+                                           l_fa,                            // A
+                                         l_scratch[0][0],                   // B
+                                         l_scratch[1][0] );                 // C
+
+          linalg::Matrix::matMulFusedAC( N_CRUNS,                           // #fused
+                                         1,                                 // m
+                                         N_ELEMENT_MODES,                   // n
+                                         N_FACE_MODES,                      // k
+                                         N_FACE_MODES,                      // ldA
+                                         N_ELEMENT_MODES,                   // ldB
+                                         N_ELEMENT_MODES,                   // ldC
+                                         static_cast<real_base>(1.0),       // beta
+                                         l_scratch[1][0],                   // A
+                                         i_dg.mat.fluxT[l_fa][0],           // B
+                                         io_dofs[l_el][0][0]  );            // C
         }
       }
     }

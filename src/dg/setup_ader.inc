@@ -47,18 +47,31 @@ edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER>::faces( l_internal.m_globalShar
 }
 
 #if defined PP_T_KERNELS_VANILLA || defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiffT, true,  true );
-l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiff,  false, true );
-l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.flux,          true );
+l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiffT, true  );
+l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiff,  false );
+l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
+                      (real_base *) l_internal.m_globalShared1[0].mat.fluxN,
+                      (real_base *) l_internal.m_globalShared1[0].mat.fluxT );
 #elif defined PP_T_KERNELS_XSMM
 {
+  // determine CSC fill-in strategy
+  std::string l_cscFillIn = "none";
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+    l_cscFillIn = "qfma";
+  }
+  EDGE_LOG_INFO << "  using the following CSC fill-in strategy for DG matrices: " << l_cscFillIn;
+
   // get matrices as dense
-  real_base l_stiffTDense[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  real_base l_stiffDense[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  real_base l_fluxDense[N_FLUX_MATRICES][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDense, true,  true );
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDense,  false, true );
-  l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_fluxDense,          true );
+  real_base l_stiffTDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
+  real_base l_stiffDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
+  real_base l_fluxLDe[ C_ENT[T_SDISC.ELEMENT].N_FACES ][N_ELEMENT_MODES][N_FACE_MODES];
+  real_base l_fluxNDe[ N_FLUXN_MATRICES               ][N_ELEMENT_MODES][N_FACE_MODES];
+  real_base l_fluxTDe[ C_ENT[T_SDISC.ELEMENT].N_FACES ][N_FACE_MODES][N_ELEMENT_MODES];
+  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDe, true  );
+  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDe,  false );
+  l_basis.getFluxDense( (real_base *) l_fluxLDe,
+                        (real_base *) l_fluxNDe,
+                        (real_base *) l_fluxTDe );
 
   // non-zero entries of the matices
   std::vector< real_base > *l_globalMat = new std::vector< real_base >();
@@ -73,7 +86,7 @@ l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShar
   t_matCrd l_stiffTCrd[N_DIM];
   for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
     edge::linalg::Matrix::denseToCrd< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffTDense[l_di][0], l_stiffTCrd[l_di], TOL.BASIS );
+                                                   l_stiffTDe[l_di][0], l_stiffTCrd[l_di], TOL.BASIS );
   }
 
   // nz-blocks
@@ -91,20 +104,21 @@ l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShar
       l_maxNzCol = std::max( l_maxNzCol, l_nzBl[1][1][1] );
     }
 
-    t_matCsr l_stiffTCsr[N_DIM];
+    t_matCsc l_stiffTCsc[N_DIM];
     for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-      edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                     l_stiffTDense[l_di][0], l_stiffTCsr[l_di], TOL.BASIS,
-                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1 );
+      edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
+                                                     l_stiffTDe[l_di][0], l_stiffTCsc[l_di], TOL.BASIS,
+                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1,
+                                                     l_cscFillIn );
     }
 
     // add data for the first CK-stiff matrix or shrinking stiff matrices
     if( l_de == 1 || l_maxNzCol < l_nzBl[0][0][1] ) {
       for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-        for( unsigned int l_nz = 0; l_nz < l_stiffTCsr[l_di].val.size(); l_nz++ ) {
-          l_globalMat->push_back( l_stiffTCsr[l_di].val[l_nz] );
+        for( unsigned int l_nz = 0; l_nz < l_stiffTCsc[l_di].val.size(); l_nz++ ) {
+          l_globalMat->push_back( l_stiffTCsc[l_di].val[l_nz] );
         }
-        l_offsets.push_back( l_offsets.back() + l_stiffTCsr[l_di].val.size() );
+        l_offsets.push_back( l_offsets.back() + l_stiffTCsc[l_di].val.size() );
       }
     }
     else {
@@ -126,30 +140,65 @@ l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShar
    * 2) Volume
    */
   for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-    t_matCsr l_stiffCsr;
+    t_matCsc l_stiffCsc;
 
-    edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffDense[l_di][0], l_stiffCsr, TOL.BASIS );
+    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
+                                                   l_stiffDe[l_di][0], l_stiffCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
-    for( unsigned short l_nz = 0; l_nz < l_stiffCsr.val.size(); l_nz++ ) {
-      l_globalMat->push_back( l_stiffCsr.val[l_nz] );
+    for( unsigned short l_nz = 0; l_nz < l_stiffCsc.val.size(); l_nz++ ) {
+      l_globalMat->push_back( l_stiffCsc.val[l_nz] );
     }
-    l_offsets.push_back( l_offsets.back() + l_stiffCsr.val.size() );
+    l_offsets.push_back( l_offsets.back() + l_stiffCsc.val.size() );
   }
 
   /*
    * 3) Surface
    */
-  for( unsigned short l_fm = 0; l_fm < N_FLUX_MATRICES; l_fm++ ) {
-    t_matCsr l_fluxCsr;
+  // local contribution flux matrices
+  for( unsigned short l_fl = 0; l_fl < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fl++ ) {
+    t_matCsc l_fluxCsc;
 
-    edge::linalg::Matrix::denseToCsr< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_fluxDense[l_fm][0], l_fluxCsr, TOL.BASIS );
+    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
+                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
 
-    for( unsigned short l_nz = 0; l_nz < l_fluxCsr.val.size(); l_nz++ ) {
-      l_globalMat->push_back( l_fluxCsr.val[l_nz] );
+    for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
+      l_globalMat->push_back( l_fluxCsc.val[l_nz] );
     }
-    l_offsets.push_back( l_offsets.back() + l_fluxCsr.val.size() );
+    l_offsets.push_back( l_offsets.back() + l_fluxCsc.val.size() );
+  }
+
+  // neighboring contribution flux matrices
+  for( unsigned short l_fn = 0; l_fn < N_FLUXN_MATRICES; l_fn++ ) {
+    t_matCsc l_fluxCsc;
+
+    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
+                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
+
+    for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
+      l_globalMat->push_back( l_fluxCsc.val[l_nz] );
+    }
+    l_offsets.push_back( l_offsets.back() + l_fluxCsc.val.size() );
+  }
+
+  // transposed flux matrices
+  for( unsigned short l_ft = 0; l_ft < C_ENT[T_SDISC.ELEMENT].N_FACES; l_ft++ ) {
+    t_matCsc l_fluxCsc;
+
+    edge::linalg::Matrix::denseToCsc< real_base >( N_FACE_MODES, N_ELEMENT_MODES,
+                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS,
+                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
+                                                   l_cscFillIn );
+
+    for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
+      l_globalMat->push_back( l_fluxCsc.val[l_nz] );
+    }
+    l_offsets.push_back( l_offsets.back() + l_fluxCsc.val.size() );
   }
 
   // set the pointers
@@ -166,8 +215,16 @@ l_basis.getFluxMm1Dense(  N_ELEMENT_MODES, (real_base *) l_internal.m_globalShar
     l_mat++;
   }
 
-  for( unsigned short l_fm = 0; l_fm < N_FLUX_MATRICES; l_fm++ ) {
-    l_internal.m_globalShared1[0].mat.flux[l_fm] = &(*l_globalMat)[0] + l_offsets[l_mat];
+  for( unsigned short l_fl = 0; l_fl < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fl++ ) {
+    l_internal.m_globalShared1[0].mat.fluxL[l_fl] = &(*l_globalMat)[0] + l_offsets[l_mat];
+    l_mat++;
+  }
+  for( unsigned short l_fn = 0; l_fn < N_FLUXN_MATRICES; l_fn++ ) {
+    l_internal.m_globalShared1[0].mat.fluxN[l_fn] = &(*l_globalMat)[0] + l_offsets[l_mat];
+    l_mat++;
+  }
+  for( unsigned short l_ft = 0; l_ft < C_ENT[T_SDISC.ELEMENT].N_FACES; l_ft++ ) {
+    l_internal.m_globalShared1[0].mat.fluxT[l_ft] = &(*l_globalMat)[0] + l_offsets[l_mat];
     l_mat++;
   }
 }

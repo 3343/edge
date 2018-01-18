@@ -30,785 +30,54 @@
 #include "data/common.hpp"
 #include "monitor/instrument.hpp"
 
-void edge::dg::Basis::computeMassMatrix() {
-  // get order #quadrature points and weights
-  std::vector< real_mesh > l_ptsXi, l_ptsEta, l_ptsZeta, l_weights;
+namespace edge {
+  namespace pre {
+    namespace dg {
+      // mass matrix
+      extern double const * g_massRaw;
+      extern std::size_t const g_massSize;
 
-  dg::QuadraturePoints::getQpts( m_entType,
-                                 m_order,
-                                 C_REF_ELEMENT.VE.ENT[m_entType],
-                                 l_ptsXi, l_ptsEta, l_ptsZeta, l_weights );
+      // stiffness matrices, premultiplied by the inverse mass matrix
+      extern double const * g_stiffVRaw;
+      extern std::size_t const g_stiffVSize;
 
-  // rows of the mass matrix
-  for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-    // cols of the mass matrix
-    for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-      // value of the mass matrix at this position
-      real_base l_val = 0;
+      // transposed stiffness matrices, premultiplied by the inverse mass matrix (after transpose)
+      extern double const * g_stiffTRaw;
+      extern std::size_t const g_stiffTSize;
 
-      // iterate over quadrature points and integrate
-      for( unsigned int l_qp = 0; l_qp < l_ptsXi.size(); l_qp++ ) {
-        // evaluate basis at quad point
-        real_base l_bValRo = 0;
-        real_base l_bValCo = 0;
-        if( m_entType == LINE ) {
-          evalBasisLine( l_ro, l_ptsXi[l_qp], l_bValRo );
-          evalBasisLine( l_co, l_ptsXi[l_qp], l_bValCo );
-        }
-        else if( m_entType == QUAD4R ) {
-          assert( m_nBaseFuncs == m_order * m_order );
+      // local contribution flux matrices
+      extern double const * g_fluxLRaw;
+      extern std::size_t const g_fluxLSize;
 
-          evalBasisQuad( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo,
-                         -1, m_order );
+      // neighboring contribution flux matrices
+      extern double const * g_fluxNRaw;
+      extern std::size_t const g_fluxNSize;
 
-          evalBasisQuad( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo,
-                         -1, m_order );
-        }
-        else if( m_entType == TRIA3 ) {
-          evalBasisTria( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo );
-
-          evalBasisTria( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo );
-        }
-        else if( m_entType == HEX8R ) {
-          evalBasisHex( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo,
-                        -1, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo,
-                        -1, m_order );
-        }
-        else if( m_entType == TET4 ) {
-          evalBasisTet( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo );
-        }
-        else assert( false );
-
-        // add this quad point
-        l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-      }
-
-      // inexact integration, we ignore almost zero values
-      // this respects hierarchical basis and leads to sparse matrix patterns as intended by this choice
-      if( std::abs( l_val ) > TOL.BASIS ) {
-        m_mass.nz.push_back( l_val );
-        m_mass.ro.push_back( l_ro  );
-        m_mass.co.push_back( l_co  );
-      }
+      // "transposed" flux matrices (fa -> el basis + inverse mass)
+      extern double const * g_fluxTRaw;
+      extern std::size_t const g_fluxTSize;
     }
   }
 }
 
-void edge::dg::Basis::computeStiffMatrices() {
-  // get order #quadrature points and weights
-  std::vector< real_mesh > l_ptsXi, l_ptsEta, l_ptsZeta, l_weights;
-
-  dg::QuadraturePoints::getQpts( m_entType,
-                                 m_order,
-                                 C_REF_ELEMENT.VE.ENT[m_entType],
-                                 l_ptsXi, l_ptsEta, l_ptsZeta, l_weights );
-
-  m_stiff.resize(C_ENT[m_entType].N_DIM);
-
-  // rows of the stiffness matrices
-  for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-    // cols of the stiffness matrices
-    for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-      // value of the stiffness matrices at this position
-      real_base l_val[3] = { 0, 0, 0 };
-
-      // iterate over quadrature points and integrate
-      for( unsigned int l_qp = 0; l_qp < l_ptsXi.size(); l_qp++ ) {
-        if( m_entType == LINE ) {
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasisLine(    l_ro, l_ptsXi[l_qp], l_bValRo );
-          evalBasisDerLine( l_co, l_ptsXi[l_qp], l_bValCo );
-
-          // add this quad point
-          l_val[0] += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-        }
-        else if( m_entType == QUAD4R ) {
-          assert( m_nBaseFuncs == m_order * m_order );
-
-          real_base l_bValRo, l_bValCo[2];
-
-          evalBasisQuad( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo,
-                         -1, m_order );
-
-          evalBasisQuad( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[0],
-                         0, m_order );
-
-          evalBasisQuad( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[1],
-                         1, m_order );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-        }
-        else if( m_entType == TRIA3 ) {
-          real_base l_bValRo, l_bValCo[2];
-
-          evalBasisTria( l_ro,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValRo );
-
-          evalBasisTria( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[0],
-                         0 );
-
-          evalBasisTria( l_co,
-                         l_ptsXi[l_qp],
-                         l_ptsEta[l_qp],
-                         l_bValCo[1],
-                         1 );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-        }
-        else if( m_entType == HEX8R ) {
-          real_base l_bValRo, l_bValCo[3];
-
-          evalBasisHex( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo,
-                        -1, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[0],
-                        0, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[1],
-                        1, m_order );
-
-          evalBasisHex( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[2],
-                        2, m_order );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-          l_val[2] +=   l_bValRo * l_bValCo[2] * l_weights[l_qp];
-        }
-        else if( m_entType == TET4 ) {
-          real_base l_bValRo, l_bValCo[3];
-
-          evalBasisTet( l_ro,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValRo );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[0],
-                        0 );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[1],
-                        1 );
-
-          evalBasisTet( l_co,
-                        l_ptsXi[l_qp],
-                        l_ptsEta[l_qp],
-                        l_ptsZeta[l_qp],
-                        l_bValCo[2],
-                        2 );
-
-          // add this quad point
-          l_val[0] +=   l_bValRo * l_bValCo[0] * l_weights[l_qp];
-          l_val[1] +=   l_bValRo * l_bValCo[1] * l_weights[l_qp];
-          l_val[2] +=   l_bValRo * l_bValCo[2] * l_weights[l_qp];
-        }
-        else assert( false );
-      }
-
-      // inexact integration, we ignore almost zero values
-      // this respects hierarchical basis and leads to sparse matrix patterns as intended by this choice
-      for( unsigned int l_dim = 0; l_dim < 3; l_dim++ ) {
-        if( std::abs( l_val[l_dim] ) > TOL.BASIS ) {
-          m_stiff[l_dim].nz.push_back( l_val[l_dim] );
-          m_stiff[l_dim].ro.push_back( l_ro     );
-          m_stiff[l_dim].co.push_back( l_co     );
-        }
-      }
-    }
-  }
-}
-
-void edge::dg::Basis::computeFluxMatricesLine() {
-  // determine number of flux matrices
-  unsigned int l_nFluxMats = C_ENT[m_entType].N_FACES + C_ENT[m_entType].N_FACES * C_ENT[m_entType].N_FACES;
-
-  m_flux.resize(l_nFluxMats);
-
-  // iterate over faces
-  for( int_md l_fa1 = 0; l_fa1 < C_ENT[m_entType].N_FACES; l_fa1++ ) {
-    // local quadrature points
-    std::vector< real_mesh > l_localQpsXi, l_localQpsEta, l_localQpsZeta, l_weights;
-
-    l_localQpsXi.push_back(   C_REF_ELEMENT.VE.LINE[0][l_fa1] );
-    l_localQpsEta.push_back(  C_REF_ELEMENT.VE.LINE[1][l_fa1] );
-    l_localQpsZeta.push_back( C_REF_ELEMENT.VE.LINE[2][l_fa1] );
-    l_weights.push_back(1);
-
-    // compute local flux matrix
-    for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-        // value of the resp flux matrix
-        real_base l_val = 0;
-
-        for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasisLine( l_ro, l_localQpsXi[l_qp], l_bValRo );
-          evalBasisLine( l_co, l_localQpsXi[l_qp], l_bValCo );
-
-          l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-        }
-
-        if( std::abs( l_val ) > TOL.BASIS ) {
-          m_flux[l_fa1].nz.push_back(l_val);
-          m_flux[l_fa1].co.push_back(l_co);
-          m_flux[l_fa1].ro.push_back(l_ro);
-        }
-      }
-    }
-
-    // compute neighboring flux matrices
-    for( unsigned int l_fa2 = 0; l_fa2 < C_ENT[m_entType].N_FACES; l_fa2++ ) {
-      std::vector< real_mesh > l_neighQpsXi, l_neighQpsEta, l_neighQpsZeta;
-
-      l_neighQpsXi.push_back(   C_REF_ELEMENT.VE.LINE[0][l_fa2] );
-      l_neighQpsEta.push_back(  C_REF_ELEMENT.VE.LINE[1][l_fa2] );
-      l_neighQpsZeta.push_back( C_REF_ELEMENT.VE.LINE[2][l_fa2] );
-
-      // map quad points to ref. element's face of adjacent element
-      for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-        linalg::Mappings::mapFaceCoords( LINE,
-                                         l_fa1,
-                                         l_fa2,
-                                         0,
-                                         l_localQpsXi[l_qp],
-                                         l_localQpsEta[l_qp],
-                                         l_localQpsZeta[l_qp],
-                                         l_neighQpsXi[l_qp],
-                                         l_neighQpsEta[l_qp],
-                                         l_neighQpsZeta[l_qp] );
-      }
-
-      for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-        for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-          // value of the flux matrix respective
-          real_base l_val = 0;
-
-          for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-            // evaluate basis at quad point
-            real_base l_bValRo = 0;
-            real_base l_bValCo = 0;
-
-            evalBasisLine( l_ro, l_neighQpsXi[l_qp], l_bValRo );
-            evalBasisLine( l_co, l_localQpsXi[l_qp], l_bValCo );
-
-            l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-          }
-          if( std::abs( l_val ) > TOL.BASIS ) {
-            m_flux[C_ENT[m_entType].N_FACES + l_fa1*C_ENT[m_entType].N_FACES+l_fa2].nz.push_back(l_val);
-            m_flux[C_ENT[m_entType].N_FACES + l_fa1*C_ENT[m_entType].N_FACES+l_fa2].co.push_back(l_co);
-            m_flux[C_ENT[m_entType].N_FACES + l_fa1*C_ENT[m_entType].N_FACES+l_fa2].ro.push_back(l_ro);
-          }
-        }
-      }
-    }
-
-  }
-}
-
-void edge::dg::Basis::computeFluxMatrices2d() {
-  // determine number of flux matrices
-  // 1) local and neighboring faces
-  unsigned int l_nFluxMats = C_ENT[m_entType].N_FACES * C_ENT[m_entType].N_FACES;
-
-  // 2) local flux matrices stored upfront
-               l_nFluxMats += C_ENT[m_entType].N_FACES;
-
-  m_flux.resize(l_nFluxMats);
-
-  // iterate over faces
-  for( unsigned int l_fa1 = 0; l_fa1 < C_ENT[m_entType].N_FACES; l_fa1++ ) {
-    // local quadrature points
-    std::vector< real_mesh > l_localQpsXi, l_localQpsEta, l_localQpsZeta, l_weights;
-
-    // get nodes of this face
-    real_mesh l_faVes[3][2];
-    for( unsigned int l_dim = 0; l_dim < 3; l_dim++ ) {
-      l_faVes[l_dim][0] = C_REF_ELEMENT.FA.ENT[m_entType][
-                             l_dim * C_ENT[m_entType].N_FACES * C_ENT[m_entType].N_FACE_VERTICES
-                           + l_fa1                            * C_ENT[m_entType].N_FACE_VERTICES
-                           + 0 ];
-      l_faVes[l_dim][1] = C_REF_ELEMENT.FA.ENT[m_entType][
-                             l_dim * C_ENT[m_entType].N_FACES * C_ENT[m_entType].N_FACE_VERTICES
-                           + l_fa1                            * C_ENT[m_entType].N_FACE_VERTICES
-                           + 1 ];
-    }
-
-    // get quad points of this face
-    dg::QuadraturePoints::getQpts( LINE,
-                                   m_order,
-                                   l_faVes,
-                                   l_localQpsXi,
-                                   l_localQpsEta,
-                                   l_localQpsZeta,
-                                   l_weights );
-
-    // sum the weights
-    real_mesh l_sum = 0;
-    for( unsigned int l_qp = 0; l_qp < l_weights.size(); l_qp++ ) l_sum += l_weights[l_qp];
-
-    // normalize to face length to 1, this is what we are assuming in the mappings
-    for( unsigned int l_qp = 0; l_qp < l_weights.size(); l_qp++ ) l_weights[l_qp] /= l_sum;
-
-    // compute local flux matrices
-    for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-        // value of the flux matrix respective
-        real_base l_val = 0;
-
-        for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasis( l_ro,
-                     m_entType,
-                     l_bValRo,
-                     l_localQpsXi[l_qp],
-                     l_localQpsEta[l_qp],
-                     0, // zeta
-                     -1, m_order );
-
-          evalBasis( l_co,
-                     m_entType,
-                     l_bValCo,
-                     l_localQpsXi[l_qp],
-                     l_localQpsEta[l_qp],
-                     0, // zeta
-                     -1, m_order );
-
-          l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-        }
-        if( std::abs( l_val ) > TOL.BASIS ) {
-          m_flux[l_fa1].nz.push_back(l_val);
-          m_flux[l_fa1].co.push_back(l_co);
-          m_flux[l_fa1].ro.push_back(l_ro);
-        }
-      }
-    }
-
-    // compute neighboring flux matrices
-    for( unsigned int l_fa2 = 0; l_fa2 < C_ENT[m_entType].N_FACES; l_fa2++ ) {
-      std::vector< real_mesh > l_neighQpsXi, l_neighQpsEta, l_neighQpsZeta;
-
-      l_neighQpsXi.resize(   m_nBaseFuncs );
-      l_neighQpsEta.resize(  m_nBaseFuncs );
-      l_neighQpsZeta.resize( m_nBaseFuncs );
-
-      // map quad points to ref. element's face of adjacent element
-      for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-        linalg::Mappings::mapFaceCoords( m_entType,
-                                         l_fa1,
-                                         l_fa2,
-                                         0,
-                                         l_localQpsXi[l_qp],
-                                         l_localQpsEta[l_qp],
-                                         l_localQpsZeta[l_qp],
-                                         l_neighQpsXi[l_qp],
-                                         l_neighQpsEta[l_qp],
-                                         l_neighQpsZeta[l_qp] );
-      }
-
-      for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-        for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-          // value in the respective flux matrix
-          real_base l_val = 0;
-
-          for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-            // evaluate basis at quad point
-            real_base l_bValRo = 0;
-            real_base l_bValCo = 0;
-
-            evalBasis( l_ro,
-                       m_entType,
-                       l_bValRo,
-                       l_neighQpsXi[l_qp],
-                       l_neighQpsEta[l_qp],
-                       0, // zeta
-                       -1, m_order );
-
-            evalBasis( l_co,
-                       m_entType,
-                       l_bValCo,
-                       l_localQpsXi[l_qp],
-                       l_localQpsEta[l_qp],
-                       0, // zeta
-                       -1, m_order );
-
-            l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-          }
-          if( std::abs( l_val ) > TOL.BASIS ) {
-            m_flux[C_ENT[m_entType].N_FACES + l_fa1*C_ENT[m_entType].N_FACES+l_fa2].nz.push_back(l_val);
-            m_flux[C_ENT[m_entType].N_FACES + l_fa1*C_ENT[m_entType].N_FACES+l_fa2].co.push_back(l_co);
-            m_flux[C_ENT[m_entType].N_FACES + l_fa1*C_ENT[m_entType].N_FACES+l_fa2].ro.push_back(l_ro);
-          }
-        }
-      }
-    }
-
-  }
-
-}
-
-void edge::dg::Basis::computeFluxMatricesHex() {
-  assert( C_ENT[m_entType].N_FACES == 6 );
-
-  // fixed size of 12 flux matrices
-  m_flux.resize( 12 );
-
-  // iterate ofver faces
-  for( unsigned int l_fa1 = 0; l_fa1 < 6; l_fa1++ ) {
-    // local quadrature points
-    std::vector< real_mesh > l_localQpsXi, l_localQpsEta, l_localQpsZeta, l_weights;
-
-    // get nodes of this face
-    real_mesh l_faVes[3][4];
-    for( unsigned int l_dim = 0; l_dim < 3; l_dim++ ) {
-      for( unsigned int l_ve = 0; l_ve < 4; l_ve++ ) {
-        l_faVes[l_dim][l_ve] = C_REF_ELEMENT.FA.HEX[l_dim][l_fa1][l_ve];
-      }
-    }
-
-    // get quad points of this face
-    dg::QuadraturePoints::getQpts( QUAD4R,
-                                   m_order,
-                                   l_faVes,
-                                   l_localQpsXi,
-                                   l_localQpsEta,
-                                   l_localQpsZeta,
-                                   l_weights );
-
-    // sum the weights
-    real_mesh l_sum = 0;
-    for( unsigned int l_qp = 0; l_qp < l_weights.size(); l_qp++ ) l_sum += l_weights[l_qp];
-
-    // normalize to face length to 1, this is what we are assuming in the mappings
-    for( unsigned int l_qp = 0; l_qp < l_weights.size(); l_qp++ ) l_weights[l_qp] /= l_sum;
-
-    // compute local flux matrices
-    for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-        // value of the flux matrix respective
-        real_base l_val = 0;
-
-        for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasis( l_ro,
-                     m_entType,
-                     l_bValRo,
-                     l_localQpsXi[l_qp],
-                     l_localQpsEta[l_qp],
-                     l_localQpsZeta[l_qp],
-                     -1, m_order );
-
-          evalBasis( l_co,
-                     m_entType,
-                     l_bValCo,
-                     l_localQpsXi[l_qp],
-                     l_localQpsEta[l_qp],
-                     l_localQpsZeta[l_qp],
-                     -1, m_order );
-
-          l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-        }
-        if( std::abs( l_val ) > TOL.BASIS ) {
-          m_flux[l_fa1].nz.push_back(l_val);
-          m_flux[l_fa1].co.push_back(l_co);
-          m_flux[l_fa1].ro.push_back(l_ro);
-        }
-      }
-    }
-
-    // derive neighboring face of regular meshes
-    unsigned int l_fa2;
-    if(      l_fa1 == 0 ) l_fa2 = 5;
-    else if( l_fa1 == 1 ) l_fa2 = 3;
-    else if( l_fa1 == 2 ) l_fa2 = 4;
-    else if( l_fa1 == 3 ) l_fa2 = 1;
-    else if( l_fa1 == 4 ) l_fa2 = 2;
-    else if( l_fa1 == 5 ) l_fa2 = 0;
-
-    std::vector< real_mesh > l_neighQpsXi, l_neighQpsEta, l_neighQpsZeta;
-
-    l_neighQpsXi.resize(   m_nBaseFuncs );
-    l_neighQpsEta.resize(  m_nBaseFuncs );
-    l_neighQpsZeta.resize( m_nBaseFuncs );
-
-    // map quad points to ref. element's face of adjacent element
-    for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-      linalg::Mappings::mapFaceCoords( m_entType,
-                                       l_fa1,
-                                       l_fa2,
-                                       0,
-                                       l_localQpsXi[l_qp],
-                                       l_localQpsEta[l_qp],
-                                       l_localQpsZeta[l_qp],
-                                       l_neighQpsXi[l_qp],
-                                       l_neighQpsEta[l_qp],
-                                       l_neighQpsZeta[l_qp] );
-    }
-
-    for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-        // value in the respective flux matrix
-        real_base l_val = 0;
-
-        for( unsigned int l_qp = 0; l_qp < l_localQpsXi.size(); l_qp++ ) {
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasis( l_ro,
-                     m_entType,
-                     l_bValRo,
-                     l_neighQpsXi[l_qp],
-                     l_neighQpsEta[l_qp],
-                     l_neighQpsZeta[l_qp],
-                     -1, m_order );
-
-          evalBasis( l_co,
-                     m_entType,
-                     l_bValCo,
-                     l_localQpsXi[l_qp],
-                     l_localQpsEta[l_qp],
-                     l_localQpsZeta[l_qp],
-                     -1, m_order );
-
-          l_val += ( l_bValRo * l_bValCo ) * l_weights[l_qp];
-        }
-        if( std::abs( l_val ) > TOL.BASIS ) {
-          m_flux[C_ENT[m_entType].N_FACES + l_fa1].nz.push_back(l_val);
-          m_flux[C_ENT[m_entType].N_FACES + l_fa1].co.push_back(l_co);
-          m_flux[C_ENT[m_entType].N_FACES + l_fa1].ro.push_back(l_ro);
-        }
-      }
-    }
-
-  }
-}
-
-void edge::dg::Basis::computeFluxMatricesTet() {
-  assert( m_entType == TET4 );
-  assert( C_ENT[m_entType].N_FACES == 4 );
-  assert( C_ENT[m_entType].N_FACE_VERTICES == 3 );
-
-  // fixed size of 52 flux matrices
-  m_flux.resize( 52 );
-
-  // get triangular quadrature points
-  std::vector< real_mesh > l_faQpsChi1, l_faQpsChi2, l_dummy, l_faWeights;
-
-  dg::QuadraturePoints::getQpts( TRIA3,
-                                 m_order,
-                                 C_REF_ELEMENT.VE.ENT[TRIA3],
-                                 l_faQpsChi1, l_faQpsChi2, l_dummy, l_faWeights );
-
-  // iterate over local faces
-  for( unsigned int l_fa1 = 0; l_fa1 < 4; l_fa1++ ) {
-
-    // compute local flux matrices
-    for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-        // value of the flux matrix respectively
-        real_base l_val = 0;
-
-        // iterate over quadrature points
-        for( unsigned int l_qp = 0; l_qp < l_faWeights.size(); l_qp++  ) {
-          // volume coords
-          real_mesh l_volPt[3];
-
-          real_mesh l_faPt[2];
-          l_faPt[0] = l_faQpsChi1[l_qp];
-          l_faPt[1] = l_faQpsChi2[l_qp];
-
-          // get volume coords
-          linalg::Mappings::faToVolRefTet4( l_fa1,
-                                            l_faPt,
-                                            l_volPt );
-
-          // evaluate basis at quad point
-          real_base l_bValRo = 0;
-          real_base l_bValCo = 0;
-
-          evalBasis( l_ro,
-                     TET4,
-                     l_bValRo,
-                     l_volPt[0],
-                     l_volPt[1],
-                     l_volPt[2] );
-
-          evalBasis( l_co,
-                     TET4,
-                     l_bValCo,
-                     l_volPt[0],
-                     l_volPt[1],
-                     l_volPt[2] );
-
-          l_val += ( l_bValRo * l_bValCo ) * l_faWeights[l_qp];
-        }
-        if( std::abs( l_val ) > TOL.BASIS ) {
-          m_flux[l_fa1].nz.push_back(l_val);
-          m_flux[l_fa1].co.push_back(l_co);
-          m_flux[l_fa1].ro.push_back(l_ro);
-        }
-      }
-    }
-
-    // iterate over neighboring faces
-    for( unsigned int l_fa2 = 0; l_fa2 < 4; l_fa2++ ) {
-      // iterate over the neighboring face's vertices
-      for( unsigned int l_ve = 0; l_ve < 3; l_ve++ ) {
-        // compute neighboring flux matrices
-        for( unsigned int l_ro = 0; l_ro < m_nBaseFuncs; l_ro++ ) {
-          for( unsigned int l_co = 0; l_co < m_nBaseFuncs; l_co++ ) {
-            // value of the flux matrix respectively
-            real_base l_val = 0;
-
-            // iterate over quadrature points
-            for( unsigned int l_qp = 0; l_qp < l_faWeights.size(); l_qp++  ) {
-              // local and neighboring volume coords
-              real_mesh l_loVol[3], l_neVol[3];
-
-              // local and neighboring face coordinates; ne coords are expressed in terms of the local coords
-              real_mesh l_loFa[2], l_neFa[2];
-
-              // get local face coords
-              l_loFa[0] = l_faQpsChi1[l_qp];
-              l_loFa[1] = l_faQpsChi2[l_qp];
-
-              // get 'neighboring' coords
-              linalg::Mappings::faLocToFaNeiTet4( l_ve, l_loFa, l_neFa );
-
-              // get volume coords
-              linalg::Mappings::faToVolRefTet4( l_fa1, l_loFa, l_loVol );
-              linalg::Mappings::faToVolRefTet4( l_fa2, l_neFa, l_neVol );
-
-
-              // evaluate basis at quad point
-              real_base l_bValRo = 0;
-              real_base l_bValCo = 0;
-
-              evalBasis( l_ro,
-                         TET4,
-                         l_bValRo,
-                         l_neVol[0],
-                         l_neVol[1],
-                         l_neVol[2] );
-
-              evalBasis( l_co,
-                         TET4,
-                         l_bValCo,
-                         l_loVol[0],
-                         l_loVol[1],
-                         l_loVol[2] );
-
-              l_val += ( l_bValRo * l_bValCo ) * l_faWeights[l_qp];
-            }
-
-            // derive index of flux matrix
-            unsigned short l_fId = 4 + l_fa1 * 4 * 3 + l_fa2 * 3 + l_ve;
-
-            if( std::abs( l_val ) > TOL.BASIS ) {
-              m_flux[l_fId].nz.push_back(l_val);
-              m_flux[l_fId].co.push_back(l_co);
-              m_flux[l_fId].ro.push_back(l_ro);
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-void edge::dg::Basis::computeFluxMatrices() {
-  if(      m_entType == LINE   ) computeFluxMatricesLine();
-  else if( m_entType == QUAD4R ) computeFluxMatrices2d();
-  else if( m_entType == TRIA3  ) computeFluxMatrices2d();
-  else if( m_entType == HEX8R  ) computeFluxMatricesHex();
-  else if( m_entType == TET4   ) computeFluxMatricesTet();
-  else assert( false );
+void edge::dg::Basis::initMassMatrix() {
+  // check that the size matches
+  EDGE_CHECK_EQ( pre::dg::g_massSize, m_nBaseFuncs*m_nBaseFuncs );
+
+  real_base *l_mass = nullptr;
+  l_mass = new real_base[ pre::dg::g_massSize ];
+
+  // set values
+  for( std::size_t l_va = 0; l_va < pre::dg::g_massSize; l_va++ )
+    l_mass[l_va] = pre::dg::g_massRaw[l_va];
+
+  // convert to coordinate format
+  linalg::Matrix::denseToCrd( m_nBaseFuncs,
+                              m_nBaseFuncs,
+                              l_mass,
+                              m_mass );
+
+  delete[] l_mass;
 }
 
 edge::dg::Basis::Basis( t_entityType   i_entityType,
@@ -817,14 +86,8 @@ edge::dg::Basis::Basis( t_entityType   i_entityType,
  m_order(i_order) {
   m_nBaseFuncs = CE_N_ELEMENT_MODES( i_entityType, i_order );
 
-  // compute the mass matrix
-  computeMassMatrix();
-
-  // compute the stiffness matrices
-  computeStiffMatrices();
-
-  // compute the flux matrices
-  computeFluxMatrices();
+  // init the mass matrix
+  initMassMatrix();
 
   // pre-compute basis at quad points
   initEvalQpRefEl( i_order+1 );
@@ -837,22 +100,6 @@ void edge::dg::Basis::print() const {
     linalg::Matrix::printMatrixCrd( m_nBaseFuncs,
                                     m_nBaseFuncs,
                                     m_mass );
-  }
-  for( unsigned int l_stiff = 0; l_stiff < m_stiff.size(); l_stiff++ ) {
-    EDGE_VLOG(2) << "  stiffness matrix #" << l_stiff << ": ";
-    if( EDGE_VLOG_IS_ON(2) ) {
-      linalg::Matrix::printMatrixCrd( m_nBaseFuncs,
-                                      m_nBaseFuncs,
-                                      m_stiff[l_stiff] );
-    }
-  }
-  for( unsigned int l_flux = 0; l_flux < m_flux.size(); l_flux++ ) {
-    EDGE_VLOG(2) << "  flux matrix #" << l_flux << ": ";
-    if( EDGE_VLOG_IS_ON(2) ) {
-      linalg::Matrix::printMatrixCrd( m_nBaseFuncs,
-                                      m_nBaseFuncs,
-                                      m_flux[l_flux]);
-    }
   }
 }
 
@@ -1006,107 +253,50 @@ void edge::dg::Basis::getMassInvDense( int_md     i_nModes,
 
 void edge::dg::Basis::getStiffMm1Dense( int_md      i_nModes,
                                         real_base  *o_matrices,
-                                        bool        i_tStiff,
-                                        bool        i_rowMajor ) const {
-  // check that we have enough basis functions
-  CHECK( i_nModes <= m_nBaseFuncs );
+                                        bool        i_tStiff ) const {
+  if( i_tStiff == false ) {
+    // check that the size matches
+    EDGE_CHECK_EQ( pre::dg::g_stiffVSize, i_nModes*i_nModes*C_ENT[m_entType].N_DIM );
 
-  for( unsigned int l_dim = 0; l_dim < C_ENT[m_entType].N_DIM; l_dim++ ) {
-    // non-zero entry of stiffness matrix
-    unsigned int l_nzId = 0;
+    // set values
+    for( std::size_t l_va = 0; l_va < pre::dg::g_stiffVSize; l_va++ )
+      o_matrices[l_va] = pre::dg::g_stiffVRaw[l_va];
+  }
+  else {
+    // check that size matches
+    EDGE_CHECK_EQ( pre::dg::g_stiffTSize, i_nModes*i_nModes*C_ENT[m_entType].N_DIM );
 
-    // iterate dense entries
-    for( unsigned int l_ro = 0; l_ro < i_nModes; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < i_nModes; l_co++ ) {
-        unsigned int l_mId = l_dim * (i_nModes*i_nModes) + l_ro * i_nModes + l_co;
-
-        // check for a match
-        if( m_stiff[l_dim].nz.size() > l_nzId &&
-            m_stiff[l_dim].ro[l_nzId] == l_ro &&
-            m_stiff[l_dim].co[l_nzId] == l_co ) {
-
-          o_matrices[l_mId] = m_stiff[l_dim].nz[l_nzId];
-          l_nzId++;
-        }
-        else
-          o_matrices[l_mId] = 0;
-      }
-    }
-
-    // transpose stiffness matrix prior to multiplication with inverse mass matrix if requested
-    if( i_tStiff == true ) {
-        linalg::Matrix::transposeDense( i_nModes, o_matrices+(l_dim * (i_nModes*i_nModes)) );
-    }
-
-    // multiply with inverse mass matrix from the right. Note this happens after transposing the stiffness matrix
-    // since we do not transpose the application of the mass matrix.
-    for( unsigned int l_ro = 0; l_ro < i_nModes; l_ro++ ) {
-      // check for a diagonal mass matrix
-      CHECK( m_mass.nz.size() >= i_nModes && m_mass.ro[l_ro] == m_mass.co[l_ro] && m_mass.ro[l_ro] == l_ro );
-
-      for( unsigned int l_co = 0; l_co < i_nModes; l_co++ ) {
-        unsigned int l_mId = l_dim * (i_nModes*i_nModes) + l_ro * i_nModes + l_co;
-
-        // divide by entry of diagonal mass matrix
-        assert( m_mass.nz[l_ro] > TOL.BASIS );
-        o_matrices[l_mId] /= m_mass.nz[l_co];
-      }
-    }
-
-    // change from row major to column major if requested
-    if( i_rowMajor == false ) {
-      linalg::Matrix::transposeDense( i_nModes, o_matrices+(l_dim * (i_nModes*i_nModes)) );
-    }
+    // set values
+    for( std::size_t l_va = 0; l_va < pre::dg::g_stiffTSize; l_va++ )
+      o_matrices[l_va] = pre::dg::g_stiffTRaw[l_va];
   }
 }
 
-void edge::dg::Basis::getFluxMm1Dense( int_md     i_nModes,
-                                       real_base *o_matrices,
-                                       bool       i_rowMajor ) const {
-  // check that we have enough basis functions
-  CHECK( i_nModes <= m_nBaseFuncs );
+void edge::dg::Basis::getFluxDense( real_base *o_fluxL,
+                                    real_base *o_fluxN,
+                                    real_base *o_fluxT ) const {
+  // check for reasonable sizes
+  EDGE_CHECK_EQ( pre::dg::g_fluxLSize,
+                 C_ENT[T_SDISC.ELEMENT].N_FACES * N_ELEMENT_MODES * N_FACE_MODES  );
 
-  // iterate over flux matrices
-  for( unsigned int l_fm = 0; l_fm < m_flux.size(); l_fm++ ) {
-    // non-zero entry of the flux matrix
-    unsigned int l_nzId = 0;
 
-    // iterate dense entries
-    for( unsigned int l_ro = 0; l_ro < i_nModes; l_ro++ ) {
-      for( unsigned int l_co = 0; l_co < i_nModes; l_co++ ) {
-        unsigned int l_mId = l_fm * (i_nModes*i_nModes) + l_ro * i_nModes + l_co;
+  EDGE_CHECK_EQ( pre::dg::g_fluxNSize,
+                 N_FLUXN_MATRICES * N_ELEMENT_MODES * N_FACE_MODES  );
 
-        // check for a match
-        if( m_flux[l_fm].nz.size() > l_nzId &&
-            m_flux[l_fm].ro[l_nzId] == l_ro &&
-            m_flux[l_fm].co[l_nzId] == l_co ) {
-          o_matrices[l_mId] = m_flux[l_fm].nz[l_nzId];
-          l_nzId++;
-        }
-        else
-          o_matrices[l_mId] = 0;
-      }
-    }
+  EDGE_CHECK_EQ( pre::dg::g_fluxTSize,
+                 C_ENT[T_SDISC.ELEMENT].N_FACES * N_ELEMENT_MODES * N_FACE_MODES  );
 
-    // multiply with inverse mass matrix from the right.
-    for( unsigned int l_ro = 0; l_ro < i_nModes; l_ro++ ) {
-      // check for a diagonal mass matrix
-      CHECK( m_mass.nz.size() >= i_nModes && m_mass.ro[l_ro] == m_mass.co[l_ro] && m_mass.ro[l_ro] == l_ro );
+  // assign local
+  for( std::size_t l_va = 0; l_va < pre::dg::g_fluxLSize; l_va++ )
+    o_fluxL[l_va] = pre::dg::g_fluxLRaw[l_va];
 
-      for( unsigned int l_co = 0; l_co < i_nModes; l_co++ ) {
-        // divide by entry of diagonal mass matrix
-        assert( m_mass.nz[l_ro] > TOL.BASIS );
+  // assign neighboring
+  for( std::size_t l_va = 0; l_va < pre::dg::g_fluxNSize; l_va++ )
+    o_fluxN[l_va] = pre::dg::g_fluxNRaw[l_va];
 
-        unsigned int l_mId = l_fm * (i_nModes*i_nModes) + l_ro * i_nModes + l_co;
-        o_matrices[l_mId] /= m_mass.nz[l_co];
-      }
-    }
-
-    // change from row major to column major if requested
-    if( i_rowMajor == false ) {
-      linalg::Matrix::transposeDense( i_nModes, o_matrices+(l_fm * (i_nModes*i_nModes)) );
-    }
-  }
+  // assign transposed
+  for( std::size_t l_va = 0; l_va < pre::dg::g_fluxTSize; l_va++ )
+    o_fluxT[l_va] = pre::dg::g_fluxTRaw[l_va];
 }
 
 void edge::dg::Basis::evalBasisLine( unsigned int  b,

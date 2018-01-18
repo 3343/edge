@@ -65,9 +65,6 @@ class edge::dg::Basis {
     //! mass matrix
     t_matCrd m_mass;
 
-    //! stiffnes matrix / matrices
-    std::vector< t_matCrd > m_stiff;
-
     //! flux matrices
     std::vector< t_matCrd > m_flux;
 
@@ -88,43 +85,9 @@ class edge::dg::Basis {
     void initEvalQpRefEl( unsigned short i_order );
 
     /**
-     * Computes the mass matrix using numerical integration.
+     * Inits the mass matrix using numerical integration.
      **/
-    void computeMassMatrix();
-
-    /**
-     * Computes the stiffness matrix/matrices using numerical integration.
-     **/
-    void computeStiffMatrices();
-
-    /**
-     * Computes the flux matrices for line elements.
-     **/
-    void computeFluxMatricesLine();
-
-    /**
-     * Computes the flux matrices for two-dimensional elements.
-     **/
-    void computeFluxMatrices2d();
-
-    /**
-     * Computes the flux matrices for hexahedral elements.
-     *
-     * Remark: While the local flux matrices default to six, we only derive 6 flux matrices for the neighboring cont also.
-     *         This is because we assume rectangular elements which are aligned to the coordinates system.
-     *         (The mapping to-/from- the reference coordinate system does not contain a rotation.
-     **/
-    void computeFluxMatricesHex();
-
-    /**
-     * Computes the flux matrices for tetrahedral elements.
-     **/
-    void computeFluxMatricesTet();
-
-    /**
-     * Computes the flux matrices using numerical integration.
-     **/
-    void computeFluxMatrices();
+    void initMassMatrix();
 
     /**
      * Evaluates a basis functions for the line reference element.
@@ -339,34 +302,29 @@ class edge::dg::Basis {
     /**
      * Gets the stiffness matrices multiplied with the inverse mass matrix.
      * Format is dense (including zero entries).
-     * Storage is row-major or column-major w.r.t. to the i-th basis function phi[i] in:
+     * Storage is row-major w.r.t. to the i-th basis function phi[i] in:
      * Int[Ref. element] ( phi[row] * phi[col]_x )
      *
      * @param i_nModes number of modes.
      * @param o_matrices will be set to stiffness matrices in dense storage: [ndim][nmodes][nmodes].
-     * @param i_tStiff true if the stiffness matrix should be transposed before multiplying with the inverse mass matrix.
-     * @param i_rowMajor true if row major storage is requested.
+     * @param i_tStiff true if the stiffness matrix should be transposed before multiplication with the inverse mass matrix.
      **/
     void getStiffMm1Dense( int_md     i_nModes,
                            real_base *o_matrices,
-                           bool       i_tStiff=false,
-                           bool       i_rowMajor=true ) const;
+                           bool       i_tStiff ) const;
 
     /**
      * Gets the flux matrices multiplied with the inverse mass matrix.
      * Format is dense (including zero entries).
-     * Order of storage is: 1) Local face 2) neighboring face 3) vertex orientation (if applicable).
+     * Order of storage for neighboring contrib. flux matrices is 1) vertices, 2) adjacent face.
      *
-     * Storage is row-major or column-major w.r.t. to the i-th basis function phi[i] in: 
-     * Int[surface of Ref. element] ( phi_neigh[row] * phi_local[col] )
-     *
-     * @param i_nModes number of modes.
-     * @param o_matrices will be set to flux matrices in dense storage: [flux-mat. id][nmodes][nmodes].
-     * @param i_rowMajor true if row major storage is requested.
+     * @param o_fluxL will be set to local contribution flux matrices.
+     * @param o_fluxN will be set to neighboring contribution flux matrices.
+     * @param i_fluxT will be set to 2D->3D basis change, premultiplied by the inverse mass matrix.
      **/
-    void getFluxMm1Dense( int_md     i_nModes,
-                          real_base *o_matrices,
-                          bool       i_rowMajor=true ) const;
+    void getFluxDense( real_base *o_fluxL,
+                       real_base *o_fluxN,
+                       real_base *o_fluxT ) const;
 };
 
 #endif
