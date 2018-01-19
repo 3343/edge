@@ -110,7 +110,7 @@
             <value>release+san</value>
         </variable>
         <variable name="LSAN_OPTIONS">
-            <value>suppressions=.asan_leak.supp</value>
+            <value>suppressions=tools/build/asan_leak.supp</value>
         </variable>
         <variable name="ASAN_OPTIONS">
           <value>fast_unwind_on_malloc=0</value>
@@ -2871,10 +2871,10 @@
             <value>host</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>valgrind --suppressions=.vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>valgrind --suppressions=.vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>host</value>
@@ -2922,10 +2922,10 @@
             <value>host</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>valgrind --suppressions=.vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>valgrind --suppressions=.vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>host</value>
@@ -2976,10 +2976,10 @@
             <value>knl</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>inspxe-cl --collect=mi2 --suppression-file=".inspxe.supp" --</value>
+            <value>inspxe-cl --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>inspxe-cl --result-dir=$rd --collect=mi2 --suppression-file=".inspxe.supp" --</value>
+            <value>inspxe-cl --result-dir=$rd --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>knl</value>
@@ -3029,10 +3029,10 @@
             <value>knl</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>inspxe-cl --collect=mi2 --suppression-file=".inspxe.supp" --</value>
+            <value>inspxe-cl --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>inspxe-cl --result-dir=inspxe_results --collect=mi2 --suppression-file=".inspxe.supp" --</value>
+            <value>inspxe-cl --result-dir=inspxe_results --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>knl</value>
