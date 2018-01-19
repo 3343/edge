@@ -1,4 +1,4 @@
-# EDGƎ [![Build Status](https://travis-ci.org/3343/edge.svg?branch=master)](https://travis-ci.org/3343/edge) [![codecov](https://codecov.io/gh/3343/edge/branch/master/graph/badge.svg)](https://codecov.io/gh/3343/edge) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge?ref=badge_shield)
+# EDGƎ [![Build Status](https://travis-ci.org/3343/edge.svg?branch=master)](https://travis-ci.org/3343/edge) [![Coverity Scan](https://img.shields.io/coverity/scan/12907.svg)](https://scan.coverity.com/projects/3343-edge) [![codecov](https://codecov.io/gh/3343/edge/branch/master/graph/badge.svg)](https://codecov.io/gh/3343/edge) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2F3343%2Fedge?ref=badge_shield)
 
 ## Equations
 * *advection (1D)*:
@@ -84,3 +84,14 @@ Based on the equations and the element type, the following table shows the imple
 | elastics  | quad4r, tria3, hex8r, tet4       |  x  |  x |         |         |
 | elastics  | quad4r, tria3, hex8r, tet4       |  x  |    |    x    |    x    |
 | swe       | line                             |  x  |  x |         |         |
+
+## High Performance Support
+| Microarchitecture | Machine(s) |
+|-------------------|:----------:|
+| [Sandy Bridge](https://ark.intel.com/products/codename/64276/Sandy-Bridge-EP) | [Stampede 1](https://portal.tacc.utexas.edu/user-guides/stampede) |
+| [Bulldozer](http://products.amd.com/en-us/search/cpu/amd-opteron%E2%84%A2/amd-opteron%E2%84%A2-6200-series-processor) | [Blue Waters](https://bluewaters.ncsa.illinois.edu/hardware-summary) |
+| [Haswell](https://ark.intel.com/products/codename/42174/Haswell) | [Comet](http://www.sdsc.edu/support/user_guides/comet.html), [Cori Phase 1](http://www.nersc.gov/users/computational-systems/cori/configuration/) |
+| [Knights Landing](https://ark.intel.com/products/codename/48999/Knights-Landing)    | [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2), [Cori Phase 2](http://www.nersc.gov/users/computational-systems/cori/configuration/), [Theta](https://www.alcf.anl.gov/theta) |
+| [Skylake](https://ark.intel.com/products/codename/37572/Skylake) | [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2) |
+| [EPYC](http://products.amd.com/en-us/search/cpu/amd-epyc%E2%84%A2)                                         | - |
+| [Knights Mill](https://ark.intel.com/products/codename/57723/Knights-Mill) | - |
