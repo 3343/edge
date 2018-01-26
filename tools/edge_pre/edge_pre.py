@@ -119,6 +119,9 @@ for l_ty in l_conf.m_types:
       l_faToFa = l_elTy.faToFa( l_symsFa )
       l_faToEl = l_elTy.faToEl( l_symsFa )
 
+      # set dummy sub-cell reordering
+      l_scDgAd = [ [0] ]
+
       # get sub-cell integration intervals
       l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Line.intSc( l_de, l_symsEl )
 
@@ -183,6 +186,9 @@ for l_ty in l_conf.m_types:
       # get face trafos
       l_faToFa = l_elTy.faToFa( l_symsFa )
       l_faToEl = l_elTy.faToEl( l_symsFa )
+
+      # get sub-cell reorderings
+      l_scDgAd = edge_pre.sc.grid.Quad.scDgAd( l_de )
 
       # get sub-cell integration intervals
       l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Quad.intSc( l_de, l_symsEl )
@@ -253,6 +259,9 @@ for l_ty in l_conf.m_types:
       l_faToFa = l_elTy.faToFa( l_symsFa )
       l_faToEl = l_elTy.faToEl( l_symsFa )
 
+      # get sub-cell reorderings
+      l_scDgAd = edge_pre.sc.grid.Tria.scDgAd( l_de )
+
       # get sub-cell integration intervals
       l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Tria.intSc( l_de, l_symsEl )
 
@@ -294,7 +303,9 @@ for l_ty in l_conf.m_types:
         l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
       # remote face
       for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, list( reversed(l_fa) ) ) ]
+         # derive reordered list
+        l_faRe = [ l_fa[l_sc] for l_sc in l_scDgAd[0] ]
+        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_faRe ) ]
 
     #
     # hexes
@@ -309,11 +320,11 @@ for l_ty in l_conf.m_types:
       # get element basis
       l_symsEl, l_basisEl = edge_pre.dg.basis.Hex.gen( l_de )
 
-      # get face integration intervals
-      l_intFa = edge_pre.types.Quad.Quad( l_de ).intEl( l_symsFa )
-
       # unify bases
       l_symsEl, l_basisEl = edge_pre.dg.basis.Mod.unify( l_symsFa, l_basisFa, l_symsEl, l_basisEl )
+
+      # get face integration intervals
+      l_intFa = edge_pre.types.Quad.Quad( l_de ).intEl( l_symsFa )
 
       # get element integration interval
       l_intEl = l_elTy.intEl( l_symsEl )
@@ -322,6 +333,9 @@ for l_ty in l_conf.m_types:
       l_faToFa = l_elTy.faToFa( l_symsFa )
       l_faToEl = l_elTy.faToEl( l_symsFa )
 
+      # get sub-cell reorderings
+      l_scDgAd = edge_pre.sc.grid.Hex.scDgAd( l_de )
+
       # get sub-cell integration intervals
       l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Hex.intSc( l_de, l_symsEl )
 
@@ -329,7 +343,7 @@ for l_ty in l_conf.m_types:
       l_subsSfDg, l_intSfDg = edge_pre.sc.grid.Hex.intSfDg( l_de, [sympy.symbols('chi_0'), sympy.symbols('chi_1')], l_symsEl )
 
       l_sfInt = []
-      for l_fa in range(4):
+      for l_fa in range(6):
         l_basisElSubs = edge_pre.int.Matrices.subsAll( l_subsSfDg[l_fa], l_basisEl )
         l_sfInt = l_sfInt + [ edge_pre.int.Matrices.intL( l_intSfDg[l_fa], l_basisElSubs ) ]
 
@@ -354,8 +368,11 @@ for l_ty in l_conf.m_types:
       for l_fa in l_intScSurf:
         l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
       # remote face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
+      for l_ve in range(4):
+        for l_fa in l_intScSurf:
+          # derive reordered list
+          l_faRe = [ l_fa[l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_faRe ) ]
 
     #
     # tets
@@ -522,6 +539,11 @@ for l_ty in l_conf.m_types:
     l_path = l_conf.m_out['subcell'] + l_dirExt + l_ty + '_' + str(l_de) + '_sctysf.csv'
     with open( l_path, 'w' ) as l_fi:
       l_fi.write(  edge_pre.io.ArrStr.int2d( l_scTySfIn+l_scTySfSend ) )
+
+    # save sub-cell reordering
+    l_path = l_conf.m_out['subcell'] + l_dirExt + l_ty + '_' + str(l_de) + '_scdgad.csv'
+    with open( l_path, 'w' ) as l_fi:
+      l_fi.write(  edge_pre.io.ArrStr.int2d( l_scDgAd ) )
 
     # save scatter matrix
     l_path = l_conf.m_out['subcell'] + l_dirExt + l_ty + '_' + str(l_de) + '_scatter.csv'

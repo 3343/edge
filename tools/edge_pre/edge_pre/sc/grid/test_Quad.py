@@ -441,3 +441,15 @@ class TestGridQuad( unittest.TestCase ):
                                       [8, 9, 10,  3],
                                       [8, 9, 10,  3],
                                       [8, 9, 10,  3] ] )
+
+  ##
+  # Tests the reordering.
+  ##
+  def test_scDgAd(self):
+    # first order
+    l_scDgAd = Quad.scDgAd( 0 )
+    self.assertEqual( l_scDgAd, [ [0] ] )
+
+    # second order
+    l_scDgAd = Quad.scDgAd( 1 )
+    self.assertEqual( l_scDgAd, [ [2,1,0] ] )

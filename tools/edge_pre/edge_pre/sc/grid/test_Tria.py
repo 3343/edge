@@ -578,3 +578,15 @@ class TestGridTria( unittest.TestCase ):
                                       [6, 7, 2],
                                       [6, 7, 2],
                                       [6, 7, 2] ] )
+
+  ##
+  # Tests the reordering.
+  ##
+  def test_scDgAd(self):
+    # first order
+    l_scDgAd = Tria.scDgAd( 0 )
+    self.assertEqual( l_scDgAd, [ [0] ] )
+
+    # second order
+    l_scDgAd = Tria.scDgAd( 1 )
+    self.assertEqual( l_scDgAd, [ [2,1,0] ] )
