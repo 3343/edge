@@ -26,6 +26,11 @@
 #undef private
 
 TEST_CASE( "Tests the precomputation of the basis values and quad points.", "[basis][evalQpRefEl]" ) {
+#ifndef PP_T_ELEMENTS_TET4
+  // return if not compiled for tets
+  return;
+#endif
+
   edge::dg::Basis l_basis( TET4, PP_ORDER );
 
   for( unsigned short l_pq = 0; l_pq < 2+1; l_pq++ ) {

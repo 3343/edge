@@ -366,6 +366,23 @@ def scTySf( i_deg ):
   return l_scTySfIn, l_scTySfSend
 
 ##
+# Define sub-cell reordering based on vertex-combinations, given two DG-faces with adjacent sub-cells.
+#   For two-dimensional elements, there is only one possible combination.
+#   The order is simply reversed.
+#
+# @param i_deg degree.
+# @return required reordering, as seen from the adjacent DG-element.
+##
+def scDgAd( i_deg ):
+  # get type
+  l_ty = edge_pre.types.Tria.Tria( i_deg )
+
+  l_scDgAd = list( range(l_ty.n_sfs) )
+  l_scDgAd.reverse()
+
+  return [ l_scDgAd ]
+
+##
 # Plots the sub-grid.
 #
 # @param i_out path to output file.

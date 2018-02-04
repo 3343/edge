@@ -269,20 +269,20 @@ TEST_CASE( "Volume: Line 2D", "[GeomVolLine2D]" ) {
   REQUIRE( l_vol == Approx( 18.620067132 ) );
 }
 
-TEST_CASE( "Volume: Triangle 2D" "[Geom][VolTria2D]" ) {
-  double l_ves[2][3] = { {0.0, 2.0, 2.0}, {0.0, 0.0, 3.0} };
+TEST_CASE( "Volume: Triangle", "[Geom][VolTria]" ) {
+  double l_ves[3][3] = { {0.0, 2.0, 2.0}, {0.0, 0.0, 3.0}, {0.0, 0.0, 0.0} };
   double l_vol = edge::linalg::Geom::volume( TRIA3, l_ves[0] );
   REQUIRE( l_vol == (2.0 * 3.0) / 2.0 );
 }
 
-TEST_CASE( "Diameter: Triangle 2D" "[Geom][DiaTria2D]" ) {
+TEST_CASE( "Diameter: Triangle 2D", "[Geom][DiaTria2D]" ) {
   // construct equilateral triangle
   double l_ves[2][3] = { {0.0, 1.0, 0.5}, {0.0, 0.0, std::sqrt(3.0)/2.0 } };
   double l_inDia = edge::linalg::Geom::inDia( TRIA3, l_ves[0] );
   REQUIRE( l_inDia == Approx(std::sqrt(3)/3.0) );
 }
 
-TEST_CASE( "Diameter: Tetrahedron 3D" "[Geom][DiaTet3D]" ) {
+TEST_CASE( "Diameter: Tetrahedron 3D", "[Geom][DiaTet3D]" ) {
   double l_ves[3][4] = { {0.0, 1.0, 0.5, 0.5},
                          {0.0, 0.0, 1.0, 0.5},
                          {0.0, 0.0, 0.0, 1.0} };
