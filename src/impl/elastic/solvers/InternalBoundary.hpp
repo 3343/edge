@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -45,18 +45,22 @@ namespace edge {
 
 #ifdef __INTEL_COMPILER
       template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP,
                 unsigned short TL_N_DIM=N_DIM >
 #else
       template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP,
                 unsigned short TL_N_DIM=C_ENT[TL_T_EL].N_DIM >
 #endif
       class InternalBoundarySolvers;
 
-      template< t_entityType TL_T_EL >
-      class InternalBoundarySolvers< TL_T_EL, 2 >;
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP >
+      class InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 >;
 
-      template< t_entityType TL_T_EL >
-      class InternalBoundarySolvers< TL_T_EL, 3 >;
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP >
+      class InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 >;
     }
   }
 }
@@ -190,12 +194,6 @@ class edge::elastic::solvers::InternalBoundary {
                             bool                  o_per[TL_N_SFS][TL_N_CRS],
                             TL_T_REAL             i_dt = 0,
                             TL_T_FA_DATA         *io_faData = nullptr ) {
-      // TODO: store as part of the flux solvers
-      TL_T_REAL l_sca = i_dt / TL_N_SFS;
-                l_sca *= CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
-      // DG solver scaled by inverse det of surface-jac (twice the area of the triangle)
-      if( TL_T_EL == TRIA3 ) l_sca *= 2;
-
       // temporary storage for the middle states
       TL_T_REAL l_msTmp[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
@@ -210,14 +208,16 @@ class edge::elastic::solvers::InternalBoundary {
       // rotate the DOFs from physical coordinates to face-aligned coords
       // remark: the back-rotation to physical coordinates is part of the the flux solver
       TL_T_REAL l_dofs[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
-                                       i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
-                                       i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
+      linalg::Matrix::matMulFusedBC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_SFS,
+                                     static_cast<TL_T_REAL>(0.0),
+                                     i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
+      linalg::Matrix::matMulFusedBC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_SFS,
+                                     static_cast<TL_T_REAL>(0.0),
+                                     i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
 
       // iterate over sub-faces
       for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
@@ -238,12 +238,13 @@ class edge::elastic::solvers::InternalBoundary {
         }
 
         // jump over waves with negative speeds from the left to get the left-side middle state
-        linalg::Matrix::matMulB1FusedBC( TL_N_CRS,
-                                         TL_N_QTS, 1, TL_N_QTS,
-                                         TL_N_QTS, 1, 1,
-                                         i_solMsJumpL[0],
-                                         l_qJump[0],
-                                         l_qVal[0][0] );
+        linalg::Matrix::matMulFusedBC( TL_N_CRS,
+                                       TL_N_QTS, 1, TL_N_QTS,
+                                       TL_N_QTS, 1, 1,
+                                       static_cast<TL_T_REAL>(1.0),
+                                       i_solMsJumpL[0],
+                                       l_qJump[0],
+                                       l_qVal[0][0] );
 
         // perturb if necessary
         TL_T_REAL l_ms[2][TL_N_QTS][TL_N_CRS];
@@ -259,27 +260,29 @@ class edge::elastic::solvers::InternalBoundary {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // left-going fluxes are subtracted
-            l_msTmp[0][l_qt][l_sf][l_cr] = -l_ms[0][l_qt][l_cr] * l_sca;
+            l_msTmp[0][l_qt][l_sf][l_cr] = -l_ms[0][l_qt][l_cr] * i_dt;
             // right-going fluxes are added
-            l_msTmp[1][l_qt][l_sf][l_cr] =  l_ms[1][l_qt][l_cr] * l_sca;
+            l_msTmp[1][l_qt][l_sf][l_cr] =  l_ms[1][l_qt][l_cr] * i_dt;
           }
         }
       }
 
       // compute fluxes and rotate DOFs back to physical coordinate system
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
-                                       i_solMsFluxL[0],
-                                       l_msTmp[0][0][0],
-                                       o_netUpsL[0][0] );
+      linalg::Matrix::matMulFusedBC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_SFS,
+                                     static_cast<TL_T_REAL>(0.0),
+                                     i_solMsFluxL[0],
+                                     l_msTmp[0][0][0],
+                                     o_netUpsL[0][0] );
 
-      linalg::Matrix::matMulB0FusedBC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_QTS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_SFS,
-                                       i_solMsFluxR[0],
-                                       l_msTmp[1][0][0],
-                                       o_netUpsR[0][0] );
+      linalg::Matrix::matMulFusedBC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_QTS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_SFS,
+                                     static_cast<TL_T_REAL>(0.0),
+                                     i_solMsFluxR[0],
+                                     l_msTmp[1][0][0],
+                                     o_netUpsR[0][0] );
     }
 };
 
@@ -299,6 +302,7 @@ class edge::elastic::solvers::InternalBoundaryTypes {
      * @param i_charsEl characteristics of the elements.
      * @param i_faEl elements adjacent to the faces.
      * @param i_elFa faces adjacent to the elements.
+     * @param i_vIdElFaEl vertex ids of the shared face with respect to the dense element's adjacent dense elements.
      *
      * @paramt TL_T_LID integer type of local ids.
      * @paramt TL_T_SP the sparse type of the internal boundary.
@@ -316,6 +320,7 @@ class edge::elastic::solvers::InternalBoundaryTypes {
                            TL_T_CHARS_EL  const     * i_charsEl,
                            TL_T_LID       const    (* i_faEl)[2],
                            TL_T_LID       const    (* i_elFa)[ TL_N_EL_FA ],
+                           unsigned short const (* i_vIdElFaEl)[ TL_N_EL_FA ],
                            edge::sc::ibnd::t_bfChars<
                              TL_T_SP
                            >                        * o_bfChars ) {
@@ -339,6 +344,9 @@ class edge::elastic::solvers::InternalBoundaryTypes {
           for( unsigned short l_fe = 0; l_fe < TL_N_EL_FA; l_fe++ ) {
             if( i_elFa[l_el][l_fe] == l_fa ) {
               o_bfChars[l_bf].fIdBfEl[l_sd] = l_fe;
+
+              // face holds the right elements vertex id
+              if( l_sd == 0 ) o_bfChars[l_bf].vIdFaElR = i_vIdElFaEl[l_el][l_fe];
               break;
             }
             // check that we found every thing
@@ -355,11 +363,19 @@ class edge::elastic::solvers::InternalBoundaryTypes {
  * Initializes 2D solvers used for internal boundaries.
  *
  * @paramt TL_T_EL two-dimensional element type.
+ * @paramt TL_O_SP order of the used DG method in space.
  **/
-template< t_entityType TL_T_EL >
-class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
+template< t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 > {
   //! #vertices of the elements
   static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
+
+  //! number of sub-faces
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! number of sub-cells
+  static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
 #if !defined(__INTEL_COMPILER) && !defined(__COVERITY__)
   static_assert( C_ENT[TL_T_EL].N_DIM==2, "template type and dimensions don't match" );
@@ -447,24 +463,24 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
      * @param i_spType sparse type.
      * @param i_faEl adjacency from faces to elements.
      * @param i_elVe adjacency from elements to vertices.
-     * @param i_veChars vertex characteristics.
      * @param i_faChars face characteristics.
+     * @param i_elChars element characteristics.
      * @param i_bgPars background parameters.
      * @param o_solverSp will be set so solver of the sparse faces. [0]: trafo to face-aligned coords, [1]: middle state, [2]: flux left, [3]: flux right.
      * @param i_bndCrds boundary coordinate system. [0]: vector pointing in the direction "left" to "right" side. If the nullptr is given, the outward-ponting normals of the mesh are used in the setup. These dependent on the global mesh indices and point from the lower to the upper index. Thus, the face-normal coordinate system in incosistent from face to face and might use either side of the internal boundary for the normal. In contrast if a vector is given, all normals are ensured to point into the normalDir-direction.
      *
      * @paramt TL_T_INT_LID integer type of local entities.
      * @paramt TL_T_INT_SP integer type for the sparse type.
-     * @paramt TL_T_VE_CHARS struct of the vertex characteristics (defines .coords[2+]).
      * @paramt TL_T_FA_CHARS struct of the face characteristics (defines .outNormal, .area).
+     * @paramt TL_T_EL_CHARS struct of the element characteristics (defines .volume).
      * @paramt TL_T_BG_PARS struct of the background parameters (defines .lam, .mu and .rho).
      * @paramt TL_T_REAL_MESH floating point precision of mesh-related data.
      * @paramt TL_T_REAL_COMP floating point precision of computational data.
      **/
     template< typename TL_T_INT_LID,
               typename TL_T_INT_SP,
-              typename TL_T_VE_CHARS,
               typename TL_T_FA_CHARS,
+              typename TL_T_EL_CHARS,
               typename TL_T_BG_PARS,
               typename TL_T_REAL_MESH,
               typename TL_T_REAL_COMP >
@@ -472,8 +488,8 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
                       TL_T_INT_SP            i_spType,
                       TL_T_INT_LID   const (*i_faEl)[2],
                       TL_T_INT_LID   const (*i_elVe)[TL_N_EL_VE],
-                      TL_T_VE_CHARS  const  *i_veChars,
                       TL_T_FA_CHARS  const  *i_faChars,
+                      TL_T_EL_CHARS  const  *i_elChars,
                       TL_T_BG_PARS   const  *i_bgPars,
                       TL_T_REAL_COMP       (*o_solversSp)[4][5][5],
                       TL_T_REAL_MESH         i_bndCrds[2][2] = nullptr ) {
@@ -481,7 +497,7 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
 
       // iterate over dense faces
       for( TL_T_INT_LID l_fa = 0; l_fa < i_nFa; l_fa++ ) {
-        // only continue for rupture elements
+        // only continue for elements of the internal boundary elements
         if( (i_faChars[l_fa].spType & i_spType) == i_spType ) {
           // get elements
           TL_T_INT_LID l_el[2];
@@ -534,7 +550,7 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
                          i_bgPars[l_el[1]].rho, i_bgPars[l_el[0]].rho,
                          o_solversSp[l_spId][1] );
 
-            // change the sign of the solver, which is multuplied to the jump in quantities Rh-Lh:
+            // change the sign of the solver, which is multiplied to the jump in quantities Rh-Lh:
             // Rh-Lh = -(R - L) if Rh=L and Lh=R
             for( unsigned short l_q1 = 0; l_q1 < 5; l_q1++ ) {
               for( unsigned short l_q2 = 0; l_q2 < 5; l_q2++ ) {
@@ -558,29 +574,10 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
                       o_solversSp[l_spId][3] );
 
           // scale the solvers by scalars
-          // TODO: This is redundant to the quad-free implementation and needs work..
-
           for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-            // vertex coordinates
-            TL_T_REAL_MESH l_veCrds[2][TL_N_EL_VE];
-
-            for( unsigned short l_ve = 0; l_ve < TL_N_EL_VE; l_ve++ ) {
-              TL_T_INT_LID l_veId = i_elVe[ l_el[l_sd] ][ l_ve ];
-
-              for( unsigned short l_di = 0; l_di < 2; l_di++ ) {
-                l_veCrds[l_di][l_ve] = i_veChars[l_veId].coords[l_di];
-              }
-            }
-
-            // get the jacobian
-            TL_T_REAL_MESH l_jac[2][2];
-            linalg::Mappings::evalJac( TL_T_EL, l_veCrds[0], l_jac[0] );
-
-            // get determinant
-            TL_T_REAL_MESH l_det = linalg::Matrix::det2x2( l_jac );
-
             // get scaling factor
-            TL_T_REAL_MESH l_sca = i_faChars[l_fa].area / l_det;
+            TL_T_REAL_MESH l_sca  = i_faChars[l_fa].area           / TL_N_SFS;
+                           l_sca *= i_elChars[ l_el[l_sd] ].volume / TL_N_SCS;
 
             // adjust sign of flux if the direction is inversed
             if( l_prefDir == false ) l_sca *= -1;
@@ -602,11 +599,19 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 2> {
  * Initializes 3D solvers used for internal boundaries.
  *
  * @paramt TL_T_EL three-dimensional element type.
+ * @paramt TL_O_SP order of the used DG method in space.
  **/
-template< t_entityType TL_T_EL >
-class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 3> {
+template< t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 > {
   //! #vertices of the elements
   static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
+
+  //! number of sub-faces
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! number of sub-cells
+  static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
 #if !defined(__INTEL_COMPILER) && !defined(__COVERITY__)
   static_assert( C_ENT[TL_T_EL].N_DIM==3, "template type and dimensions don't match" );
@@ -704,23 +709,23 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 3> {
      * @param i_spType sparse type.
      * @param i_faEl adjacency from faces to elements.
      * @param i_elVe adjacency from elements to vertices.
-     * @param i_veChars vertex characteristics.
      * @param i_faChars face characteristics.
+     * @param i_elChars element characteristics.
      * @param i_bgPars background parameters.
      * @param o_solverSp will be set so solver of the sparse faces. [0]: trafo to face-aligned coords, [1]: middle state, [2]: flux left, [3]: flux right.
      *
      * @paramt TL_T_INT_LID integer type of local entities.
      * @paramt TL_T_INT_SP integer type for the sparse type.
-     * @paramt TL_T_VE_CHARS struct of the vertex characteristics (defines .coords[3]).
      * @paramt TL_T_FA_CHARS struct of the face characteristics (defines .outNormal, .tangent0, .tangent1 and .area).
+     * @paramt TL_T_EL_CHARS struct of the element characteristics (defines .volume).
      * @paramt TL_T_BG_PARS struct of the background parameters (defines .lam, .mu and .rho).
      * @paramt TL_T_REAL_MESH floating point precision of mesh-related data.
      * @paramt TL_T_REAL_COMP floating point precision of computational data.
      **/
     template< typename TL_T_INT_LID,
               typename TL_T_INT_SP,
-              typename TL_T_VE_CHARS,
               typename TL_T_FA_CHARS,
+              typename TL_T_EL_CHARS,
               typename TL_T_BG_PARS,
               typename TL_T_REAL_MESH,
               typename TL_T_REAL_COMP >
@@ -728,8 +733,8 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 3> {
                       TL_T_INT_SP            i_spType,
                       TL_T_INT_LID   const (*i_faEl)[2],
                       TL_T_INT_LID   const (*i_elVe)[TL_N_EL_VE],
-                      TL_T_VE_CHARS  const  *i_veChars,
                       TL_T_FA_CHARS  const  *i_faChars,
+                      TL_T_EL_CHARS  const  *i_elChars,
                       TL_T_BG_PARS   const  *i_bgPars,
                       TL_T_REAL_COMP       (*o_solversSp)[4][9][9],
                       TL_T_REAL_MESH         i_bndCrds[3][3] = nullptr ) {
@@ -883,28 +888,10 @@ class edge::elastic::solvers::InternalBoundarySolvers<TL_T_EL, 3> {
                       o_solversSp[l_spId][3] );
 
           // scale the solvers by scalars
-          // TODO: This is redundant to the quad-free implementation and needs work..
           for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-            // vertex coordinates
-            TL_T_REAL_MESH l_veCrds[3][TL_N_EL_VE];
-
-            for( unsigned short l_ve = 0; l_ve < TL_N_EL_VE; l_ve++ ) {
-              TL_T_INT_LID l_veId = i_elVe[ l_el[l_sd] ][ l_ve ];
-
-              for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-                l_veCrds[l_di][l_ve] = i_veChars[l_veId].coords[l_di];
-              }
-            }
-
-            // get the jacobian
-            TL_T_REAL_MESH l_jac[3][3];
-            linalg::Mappings::evalJac( TL_T_EL, l_veCrds[0], l_jac[0] );
-
-            // get determinant
-            TL_T_REAL_MESH l_det = linalg::Matrix::det3x3( l_jac );
-
             // get scaling factor
-            TL_T_REAL_MESH l_sca = i_faChars[l_fa].area / l_det;
+            TL_T_REAL_MESH l_sca  = i_faChars[l_fa].area           / TL_N_SFS;
+                           l_sca *= i_elChars[ l_el[l_sd] ].volume / TL_N_SCS;
 
             // adjust sign of flux if the direction is inversed
             if( l_prefDir == false ) l_sca *= -1;

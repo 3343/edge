@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -609,17 +609,19 @@ if( l_elasticConf.m_frictionLaw != "" ) {
                 l_internal.m_elementChars,
                 l_internal.m_connect.faEl,
                 l_internal.m_connect.elFa,
+                l_internal.m_connect.vIdElFaEl,
                 l_internal.m_globalShared7[0].bfChars );
 
   // set up rupture solvers
   edge::elastic::solvers::InternalBoundarySolvers<
-    T_SDISC.ELEMENT
+    T_SDISC.ELEMENT,
+    ORDER
   >::init( l_enLayouts[1].nEnts,
            t_spTypeElastic::RUPTURE,
            l_internal.m_connect.faEl,
            l_internal.m_connect.elVe,
-           l_internal.m_vertexChars,
            l_internal.m_faceChars,
+           l_internal.m_elementChars,
            l_internal.m_elementShared1[0],
            l_internal.m_globalShared7[0].mss,
            l_elasticConf.m_faultCrds );
@@ -681,8 +683,10 @@ l_internal.m_globalShared8[0].alloc( l_enLayouts[l_limPlusLayout].nEnts,
 l_internal.m_globalShared8[0].init( 0,
                                     l_enLayouts[l_limPlusLayout].nEnts,
                                     l_internal.m_globalShared2[0].connect.lpEl,
+                                    l_internal.m_connect.elVe,
                                     l_internal.m_connect.elFa,
                                     l_internal.m_connect.elFaEl,
+                                    l_internal.m_vertexChars,
                                     l_internal.m_faceChars,
                                     l_internal.m_elementChars,
                                     l_internal.m_elementShared1[0] );

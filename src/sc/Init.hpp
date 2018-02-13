@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -43,6 +43,10 @@ namespace edge {
       //! types of the sub-cells' sub-faces
       extern const unsigned short *g_sctysfRaw;
       extern const std::size_t     g_sctysfSize;
+
+      //! types of the sub-cell reordering, based on vertex combinations of adjacent DG-elements
+      extern const unsigned short *g_scdgadRaw;
+      extern const std::size_t     g_scdgadSize;
 
       //! reference coordinates of the sub-vertices
       extern const double      *g_svcrdsRaw;
@@ -88,8 +92,11 @@ class edge::sc::Init {
     //! number of dimensions
     static unsigned short const TL_N_DIS = C_ENT[ TL_T_EL ].N_DIM;
 
+    //! number of vertices per face / sub-face
+    static unsigned short const TL_N_VES_FA = C_ENT[ TL_T_EL ].N_FACE_VERTICES;
+
     //! number of vertices per element / sub-cell
-    static unsigned short const TL_N_VES = C_ENT[ TL_T_EL ].N_VERTICES;
+    static unsigned short const TL_N_VES_EL = C_ENT[ TL_T_EL ].N_VERTICES;
 
     //! number of faces per element / sub-cell
     static unsigned short const TL_N_FAS = C_ENT[ TL_T_EL ].N_FACES;
@@ -105,6 +112,9 @@ class edge::sc::Init {
 
     //! number of modes
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
+
+    //! number scatter surface ops
+    static unsigned short const TL_N_SCASU = (TL_N_DIS < 3) ? 2*TL_N_FAS : TL_N_FAS+TL_N_VES_FA*TL_N_FAS;
 
     /**
      * Gets the send sub-cells adjacent to DG-faces through sub-grid connectivity.
@@ -166,7 +176,7 @@ class edge::sc::Init {
        */
       // check sizes
       l_size  = l_nScs;
-      l_size *= TL_N_VES;
+      l_size *= TL_N_VES_EL;
       EDGE_CHECK_EQ( edge::pre::sc::g_scsvSize,
                      l_size );
 
@@ -174,7 +184,7 @@ class edge::sc::Init {
       l_ptr = edge::pre::sc::g_scsvRaw;
 
       for( unsigned short l_sc = 0; l_sc < l_nScs; l_sc++ ) {
-        for( unsigned short l_ve = 0; l_ve < TL_N_VES; l_ve++ ) {
+        for( unsigned short l_ve = 0; l_ve < TL_N_VES_EL; l_ve++ ) {
           o_conn.scSv[l_sc][l_ve] = *l_ptr;
           l_ptr++;
         }
@@ -208,7 +218,7 @@ class edge::sc::Init {
       /*
        * scTySf
        */
-      // check sizes
+      // check size
       l_size =  TL_N_SCS;
       l_size *= TL_N_FAS;
       EDGE_CHECK_EQ( edge::pre::sc::g_sctysfSize,
@@ -220,6 +230,27 @@ class edge::sc::Init {
       for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
           o_conn.scTySf[l_sc][l_fa] = *l_ptr;
+          l_ptr++;
+        }
+      }
+
+      /*
+       * scDgAd
+       */
+      // number of possible orientations
+      const unsigned short l_or = (TL_N_DIS == 3) ? TL_N_VES_FA : 1;
+
+      // check size
+      l_size = l_or;
+      l_size *= TL_N_SFS;
+      EDGE_CHECK_EQ( edge::pre::sc::g_scdgadSize,
+                     l_size );
+      // assign info
+      l_ptr = edge::pre::sc::g_scdgadRaw;
+
+      for( unsigned short l_ve = 0; l_ve < l_or; l_ve++ ) {
+        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+          o_conn.scDgAd[l_ve][l_sf] = *l_ptr;
           l_ptr++;
         }
       }
@@ -296,7 +327,7 @@ class edge::sc::Init {
        * scatter surf
        **/
       l_size  = TL_N_MDS;
-      l_size *= TL_N_FAS*2;
+      l_size *= TL_N_SCASU;
       l_size *= TL_N_SFS;
       EDGE_CHECK_EQ( edge::pre::sc::g_scattersurfSize,
                      l_size );
@@ -304,7 +335,7 @@ class edge::sc::Init {
       // assign info
       l_ptr = edge::pre::sc::g_scattersurfRaw;
 
-      for( unsigned short l_fa = 0; l_fa < TL_N_FAS*2; l_fa++ ) {
+      for( unsigned short l_fa = 0; l_fa < TL_N_SCASU; l_fa++ ) {
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             o_ops.scatterSurf[l_fa][l_md][l_sf] = *l_ptr;

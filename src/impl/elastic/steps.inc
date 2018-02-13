@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -61,12 +61,14 @@ if( i_step == 0 ) {
             i_enSp[2].first,
             i_enSp[0].first,
             m_internal.m_globalShared2[0].connect.faSfSc,
+            m_internal.m_globalShared2[0].connect.scDgAd,
             m_internal.m_connect.elFa,
             m_internal.m_faceChars,
             m_internal.m_elementChars,
             m_internal.m_globalShared1[0],
             m_internal.m_elementShared4,
             m_internal.m_elementShared2,
+            m_internal.m_connect.vIdElFaEl,
             m_internal.m_elementModePrivate1,
             m_internal.m_globalShared2[0].dofs,
             m_internal.m_globalShared6,
@@ -114,8 +116,6 @@ else if( i_step == 1 ) {
             m_internal.m_globalShared2[0].connect.liVeEx,
             m_internal.m_connect.elFa,
             m_internal.m_connect.elFaEl,
-            m_internal.m_globalShared7[0].connect.bfBe,
-            m_internal.m_globalShared7[0].connect.beBf,
             m_internal.m_connect.fIdElFaEl,
             m_internal.m_connect.vIdElFaEl,
             m_internal.m_globalShared6,
@@ -170,7 +170,7 @@ else if ( i_step == 2 ) {
               i_enSp[0].first,
   (real_base) m_covSimTime,
   (real_base) m_dT,
-              m_internal.m_globalShared1[0],
+              m_internal.m_globalShared2[0].connect.scDgAd,
               m_internal.m_globalShared2[0].ops.scatterSurf,
               m_internal.m_elementShared4,
               m_internal.m_globalShared7[0],
@@ -205,7 +205,9 @@ else if( i_step == 3 ) {
     N_CRUNS >::aPost( i_first,
                       i_size,
                       m_dT,
-                      m_internal.m_globalShared1[0].mat.flux,
+                      m_internal.m_globalShared1[0].mat.fluxL,
+                      m_internal.m_globalShared1[0].mat.fluxN,
+                      m_internal.m_globalShared1[0].mat.fluxT,
                       m_internal.m_globalShared2[0].ops,
                       m_internal.m_globalShared2[0].connect,
                       m_internal.m_faceChars,

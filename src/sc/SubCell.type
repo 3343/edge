@@ -84,6 +84,9 @@ struct edge::sc::t_connect {
   //! type of the sub-cells' faces
   unsigned short scTySf[TL_N_SCS][TL_N_FAS];
 
+  //! sub-cell reordering based on vertex combinations of adjacent DG-elements
+  unsigned short scDgAd[TL_N_VES][TL_N_SFS];
+
   //! link between limited plus elements and dense elements (no bridge)
   TL_T_LID (*lpEl);
 
@@ -110,10 +113,10 @@ template< typename     TL_T_REAL,
           t_entityType TL_T_EL >
 struct edge::sc::t_svChars {
   //! number of dims
-  static unsigned short const TL_N_DIMS = C_ENT[TL_T_EL].N_DIM;
+  static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 
   //! coordinates
-  TL_T_REAL coords[TL_N_DIMS];
+  TL_T_REAL coords[TL_N_DIS];
 };
 
 /**
@@ -127,6 +130,12 @@ template< typename       TL_T_REAL,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP >
 struct edge::sc::t_ops {
+  //! number of dims
+  static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
+
+  //! number of vertices per face / sub-face
+  static unsigned short const TL_N_VES_FA = C_ENT[ TL_T_EL ].N_FACE_VERTICES;
+
   //! number of faces per element / sub-cell
   static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
@@ -137,13 +146,16 @@ struct edge::sc::t_ops {
   static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
   //! number of sub-cells per element
-  static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+  static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+
+  //! number of scatter surface ops
+  static unsigned short const TL_N_SCASU = (TL_N_DIS < 3) ? 2*TL_N_FAS : TL_N_FAS+TL_N_VES_FA*TL_N_FAS;
 
   //! scatter matrix
   TL_T_REAL scatter[TL_N_MDS][TL_N_SCS];
 
   //! scatter matrix for sub-cells at the DG element's and adjacent DG elements surfaces
-  TL_T_REAL scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS];
+  TL_T_REAL scatterSurf[TL_N_SCASU][TL_N_MDS][TL_N_SFS];
 
   //! gather matrix
   TL_T_REAL gather[TL_N_SCS][TL_N_MDS];

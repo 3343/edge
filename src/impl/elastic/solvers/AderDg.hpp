@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -77,8 +77,11 @@ class edge::elastic::solvers::AderDg {
     //! number of dimensions
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 
-    //! number of vertices
-    static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
+    //! number of vertices per face
+    static unsigned short const TL_N_VES_FA = C_ENT[TL_T_EL].N_FACE_VERTICES;
+
+    //! number of vertices per element
+    static unsigned short const TL_N_VES_EL = C_ENT[TL_T_EL].N_VERTICES;
 
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
@@ -91,9 +94,6 @@ class edge::elastic::solvers::AderDg {
 
     //! number of subcells per DG-element
     static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
-
-    //! number of flux matrices
-    static unsigned short const TL_N_FMS = CE_N_FLUX_MATRICES( TL_T_EL );
 
   public:
     /**
@@ -127,7 +127,7 @@ class edge::elastic::solvers::AderDg {
      **/
     static void setupStarM(       int_el           i_nElements,
                             const t_vertexChars   *i_vertexChars,
-                            const int_el         (*i_elVe)[TL_N_VES],
+                            const int_el         (*i_elVe)[TL_N_VES_EL],
                             const t_bgPars       (*i_bgPars)[1],
                                   t_matStar      (*o_starMatrices)[N_DIM] ) {
       PP_INSTR_FUN("star_matrices")
@@ -157,7 +157,7 @@ class edge::elastic::solvers::AderDg {
         getJac( i_bgPars[l_el][0].rho, i_bgPars[l_el][0].lam, i_bgPars[l_el][0].mu, l_A[0][0], N_DIM );
 
         // derive vertex coords
-        real_mesh l_veCoords[N_DIM][TL_N_VES];
+        real_mesh l_veCoords[N_DIM][TL_N_VES_EL];
         mesh::common< TL_T_EL >::getElVeCrds( l_el, i_elVe, i_vertexChars, l_veCoords );
 
         // get inverse jacobian
@@ -244,12 +244,14 @@ class edge::elastic::solvers::AderDg {
      * @param i_firstSpLe first limited element.
      * @param i_firstSpRe first sparse receiver entity.
      * @param i_faSfSc sub-cells adjacent to DG-faces (sub-faces as "bridge").
+     * @param i_scDgAd adjacency of sub-cells at faces of face-adjacent elements.
      * @param i_elFa faces adjacent to the elements.
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_dg const DG data.
      * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers for the local element's contribution.
+     * @param i_vIdElFaEl vertex combinations of adajcent elements (faces as bridge).
      * @param io_dofs DOFs.
      * @param i_dofsSc sub-cell limited solution.
      * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
@@ -273,13 +275,15 @@ class edge::elastic::solvers::AderDg {
                        double                               i_dt,
                        TL_T_LID                             i_firstSpLe,
                        TL_T_LID                             i_firstSpRe,
-                       TL_T_LID       const                 i_faSfSc[TL_N_FAS][TL_N_SFS],
+                       TL_T_LID                             i_faSfSc[TL_N_FAS][TL_N_SFS],
+                       unsigned short const                 i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                        TL_T_LID                    const (* i_elFa)[TL_N_FAS],
                        t_faceChars                 const  * i_faChars,
                        t_elementChars              const  * i_elChars,
                        t_dg                        const  & i_dg,
                        t_matStar                   const (* i_starM)[N_DIM],
                        t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
+                       unsigned short const              (* i_vIdElFaEl)[TL_N_FAS],
                        TL_T_REAL                         (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                        TL_T_REAL                    const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                        TL_T_REAL           (* const * const o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
@@ -348,7 +352,7 @@ class edge::elastic::solvers::AderDg {
                           (TL_T_REAL (*)[TL_N_QTS][TL_N_MDS][TL_N_CRS])l_tmp );
 
               // write this time prediction
-              io_recvs.writeRecvAll( l_enRe, l_tmpEl );
+              io_recvs.writeRecvAll( l_enRe, l_tmp );
             }
           }
           l_enRe++;
@@ -410,14 +414,19 @@ class edge::elastic::solvers::AderDg {
 
           // iterate over DG-faces
           for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+            unsigned l_vId = i_vIdElFaEl[l_el][l_fa];
+
             // iterate over quantities
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
               // iterate over sub-faces
               for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-                // get sub-cell id for use by adjacent elements (faces as bridge): reverse order required due to "clock-wise orientation" of adjacent element
-                TL_T_LID l_sc = i_faSfSc[l_fa][TL_N_SFS-1-l_sf];
+                // determine sub-face from the view of the adjacent element
+                unsigned short l_sfRe = i_scDgAd[l_vId][l_sf];
 
-                // copy over the sub-cell DOFs
+                // get id of copy sub-cell (faces as bridge)
+                TL_T_LID l_sc = i_faSfSc[l_fa][l_sfRe];
+
+                // copy over the sub-cell DOFs; we already respect possible vertex combis and the change in orientation
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   o_tDofsSc[l_le][l_fa][l_qt][l_sf][l_cr] = i_dofsSc[l_le][l_qt][l_sc][l_cr];
                 }
@@ -438,7 +447,7 @@ class edge::elastic::solvers::AderDg {
      * @param i_firstReSp first sparse id of the receivers.
      * @param i_time current time of the faces.
      * @param i_dt time step of the two adjacent elements.
-     * @param i_dg discontinuous galerkin data structures.
+     * @param i_scDgAd adjacency of sub-cells at the faces of face-adjacent elements.
      * @param i_scatterSurf scatter operator for sub-cells at the DG-faces.
      * @param i_starM star matrices.
      * @param i_iBnd internal boundary data.
@@ -473,7 +482,7 @@ class edge::elastic::solvers::AderDg {
                          TL_T_LID                                             i_firstSpRe,
                          TL_T_REAL                                            i_time,
                          TL_T_REAL                                            i_dt,
-                         t_dg                          const                & i_dg,
+                         unsigned short                const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                          TL_T_REAL                     const                  i_scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS],
                          t_matStar                     const               (* i_starM)[N_DIM],
                          edge::sc::ibnd::t_InternalBoundary<
@@ -522,11 +531,16 @@ class edge::elastic::solvers::AderDg {
         // get sub-cell solution at DG-faces
         TL_T_REAL l_dofsSc[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
 
+        // vertex combination
+        unsigned short l_vIdFaEl = i_iBnd.bfChars[l_bf].vIdFaElR;
+
         for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
           // get dense element
           TL_T_LID l_el = i_iBnd.connect.beEl[ l_be[l_sd] ];
 
-          unsigned short l_fId = l_fIdBfEl[l_sd] + TL_N_FAS;
+          unsigned short l_fId  = TL_N_FAS;             // jump of local scatter ops
+                         l_fId += l_vIdFaEl * TL_N_FAS; // jump over vertex combis
+                         l_fId += l_fIdBfEl[l_sd];      // jump over faces
 
           edge::sc::Kernels<
             TL_T_EL,
@@ -539,13 +553,17 @@ class edge::elastic::solvers::AderDg {
                                                  l_dofsSc[l_sd] );
         }
 
-        // fix storage of left element's sub-cells (both, left and right, are reversed at the moment)
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-          for( unsigned short l_sf = 0; l_sf < TL_N_SFS/2; l_sf++ ) {
+        // at this point both faces are reordered: fix storage of left element's sub-cells by reapplying the permutation
+        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+          unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
+          // only permute one time
+          if( l_sfRe <= l_sf ) continue;
+
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               TL_T_REAL l_dofTmp = l_dofsSc[0][l_qt][l_sf][l_cr];
-              l_dofsSc[0][l_qt][l_sf][l_cr] = l_dofsSc[0][l_qt][TL_N_SFS-1-l_sf][l_cr];
-              l_dofsSc[0][l_qt][TL_N_SFS-1-l_sf][l_cr] = l_dofTmp;
+              l_dofsSc[0][l_qt][l_sf][l_cr] = l_dofsSc[0][l_qt][l_sfRe][l_cr];
+              l_dofsSc[0][l_qt][l_sfRe][l_cr] = l_dofTmp;
             }
           }
         }
@@ -579,9 +597,12 @@ class edge::elastic::solvers::AderDg {
          // store net-updates
          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+             // sub-cells are ordered based on the left element; reorder for right element
+             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
+
              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                io_tDofsSc[ l_le[0] ][ l_fIdBfEl[0] ][l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
-               io_tDofsSc[ l_le[1] ][ l_fIdBfEl[1] ][l_qt][l_sf][l_cr] = l_netUps[1][l_qt][TL_N_SFS-1-l_sf][l_cr];
+               io_tDofsSc[ l_le[1] ][ l_fIdBfEl[1] ][l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
              }
            }
          }
@@ -643,17 +664,16 @@ class edge::elastic::solvers::AderDg {
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_fluxSolvers flux solvers for the neighboring elements' contribution.
+     * @param i_liVeEx extrema elements adjacent to limited elements (vertices as bridge).
      * @param i_elFa elements' adjacent faces.
      * @param i_elFaEl face-neighboring elements.
-     * @param i_faElSpRp adjacency information from sparse rupture faces to sparse rupture elements.
-     * @param i_elFaSpRp adjacnecy information from sparse rupture elements to sparse rupture faces.
      * @param i_fIdElFaEl local face ids of face-neighboring elememts.
      * @param i_vIdElFaEl local vertex ids w.r.t. the shared face from the neighboring elements' perspsective.
      * @param i_tDofsDg temporarary DG DOFs ([0]: time integrated, [1]: DOFs of previous time step).
      * @param io_dofs DOFs which will be updated with neighboring elements' contribution.
      * @param io_admC will be updated with the admissibility of the candidate solution.
      * @param i_extP extreme of the previous solution.
-     * @param i_extC will be set to extreme of the candidate solution.
+     * @param o_extC will be set to extreme of the candidate solution.
      * @param i_mm matrix-matrix multiplication kernels.
      *
      * @paramt TL_T_LID integer type of local entity ids.
@@ -675,8 +695,6 @@ class edge::elastic::solvers::AderDg {
                        TL_T_LID       const       (* const * i_liVeEx),
                        TL_T_LID   const                   (* i_elFa)[TL_N_FAS],
                        TL_T_LID   const                   (* i_elFaEl)[TL_N_FAS],
-                       TL_T_LID   const                   (* i_faElSpRp)[2],
-                       TL_T_LID   const                   (* i_elFaSpRp)[TL_N_FAS],
                        unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
                        unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
                        TL_T_REAL      const (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
@@ -692,8 +710,8 @@ class edge::elastic::solvers::AderDg {
       TL_T_LID l_le = i_firstLe;
 
       // temporary product for three-way mult
-        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
-          (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
+      TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
+        (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
 
       // iterate over elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
@@ -707,9 +725,7 @@ class edge::elastic::solvers::AderDg {
                                           TL_N_QTS,
                                           TL_O_SP,
                                           TL_O_TI,
-                                          TL_N_CRS >::fMatId( i_faChars[l_faId].spType,
-                                                              l_fa,
-                                                              i_vIdElFaEl[l_el][l_fa],
+                                          TL_N_CRS >::fMatId( i_vIdElFaEl[l_el][l_fa],
                                                               i_fIdElFaEl[l_el][l_fa] );
 
           if( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW ) {
@@ -747,7 +763,7 @@ class edge::elastic::solvers::AderDg {
                                                                                                       i_dg.mat.fluxL[l_fa],
                                        i_dg.mat.fluxT[l_fa],
                                        ( TL_T_REAL (*)[TL_N_QTS] )  ( i_fluxSolvers[l_el][l_fa].solver[0] ), // TODO: fix struct
-                                       i_tInt[l_ne],
+                                       i_tDofsDg[0][l_ne],
                                        i_mm,
                                        io_dofs[l_el],
                                        l_tmpFa,
@@ -802,7 +818,6 @@ class edge::elastic::solvers::AderDg {
         }
       }
     }
-  }
 };
 
 #endif

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -703,12 +703,12 @@ class edge::mesh::common {
     static void getElVeCrds(       TL_T_LID        i_el,
                              const TL_T_LID      (*i_elVe)[TL_N_EL_VES],
                              const TL_T_VE_CHARS  *i_veChars,
-                                   TL_T_REAL       o_veCrds[TL_N_DI][TL_N_EL_VES] ) {
+                                   TL_T_REAL       o_veCrds[TL_N_DIS][TL_N_EL_VES] ) {
       // get elements vertices
       for( unsigned short l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
         TL_T_LID l_veId       = i_elVe[i_el][l_ve];
 
-        for( unsigned short l_di = 0; l_di < TL_N_DI; l_di++ ) {
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
           o_veCrds[l_di][l_ve] = i_veChars[l_veId].coords[l_di];
         }
       }

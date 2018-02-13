@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -75,12 +75,13 @@ class edge::sc::Kernels {
                                 TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
                                 TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
       // project element's DG solution to sub-cells
-      linalg::Matrix::matMulB0FusedAC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_SCS, TL_N_MDS, // m, n, k
-                                       TL_N_MDS, TL_N_SCS, TL_N_SCS, // ldA, ldB, ldC
-                                       i_dofsDg[0][0],               // A
-                                       i_mat[0],                     // B
-                                       o_scDofs[0][0] );             // C
+      linalg::Matrix::matMulFusedAC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_SCS, TL_N_MDS, // m, n, k
+                                     TL_N_MDS, TL_N_SCS, TL_N_SCS, // ldA, ldB, ldC
+                                     static_cast<TL_T_REAL>(0.0),  // beta
+                                     i_dofsDg[0][0],               // A
+                                     i_mat[0],                     // B
+                                     o_scDofs[0][0] );             // C
     }
 
     /**
@@ -98,12 +99,13 @@ class edge::sc::Kernels {
                                   TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
                                   TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
       // project element's DG solution to sub-cells
-      linalg::Matrix::matMulB0FusedAC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_SFS, TL_N_MDS, // m, n, k
-                                       TL_N_MDS, TL_N_SFS, TL_N_SFS, // ldA, ldB, ldC
-                                       i_dofsDg[0][0],               // A
-                                       i_mat[0],                     // B
-                                       o_scDofs[0][0] );             // C
+      linalg::Matrix::matMulFusedAC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_SFS, TL_N_MDS, // m, n, k
+                                     TL_N_MDS, TL_N_SFS, TL_N_SFS, // ldA, ldB, ldC
+                                     static_cast<TL_T_REAL>(0.0),  // beta
+                                     i_dofsDg[0][0],               // A
+                                     i_mat[0],                     // B
+                                     o_scDofs[0][0] );             // C
     }
 
     /**
@@ -195,12 +197,13 @@ class edge::sc::Kernels {
                                TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                                TL_T_REAL       o_dgDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution to DG solution
-      linalg::Matrix::matMulB0FusedAC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_MDS, TL_N_SCS, // m, n, k
-                                       TL_N_SCS, TL_N_MDS, TL_N_MDS, // ldA, ldB, ldC
-                                       i_scDofs[0][0],               // A
-                                       i_mat[0],                     // B
-                                       o_dgDofs[0][0] );             // C
+      linalg::Matrix::matMulFusedAC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_MDS, TL_N_SCS, // m, n, k
+                                     TL_N_SCS, TL_N_MDS, TL_N_MDS, // ldA, ldB, ldC
+                                     static_cast<TL_T_REAL>(0.0),  // beta
+                                     i_scDofs[0][0],               // A
+                                     i_mat[0],                     // B
+                                     o_dgDofs[0][0] );             // C
     }
 
     /**
@@ -218,12 +221,13 @@ class edge::sc::Kernels {
                               TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                               TL_T_REAL       o_int[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution at faces to DG solution
-      linalg::Matrix::matMulB0FusedAC( TL_N_CRS,
-                                       TL_N_QTS, TL_N_MDS, TL_N_SFS, // m, n, k
-                                       TL_N_SFS, TL_N_MDS, TL_N_MDS, // ldA, ldB, ldC
-                                       i_scFluxes[0][0],             // A
-                                       i_mat[0],                     // B
-                                       o_int[0][0] );                // C
+      linalg::Matrix::matMulFusedAC( TL_N_CRS,
+                                     TL_N_QTS, TL_N_MDS, TL_N_SFS, // m, n, k
+                                     TL_N_SFS, TL_N_MDS, TL_N_MDS, // ldA, ldB, ldC
+                                     static_cast<TL_T_REAL>(0.0),  // beta
+                                     i_scFluxes[0][0],             // A
+                                     i_mat[0],                     // B
+                                     o_int[0][0] );                // C
     }
 
     /**

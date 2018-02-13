@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,7 @@
 #include "data/Dynamic.h"
 #include "../common.hpp"
 #include "linalg/Matrix.h"
+#include "linalg/Geom.hpp"
 
 namespace edge {
   namespace elastic {
@@ -67,10 +68,10 @@ class edge::elastic::sc::LlfSolver< 2 > {
      **/
     template< typename TL_T_REAL >
     static void centralL( TL_T_REAL  const i_matL[3],
-                          TL_T_REAL  i_n[2],
-                          TL_T_REAL  *,
-                          TL_T_REAL  *,
-                          TL_T_REAL  o_cenL[5][5] ) {
+                          TL_T_REAL  const i_n[2],
+                          TL_T_REAL  const *,
+                          TL_T_REAL  const *,
+                          TL_T_REAL        o_cenL[5][5] ) {
       // compute trafos
       TL_T_REAL l_t[5][5];
       elastic::common::setupTrafo2d( i_n[0], i_n[1],
@@ -110,7 +111,6 @@ class edge::elastic::sc::LlfSolver< 3 > {
      * Initializes the left element's contribution to the central flux solver.
      *
      * @param i_matL left element's material parameters: lambda, mu, rho.
-     * @param i_matR right element's material parameters: lambda, mu, rho.
      * @param i_n face-normal, pointing from the left to the right element.
      * @param i_t0 first face-tangent.
      * @param i_t1 second face-tangent, normal to the normal and t0.
@@ -120,11 +120,40 @@ class edge::elastic::sc::LlfSolver< 3 > {
      **/
     template< typename TL_T_REAL >
     static void centralL( TL_T_REAL const i_matL[3],
-                          TL_T_REAL i_n[3],
-                          TL_T_REAL t_t0[3],
-                          TL_T_REAL i_t1[3],
-                          TL_T_REAL o_cenL[9][9] ) {
-      EDGE_LOG_FATAL << "not implemented";
+                          TL_T_REAL const i_n[3],
+                          TL_T_REAL const i_t0[3],
+                          TL_T_REAL const i_t1[3],
+                          TL_T_REAL       o_cenL[9][9] ) {
+      // compute trafos
+      TL_T_REAL l_t[9][9];
+      elastic::common::setupTrafo3d( i_n[0],  i_n[1],  i_n[2],
+                                     i_t0[0], i_t0[1], i_t0[2],
+                                     i_t1[0], i_t1[1], i_t1[2],
+                                     l_t );
+      TL_T_REAL l_tm1[9][9];
+      elastic::common::setupTrafoInv3d( i_n[0],  i_n[1],  i_n[2],
+                                        i_t0[0], i_t0[1], i_t0[2],
+                                        i_t1[0], i_t1[1], i_t1[2],
+                                        l_tm1 );
+
+      // compute the jacobians of the left element
+      TL_T_REAL l_abc[3][9][9];
+      elastic::common::getJac3D( i_matL[2],
+                                 i_matL[0],
+                                 i_matL[1],
+                                 l_abc );
+
+      // compute combined solver
+      TL_T_REAL l_tmp[9][9];
+      linalg::Matrix::matMulB0( 9, 9, 9,
+                                l_t[0], l_abc[0][0], l_tmp[0] );
+      linalg::Matrix::matMulB0( 9, 9, 9,
+                                l_tmp[0], l_tm1[0], o_cenL[0] );
+
+      // scale with 0.5 (left element: negative)
+      for( unsigned short l_q1 = 0; l_q1 < 9; l_q1++ )
+        for( unsigned short l_q2 = 0; l_q2 < 9; l_q2++ )
+          o_cenL[l_q1][l_q2] *= (TL_T_REAL) -0.5;
     }
 };
 
@@ -145,6 +174,9 @@ class edge::elastic::sc::Llf {
     //! number of dimensions
     static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 
+    //! number of vertices per element
+    static const unsigned short TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
+
     //! number of faces per element
     static const unsigned short TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
@@ -154,39 +186,45 @@ class edge::elastic::sc::Llf {
     //! number of sub-faces per element face
     static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
-    //! number of subcells per element
+    //! number of sub-cells per element
     static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
-    static_assert( TL_T_EL == TRIA3 || TL_T_EL == QUAD4R, "Tets might have more sub-faces than DG-faces" );
-    // central flux part of the local Lax-Friedrichs solver for the "left" side
-    // 0 - N_FAS: homogeneous (incorporates the element's material parameters)
-    // N_FAS - 2*N_FAS-1: heterogeneous (incorporates material parameters of the adjacent elements)
-    TL_T_REAL (* m_cen)[TL_N_FAS*2][TL_N_QTS][TL_N_QTS];
+    //! number of sub-face types
+    static unsigned short const TL_N_TYSF = (TL_T_EL != TET4) ? TL_N_FAS : 6;
 
-    //! viscosity term, homogeneous: 0 - N_FAS-1, heterogeneous: N_FAS - 2*N_FAS-1
-    TL_T_REAL (* m_vis)[TL_N_FAS*2];
+    // central flux part of the local Lax-Friedrichs solver for the "left" side
+    // 0 - TL_N_TYSF-1: homogeneous (incorporates the element's material parameters)
+    // TL_N_TYSF - TL_N_TYSF+TL_N_FAS-1: heterogeneous (incorporates material parameters of the adjacent elements)
+    TL_T_REAL (* m_cen)[TL_N_TYSF+TL_N_FAS][TL_N_QTS][TL_N_QTS];
+
+    //! viscosity term, homogeneous: 0 - TL_N_TYSF-1, heterogeneous: TL_N_TYSF - TL_N_TYSF+TL_N_FAS-1
+    TL_T_REAL (* m_vis)[TL_N_TYSF+TL_N_FAS];
 
   private:
     /**
      * Derives the LLF solver's ids and side, based on the sub-cell's face-type.
      *
-     * @param i_scTySf sub-cell's face type, DG left: 0 - N_FAS-1, DG right: N_FAS - 2*N_FAS-1, SC left: 2*N_FAS - 3*N_FAS-1, SC right: 3*N_FAS - 4*N_FAS-1.
+     * @param i_scTySf sub-cell's face type, DG-surf left: 0 - TL_N_FAS-1, DG-surf right: TL_N_FAS - 2*TL_N_FAS-1, Inner left: 2*TL_N_FAS - 2*TL_N_FAS+TL_N_TYSF-1, Inner right: 2*TL_N_FAS+TL_N_TYSF - 2*TL_N_FAS+2*TL_N_TYSF.
      * @param o_lffIds will be set to LLF solver's id.
      * @return true if sub-cell is left w.r.t. to DG-face's outer-pointing normal.
      **/
     static bool llfIds( unsigned short  i_scTySf,
                         unsigned short  o_llfIds[2] ) {
+      // DG surface or inner sub-face
+      bool l_dgs = (i_scTySf < 2*TL_N_FAS) ? true : false;
+
       // contribution of the sub-cell (always homogeneous)
-      o_llfIds[0]  = i_scTySf % TL_N_FAS;
+      o_llfIds[0] = (l_dgs) ?  i_scTySf               % TL_N_FAS:
+                              (i_scTySf - 2*TL_N_FAS) % TL_N_TYSF;
 
-      // contribution of the adjacent sub-cell (init with heterogeneous solver)
-      o_llfIds[1] = o_llfIds[0] + TL_N_FAS;
-
-      // switch to homogeneous solver at SC-faces for adjacent sub-cell (if applicable)
-      o_llfIds[1] -= ( i_scTySf / (TL_N_FAS*2) ) *  TL_N_FAS; // hom. vs. het
+      // contribution of the adjacent sub-cell
+      o_llfIds[1]  = o_llfIds[0];
+      // jump to heterogeneous solver if required
+      o_llfIds[1] += l_dgs * TL_N_TYSF;
 
       // return true if sub-cell is on the left side
-      return ( i_scTySf % (2*TL_N_FAS) ) < TL_N_FAS;
+      return (l_dgs) ?  i_scTySf               < TL_N_FAS:
+                       (i_scTySf - 2*TL_N_FAS) < TL_N_TYSF;
     }
 
   public:
@@ -202,14 +240,14 @@ class edge::elastic::sc::Llf {
     void alloc( TL_T_LID              i_nLimPlus,
                 edge::data::Dynamic  &io_dynMem ) {
       // size of the homogenous and heterogeneous central flux solver per limited plus element
-      std::size_t l_cenSize  = (std::size_t) TL_N_FAS*2 * TL_N_QTS * TL_N_QTS;
+      std::size_t l_cenSize  = (std::size_t) (TL_N_TYSF+TL_N_FAS) * TL_N_QTS * TL_N_QTS;
                   l_cenSize *= i_nLimPlus * sizeof(TL_T_REAL);
-      m_cen =  (TL_T_REAL (*) [TL_N_FAS*2][TL_N_QTS][TL_N_QTS]) io_dynMem.allocate( l_cenSize );
+      m_cen =  (TL_T_REAL (*) [TL_N_TYSF+TL_N_FAS][TL_N_QTS][TL_N_QTS]) io_dynMem.allocate( l_cenSize );
 
       // size of the viscosity scalars
-      std::size_t l_visHomSize  = TL_N_FAS * 2;
-                  l_visHomSize *= i_nLimPlus * sizeof(TL_T_REAL);
-      m_vis = (TL_T_REAL (*)[TL_N_FAS*2]) io_dynMem.allocate( l_visHomSize );
+      std::size_t l_visSize  = TL_N_TYSF+TL_N_FAS;
+                  l_visSize *= i_nLimPlus * sizeof(TL_T_REAL);
+      m_vis = (TL_T_REAL (*)[TL_N_TYSF+TL_N_FAS]) io_dynMem.allocate( l_visSize );
     }
 
     /**
@@ -217,27 +255,33 @@ class edge::elastic::sc::Llf {
      *
      * @param i_firstLp first limited plus element.
      * @param i_sizeLp number of limited plus elements, which are initialized.
-     * @param i_lpEl connecticity: limited plus element -> dense element.
+     * @param i_lpEl connectivity: limited plus element -> dense element.
+     * @param i_elVe connectivity: dense elemenet -> dense vertex.
      * @param i_elFa connectivity: dense element -> dense face.
      * @param i_elFaEl dense element -> dense element (faces as bridge).
+     * @param i_charsVe characteristics of the vertices.
      * @param i_charsFa characteristics of the faces.
      * @param i_charsEl characteristics of the elements.
      * @param i_matPars material parameters.
      *
      * @paramt TL_T_LID integral type for local ids.
+     * @paramt TL_T_CHARS_VE characteristics of the vertices, providing member .coords.
      * @paramt TL_T_CHARS_FA characteristics of the faces, providing members .outNormal, .tangent0, tangent1, .area.
      * @paramt TL_T_CHARS_EL characteristics of the elements, providing member .volume.
      * @paramt TL_T_MAT_PARS material parameters, providing members .rho, .lam, and .mu (Lame parameters).
      **/
     template< typename TL_T_LID,
+              typename TL_T_CHARS_VE,
               typename TL_T_CHARS_FA,
               typename TL_T_CHARS_EL,
               typename TL_T_MAT_PARS >
     void init( TL_T_LID                 i_firstLp,
                TL_T_LID                 i_sizeLp,
                TL_T_LID          const (*i_lpEl),
+               TL_T_LID          const (*i_elVe)[TL_N_VES],
                TL_T_LID          const (*i_elFa)[TL_N_FAS],
                TL_T_LID          const (*i_elFaEl)[TL_N_FAS],
+               TL_T_CHARS_VE     const (*i_charsVe),
                TL_T_CHARS_FA     const (*i_charsFa),
                TL_T_CHARS_EL     const (*i_charsEl),
                TL_T_MAT_PARS     const (*i_matPars) ) {
@@ -255,73 +299,115 @@ class edge::elastic::sc::Llf {
         // element's maximum signal speed (p-wave velocity)
         TL_T_REAL l_mssEl = elastic::common::getVelP( l_mpEl[2], l_mpEl[0], l_mpEl[1] );
 
-        // iterate over the element's faces
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          // get id of the the adjacent element
-          TL_T_LID l_elAd = i_elFaEl[l_el][l_fa];
+        // assemble normals, tangents and face areas
+        TL_T_REAL l_n[TL_N_TYSF][TL_N_DIS];
+        TL_T_REAL l_t0[TL_N_TYSF][TL_N_DIS];
+        TL_T_REAL l_t1[TL_N_TYSF][TL_N_DIS];
+        TL_T_REAL l_ar[TL_N_TYSF];
 
-          // get material parameters of the adjacent element
-          TL_T_REAL l_mpElAd[3];
-          l_mpElAd[0] = i_matPars[l_elAd].lam;
-          l_mpElAd[1] = i_matPars[l_elAd].mu;
-          l_mpElAd[2] = i_matPars[l_elAd].rho;
+        for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
+          // default: sub-faces are parallel to element faces
+          if( TL_T_EL != TET4 || l_ty < TL_N_FAS ) {
+            // get id of the the adjacent element
+            TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
 
-          // get face's id
-          TL_T_LID l_faId = i_elFa[l_el][l_fa];
+            // get face's id
+            TL_T_LID l_faId = i_elFa[l_el][l_ty];
 
-          // get the face's coordinate system
-          TL_T_REAL l_n[TL_N_DIS], l_t0[TL_N_DIS], l_t1[TL_N_DIS];
-          for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-            l_n[ l_di] = i_charsFa[l_faId].outNormal[l_di];
-            l_t0[l_di] = i_charsFa[l_faId].tangent0[ l_di];
-            l_t1[l_di] = i_charsFa[l_faId].tangent1[ l_di];
+            for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+              l_n[l_ty][ l_di] = i_charsFa[l_faId].outNormal[l_di];
+              l_t0[l_ty][l_di] = i_charsFa[l_faId].tangent0[ l_di];
+              l_t1[l_ty][l_di] = i_charsFa[l_faId].tangent1[ l_di];
+            }
+
+            // change direction of normal, if the local element is right
+            if( l_el > l_elAd ) {
+              for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+                l_n[l_ty][l_di] *= -1;
+            }
+
+            l_ar[l_ty] = i_charsFa[l_faId].area;
           }
+          // special handling for limiting-specific introduced sub-faces
+          else {
+            // assemble tetrahedral vertices
+            TL_T_REAL l_veCrds[3][4];
+            for( unsigned short l_di = 0; l_di < 3; l_di++ )
+              for( unsigned short l_ve = 0; l_ve < 4; l_ve++ )
+                l_veCrds[l_di][l_ve] = i_charsVe[ i_elVe[l_el][l_ve] ].coords[l_di];
 
-          // change direction of normal, if the local element is right
-          if( l_el > l_elAd ) {
-            for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
-              l_n[l_di] *= -1;
+            // assemble normal and tangents
+            linalg::Geom::sfAdd( TL_T_EL,
+                                 (l_ty == TL_N_FAS) ? 0 : 1,
+                                 l_veCrds[0],
+                                 l_n[l_ty],
+                                 l_t0[l_ty],
+                                 l_t1[l_ty],
+                                 l_ar[l_ty] );
+          }
+        }
+
+        // compute unscaled central flux solvers and viscosity
+        for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
+          // default: sub-faces are parallel to element faces
+          if( TL_T_EL != TET4 || l_ty < TL_N_FAS ) {
+            // get id of the the adjacent element
+            TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
+
+            // get material parameters of the adjacent element
+            TL_T_REAL l_mpElAd[3];
+            for( unsigned short l_pa = 0; l_pa < 3; l_pa++ )
+              l_mpElAd[l_pa] =std::numeric_limits< TL_T_REAL >::max();
+            l_mpElAd[0] = i_matPars[l_elAd].lam;
+            l_mpElAd[1] = i_matPars[l_elAd].mu;
+            l_mpElAd[2] = i_matPars[l_elAd].rho;
+
+            // compute heterogeneous LLF solver
+            LlfSolver< TL_N_DIS >::centralL( l_mpElAd,
+                                             l_n[l_ty],
+                                             l_t0[l_ty],
+                                             l_t1[l_ty],
+                                             m_cen[l_lp][TL_N_TYSF+l_ty] );
+
+            // adjacent element's maximum signal speed (p-wave velocity)
+            TL_T_REAL l_mssElAd = elastic::common::getVelP( l_mpElAd[2], l_mpElAd[0], l_mpElAd[1] );
+
+
+            // set heterogeneous viscosity for left element's contribution
+            m_vis[l_lp][TL_N_TYSF+l_ty] = (TL_T_REAL) -0.5 * std::max( l_mssEl, l_mssElAd );
           }
 
           // compute homogeneous LLF solver
           LlfSolver< TL_N_DIS >::centralL( l_mpEl,
-                                           l_n,
-                                           l_t0,
-                                           l_t1,
-                                           m_cen[l_lp][l_fa] );
+                                           l_n[l_ty],
+                                           l_t0[l_ty],
+                                           l_t1[l_ty],
+                                           m_cen[l_lp][l_ty] );
 
-          // compute heterogeneous LLF solver
-          LlfSolver< TL_N_DIS >::centralL( l_mpElAd,
-                                           l_n,
-                                           l_t0,
-                                           l_t1,
-                                           m_cen[l_lp][l_fa+TL_N_FAS] );
-
-          // adjacent element's maximum signal speed (p-wave velocity)
-          TL_T_REAL l_mssElAd = elastic::common::getVelP( l_mpElAd[2], l_mpElAd[0], l_mpElAd[1] );
-
-          // set homogeneous and heterogeneous viscosity for left element's contribution
-          m_vis[l_lp][l_fa         ] = (TL_T_REAL) -0.5 * l_mssEl;
-          m_vis[l_lp][l_fa+TL_N_FAS] = (TL_T_REAL) -0.5 * std::max( l_mssEl, l_mssElAd );
+          // set homogeneous viscosity for left element's contribution
+          m_vis[l_lp][l_ty] = (TL_T_REAL) -0.5 * l_mssEl;
         }
 
 
         // scale central flux solvers and viscosity term by sub-cells' volume and  sub-faces' area
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          TL_T_LID l_faId = i_elFa[l_el][l_fa];
-
-          TL_T_REAL l_sca  = i_charsFa[l_faId].area / TL_N_SFS;
+        for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
+          TL_T_REAL l_sca  = l_ar[l_ty] / TL_N_SFS;
                     l_sca *= TL_N_SCS / i_charsEl[l_el].volume;
 
-          // viscosity
-          m_vis[l_lp][l_fa         ] *= l_sca;
-          m_vis[l_lp][l_fa+TL_N_FAS] *= l_sca;
+          // homogeneous viscosity
+          m_vis[l_lp][l_ty] *= l_sca;
+          // heterogeneous viscosity
+          if( l_ty < TL_N_FAS )
+            m_vis[l_lp][TL_N_TYSF + l_ty] *= l_sca;
 
           // central flux contribution
           for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
             for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
-              m_cen[l_lp][l_fa         ][l_q1][l_q2] *= l_sca;
-              m_cen[l_lp][l_fa+TL_N_FAS][l_q1][l_q2] *= l_sca; 
+              // homogeneous
+              m_cen[l_lp][l_ty][l_q1][l_q2] *= l_sca;
+              // heterogeneous
+              if( l_ty < TL_N_FAS )
+                m_cen[l_lp][TL_N_TYSF+l_ty][l_q1][l_q2] *= l_sca;
             }
           }
         }
@@ -396,7 +482,7 @@ class edge::elastic::sc::Llf {
 
             // iterate over target quantities
             for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-              // add visosity term to net-updates
+              // add viscosity term to net-updates
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                 // own sub-cell's viscosity contribution
                 o_dofsSc[l_q1][l_sc][l_cr] +=   i_dofsSc[l_q1][l_sc][l_cr]
@@ -463,12 +549,12 @@ class edge::elastic::sc::Llf {
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // own sub-cell's viscosity contribution
             o_netUps[l_q1][l_sf][l_cr]  =   i_dofsSc[0][l_q1][l_sf][l_cr]
-                                          * m_vis[i_lp][TL_N_FAS+i_fa] // always heterogeneous
+                                          * m_vis[i_lp][TL_N_TYSF+i_fa] // always heterogeneous
                                           * i_dt;
 
             // adjacent sub-cell's viscosity contribution
             o_netUps[l_q1][l_sf][l_cr] -=   i_dofsSc[1][l_q1][l_sf][l_cr]
-                                          * m_vis[i_lp][TL_N_FAS+i_fa] // always heterogeneous
+                                          * m_vis[i_lp][TL_N_TYSF+i_fa] // always heterogeneous
                                           * i_dt;
           }
 
@@ -483,7 +569,7 @@ class edge::elastic::sc::Llf {
 
               // neighboring, possibly heterogenous central flux contribution
               o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[1][l_q2][l_sf][l_cr]
-                                            * m_cen[i_lp][TL_N_FAS+i_fa][l_q1][l_q2]
+                                            * m_cen[i_lp][TL_N_TYSF+i_fa][l_q1][l_q2]
                                             * i_dt;
             }
           }

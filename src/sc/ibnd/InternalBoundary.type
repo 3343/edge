@@ -81,6 +81,9 @@ struct edge::sc::ibnd::t_bfChars {
 
   //! local face ids of the two adjacent elements
   unsigned short fIdBfEl[2];
+
+  //! local vertex id of the right element
+  unsigned short vIdFaElR;
 };
 
 /**

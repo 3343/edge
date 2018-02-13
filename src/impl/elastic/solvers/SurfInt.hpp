@@ -67,7 +67,7 @@ class edge::elastic::solvers::SurfInt {
     //! half the number of faces
     static unsigned short const TL_N_FAS_DIV2 =  TL_N_FAS / 2;
 
-    //! number of DG face mods
+    //! number of DG face modes
     static unsigned short const TL_N_MDS_FA = CE_N_ELEMENT_MODES( C_ENT[TL_T_EL].TYPE_FACES, TL_O_SP );
 
     //! number of DG element modes
@@ -87,80 +87,6 @@ class edge::elastic::solvers::SurfInt {
                                          unsigned short i_fIdElFaEl ) {
       return i_vIdElFaEl*TL_N_FAS+i_fIdElFaEl;
     }
-
-#ifdef PP_T_KERNELS_VANILLA
-    /**
-     * Single contribution (local or neighboring) for a face using vanilla matrix-matrix multiplication kernels.
-     *
-     * @param i_fInt face integration matrix (pre-computed, quadrature-free surface integration).
-     * @param i_fSol flux solver.
-     * @param i_tDofs time integrated DG-DOFs.
-     * @param i_mm matrix-matrix multiplication kernels.
-     * @param io_dofs will be updated with the single contribution of a face to the surface integral.
-     * @param o_scratch will be used as scratch space for the computations.
-     * @param i_dofsP DOFs for prefetching (not used).
-     * @param i_fId flux matrix id (not used).
-     *
-     * @paramt TL_T_REAL floating point precision.
-     **/
-    template< typename TL_T_REAL >
-    static void inline faS( TL_T_REAL                    const   i_fInt[TL_N_MDS_EL][TL_N_MDS_EL],
-                            TL_T_REAL                    const   i_fSol[TL_N_QTS][TL_N_QTS],
-                            TL_T_REAL                    const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                            data::MmVanilla< TL_T_REAL > const & i_mm,
-                            TL_T_REAL                            io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                            TL_T_REAL                            o_scratch[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                            TL_T_REAL                    const   i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
-                            unsigned short                       i_fId = std::numeric_limits< unsigned short >::max() ) {
-      EDGE_LOG_FATAL << "TODO";
-      // multiply with face integration matrix
-      i_mm.m_kernels[((TL_O_TI-1)*2)+2]( i_tDofs[0][0],
-                                         i_fInt[0],
-                                         o_scratch[0][0] );
-      // multiply with flux solver
-      i_mm.m_kernels[((TL_O_TI-1)*2)+3]( i_fSol[0],
-                                         o_scratch[0][0],
-                                         io_dofs[0][0] );
-    }
-#endif
-
-#if defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-    /**
-     * Single contribution (local or neighboring) for a face using non-fused LIBXSMM matrix-matrix multiplication kernels.
-     *
-     * @param i_fInt face integration matrix (pre-computed, quadrature-free surface integration).
-     * @param i_fSol flux solver.
-     * @param i_tDofs time integrated DG-DOFs.
-     * @param i_mm matrix-matrix multiplication kernels.
-     * @param io_dofs will be updated with the single contribution of a face to the surface integral.
-     * @param o_scratch will be used as scratch space for the computations.
-     * @param i_dofsP DOFs for prefetching (not used).
-     * @param i_fId flux matrix id (not used).
-     *
-     * @paramt TL_T_REAL floating point precision.
-     **/
-    template< typename TL_T_REAL >
-    static void inline faS( TL_T_REAL                       const   i_fInt[TL_N_MDS_EL][TL_N_MDS_EL],
-                            TL_T_REAL                       const   i_fSol[TL_N_QTS][TL_N_QTS],
-                            TL_T_REAL                       const   i_tDofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                            data::MmXsmmSingle< TL_T_REAL > const & i_mm,
-                            TL_T_REAL                               io_dofs[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                            TL_T_REAL                               o_scratch[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                            TL_T_REAL                       const   i_dofsP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS] = nullptr,
-                            unsigned short                          i_fId = std::numeric_limits< unsigned short >::max() ) {
-      EDGE_LOG_FATAL << "TODO";
-      // multiply with flux matrix
-      i_mm.m_kernels[((TL_O_TI-1)*2)+3]( i_fInt[0],
-                                         i_tDofs[0][0],
-                                         o_scratch[0][0] );
-
-      // multiply with flux solver
-      i_mm.m_kernels[((TL_O_TI-1)*2)+4]( o_scratch[0][0],
-                                         i_fSol[0],
-                                         io_dofs[0][0] );
-    }
-#endif
-
 
 #ifdef PP_T_KERNELS_VANILLA
     /**
@@ -312,7 +238,7 @@ class edge::elastic::solvers::SurfInt {
 
 #ifdef PP_T_KERNELS_VANILLA
     /**
-     * Neighboring contribution of a single adjacent element using vanilla matrix-matrix multiplication kernels.
+     * Single contribution of an element to the surface integral using vanilla matrix-matrix multiplication kernels.
      *
      * @param i_fIntLN local or neighboring face integration matrix (pre-computed, quadrature-free surface integration).
      * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).     * @param i_fSol flux solvers.
@@ -356,7 +282,7 @@ class edge::elastic::solvers::SurfInt {
 
 #ifdef PP_T_KERNELS_XSMM_DENSE_SINGLE
     /**
-     * Neighboring contribution of a single adjacent element using non-fused LIBXSMM matrix-matrix multiplication kernels.
+     * Single contribution of an element to the surface integral using non-fused LIBXSMM matrix-matrix multiplication kernels.
      *
      * @param i_fIntLN local or neighboring face integration matrix (pre-computed, quadrature-free surface integration).
      * @param i_fIntT transposed face integration matrices (pre-computed, quadrature-free surface integration).
