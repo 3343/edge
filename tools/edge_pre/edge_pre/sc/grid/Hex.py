@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -272,58 +272,31 @@ def scSfSc( i_deg ):
 #
 # @param i_deg polynomial degree.
 # @param i_syms symbols.
-# @return integration intervals for inner sub-cells, send sub-cells, and per DG-face of surface sub-cells.
+# @return 1) mappings, 2) absolute values of Jacobi determinant.
 ##
 def intSc( i_deg, i_syms ):
   assert( len(i_syms) == 3 )
 
-  # get vertex coordinates
+  # hex shape functions
+  l_shape = [ (1 - i_syms[0]) * (1 - i_syms[1]) * (1 - i_syms[2]),
+               i_syms[0]      * (1 - i_syms[1]) * (1 - i_syms[2]),
+               i_syms[0]      *  i_syms[1]      * (1 - i_syms[2]),
+              (1 - i_syms[0]) *  i_syms[1]      * (1 - i_syms[2]),
+              (1 - i_syms[0]) * (1 - i_syms[1]) *  i_syms[2],
+               i_syms[0]      * (1 - i_syms[1]) *  i_syms[2],
+               i_syms[0]      *  i_syms[1]      *  i_syms[2],
+              (1 - i_syms[0]) *  i_syms[1]      *  i_syms[2] ]
+
+  # get sub-cell coords
   l_svs = svs( i_deg )
+  l_scSv = scSv( i_deg )[0:2]
 
-  # get vertex connectivity
-  l_scSv = scSv( i_deg )
-
-  l_intSc = [ [], [], [] ]
-
-  # iterate over inner and send sub-cells
-  for l_ty in range(2):
-    for l_sc in l_scSv[l_ty]:
-      # determine min/max in each dimension
-      l_minMax = [ [float('inf'), -float('inf')],
-                   [float('inf'), -float('inf')],
-                   [float('inf'), -float('inf')] ]
-
-      for l_ve in l_sc:
-        for l_di in range(3):
-          l_minMax[l_di][0] = min( l_minMax[l_di][0], l_svs[l_ve][l_di] )
-          l_minMax[l_di][1] = max( l_minMax[l_di][1], l_svs[l_ve][l_di] )
-     
-      # add integration intervals for sub-cell
-      l_intSc[l_ty] = l_intSc[l_ty] + [ [ (i_syms[0], l_minMax[0][0], l_minMax[0][1]),
-                                          (i_syms[1], l_minMax[1][0], l_minMax[1][1]),
-                                          (i_syms[2], l_minMax[2][0], l_minMax[2][1]) ] ]
-
-  # get sub-cell connectivity
+  # assemble mappings and dets for surface sub-cells
   l_scSfSc = scSfSc( i_deg )
 
-  # combined inner, send intervals
-  l_comb = l_intSc[0] + l_intSc[1]
-
-  # get type
   l_ty = edge_pre.types.Hex.Hex( i_deg )
 
-  # determine integration intervals for sub-cells at DG-faces through conn. of recv scs
-  for l_fa in range(6):
-    # add empty list for the DG-face
-    l_intSc[2] = l_intSc[2] + [[]]
-
-    # iterate over sub-cells at DG-face
-    for l_re in l_scSfSc[2][ l_fa*l_ty.n_sfs:(l_fa+1)*l_ty.n_sfs ]:
-      for l_sc in l_re:
-        if( l_sc != -1 ):
-          l_intSc[2][-1] = l_intSc[2][-1] + [ l_comb[l_sc] ]
-
-  return l_intSc[0], l_intSc[1], l_intSc[2]
+  return Generic.intSc( i_deg, l_ty, i_syms, l_shape, l_svs, l_scSv[0:2], l_scSfSc[2] )
 
 ##
 # Derives the integration intervals for the sub-faces at the DG-faces.

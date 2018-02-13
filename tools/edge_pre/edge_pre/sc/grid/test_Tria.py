@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -380,73 +380,6 @@ class TestGridTria( unittest.TestCase ):
                                       [ 23, -1, -1 ],
                                       [ 24, -1, -1 ],
                                       [ 13, -1, -1 ] ] )
-
-  ##
-  # Tests integration intervals for sub-cells.
-  ##
-  def test_intSc(self):
-    l_xi0 = sympy.symbols('xi_0')
-    l_xi1 = sympy.symbols('xi_1')
-
-    # second order
-    l_intIn, l_intSend, l_intSurf = Tria.intSc( 1, [l_xi0, l_xi1] )
-
-    # inner intervals
-    self.assertEqual( l_intIn, [ [ ( l_xi0, Fra(1,3)-l_xi1,            Fra(1,3) ),
-                                   ( l_xi1, Fra(0,3),                  Fra(1,3) ) ],
-
-                                 [ ( l_xi0, Fra(2,3)-l_xi1,            Fra(2,3) ),
-                                   ( l_xi1, Fra(0,3),                  Fra(1,3) ) ],
-
-                                 [ ( l_xi0, Fra(1,3)-(l_xi1-Fra(1,3)), Fra(1,3) ),
-                                   ( l_xi1, Fra(1,3),                  Fra(2,3) ) ] ] )
-
-    # send intervals
-    self.assertEqual( l_intSend, [ [ ( l_xi0, Fra(0,3), Fra(1,3)-l_xi1            ),
-                                     ( l_xi1, Fra(0,3), Fra(1,3)                  ) ],
-
-                                   [ ( l_xi0, Fra(1,3), Fra(2,3)-l_xi1            ),
-                                     ( l_xi1, Fra(0,3), Fra(1,3)                  ) ],
-
-                                   [ ( l_xi0, Fra(2,3), Fra(3,3)-l_xi1            ),
-                                     ( l_xi1, Fra(0,3), Fra(1,3)                  ) ],
-
-                                   [ ( l_xi0, Fra(1,3), Fra(2,3)-(l_xi1-Fra(1,3)) ),
-                                     ( l_xi1, Fra(1,3), Fra(2,3)                  ) ],
-
-                                   [ ( l_xi0, Fra(0,3), Fra(1,3)-(l_xi1-Fra(2,3)) ),
-                                     ( l_xi1, Fra(2,3), Fra(3,3)                  ) ],
-
-                                   [ ( l_xi0, Fra(0,3), Fra(1,3)-(l_xi1-Fra(1,3)) ),
-                                     ( l_xi1, Fra(1,3), Fra(2,3)                  ) ] ] )
-
-    # DG intervals
-    self.assertEqual( l_intSurf[0], [ [ ( l_xi0, Fra(0,3), Fra(1,3)-l_xi1 ),
-                                        ( l_xi1, Fra(0,3), Fra(1,3)       ) ],
-
-                                      [ ( l_xi0, Fra(1,3), Fra(2,3)-l_xi1 ),
-                                        ( l_xi1, Fra(0,3), Fra(1,3)       ) ],
-
-                                      [ ( l_xi0, Fra(2,3), Fra(3,3)-l_xi1 ),
-                                        ( l_xi1, Fra(0,3), Fra(1,3)       ) ] ] )
-
-    self.assertEqual( l_intSurf[1], [ [ ( l_xi0, Fra(2,3), Fra(3,3)-l_xi1 ),
-                                        ( l_xi1, Fra(0,3), Fra(1,3)       ) ],
-
-                                      [ ( l_xi0, Fra(1,3), Fra(2,3)-(l_xi1-Fra(1,3)) ),
-                                        ( l_xi1, Fra(1,3), Fra(2,3)                  ) ],
-
-                                      [ ( l_xi0, Fra(0,3), Fra(1,3)-(l_xi1-Fra(2,3)) ),
-                                        ( l_xi1, Fra(2,3), Fra(3,3)                  ) ] ] )
-
-    self.assertEqual( l_intSurf[2], [ [ ( l_xi0, Fra(0,3), Fra(1,3)-(l_xi1-Fra(2,3)) ),
-                                        ( l_xi1, Fra(2,3), Fra(3,3)                  ) ],
-
-                                      [ ( l_xi0, Fra(0,3), Fra(1,3)-(l_xi1-Fra(1,3)) ),
-                                        ( l_xi1, Fra(1,3), Fra(2,3)                  ) ],
-
-                                      [ ( l_xi0, Fra(0,3), Fra(1,3)-l_xi1 ),
-                                        ( l_xi1, Fra(0,3), Fra(1,3)       ) ] ] )
 
   ##
   # Tests integration intervals for DG sub-faces.

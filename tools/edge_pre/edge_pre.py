@@ -5,7 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,7 +42,7 @@ import edge_pre.dg.basis.Hex
 import edge_pre.sc.grid.Hex
 import edge_pre.types.Tet
 import edge_pre.dg.basis.Tet
-
+import edge_pre.sc.grid.Tet
 
 # set up logger
 logging.basicConfig( level=logging.DEBUG,
@@ -122,8 +122,8 @@ for l_ty in l_conf.m_types:
       # set dummy sub-cell reordering
       l_scDgAd = [ [0] ]
 
-      # get sub-cell integration intervals
-      l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Line.intSc( l_de, l_symsEl )
+      # get sub-cell integration intervals and trafos
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Line.intSc( l_de, l_symsEl )
 
       # get sub-face integration matrices
       l_sfInt = []
@@ -155,11 +155,24 @@ for l_ty in l_conf.m_types:
       # get scatter matrix for DG surface sub-cells
       l_scatterSurf = []
       # local face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
+      for l_fa in range(2):
+        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                           l_basisEl,\
+                                                                           l_intEl,\
+                                                                           l_mapsSc[2][l_fa],\
+                                                                           l_detsSc[2][l_fa] ) ]
+
       # remote face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, list( reversed(l_fa) ) ) ]
+      for l_ve in range(1):
+        for l_fa in range(2):
+          # derive reordered lists
+          l_maRe = [ l_mapsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_deRe = [ l_detsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                             l_basisEl,\
+                                                                             l_intEl,\
+                                                                             l_maRe,\
+                                                                             l_deRe ) ]
 
     #
     # quadrilaterals
@@ -190,8 +203,9 @@ for l_ty in l_conf.m_types:
       # get sub-cell reorderings
       l_scDgAd = edge_pre.sc.grid.Quad.scDgAd( l_de )
 
-      # get sub-cell integration intervals
-      l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Quad.intSc( l_de, l_symsEl )
+
+      # get sub-cell integration intervals and trafos
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Quad.intSc( l_de, l_symsEl )
 
       # get sub-face integration matrices
       l_subsSfDg, l_intSfDg = edge_pre.sc.grid.Quad.intSfDg( l_de, [sympy.symbols('chi_0')], l_symsEl )
@@ -227,11 +241,24 @@ for l_ty in l_conf.m_types:
       # get scatter matrix for DG surface sub-cells
       l_scatterSurf = []
       # local face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
+      for l_fa in range(4):
+        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                           l_basisEl,\
+                                                                           l_intEl,\
+                                                                           l_mapsSc[2][l_fa],\
+                                                                           l_detsSc[2][l_fa] ) ]
+
       # remote face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, list( reversed(l_fa) ) ) ]
+      for l_ve in range(1):
+        for l_fa in range(4):
+          # derive reordered lists
+          l_maRe = [ l_mapsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_deRe = [ l_detsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                             l_basisEl,\
+                                                                             l_intEl,\
+                                                                             l_maRe,\
+                                                                             l_deRe ) ]
 
     #
     # triangles
@@ -262,8 +289,8 @@ for l_ty in l_conf.m_types:
       # get sub-cell reorderings
       l_scDgAd = edge_pre.sc.grid.Tria.scDgAd( l_de )
 
-      # get sub-cell integration intervals
-      l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Tria.intSc( l_de, l_symsEl )
+      # get sub-cell integration intervals and trafos
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Tria.intSc( l_de, l_symsEl )
 
       # get sub-face integration matrices
       l_subsSfDg, l_intSfDg = edge_pre.sc.grid.Tria.intSfDg( l_de, [sympy.symbols('chi_0')], l_symsEl )
@@ -299,13 +326,24 @@ for l_ty in l_conf.m_types:
       # get scatter matrix for DG surface sub-cells
       l_scatterSurf = []
       # local face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
+      for l_fa in range(3):
+        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                           l_basisEl,\
+                                                                           l_intEl,\
+                                                                           l_mapsSc[2][l_fa],\
+                                                                           l_detsSc[2][l_fa] ) ]
+
       # remote face
-      for l_fa in l_intScSurf:
-         # derive reordered list
-        l_faRe = [ l_fa[l_sc] for l_sc in l_scDgAd[0] ]
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_faRe ) ]
+      for l_ve in range(1):
+        for l_fa in range(3):
+          # derive reordered lists
+          l_maRe = [ l_mapsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_deRe = [ l_detsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                             l_basisEl,\
+                                                                             l_intEl,\
+                                                                             l_maRe,\
+                                                                             l_deRe ) ]
 
     #
     # hexes
@@ -336,8 +374,8 @@ for l_ty in l_conf.m_types:
       # get sub-cell reorderings
       l_scDgAd = edge_pre.sc.grid.Hex.scDgAd( l_de )
 
-      # get sub-cell integration intervals
-      l_intScIn, l_intScSend, l_intScSurf = edge_pre.sc.grid.Hex.intSc( l_de, l_symsEl )
+      # get sub-cell integration intervals and trafos
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Hex.intSc( l_de, l_symsEl )
 
       # get sub-face integration matrices
       l_subsSfDg, l_intSfDg = edge_pre.sc.grid.Hex.intSfDg( l_de, [sympy.symbols('chi_0'), sympy.symbols('chi_1')], l_symsEl )
@@ -365,14 +403,24 @@ for l_ty in l_conf.m_types:
       # get scatter matrix for DG surface sub-cells
       l_scatterSurf = []
       # local face
-      for l_fa in l_intScSurf:
-        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_fa ) ]
+      for l_fa in range(6):
+        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                           l_basisEl,\
+                                                                           l_intEl,\
+                                                                           l_mapsSc[2][l_fa],\
+                                                                           l_detsSc[2][l_fa] ) ]
+
       # remote face
       for l_ve in range(4):
-        for l_fa in l_intScSurf:
-          # derive reordered list
-          l_faRe = [ l_fa[l_sc] for l_sc in l_scDgAd[l_ve] ]
-          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_basisEl, l_faRe ) ]
+        for l_fa in range(6):
+          # derive reordered lists
+          l_maRe = [ l_mapsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_deRe = [ l_detsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                             l_basisEl,\
+                                                                             l_intEl,\
+                                                                             l_maRe,\
+                                                                             l_deRe ) ]
 
     #
     # tets
@@ -390,15 +438,62 @@ for l_ty in l_conf.m_types:
       # unify bases
       l_symsEl, l_basisEl = edge_pre.dg.basis.Mod.unify( l_symsFa, l_basisFa, l_symsEl, l_basisEl )
 
-      # get face integration interval
+      # get face integration intervals
       l_intFa = edge_pre.types.Tria.Tria( l_de ).intEl( l_symsFa )
 
-      # get element integration interval
+      # get element integration intervals
       l_intEl = l_elTy.intEl( l_symsEl )
 
       # get face trafos
       l_faToFa = l_elTy.faToFa( l_symsFa )
       l_faToEl = l_elTy.faToEl( l_symsFa )
+
+      # get sub-cell reordering
+      l_scDgAd = edge_pre.sc.grid.Tet.scDgAd( l_de )
+
+      # get sub-cell integration intervals and trafos
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Tet.intSc( l_de, l_symsEl )
+
+      # get sub-face integration matrices
+      l_subsSfDg, l_intSfDg = edge_pre.sc.grid.Tet.intSfDg( l_de, [sympy.symbols('chi_0'), sympy.symbols('chi_1')], l_symsEl )
+
+      l_sfInt = []
+      for l_fa in range(4):
+        l_basisElSubs = edge_pre.int.Matrices.subsAll( l_subsSfDg[l_fa], l_basisEl )
+        l_sfInt = l_sfInt + [ edge_pre.int.Matrices.intL( l_intSfDg[l_fa], l_basisElSubs ) ]
+
+      # vertices of sub-cells
+      l_veCrds = edge_pre.sc.grid.Tet.svs( l_de )
+      l_scSvIn, l_scSvSend, l_scSvRecv = edge_pre.sc.grid.Tet.scSv( l_de )
+
+      # sub-cell adjacency
+      l_scSfScIn, l_scSfScSend, l_scSfScRecv = edge_pre.sc.grid.Tet.scSfSc( l_de )
+
+      # type of sub-cell's faces
+      l_scTySfIn, l_scTySfSend =  edge_pre.sc.grid.Tet.scTySf( l_de )
+
+
+      # get scatter matrix for DG surface sub-cells
+      l_scatterSurf = []
+      # local face
+      for l_fa in range(4):
+        l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                           l_basisEl,\
+                                                                           l_intEl,\
+                                                                           l_mapsSc[2][l_fa],\
+                                                                           l_detsSc[2][l_fa] ) ]
+
+      # remote face
+      for l_ve in range(3):
+        for l_fa in range(4):
+          # derive reordered lists
+          l_maRe = [ l_mapsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_deRe = [ l_detsSc[2][l_fa][l_sc] for l_sc in l_scDgAd[l_ve] ]
+          l_scatterSurf = l_scatterSurf + [ edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                                             l_basisEl,\
+                                                                             l_intEl,\
+                                                                             l_maRe,\
+                                                                             l_deRe ) ]
 
     #
     # Generic DG structures
@@ -503,18 +598,22 @@ for l_ty in l_conf.m_types:
       edge_pre.io.Matrices.sparsity( l_fluxT[l_ma],
                                      l_path )
 
-    # TODO: Add sc-support for tets
-    if( l_ty == 'tet4' ):
-      continue
-
     #
     # Generic sub-cell structures
     #
     # get scatter matrix
-    l_scatter = edge_pre.sc.ops.Project.scatter( l_basisEl, l_intScIn+l_intScSend )
+    l_scatter = edge_pre.sc.ops.Project.scatter( l_symsEl,\
+                                                 l_basisEl,\
+                                                 l_intEl,\
+                                                 l_mapsSc[0]+l_mapsSc[1],\
+                                                 l_detsSc[0]+l_detsSc[1] )
 
     # get gather matrix
-    l_gather = edge_pre.sc.ops.Project.gather( l_basisEl, l_intScIn+l_intScSend )
+    l_gather = edge_pre.sc.ops.Project.gather( l_symsEl,\
+                                               l_basisEl,\
+                                               l_intEl,\
+                                               l_mapsSc[0]+l_mapsSc[1],\
+                                               l_detsSc[0]+l_detsSc[1] )
 
     # scale face int with inverse mass matrix
     for l_fa in range(len(l_sfInt)):
