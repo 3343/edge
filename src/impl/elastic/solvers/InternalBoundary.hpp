@@ -576,8 +576,8 @@ class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 > {
           // scale the solvers by scalars
           for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
             // get scaling factor
-            TL_T_REAL_MESH l_sca  = i_faChars[l_fa].area           / TL_N_SFS;
-                           l_sca *= i_elChars[ l_el[l_sd] ].volume / TL_N_SCS;
+            TL_T_REAL_MESH l_sca  = i_faChars[ l_fa       ].area   / TL_N_SFS;
+                           l_sca /= i_elChars[ l_el[l_sd] ].volume / TL_N_SCS;
 
             // adjust sign of flux if the direction is inversed
             if( l_prefDir == false ) l_sca *= -1;
@@ -890,14 +890,11 @@ class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 > {
           // scale the solvers by scalars
           for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
             // get scaling factor
-            TL_T_REAL_MESH l_sca  = i_faChars[l_fa].area           / TL_N_SFS;
-                           l_sca *= i_elChars[ l_el[l_sd] ].volume / TL_N_SCS;
+            TL_T_REAL_MESH l_sca  = i_faChars[ l_fa       ].area   / TL_N_SFS;
+                           l_sca /= i_elChars[ l_el[l_sd] ].volume / TL_N_SCS;
 
             // adjust sign of flux if the direction is inversed
             if( l_prefDir == false ) l_sca *= -1;
-
-            // scale with 2 to account for 0.5 volume of triangular reference element
-            if( TL_T_EL == TET4 ) l_sca *= 2;
 
             // scale the flux solver
             for( unsigned short l_q1 = 0; l_q1 < 9; l_q1++ ) {
