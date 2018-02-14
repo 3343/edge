@@ -30,6 +30,7 @@
 namespace edge {
   namespace sc {
     namespace ibnd {
+      template< t_entityType TL_T_EL >
       class Init;
     }
   }
@@ -37,8 +38,15 @@ namespace edge {
 
 /**
  * Initialization of internal boundaries.
+ *
+ * @paramt TL_T_EL element type.
  **/
+template< t_entityType TL_T_EL >
 class edge::sc::ibnd::Init {
+  private:
+    //! number of faces.
+    static const unsigned short TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
   public:
     /**
      * Initializes the connectivity info.
@@ -57,13 +65,11 @@ class edge::sc::ibnd::Init {
      * @paramt TL_T_SP sparse type.
      * @paramt TL_T_CHARS_FA characteristics of DG-faces, offers member .spType.
      * @paramt TL_T_CHARS_EL characteristics of DG-elements, offers member .spType.
-     * @paramt TL_T_EL element type.
      **/
     template< typename     TL_T_LID,
               typename     TL_T_SP,
               typename     TL_T_CHARS_FA,
-              typename     TL_T_CHARS_EL,
-              t_entityType TL_T_EL >
+              typename     TL_T_CHARS_EL >
     static void connect( TL_T_LID                      i_nFa,
                          TL_T_LID                      i_nEl,
                          TL_T_SP                       i_spIb,
@@ -74,8 +80,6 @@ class edge::sc::ibnd::Init {
                          TL_T_CHARS_EL         const  *i_charsEl,
                          t_connect< TL_T_LID,
                                     TL_T_EL  >        &o_conn ) {
-      unsigned short TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
-
       // link internal boundary faces and internal boundary elements
       data::SparseEntities::linkSpAdjDst( i_nFa,
                                           2,

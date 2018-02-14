@@ -421,11 +421,11 @@ class edge::sc::Limiter {
                        sc::t_ops<
                          TL_T_REAL,
                          TL_T_EL,
-                         TL_O_SP >         const                    i_scOps,
+                         TL_O_SP >         const                   &i_scOps,
                        sc::t_connect<
                          TL_T_LID,
                          TL_T_EL,
-                         TL_O_SP >         const                    i_scConn,
+                         TL_O_SP >         const                   &i_scConn,
                        TL_T_CHARS_FA       const                  (*i_charsFa),
                        TL_T_REAL           const                  (*i_fsDg)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
                        TL_T_REAL           const                  (*i_fsDgAd)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
@@ -438,7 +438,11 @@ class edge::sc::Limiter {
                        bool                                       (*o_admL)[TL_N_CRS],
                        bool                const                  (*i_lock)[TL_N_CRS],
                        unsigned int                               (*io_limSync)[TL_N_CRS],
+#ifndef __INTEL_COMPILER
                        TL_T_REAL           const (* const * const   i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
+#else
+                       TL_T_REAL                                 (**i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
+#endif
                        TL_T_REAL                                  (*io_dofsDg)[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                        TL_T_REAL           const                  (*i_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
                        TL_T_REAL                                  (*io_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],

@@ -283,16 +283,16 @@ class edge::elastic::solvers::AderDg {
                        t_dg                        const  & i_dg,
                        t_matStar                   const (* i_starM)[N_DIM],
                        t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
-                       unsigned short const              (* i_vIdElFaEl)[TL_N_FAS],
+                       unsigned short              const (* i_vIdElFaEl)[TL_N_FAS],
                        TL_T_REAL                         (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL                    const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                       TL_T_REAL           (* const * const o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL                          (*o_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                       bool                         const (*i_admP)[TL_N_CRS],
-                       bool                               (*o_admC)[TL_N_CRS],
-                       bool                               (*o_lock)[TL_N_CRS],
+                       TL_T_REAL                   const (* i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                       TL_T_REAL        (* const * const    o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+                       TL_T_REAL                         (* o_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                       bool                        const (* i_admP)[TL_N_CRS],
+                       bool                              (* o_admC)[TL_N_CRS],
+                       bool                              (* o_lock)[TL_N_CRS],
                        edge::io::Receivers                & io_recvs,
-                       TL_T_MM const                      & i_mm
+                       TL_T_MM                     const  & i_mm
                      ) {
       // counter for limited elements
       TL_T_LID l_le = i_firstSpLe;
@@ -482,22 +482,26 @@ class edge::elastic::solvers::AderDg {
                          TL_T_LID                                             i_firstSpRe,
                          TL_T_REAL                                            i_time,
                          TL_T_REAL                                            i_dt,
-                         unsigned short                const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
-                         TL_T_REAL                     const                  i_scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS],
-                         t_matStar                     const               (* i_starM)[N_DIM],
+                         unsigned short                              const    i_scDgAd[TL_N_VES_FA][TL_N_SFS],
+                         TL_T_REAL                                   const    i_scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS],
+                         t_matStar                                   const (* i_starM)[N_DIM],
                          edge::sc::ibnd::t_InternalBoundary<
                            TL_T_LID,
                            TL_T_REAL,
                            TL_T_SP,
                            TL_T_EL,
-                           TL_N_QTS >              const                    & i_iBnd,
+                           TL_N_QTS >                                const  & i_iBnd,
                          TL_T_FRI_GL                                        & i_frictionGlobal,
                          TL_T_FRI_FA                                        * i_frictionFa,
                          TL_T_FRI_QP                                       (* i_frictionSf)[TL_N_SFS],
-                         TL_T_REAL                     const (* const * const i_tDofsDg)[TL_N_MDS][TL_N_CRS],
-                         TL_T_REAL                                          (*io_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
+#ifndef __INTEL_COMPILER
+                         TL_T_REAL                  const (* const * const    i_tDofsDg)[TL_N_MDS][TL_N_CRS],
+#else
+                         TL_T_REAL                                         (**i_tDofsDg)[TL_N_MDS][TL_N_CRS],
+#endif
+                         TL_T_REAL                                         (* io_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
                          TL_T_REAL                                         (* o_updates)[2][TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                         bool                          const               (* i_admP)[TL_N_CRS],
+                         bool                                        const (* i_admP)[TL_N_CRS],
                          bool                                              (* io_admC)[TL_N_CRS],
                          bool                                              (* io_lock)[TL_N_CRS],
                          TL_T_RECVQ                                         & io_recvsQuad ) {
@@ -692,17 +696,25 @@ class edge::elastic::solvers::AderDg {
                        t_faceChars    const                * i_faChars,
                        t_elementChars const                * i_elChars,
                        t_fluxSolver   const               (* i_fluxSolvers)[TL_N_FAS],
+#ifndef __INTEL_COMPILER
                        TL_T_LID       const       (* const * i_liVeEx),
-                       TL_T_LID   const                   (* i_elFa)[TL_N_FAS],
-                       TL_T_LID   const                   (* i_elFaEl)[TL_N_FAS],
+#else
+                       TL_T_LID                           **i_liVeEx,
+#endif
+                       TL_T_LID       const               (* i_elFa)[TL_N_FAS],
+                       TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
                        unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
                        unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
+#ifndef __INTEL_COMPILER
                        TL_T_REAL      const (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+#else
+                       TL_T_REAL                          (**i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+#endif
                        TL_T_REAL                          (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                        bool                               (* io_admC)[TL_N_CRS],
-                       TL_T_REAL      const               (*i_extP)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_REAL                          (*o_extC)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_MM const                      & i_mm ) {
+                       TL_T_REAL      const               (* i_extP)[2][TL_N_QTS][TL_N_CRS],
+                       TL_T_REAL                          (* o_extC)[2][TL_N_QTS][TL_N_CRS],
+                       TL_T_MM        const               & i_mm ) {
       // counter for elements computing extrema
       TL_T_LID l_ex = i_firstEx;
 

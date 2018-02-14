@@ -5,7 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
-# Copyright (c) 2015-2017, Regents of the University of California
+# Copyright (c) 2015-2018, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
 #
@@ -31,8 +31,6 @@ l_scriptDir = Dir('.').srcnode().abspath
 
 import os
 from sys import path
-path.append(l_scriptDir + '/../tools/build' )
-import csvToCpp
 
 Import('env')
 Import('conf')
@@ -180,7 +178,7 @@ env['edge_pre'] = {}
 # EDGEpre's DG data
 l_dgPre =  ['mass', 'stiffT', 'stiffV', 'fluxL', 'fluxN', 'fluxT']
 # EDGEpre's SC data
-l_scPre = []
+l_scPre = ['svcrds', 'scsv', 'scsfsc', 'sctysf', 'scdgad', 'gather', 'scatter', 'scattersurf', 'sfint']
 
 # add EDGEpre's data
 for l_pre in l_dgPre+l_scPre:
@@ -204,7 +202,7 @@ for l_pre in l_dgPre+l_scPre:
 
   if l_pre in ['svcrds', 'gather', 'scatter', 'scattersurf', 'sfint']+l_dgPre:
     env['edge_pre'][l_csv.get_abspath()]['ot']  = 'double'
-  elif l_pre in ['scsv', 'scsfsc', 'sctysf']:
+  elif l_pre in ['scsv', 'scsfsc', 'sctysf', 'scdgad']:
     env['edge_pre'][l_csv.get_abspath()]['ot']  = 'unsigned short'
     env['edge_pre'][l_csv.get_abspath()]['r']  = ['-1', 'std::numeric_limits< unsigned short >::max()']
   else: assert( False )

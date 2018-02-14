@@ -589,15 +589,15 @@ if( l_elasticConf.m_frictionLaw != "" ) {
                                  l_internal.m_globalShared7[0] );
 
   // init connectivity of the internal boundary
-  edge::sc::ibnd::Init::connect(              l_enLayouts[1].nEnts,
-                                              l_enLayouts[2].nEnts,
-                                 (int_spType) t_spTypeElastic::RUPTURE,
-                                 (int_spType) t_enTypeShared::LIMIT,
-                                              l_internal.m_connect.faEl,
-                                              l_internal.m_connect.elFa,
-                                              l_internal.m_faceChars,
-                                              l_internal.m_elementChars,
-                                              l_internal.m_globalShared7[0].connect );
+  edge::sc::ibnd::Init< T_SDISC.ELEMENT >::connect( l_enLayouts[1].nEnts,
+                                                    l_enLayouts[2].nEnts,
+                                       (int_spType) t_spTypeElastic::RUPTURE,
+                                       (int_spType) t_enTypeShared::LIMIT,
+                                                    l_internal.m_connect.faEl,
+                                                    l_internal.m_connect.elFa,
+                                                    l_internal.m_faceChars,
+                                                    l_internal.m_elementChars,
+                                                    l_internal.m_globalShared7[0].connect );
 
   // set up ibnd face chars
   edge::elastic::solvers::InternalBoundaryTypes<

@@ -82,15 +82,15 @@ TEST_CASE( "Ibnd init: Connectivity.", "[ibndInit][conn]") {
   l_conn1.beEl = l_beEl1;
 
   // call the initialization
-  edge::sc::ibnd::Init::connect( 8,
-                                 10,
-                                 2,
-                                 1,
-                                 l_faEl1,
-                                 l_elFa1,
-                                 l_charsFa1,
-                                 l_charsEl1,
-                                 l_conn1 );
+  edge::sc::ibnd::Init< TRIA3 >::connect( 8,
+                                          10,
+                                          2,
+                                          1,
+                                          l_faEl1,
+                                          l_elFa1,
+                                          l_charsFa1,
+                                          l_charsEl1,
+                                          l_conn1 );
 
   // check link between ibnd faces and ibnd elements, remark: max() would be invalid in application
   REQUIRE( l_conn1.bfBe[0][0] == 0 );
