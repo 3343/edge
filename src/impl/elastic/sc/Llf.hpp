@@ -444,7 +444,7 @@ class edge::elastic::sc::Llf {
     template< typename TL_T_LID >
     void tsSc( TL_T_REAL            i_dt,
                TL_T_LID             i_lp,
-               TL_T_LID  const      i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
+               unsigned short const i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
                unsigned short const i_scTySf[TL_N_SCS][TL_N_FAS],
                bool           const i_netUpSc[TL_N_FAS],
                TL_T_REAL      const i_dofsSc[TL_N_QTS][TL_N_SCS+TL_N_FAS*TL_N_SFS][TL_N_CRS],

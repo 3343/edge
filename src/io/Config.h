@@ -228,10 +228,19 @@ class edge::io::Config {
     std::string m_waveFieldType;
 
     //! name of the output file for the wave field
-    std::string m_waveFieldFile;
+    std::string m_waveFieldFile = "";
 
-    //! interval of wave field output
-    double m_waveFieldInt;
+    //! interval of wave field output (max/2 to prevent inf when used in comparisons)
+    double m_waveFieldInt =  std::numeric_limits< double >::max()/2;
+
+    //! type of the internal boundary output
+    std::string m_iBndType;
+
+    //! name of the output file for the internal boundary
+    std::string m_iBndFile = "";
+
+    //! interval of internal boundary output  (max/2 to prevent inf when used in comparisons)
+    double m_iBndInt =  std::numeric_limits< double >::max()/2;
 
     //! type of the error norms
     std::string m_errorNormsType;

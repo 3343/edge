@@ -24,7 +24,6 @@
 #ifndef EDGE_SEISMIC_INTERNAL_BOUNDARY_HPP
 #define EDGE_SEISMIC_INTERNAL_BOUNDARY_HPP
 
-#include "InternalBoundary.type"
 #include "constants.hpp"
 #include "io/logging.h"
 #include "linalg/Matrix.h"

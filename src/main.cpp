@@ -226,6 +226,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   double l_simTime = 0;
   double l_endTime = l_config.m_endTime;
   double l_syncInt = l_config.m_waveFieldInt;
+         l_syncInt = std::min( l_syncInt, l_config.m_iBndInt );
 
   if( std::abs(l_syncInt) < TOL.TIME ) l_syncInt = l_endTime;
 
@@ -261,7 +262,10 @@ l_mesh.getGIdsEl( l_gIdsEl );
   l_timer.start();
 
   // iterate over sync points
-  for( int l_step = 1; l_step < l_endTime/l_syncInt+1; l_step++ ) {
+  unsigned int l_step    = 0;
+  unsigned int l_stepWf  = 0;
+  unsigned int l_stepBnd = 0;
+  while( l_endTime - l_simTime > TOL.TIME ) {
     // derive time to advance in this step
     double l_stepTime = std::max( 0.0, l_endTime - l_simTime );
            l_stepTime = std::min( l_stepTime, l_syncInt );
@@ -274,8 +278,33 @@ l_mesh.getGIdsEl( l_gIdsEl );
     EDGE_LOG_INFO << "reached synchronization point #" << l_step << ": " << l_simTime;
 
     // write this sync step
-    l_writer.write( l_stepTime,
-                    l_internal.m_globalShared2[0].limSync );
+    if( l_simTime + TOL.TIME > (l_stepWf+1)*l_config.m_waveFieldInt ) {
+      EDGE_LOG_INFO << "  writing wave field #" << l_stepWf;
+      l_writer.write( l_stepTime,
+                      l_internal.m_globalShared2[0].limSync );
+      l_stepWf++;
+    }
+
+#ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
+    if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
+      EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd;
+      l_rupWriter.write( 0,
+                        l_enLayouts[l_rupLayoutFa].nEnts,
+                        3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                        3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                        l_internal.m_globalShared5[0].sfQtNaPtr,
+                        (real_base*) l_internal.m_globalShared5[0].sf );
+      l_stepBnd++;
+    }
+#endif
+    // increase step and derive next synchronization point
+    l_step++;
+    if( (l_stepWf+1)*l_config.m_waveFieldInt < (l_stepBnd+1)*l_config.m_iBndInt )
+      l_syncInt = (l_stepWf +1)*l_config.m_waveFieldInt - l_simTime;
+    else
+      l_syncInt = (l_stepBnd+1)*l_config.m_iBndInt      - l_simTime;
+
+    if( std::abs(l_syncInt) < TOL.TIME ) l_syncInt = l_endTime;
   }
 
   // print time info for compute

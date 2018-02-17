@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -203,9 +203,13 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   double l_faultCrds[2][2] = { {0, 1}, {1, 0} };
 
   // output
-  edge::elastic::solvers::t_LinSlipWeakGlobal<double, 8>           l_lswGlobal;
-  edge::elastic::solvers::t_LinSlipWeakFace<double>                l_lswFace[3];
+  edge::elastic::solvers::t_LinSlipWeakGlobal<double, 8>     l_lswGlobal;
+  edge::elastic::solvers::t_LinSlipWeakFace<double>          l_lswFace[3];
   edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8> l_lswSf[3][5];
+  edge::elastic::solvers::t_LinSlipWeak< double, TRIA3, 3, 8 > l_lsw;
+  l_lsw.gl = l_lswGlobal;
+  l_lsw.fa = l_lswFace;
+  l_lsw.sf = l_lswSf;
 
   // init the rupture physics
   edge::elastic::setups::RuptureInit< TRIA3, 3, 8>::linSlipWeak( l_nFaces,
@@ -219,9 +223,7 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
                                                                  l_lswPars,
                                                                  l_doms,
                                                                  l_stress,
-                                                                 l_lswGlobal,
-                                                                 l_lswFace,
-                                                                 l_lswSf );
+                                                                 l_lsw );
 
   // check the resulting friction parameters
   for( unsigned short l_ru = 0; l_ru < 8; l_ru++ ) {

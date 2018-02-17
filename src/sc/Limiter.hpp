@@ -283,7 +283,7 @@ class edge::sc::Limiter {
               typename TL_T_SOLV_SC >
     static void limit( TL_T_REAL              i_dt,
                        TL_T_LID               i_lp,
-                       TL_T_LID       const   i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
+                       unsigned short const   i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
                        unsigned short const   i_scTySf[TL_N_SCS][TL_N_FAS],
                        unsigned short const   i_vIdElFaEl[TL_N_FAS],
                        unsigned short const   i_fIdElFaEl[TL_N_FAS],

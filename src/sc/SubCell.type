@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Data types of the sub-cell limiter.
  **/
-#ifndef SC_TYPE
-#define SC_TYPE
+#ifndef EDGE_SC_SUBCELL_TYPE
+#define EDGE_SC_SUBCELL_TYPE
 
 namespace edge {
   namespace sc {
@@ -73,13 +73,13 @@ struct edge::sc::t_connect {
   static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
   //! sub-vertices adjacent to sub-cells (owned + recv)
-  TL_T_LID scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_VES ];
+  unsigned short scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_VES ];
 
   //! sub-cells adjacent to sub-cells (sub-faces as bride, owned + recv)
-  TL_T_LID scSfSc[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_FAS ];
+  unsigned short scSfSc[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_FAS ];
 
   //! send sub-cells adjacent to DG faces
-  TL_T_LID faSfSc[TL_N_FAS][TL_N_SFS];
+  unsigned short faSfSc[TL_N_FAS][TL_N_SFS];
 
   //! type of the sub-cells' faces
   unsigned short scTySf[TL_N_SCS][TL_N_FAS];

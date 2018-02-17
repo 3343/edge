@@ -275,7 +275,7 @@ class edge::elastic::solvers::AderDg {
                        double                               i_dt,
                        TL_T_LID                             i_firstSpLe,
                        TL_T_LID                             i_firstSpRe,
-                       TL_T_LID                             i_faSfSc[TL_N_FAS][TL_N_SFS],
+                       unsigned short const                 i_faSfSc[TL_N_FAS][TL_N_SFS],
                        unsigned short const                 i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                        TL_T_LID                    const (* i_elFa)[TL_N_FAS],
                        t_faceChars                 const  * i_faChars,

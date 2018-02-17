@@ -39,6 +39,7 @@
 #include "sc/ibnd/Init.hpp"
 #include "impl/elastic/setups/KinematicsInit.hpp"
 #include "impl/elastic/setups/RuptureInit.hpp"
+#include "io/InternalBoundary.hpp"
 
 // sub-cell solver
 #include "sc/Memory.hpp"

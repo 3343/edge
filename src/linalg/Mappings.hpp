@@ -176,32 +176,35 @@ class edge::linalg::Mappings {
      * @param i_xi xi position at which the jacobian is evaluated; only relevant for non-constant jacobians.
      * @param i_eta eta position at which the jacobian is evaluated; only relevant for non-constant jacobians.
      * @param i_zeta zeta position at which the jacobian is evaluated; only relevant for non-constant jacobians.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
+    template< typename TL_T_REAL >
     static void evalJac(       t_entityType  i_entType,
-                         const real_mesh    *i_veCoords,
-                               real_mesh    *o_jac,
-                               real_mesh     i_xi   = 0,
-                               real_mesh     i_eta  = 0,
-                               real_mesh     i_zeta = 0 ) {
+                         const TL_T_REAL    *i_veCoords,
+                               TL_T_REAL    *o_jac,
+                               TL_T_REAL     i_xi   = 0,
+                               TL_T_REAL     i_eta  = 0,
+                               TL_T_REAL     i_zeta = 0 ) {
       // derivatives of the shape functions, we use 3 dims and 8 nodes as current upper bound
-      real_mesh l_evalSfDer[3*8];
-      for( unsigned short l_en = 0; l_en < 3*8; l_en++ ) l_evalSfDer[l_en] = std::numeric_limits< real_mesh >::max();
+      TL_T_REAL l_evalSfDer[3*8];
+      for( unsigned short l_en = 0; l_en < 3*8; l_en++ ) l_evalSfDer[l_en] = std::numeric_limits< TL_T_REAL >::max();
       EDGE_CHECK_LE( C_ENT[i_entType].N_VERTICES, 8 );
 
       if( i_entType == LINE ) {
         Shape::derLine( l_evalSfDer );
       }
       else if( i_entType == QUAD4R ) {
-        Shape::derQuad4( 0, 0, (real_mesh (*)[4]) l_evalSfDer );
+        Shape::derQuad4( TL_T_REAL(0), TL_T_REAL(0), (TL_T_REAL (*)[4]) l_evalSfDer );
       }
       else if( i_entType == TRIA3 ) {
-        Shape::derTria3( (real_mesh (*)[3]) l_evalSfDer );
+        Shape::derTria3( (TL_T_REAL (*)[3]) l_evalSfDer );
       }
       else if( i_entType == HEX8R ) {
-        Shape::derHex8Lin( 0, 0, 0, (real_mesh (*)[8]) l_evalSfDer );
+        Shape::derHex8Lin( TL_T_REAL(0), TL_T_REAL(0), TL_T_REAL(0), (TL_T_REAL (*)[8]) l_evalSfDer );
       }
       else if( i_entType == TET4 ) {
-        Shape::derTet4( (real_mesh(*)[4]) l_evalSfDer );
+        Shape::derTet4( (TL_T_REAL(*)[4]) l_evalSfDer );
       }
       else EDGE_LOG_FATAL;
 

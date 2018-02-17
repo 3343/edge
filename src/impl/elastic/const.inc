@@ -95,4 +95,3 @@ typedef scratchMem t_scratchMem;
 
 #include "src/impl/elastic/solvers/Kinematics.type"
 #include "src/impl/elastic/solvers/FrictionLaws.type"
-#include "src/impl/elastic/solvers/InternalBoundary.type"

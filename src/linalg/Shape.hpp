@@ -45,9 +45,12 @@ class edge::linalg::Shape {
      * @param i_xi xi-coord.
      * @param i_eta eta-coord.
      * @param o_evalSf will be set to evaluated shape functions.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void line( real_mesh i_xi,
-                      real_mesh o_evalSf[2] ) {
+    template< typename TL_T_REAL >
+    static void line( TL_T_REAL i_xi,
+                      TL_T_REAL o_evalSf[2] ) {
       o_evalSf[0] = 1 - i_xi;
       o_evalSf[1] = i_xi;
     }
@@ -62,8 +65,11 @@ class edge::linalg::Shape {
      * @param i_xi xi-coord.
      * @param i_eta eta-coord.
      * @param o_evalSf will be set to evaluated derivatives of the shape functions.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void derLine( real_mesh o_evalSf[2] ) {
+    template< typename TL_T_REAL >
+    static void derLine( TL_T_REAL o_evalSf[2] ) {
       o_evalSf[0] = -1;
       o_evalSf[1] =  1;
     }
@@ -89,10 +95,13 @@ class edge::linalg::Shape {
      * @param i_eta eta-coord.
      * @param o_evalSf will be set to evaluated shape functions.
      *        If called for vertex v with xi_v, eta_v, o_evalSf[v] = 1, 0 elsewhere.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void quad4( real_mesh i_xi,
-                       real_mesh i_eta,
-                       real_mesh o_evalSf[4] ) {
+    template< typename TL_T_REAL >
+    static void quad4( TL_T_REAL i_xi,
+                       TL_T_REAL i_eta,
+                       TL_T_REAL o_evalSf[4] ) {
       o_evalSf[0] = ( 1.0 - i_xi ) * ( 1.0 - i_eta );
       o_evalSf[1] =   i_xi   *       ( 1.0 - i_eta );
       o_evalSf[2] =   i_xi   *         i_eta;
@@ -107,10 +116,13 @@ class edge::linalg::Shape {
      * @param i_xi xi-coord.
      * @param i_eta eta-coord.
      * @param o_evalDerSf evaluated derivatives of shape functions, [0][*]: d / dxi, [1][*]: d / deta.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void derQuad4( real_mesh i_xi,
-                          real_mesh i_eta,
-                          real_mesh o_evalSfDer[2][4] ) {
+    template< typename TL_T_REAL >
+    static void derQuad4( TL_T_REAL i_xi,
+                          TL_T_REAL i_eta,
+                          TL_T_REAL o_evalSfDer[2][4] ) {
       o_evalSfDer[0][0] = -( 1.0 - i_eta );
       o_evalSfDer[0][1] =  ( 1.0 - i_eta );
       o_evalSfDer[0][2] =  i_eta;
@@ -143,11 +155,14 @@ class edge::linalg::Shape {
      * @param i_eta eta-coord.
      * @param o_evalSf will be set to evaluated shape functions.
      *        If called for vertex v with xi_v, eta_v, o_evalSf[v] = 1, 0 elsewhere.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void tria3( real_mesh i_xi,
-                       real_mesh i_eta,
-                       real_mesh o_evalSf[3] ) {
-      o_evalSf[0] = real_mesh(1) - i_xi - i_eta;
+    template< typename TL_T_REAL >
+    static void tria3( TL_T_REAL i_xi,
+                       TL_T_REAL i_eta,
+                       TL_T_REAL o_evalSf[3] ) {
+      o_evalSf[0] = TL_T_REAL(1) - i_xi - i_eta;
       o_evalSf[1] = i_xi;
       o_evalSf[2] = i_eta;
     }
@@ -158,8 +173,11 @@ class edge::linalg::Shape {
      * Node ordering for our ref element [0,1]x[0,1-xi]: see tria3.
      *
      * @param o_evalDerSf evaluated derivatives of shape functions, [0][*]: d / dxi, [1][*]: d / deta.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void derTria3( real_mesh o_evalSfDer[2][3] ) {
+    template< typename TL_T_REAL >
+    static void derTria3( TL_T_REAL o_evalSfDer[2][3] ) {
       o_evalSfDer[0][0] = -1;
       o_evalSfDer[0][1] =  1;
       o_evalSfDer[0][2] =  0;
@@ -199,11 +217,14 @@ class edge::linalg::Shape {
      * @param i_eta eta-coord.
      * @param i_zeta zeta-coord.
      * @param o_evalSf evaluated shape functions at the given coordinates.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void hex8Lin( real_mesh i_xi,
-                         real_mesh i_eta,
-                         real_mesh i_zeta,
-                         real_mesh o_evalSf[8] ) {
+    template< typename TL_T_REAL >
+    static void hex8Lin( TL_T_REAL i_xi,
+                         TL_T_REAL i_eta,
+                         TL_T_REAL i_zeta,
+                         TL_T_REAL o_evalSf[8] ) {
       o_evalSf[0] = (1 - i_xi) * (1 - i_eta) * (1 - i_zeta);
       o_evalSf[1] = i_xi       * (1 - i_eta) * (1 - i_zeta);
       o_evalSf[2] = i_xi       * i_eta       * (1 - i_zeta);
@@ -225,11 +246,14 @@ class edge::linalg::Shape {
      * @param i_eta eta-coord.
      * @param i_zeta zeta-coord.
      * @param o_evalDerSf evaluated derivatives of shape functions, [0][*]: d / dxi, [1][*]: d / deta, [2][*] d / dzeta
-     */
-    static void derHex8Lin( real_mesh i_xi,
-                            real_mesh i_eta,
-                            real_mesh i_zeta,
-                            real_mesh o_evalSf[3][8] ) {
+     *
+     * @paramt TL_T_REAL floating point type.
+     **/
+    template< typename TL_T_REAL >
+    static void derHex8Lin( TL_T_REAL i_xi,
+                            TL_T_REAL i_eta,
+                            TL_T_REAL i_zeta,
+                            TL_T_REAL o_evalSf[3][8] ) {
       o_evalSf[0][0] = -1 * (1 - i_eta) * (1 - i_zeta);
       o_evalSf[0][1] =  1 * (1 - i_eta) * (1 - i_zeta);
       o_evalSf[0][2] =  1 * i_eta       * (1 - i_zeta);
@@ -297,11 +321,14 @@ class edge::linalg::Shape {
      * @param i_eta eta-coord.
      * @param i_zeta zeta-coord.
      * @param o_evalSf evaluated shape functions at the given coordinate.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void tet4( real_mesh i_xi,
-                      real_mesh i_eta,
-                      real_mesh i_zeta,
-                      real_mesh o_evalSf[4] ) {
+    template< typename TL_T_REAL >
+    static void tet4( TL_T_REAL i_xi,
+                      TL_T_REAL i_eta,
+                      TL_T_REAL i_zeta,
+                      TL_T_REAL o_evalSf[4] ) {
       o_evalSf[0] = 1 - i_xi - i_eta - i_zeta;
       o_evalSf[1] = i_xi;
       o_evalSf[2] = i_eta;
@@ -314,8 +341,11 @@ class edge::linalg::Shape {
      * Node ordering for our ref-element: see tet4.
      *
      * @param o_evalDerSf evaluated derivatives of shape functions, [0][*]: d / dxi, [1][*]: d / deta, [2][*] d / dzeta
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void derTet4( real_mesh o_evalSfDer[3][4] ) {
+    template< typename TL_T_REAL >
+    static void derTet4( TL_T_REAL o_evalSfDer[3][4] ) {
       o_evalSfDer[0][0] = -1;
       o_evalSfDer[0][1] =  1;
       o_evalSfDer[0][2] =  0;

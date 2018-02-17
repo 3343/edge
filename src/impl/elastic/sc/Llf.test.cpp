@@ -749,24 +749,24 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Time Step", "[elasticScLlf][t
    */
 
   // init sub-cell connectivity
-  int l_scSfSc[18][3] = { {4,8,3},
-                          {5,6,4},
-                          {6,7,8},
-                          {9,0,17},
-                          {10,1,0},
-                          {11,12,1},
-                          {1,13,2},
-                          {2,14,15},
-                          {0,2,16},
-                          {3,-1,-1},
-                          {4,-1,-1},
-                          {5,-1,-1},
-                          {5,-1,-1},
-                          {6,-1,-1},
-                          {7,-1,-1},
-                          {7,-1,-1},
-                          {8,-1,-1},
-                          {3,-1,-1} };
+  unsigned short l_scSfSc[18][3] = { {4,8,3},
+                                     {5,6,4},
+                                     {6,7,8},
+                                     {9,0,17},
+                                     {10,1,0},
+                                     {11,12,1},
+                                     {1,13,2},
+                                     {2,14,15},
+                                     {0,2,16},
+                                     {3,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {4,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {5,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {5,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {6,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {7,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {7,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {8,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()},
+                                     {3,std::numeric_limits< unsigned short >::max(),std::numeric_limits< unsigned short >::max()} };
 
   // init sub-face types
   unsigned short l_scTySf[9][3] = { {11,9,10},

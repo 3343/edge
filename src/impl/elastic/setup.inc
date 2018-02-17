@@ -628,6 +628,14 @@ if( l_elasticConf.m_frictionLaw != "" ) {
 
   // set up rupture physics
   EDGE_LOG_INFO << "  setting up rupture physics";
+   edge::elastic::setups::RuptureInit<
+    T_SDISC.ELEMENT,
+    ORDER,
+    N_CRUNS >::alloc(
+      l_enLayouts[1].nEnts,
+      l_dynMem,
+      l_internal.m_globalShared5[0] );
+
   edge::elastic::setups::RuptureInit<
     T_SDISC.ELEMENT,
     ORDER,
@@ -643,9 +651,7 @@ if( l_elasticConf.m_frictionLaw != "" ) {
       l_elasticConf.m_lsw,
       l_elasticConf.m_rupDoms,
       l_elasticConf.m_stressInit,
-      l_internal.m_globalShared5[0],
-      l_internal.m_faceSparseShared1[0],
-      l_internal.m_faceSparseShared2[0] );
+      l_internal.m_globalShared5[0] );
 }
 
 #if PP_ORDER > 1
@@ -819,3 +825,29 @@ for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
     l_li++;
   }
 }
+
+// setup writer for rupture boundaries
+edge::io::InternalBoundary< int_el,
+                            T_SDISC.ELEMENT,
+                            ORDER > l_rupWriter( l_config.m_iBndFile,
+                                                 l_config.m_iBndType=="vtk_binary" );
+
+l_rupWriter.alloc( l_enLayouts[l_rupLayoutFa].nEnts,
+                   3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                   l_dynMem );
+
+l_rupWriter.init( l_enLayouts[l_rupLayoutFa].nEnts,
+                  l_internal.m_globalShared2[0].connect.scSv,
+                  l_internal.m_globalShared7[0].connect.bfBe,
+                  l_internal.m_globalShared7[0].connect.beEl,
+                  l_internal.m_connect.elVe,
+                  l_internal.m_globalShared2[0].svChars,
+                  l_internal.m_vertexChars,
+                  l_internal.m_globalShared7[0].bfChars );
+
+l_rupWriter.write( 0,
+                   l_enLayouts[l_rupLayoutFa].nEnts,
+                   3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                   3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                   l_internal.m_globalShared5[0].sfQtNaPtr,
+                   (real_base*) l_internal.m_globalShared5[0].sf );

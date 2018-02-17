@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -49,12 +49,10 @@ typedef int_el (*t_globalShared4)[N_CRUNS];
  * Rupture physics
  */
 #define PP_N_GLOBAL_SHARED_5 1
-typedef edge::elastic::solvers::t_LinSlipWeakGlobal<real_base, N_CRUNS> t_globalShared5;
-#define PP_N_FACE_SPARSE_SHARED_1 1
-typedef edge::elastic::solvers::t_LinSlipWeakFace<real_base> t_faceSparseShared1;
-#define PP_N_FACE_SPARSE_SHARED_2 1
-typedef edge::elastic::solvers::t_LinSlipWeakSubFace<real_base, N_DIM, N_CRUNS>
-          t_faceSparseShared2[CE_N_SUB_FACES( T_SDISC.ELEMENT, ORDER )];
+typedef edge::elastic::solvers::t_LinSlipWeak< real_base,
+                                               T_SDISC.ELEMENT,
+                                               ORDER,
+                                               N_CRUNS> t_globalShared5;
 
 // updates for left and right side
 #define PP_N_FACE_SPARSE_SHARED_4 2

@@ -36,20 +36,20 @@ namespace edge {
 
 class edge::io::Vtk {
   //private:
-    // true if the vtk output is initialized (allocation and setup of reocurring arrays)
-    bool   m_initialized;
+    //! true if the vtk output is initialized (allocation and setup of reocurring arrays)
+    bool m_initialized;
 
     //! coords of the vertices associated with the elements.
-    float  *m_coordsVe;
+    float *m_coordsVe;
 
     //! connectivity information of elements to vertices.
-    int    *m_connElVe;
+    int *m_connElVe;
 
     //! number of time an element was limited since the last sync; TODO: stored as float since this is all our vtk-writer supports.
     float *m_limSync;
 
     //! 1st order dofs in single precision, storage is element as ld, then quantities, then cruns (slowest dim).
-    float  *m_dofs;
+    float *m_dofs;
 
     //! pointers to the stride-1 element regions.
     float **m_ptrs;

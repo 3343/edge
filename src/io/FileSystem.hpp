@@ -27,6 +27,7 @@
 #include "parallel/Mpi.h"
 #include <sys/stat.h>
 #include "io/logging.h"
+#include <unistd.h>
 
 namespace edge {
   namespace io {
@@ -76,6 +77,9 @@ class edge::io::FileSystem {
           else {
             EDGE_LOG_FATAL << "  creating " << l_dir << " failed: " << std::strerror( l_error );
           }
+
+          // wait for the file system
+          fsync( l_error );
         }
       }
 #ifdef PP_USE_MPI
