@@ -384,9 +384,6 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
         o_sr[1][l_ru] = o_msP[8][l_ru] - o_msM[8][l_ru];
 
         // compute resulting slip
-        // TODO: This is not a proper numerical integration
-        //       quadrature points.
-        //       Should we use a multistep method here?
         io_dd[0][l_ru] += std::abs(o_sr[0][l_ru]) * i_dt;
         io_dd[1][l_ru] += std::abs(o_sr[1][l_ru]) * i_dt;
 
