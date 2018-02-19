@@ -307,7 +307,7 @@ class edge::elastic::sc::Llf {
 
         for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
           // default: sub-faces are parallel to element faces
-          if( TL_T_EL != TET4 || l_ty < TL_N_FAS ) {
+          if( l_ty < TL_N_FAS ) {
             // get id of the the adjacent element
             TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
 
@@ -330,6 +330,8 @@ class edge::elastic::sc::Llf {
           }
           // special handling for limiting-specific introduced sub-faces
           else {
+            EDGE_CHECK_EQ( TL_T_EL, TET4 );
+
             // assemble tetrahedral vertices
             TL_T_REAL l_veCrds[3][4];
             for( unsigned short l_di = 0; l_di < 3; l_di++ )
@@ -350,7 +352,7 @@ class edge::elastic::sc::Llf {
         // compute unscaled central flux solvers and viscosity
         for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
           // default: sub-faces are parallel to element faces
-          if( TL_T_EL != TET4 || l_ty < TL_N_FAS ) {
+          if( l_ty < TL_N_FAS ) {
             // get id of the the adjacent element
             TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
 
