@@ -34,11 +34,13 @@ unsigned short l_limPlusLayout;
                                              l_enLayouts[2],
                                              l_enLayouts.back() );
   l_limPlusLayout = l_enLayouts.size()-1;
+  EDGE_CHECK_LE( l_nLim, l_enLayouts[l_limPlusLayout].nEnts );
 
   // get number of sub-cell extrema
   int_el l_nScExt = edge::data::SparseEntities::nSp( l_enLayouts[2].nEnts,
                                                      t_enTypeShared::EXTREMA,
                                                      l_internal.m_elementChars );
+  EDGE_CHECK_LE( l_enLayouts[l_limPlusLayout].nEnts, l_nScExt );
 
   // allocate sub-cell memory
   edge::sc::Memory::alloc( l_nLim,
