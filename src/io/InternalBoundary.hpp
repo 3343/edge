@@ -97,7 +97,7 @@ class edge::io::InternalBoundary {
     int m_visitElType;
 
     /**
-     * Derives the face-loca "sub-grid" in reference coordinats.
+     * Derives the face-local "sub-grid" in reference coordinats.
      *
      * @param i_scSv sub-vertices adjacent to the sub-cells (no bridge).
      * @param o_faSfSvL will be set to sub-vertices adjacent to sub-faces of a face as local sub-grid ids.
@@ -111,8 +111,8 @@ class edge::io::InternalBoundary {
         for( unsigned short l_sv = 0; l_sv < TL_N_FA_SVS; l_sv++ )
           o_faSvR[l_fa][l_sv] = std::numeric_limits< unsigned short >::max();
 
-          // iterate over sub-faces
-          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+        // iterate over sub-faces
+        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
           // corresponding receive sub-cell
           unsigned short l_scRecv = TL_N_SCS + l_fa * TL_N_SFS + l_sf;
 
@@ -132,6 +132,13 @@ class edge::io::InternalBoundary {
                 break;
               }
             }
+          }
+
+          // reorder for quad-faces to avoid diagonals when plotting
+          if( TL_T_EL == HEX8R ) {
+            unsigned short l_svTmp = o_faSfSvL[l_fa][l_sf][0];
+            o_faSfSvL[l_fa][l_sf][0] = o_faSfSvL[l_fa][l_sf][1];
+            o_faSfSvL[l_fa][l_sf][1] = l_svTmp;
           }
         }
       }
@@ -195,7 +202,8 @@ class edge::io::InternalBoundary {
     InternalBoundary( std::string &i_outPath,
                       bool i_binary=1 ): m_outPath(i_outPath), m_binary(i_binary) {
       // init directory if given
-      FileSystem::createDir( m_outPath );
+      if( m_outPath != "")
+        FileSystem::createDir( m_outPath );
 
       // set plotting type
       if(       C_ENT[TL_T_EL].TYPE_FACES == LINE   ) m_visitElType = VISIT_LINE;
