@@ -358,8 +358,6 @@ class edge::elastic::sc::Llf {
 
             // get material parameters of the adjacent element
             TL_T_REAL l_mpElAd[3];
-            for( unsigned short l_pa = 0; l_pa < 3; l_pa++ )
-              l_mpElAd[l_pa] =std::numeric_limits< TL_T_REAL >::max();
             l_mpElAd[0] = i_matPars[l_elAd].lam;
             l_mpElAd[1] = i_matPars[l_elAd].mu;
             l_mpElAd[2] = i_matPars[l_elAd].rho;
