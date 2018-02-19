@@ -242,8 +242,23 @@ l_mesh.getGIdsEl( l_gIdsEl );
 
   // write setup
   EDGE_LOG_INFO << "reached synchronization point #0: " << l_simTime;
-  l_writer.write( 0,
-                  l_internal.m_globalShared2[0].limSync );
+  if( l_config.m_waveFieldInt > TOL.TIME ) {
+    EDGE_LOG_INFO << "  writing wave field #0";
+    l_writer.write( 0,
+                    l_internal.m_globalShared2[0].limSync );
+  }
+
+#ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
+  if( l_config.m_iBndInt > TOL.TIME ) {
+    EDGE_LOG_INFO << "  writing internal boundary #0";
+    l_rupWriter.write( 0,
+                       l_enLayouts[l_rupLayoutFa].nEnts,
+                       3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                       3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                       l_internal.m_globalShared5[0].sfQtNaPtr,
+                       (real_base*) l_internal.m_globalShared5[0].sf );
+  }
+#endif
 
   // print mem stats
   edge::data::common::printMemStats();
@@ -279,7 +294,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
 
     // write this sync step
     if( l_simTime + TOL.TIME > (l_stepWf+1)*l_config.m_waveFieldInt ) {
-      EDGE_LOG_INFO << "  writing wave field #" << l_stepWf;
+      EDGE_LOG_INFO << "  writing wave field #" << l_stepWf+1;
       l_writer.write( l_stepTime,
                       l_internal.m_globalShared2[0].limSync );
       l_stepWf++;
@@ -287,7 +302,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
 
 #ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
     if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
-      EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd;
+      EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
       l_rupWriter.write( 0,
                         l_enLayouts[l_rupLayoutFa].nEnts,
                         3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,

@@ -844,10 +844,3 @@ l_rupWriter.init( l_enLayouts[l_rupLayoutFa].nEnts,
                   l_internal.m_globalShared2[0].svChars,
                   l_internal.m_vertexChars,
                   l_internal.m_globalShared7[0].bfChars );
-
-l_rupWriter.write( 0,
-                   l_enLayouts[l_rupLayoutFa].nEnts,
-                   3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                   3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                   l_internal.m_globalShared5[0].sfQtNaPtr,
-                   (real_base*) l_internal.m_globalShared5[0].sf );
