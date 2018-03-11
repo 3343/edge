@@ -38,7 +38,7 @@ namespace edge {
 }
 
 class edge::elastic::solvers::common {
-  private:
+  public:
     /**
      * Sets up the two-dimensional flux solvers for a single face.
      *
@@ -316,7 +316,6 @@ class edge::elastic::solvers::common {
       assert( std::abs( l_fL[4][4] -  0.75                ) < TOL.SOLVER );
     }
 
-  public:
     /**
      * Sets up the flux solvers.
      *

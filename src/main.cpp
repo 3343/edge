@@ -35,6 +35,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "dg/QuadratureEval.hpp"
 #include "sc/Memory.hpp"
 #include "sc/Init.hpp"
+#include "sc/ibnd/SuperCell.hpp"
 #include "io/Receivers.h"
 #include "io/ReceiversQuad.hpp"
 #include "io/WaveField.h"
@@ -253,8 +254,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
     EDGE_LOG_INFO << "  writing internal boundary #0";
     l_rupWriter.write( 0,
                        l_enLayouts[l_rupLayoutFa].nEnts,
-                       3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                       3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                       4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                       4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
                        l_internal.m_globalShared5[0].sfQtNaPtr,
                        (real_base*) l_internal.m_globalShared5[0].sf );
   }
@@ -305,8 +306,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
       EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
       l_rupWriter.write( 0,
                         l_enLayouts[l_rupLayoutFa].nEnts,
-                        3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                        3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                        4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                        4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
                         l_internal.m_globalShared5[0].sfQtNaPtr,
                         (real_base*) l_internal.m_globalShared5[0].sf );
       l_stepBnd++;

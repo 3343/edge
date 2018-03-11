@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,22 +18,61 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Setup for the sub-cell limiter.
+ * Data types of the supercells.
  **/
+#ifndef EDGE_SC_SUPERCELL_TYPE
+#define EDGE_SC_SUPERCELL_TYPE
 
-edge::sc::Init< T_SDISC.ELEMENT,
-                ORDER,
-                N_QUANTITIES,
-                N_CRUNS >::connect(           l_internal.m_globalShared2[0].connect );
-edge::sc::Init< T_SDISC.ELEMENT,
-                ORDER,
-                N_QUANTITIES,
-                N_CRUNS >::svChars(           l_internal.m_globalShared2[0].svChars );
-edge::sc::Init< T_SDISC.ELEMENT,
-                ORDER,
-                N_QUANTITIES,
-                N_CRUNS >::ops(               l_internal.m_globalShared2[0].ops     );
-edge::sc::ibnd::SuperCellInit< T_SDISC.ELEMENT,
-                               ORDER >::faSt( l_internal.m_globalShared2[0].connect.scDgAd,
-                                              l_internal.m_globalShared2[0].connect.scSfSc,
-                                              l_internal.m_globalShared2[0].iBndSu );
+namespace edge {
+  namespace sc {
+    namespace ibnd {
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP >
+      struct t_stCol;
+
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP >
+      struct t_SuperCell;
+    }
+  }
+}
+
+/**
+ * Stencil collection.
+ *
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP spatial order.
+ ***/
+template< t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+struct edge::sc::ibnd::t_stCol {
+  //! number of sub-edges
+  static unsigned short const TL_N_SES = CE_N_SUB_EDGES( TL_T_EL, TL_O_SP );
+  //! number of sub-faces
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! number of stencils
+  static unsigned short const TL_N_ST = (TL_T_EL == TET4) ? TL_N_SFS - TL_N_SES : 0;
+
+  //! sub-cells of the stencils
+  unsigned short sc[ CE_MAX( TL_N_ST, (unsigned short) 1 ) ][2];
+};
+
+/**
+ * Super-cells.
+ *
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP spatial  order.
+ **/
+template< t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+struct edge::sc::ibnd::t_SuperCell {
+  //! number of faces
+  static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+  //! stencil collections
+  t_stCol< TL_T_EL,
+           TL_O_SP > col[TL_N_FAS];
+};
+
+#endif

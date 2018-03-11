@@ -99,6 +99,8 @@ struct edge::elastic::solvers::t_LinSlipWeakSubFace {
   TL_T_REAL ss0A[TL_N_CRS];
   //! friction cofficients
   TL_T_REAL muf[TL_N_CRS];
+  //! strength
+  TL_T_REAL st[TL_N_CRS];
   //! traction
   TL_T_REAL tr[TL_N_DIS-1][TL_N_CRS];
   //! slip rate
@@ -139,8 +141,8 @@ struct edge::elastic::solvers::t_LinSlipWeak {
                         TL_N_CRS > (*sf)[TL_N_SFS];
 
   //! sub-face quantity names (256 chars maximum length)
-  char         sfQtNa[3*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS][256];
-  char const * sfQtNaPtr[3*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS];
+  char         sfQtNa[4*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS][256];
+  char const * sfQtNaPtr[4*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS];
 };
 
 #endif

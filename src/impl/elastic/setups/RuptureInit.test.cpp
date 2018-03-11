@@ -203,11 +203,9 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   double l_faultCrds[2][2] = { {0, 1}, {1, 0} };
 
   // output
-  edge::elastic::solvers::t_LinSlipWeakGlobal<double, 8>     l_lswGlobal;
   edge::elastic::solvers::t_LinSlipWeakFace<double>          l_lswFace[3];
   edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8> l_lswSf[3][5];
   edge::elastic::solvers::t_LinSlipWeak< double, TRIA3, 3, 8 > l_lsw;
-  l_lsw.gl = l_lswGlobal;
   l_lsw.fa = l_lswFace;
   l_lsw.sf = l_lswSf;
 
@@ -227,9 +225,9 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
 
   // check the resulting friction parameters
   for( unsigned short l_ru = 0; l_ru < 8; l_ru++ ) {
-    REQUIRE( l_lswGlobal.mus[l_ru]   == Approx( l_ru + 0.1 ) );
-    REQUIRE( l_lswGlobal.mud[l_ru]   == Approx( l_ru * 2 + 0.01 ) );
-    REQUIRE( l_lswGlobal.dcInv[l_ru] == Approx( 1.0 / (l_ru * 3 + 0.3) ) );
+    REQUIRE( l_lsw.gl.mus[l_ru]   == Approx( l_ru + 0.1 ) );
+    REQUIRE( l_lsw.gl.mud[l_ru]   == Approx( l_ru * 2 + 0.01 ) );
+    REQUIRE( l_lsw.gl.dcInv[l_ru] == Approx( 1.0 / (l_ru * 3 + 0.3) ) );
   }
 
   // check the stress setup
@@ -241,12 +239,12 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
             || (l_sp == 2 && l_ru > 3) ) {
           REQUIRE( l_lswSf[l_sp][l_sf].sn0[l_ru]    == Approx(l_ru *  1.0E6) );
           REQUIRE( l_lswSf[l_sp][l_sf].ss0[0][l_ru] == Approx(l_ru * -2.0E6) );
-          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
+          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lsw.gl.mus[l_ru] );
         }
         else {
           REQUIRE( l_lswSf[l_sp][l_sf].sn0[l_ru]    == Approx(l_ru * -3.0E6) );
           REQUIRE( l_lswSf[l_sp][l_sf].ss0[0][l_ru] == Approx(l_ru *  4.0E6) );
-          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
+          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lsw.gl.mus[l_ru] );
         }
       }
     }

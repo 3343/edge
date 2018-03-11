@@ -686,16 +686,16 @@ edge::elastic::solvers::common::setupSolvers( l_internal.m_nElements,
 // set up sub-cell local lax-friedrichs solvers
 l_internal.m_globalShared8[0].alloc( l_enLayouts[l_limPlusLayout].nEnts,
                                      l_dynMem );
-l_internal.m_globalShared8[0].init( 0,
-                                    l_enLayouts[l_limPlusLayout].nEnts,
-                                    l_internal.m_globalShared2[0].connect.lpEl,
-                                    l_internal.m_connect.elVe,
-                                    l_internal.m_connect.elFa,
-                                    l_internal.m_connect.elFaEl,
-                                    l_internal.m_vertexChars,
-                                    l_internal.m_faceChars,
-                                    l_internal.m_elementChars,
-                                    l_internal.m_elementShared1[0] );
+l_internal.m_globalShared8[0].init(  0,
+                                     l_enLayouts[l_limPlusLayout].nEnts,
+                                     l_internal.m_globalShared2[0].connect.lpEl,
+                                     l_internal.m_connect.elVe,
+                                     l_internal.m_connect.elFa,
+                                     l_internal.m_connect.elFaEl,
+                                     l_internal.m_vertexChars,
+                                     l_internal.m_faceChars,
+                                     l_internal.m_elementChars,
+                                     l_internal.m_elementShared1[0] );
 
 // get time step stats
 edge::elastic::common::getTimeStepStatsCFL( l_internal.m_nElements,
@@ -833,7 +833,7 @@ edge::io::InternalBoundary< int_el,
                                                  l_config.m_iBndType=="vtk_binary" );
 
 l_rupWriter.alloc( l_enLayouts[l_rupLayoutFa].nEnts,
-                   3*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                   4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
                    l_dynMem );
 
 l_rupWriter.init( l_enLayouts[l_rupLayoutFa].nEnts,

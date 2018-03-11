@@ -204,12 +204,13 @@ else if( i_step == 3 ) {
     N_QUANTITIES,
     N_CRUNS >::aPost( i_first,
                       i_size,
-                      m_dT,
+          (real_base) m_dT,
                       m_internal.m_globalShared1[0].mat.fluxL,
                       m_internal.m_globalShared1[0].mat.fluxN,
                       m_internal.m_globalShared1[0].mat.fluxT,
                       m_internal.m_globalShared2[0].ops,
                       m_internal.m_globalShared2[0].connect,
+                      m_internal.m_globalShared2[0].iBndSu,
                       m_internal.m_faceChars,
 (real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) m_internal.m_elementShared2, // TODO: fix type
 (real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) m_internal.m_elementShared3, // TODO: fix type

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017-2018, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,15 +18,15 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Local Lax-Friedrichs sub-cell solver.
+ * Upwind sub-cell solver.
  **/
-#ifndef EDGE_SEISMIC_SC_LLF_HPP
-#define EDGE_SEISMIC_SC_LLF_HPP
+#ifndef EDGE_SEISMIC_SC_UPWIND_HPP
+#define EDGE_SEISMIC_SC_UPWIND_HPP
 
 #include "constants.hpp"
 #include "io/logging.h"
 #include "data/Dynamic.h"
-#include "../common.hpp"
+#include "../solvers/common.hpp"
 #include "linalg/Matrix.h"
 #include "linalg/Geom.hpp"
 
@@ -34,131 +34,230 @@ namespace edge {
   namespace elastic {
     namespace sc {
       template< unsigned short N_DIS >
-      class LlfSolver;
+      class UpWindSolver;
 
       template<>
-      class LlfSolver< 2 >;
+      class UpWindSolver< 2 >;
 
       template<>
-      class LlfSolver< 3 >;
+      class UpWindSolver< 3 >;
 
       template< typename       TL_T_REAL,
                 t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_N_CRS >
-      class Llf;
+      class UpWind;
     }
   }
 }
 
 /**
- * Sets up the face-local central flux matrices for the two-dimensional local Lax-Friedrichs solver.
+ * Sets up the face-local matrices for the two-dimensional upwind flux solver.
  **/
 template<>
-class edge::elastic::sc::LlfSolver< 2 > {
+class edge::elastic::sc::UpWindSolver< 2 > {
   public:
     /**
-     * Initializes the left element's contribution to the central flux solver.
+     * Initializes the upwind flux solvers.
      *
-     * @param i_matL left element's material parameters: lambda, mu, rho.
+     * @param i_mpL left element's material parameters: lambda, mu, rho.
+     * @param i_mpR right element's material parameters: lambda, mu, rho.
      * @param i_n face-normal, pointing from the left to the right element.
-     * @param o_cenL will be set to the left element's contributions to the central flux for the given face.
+     * @param i_t0 first face-tangent.
+     * @param i_t1 second face-tangent, normal to the normal and t0.
+     * @param o_upL will be set to solver for left element update [0]: own contribution, [1]: neighboring contribution.
+     * @param o_upR will be set to solver for right element update [0]: own contribution, [1]: neighboring contribution.
+     * @param i_vis scaling for the viscosity.
      *
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void centralL( TL_T_REAL  const i_matL[3],
-                          TL_T_REAL  const i_n[2],
-                          TL_T_REAL  const *,
-                          TL_T_REAL  const *,
-                          TL_T_REAL        o_cenL[5][5] ) {
-      // compute trafos
+    static void lr( TL_T_REAL const i_mpL[3],
+                    TL_T_REAL const i_mpR[3],
+                    TL_T_REAL const i_n[2],
+                    TL_T_REAL const *,
+                    TL_T_REAL const *,
+                    TL_T_REAL       o_upL[2][5][5],
+                    TL_T_REAL       o_upR[2][5][5],
+                    TL_T_REAL       i_vis = TL_T_REAL(1.0) ) {
+
+      solvers::common::setupSolver2d( i_mpL[2], i_mpR[2],
+                                      i_mpL[0], i_mpR[0],
+                                      i_mpL[1], i_mpR[1],
+                                      i_n[0], i_n[1], 0,
+                                      o_upL[0],
+                                      o_upL[1] );
+
+      solvers::common::setupSolver2d( i_mpL[2], i_mpR[2],
+                                      i_mpL[0], i_mpR[0],
+                                      i_mpL[1], i_mpR[1],
+                                      -i_n[0], -i_n[1], 0,
+                                      o_upR[0],
+                                      o_upR[1] );
+
+      // determine maximum signal speed of both sides
+      TL_T_REAL l_mssEl =           elastic::common::getVelP( i_mpL[2], i_mpL[0], i_mpL[1] );
+                l_mssEl = std::max( elastic::common::getVelP( i_mpR[2], i_mpR[0], i_mpR[1] ),
+                                    l_mssEl );
+
+      // get the trafos
       TL_T_REAL l_t[5][5];
-      elastic::common::setupTrafo2d( i_n[0], i_n[1],
-                                     l_t );
       TL_T_REAL l_tm1[5][5];
-      elastic::common::setupTrafoInv2d( i_n[0], i_n[1],
+
+      elastic::common::setupTrafo2d(  i_n[0],  i_n[1],
+                                      l_t );
+
+      elastic::common::setupTrafoInv2d( i_n[0],  i_n[1],
                                         l_tm1 );
 
-      // compute the jacobians of the left element
-      TL_T_REAL l_ab[2][5][5];
-      elastic::common::getJac2D( i_matL[2],
-                                 i_matL[0],
-                                 i_matL[1],
-                                 l_ab );
+      // derive scaling for artificial viscosity for zero-speed wave
+      TL_T_REAL l_entFix[5][5];
+      for( unsigned short l_ro = 0; l_ro < 5; l_ro++ )
+        for( unsigned short l_co = 0; l_co < 5; l_co++ )
+          l_entFix[l_ro][l_co] = 0;
+      l_entFix[1][1]  = l_mssEl;
+      l_entFix[1][1] *= i_vis;
 
-      // compute combined solver
+      // do the matrix mults
       TL_T_REAL l_tmp[5][5];
       linalg::Matrix::matMulB0( 5, 5, 5,
-                                l_t[0], l_ab[0][0], l_tmp[0] );
+                                l_t[0], l_entFix[0], l_tmp[0] );
       linalg::Matrix::matMulB0( 5, 5, 5,
-                                l_tmp[0], l_tm1[0], o_cenL[0] );
+                                l_tmp[0], l_tm1[0], l_entFix[0] );
 
-      // scale with 0.5 (left element: negative)
-      for( unsigned short l_q1 = 0; l_q1 < 5; l_q1++ )
-        for( unsigned short l_q2 = 0; l_q2 < 5; l_q2++ )
-          o_cenL[l_q1][l_q2] *= (TL_T_REAL) -0.5;
+      // add viscosity to solvers
+      for( unsigned short l_ro = 0; l_ro < 5; l_ro++ ) {
+        for( unsigned short l_co = 0; l_co < 5; l_co++ ) {
+          o_upL[0][l_ro][l_co] += l_entFix[l_ro][l_co];
+          o_upR[0][l_ro][l_co] += l_entFix[l_ro][l_co];
+
+          o_upL[1][l_ro][l_co] -= l_entFix[l_ro][l_co];
+          o_upR[1][l_ro][l_co] -= l_entFix[l_ro][l_co];
+        }
+      }
+
+      // scale with -1 since we add the fluxes
+      for( unsigned l_co = 0; l_co < 2; l_co++ ) {
+        for( unsigned short l_q1 = 0; l_q1 < 5; l_q1++ ) {
+          for( unsigned short l_q2 = 0; l_q2 < 5; l_q2++ ) {
+            o_upL[l_co][l_q1][l_q2] *= (TL_T_REAL) -1.0;
+            o_upR[l_co][l_q1][l_q2] *= (TL_T_REAL) -1.0;
+          }
+        }
+      }
+
     }
 };
 
 /**
- * Sets up the face-local matrices for the three-dimensional central flux solver.
+ * Sets up the face-local matrices for the three-dimensional upwind flux solver.
  **/
 template<>
-class edge::elastic::sc::LlfSolver< 3 > {
+class edge::elastic::sc::UpWindSolver< 3 > {
   public:
     /**
-     * Initializes the left element's contribution to the central flux solver.
+     * Initializes the upwind flux solvers.
      *
-     * @param i_matL left element's material parameters: lambda, mu, rho.
+     * @param i_mpL left element's material parameters: lambda, mu, rho.
+     * @param i_mpR right element's material parameters: lambda, mu, rho.
      * @param i_n face-normal, pointing from the left to the right element.
      * @param i_t0 first face-tangent.
      * @param i_t1 second face-tangent, normal to the normal and t0.
-     * @param o_cenL will be set to the left element's contributions to the central flux for the given face.
-     *
+     * @param o_upL will be set to solver for left element update [0]: own contribution, [1]: neighboring contribution.
+     * @param o_upR will be set to solver for right element update [0]: own contribution, [1]: neighboring contribution.
+     * @param i_vis scaling for the viscosity.
+     * 
      * @paramt TL_T_REAL floating point precision.
      **/
     template< typename TL_T_REAL >
-    static void centralL( TL_T_REAL const i_matL[3],
-                          TL_T_REAL const i_n[3],
-                          TL_T_REAL const i_t0[3],
-                          TL_T_REAL const i_t1[3],
-                          TL_T_REAL       o_cenL[9][9] ) {
-      // compute trafos
+    static void lr( TL_T_REAL const i_mpL[3],
+                    TL_T_REAL const i_mpR[3],
+                    TL_T_REAL const i_n[3],
+                    TL_T_REAL const i_t0[3],
+                    TL_T_REAL const i_t1[3],
+                    TL_T_REAL       o_upL[2][9][9],
+                    TL_T_REAL       o_upR[2][9][9],
+                    TL_T_REAL       i_vis=TL_T_REAL(1) ) {
+      solvers::common::setupSolver3d( i_mpL[2], i_mpR[2],
+                                      i_mpL[0], i_mpR[0],
+                                      i_mpL[1], i_mpR[1],
+                                      i_n[0], i_n[1], i_n[2],
+                                      i_t0[0], i_t0[1], i_t0[2],
+                                      i_t1[0], i_t1[1], i_t1[2],
+                                      o_upL[0],
+                                      o_upL[1] );
+
+      solvers::common::setupSolver3d( i_mpL[2], i_mpR[2],
+                                      i_mpL[0], i_mpR[0],
+                                      i_mpL[1], i_mpR[1],
+                                      -i_n[0], -i_n[1], -i_n[2],
+                                      i_t0[0], i_t0[1], i_t0[2],
+                                      i_t1[0], i_t1[1], i_t1[2],
+                                      o_upR[0],
+                                      o_upR[1] );
+
+      // determine maximum signal speed of both sides
+      TL_T_REAL l_mssEl =           elastic::common::getVelP( i_mpL[2], i_mpL[0], i_mpL[1] );
+                l_mssEl = std::max( elastic::common::getVelP( i_mpR[2], i_mpR[0], i_mpR[1] ),
+                                    l_mssEl );
+
+      // get the trafos
       TL_T_REAL l_t[9][9];
-      elastic::common::setupTrafo3d( i_n[0],  i_n[1],  i_n[2],
-                                     i_t0[0], i_t0[1], i_t0[2],
-                                     i_t1[0], i_t1[1], i_t1[2],
-                                     l_t );
       TL_T_REAL l_tm1[9][9];
+
+      elastic::common::setupTrafo3d(  i_n[0],  i_n[1],  i_n[2],
+                                      i_t0[0], i_t0[1], i_t0[2],
+                                      i_t1[0], i_t1[1], i_t1[2],
+                                      l_t );
+
       elastic::common::setupTrafoInv3d( i_n[0],  i_n[1],  i_n[2],
                                         i_t0[0], i_t0[1], i_t0[2],
                                         i_t1[0], i_t1[1], i_t1[2],
                                         l_tm1 );
 
-      // compute the jacobians of the left element
-      TL_T_REAL l_abc[3][9][9];
-      elastic::common::getJac3D( i_matL[2],
-                                 i_matL[0],
-                                 i_matL[1],
-                                 l_abc );
+      // derive scaling for artificial viscosity for zero-speed waves
+      TL_T_REAL l_entFix[9][9];
+      for( unsigned short l_ro = 0; l_ro < 9; l_ro++ )
+        for( unsigned short l_co = 0; l_co < 9; l_co++ )
+          l_entFix[l_ro][l_co] = 0;
+      l_entFix[1][1]  = l_mssEl;
+      l_entFix[1][1] *= i_vis;
+      l_entFix[2][2] = l_entFix[2][2];
+      l_entFix[4][4] = l_entFix[2][2];
 
-      // compute combined solver
+      // do the matrix mults
       TL_T_REAL l_tmp[9][9];
       linalg::Matrix::matMulB0( 9, 9, 9,
-                                l_t[0], l_abc[0][0], l_tmp[0] );
+                                l_t[0], l_entFix[0], l_tmp[0] );
       linalg::Matrix::matMulB0( 9, 9, 9,
-                                l_tmp[0], l_tm1[0], o_cenL[0] );
+                                l_tmp[0], l_tm1[0], l_entFix[0] );
 
-      // scale with 0.5 (left element: negative)
-      for( unsigned short l_q1 = 0; l_q1 < 9; l_q1++ )
-        for( unsigned short l_q2 = 0; l_q2 < 9; l_q2++ )
-          o_cenL[l_q1][l_q2] *= (TL_T_REAL) -0.5;
+      // add viscosity to solvers
+      for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
+        for( unsigned short l_co = 0; l_co < 9; l_co++ ) {
+          o_upL[0][l_ro][l_co] += l_entFix[l_ro][l_co];
+          o_upR[0][l_ro][l_co] += l_entFix[l_ro][l_co];
+
+          o_upL[1][l_ro][l_co] -= l_entFix[l_ro][l_co];
+          o_upR[1][l_ro][l_co] -= l_entFix[l_ro][l_co];
+        }
+      }
+
+      // scale with -1, since we add the fluxes
+      for( unsigned l_co = 0; l_co < 2; l_co++ ) {
+        for( unsigned short l_q1 = 0; l_q1 < 9; l_q1++ ) {
+          for( unsigned short l_q2 = 0; l_q2 < 9; l_q2++ ) {
+            o_upL[l_co][l_q1][l_q2] *= (TL_T_REAL) -1.0;
+            o_upR[l_co][l_q1][l_q2] *= (TL_T_REAL) -1.0;
+          }
+        }
+      }
+
     }
 };
 
 /**
- * Local Lax-Friedrichs sub-cell solver.
+ * Upwind sub-cell solver.
  *
  * @paramt TL_T_REAL floating point precision.
  * @paramt TL_T_EL element type.
@@ -169,7 +268,7 @@ template< typename       TL_T_REAL,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::sc::Llf {
+class edge::elastic::sc::UpWind {
   private:
     //! number of dimensions
     static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
@@ -192,35 +291,35 @@ class edge::elastic::sc::Llf {
     //! number of sub-face types
     static unsigned short const TL_N_TYSF = (TL_T_EL != TET4) ? TL_N_FAS : 6;
 
-    // central flux part of the local Lax-Friedrichs solver for the "left" side
+    // upwind solvers.
     // 0 - TL_N_TYSF-1: homogeneous (incorporates the element's material parameters)
     // TL_N_TYSF - TL_N_TYSF+TL_N_FAS-1: heterogeneous (incorporates material parameters of the adjacent elements)
-    TL_T_REAL (* m_cen)[TL_N_TYSF+TL_N_FAS][TL_N_QTS][TL_N_QTS];
-
-    //! viscosity term, homogeneous: 0 - TL_N_TYSF-1, heterogeneous: TL_N_TYSF - TL_N_TYSF+TL_N_FAS-1
-    TL_T_REAL (* m_vis)[TL_N_TYSF+TL_N_FAS];
+    // [][0]: solver for left update [][1]: solver for right update
+    // [][][0]: local contribution
+    // [][][1]: neighboring contribution
+    TL_T_REAL (* m_up)[TL_N_TYSF+TL_N_FAS][2][2][TL_N_QTS][TL_N_QTS];
 
   private:
     /**
-     * Derives the LLF solver's ids and side, based on the sub-cell's face-type.
+     * Derives the upwinds solver's ids and side, based on the sub-cell's face-type.
      *
      * @param i_scTySf sub-cell's face type, DG-surf left: 0 - TL_N_FAS-1, DG-surf right: TL_N_FAS - 2*TL_N_FAS-1, Inner left: 2*TL_N_FAS - 2*TL_N_FAS+TL_N_TYSF-1, Inner right: 2*TL_N_FAS+TL_N_TYSF - 2*TL_N_FAS+2*TL_N_TYSF.
      * @param o_lffIds will be set to LLF solver's id.
      * @return true if sub-cell is left w.r.t. to DG-face's outer-pointing normal.
      **/
-    static bool llfIds( unsigned short  i_scTySf,
-                        unsigned short  o_llfIds[2] ) {
+    static bool upIds( unsigned short  i_scTySf,
+                       unsigned short  o_upIds[2] ) {
       // DG surface or inner sub-face
       bool l_dgs = (i_scTySf < 2*TL_N_FAS) ? true : false;
 
       // contribution of the sub-cell (always homogeneous)
-      o_llfIds[0] = (l_dgs) ?  i_scTySf               % TL_N_FAS:
-                              (i_scTySf - 2*TL_N_FAS) % TL_N_TYSF;
+      o_upIds[0] = (l_dgs) ?  i_scTySf               % TL_N_FAS:
+                             (i_scTySf - 2*TL_N_FAS) % TL_N_TYSF;
 
       // contribution of the adjacent sub-cell
-      o_llfIds[1]  = o_llfIds[0];
+      o_upIds[1]  = o_upIds[0];
       // jump to heterogeneous solver if required
-      o_llfIds[1] += l_dgs * TL_N_TYSF;
+      o_upIds[1] += l_dgs * TL_N_TYSF;
 
       // return true if sub-cell is on the left side
       return (l_dgs) ?  i_scTySf               < TL_N_FAS:
@@ -229,7 +328,7 @@ class edge::elastic::sc::Llf {
 
   public:
     /**
-     * Allocates memory for the local Lax-Friedrichs solvers.
+     * Allocates memory for the upwind solver.
      *
      * @param i_nLimPlus number of limited plus DG elements (limited + face neighbors).
      * @param io_dynMem will be called for dynamic memory allocation.
@@ -240,18 +339,13 @@ class edge::elastic::sc::Llf {
     void alloc( TL_T_LID              i_nLimPlus,
                 edge::data::Dynamic  &io_dynMem ) {
       // size of the homogenous and heterogeneous central flux solver per limited plus element
-      std::size_t l_cenSize  = (std::size_t) (TL_N_TYSF+TL_N_FAS) * TL_N_QTS * TL_N_QTS;
-                  l_cenSize *= i_nLimPlus * sizeof(TL_T_REAL);
-      m_cen =  (TL_T_REAL (*) [TL_N_TYSF+TL_N_FAS][TL_N_QTS][TL_N_QTS]) io_dynMem.allocate( l_cenSize );
-
-      // size of the viscosity scalars
-      std::size_t l_visSize  = TL_N_TYSF+TL_N_FAS;
-                  l_visSize *= i_nLimPlus * sizeof(TL_T_REAL);
-      m_vis = (TL_T_REAL (*)[TL_N_TYSF+TL_N_FAS]) io_dynMem.allocate( l_visSize );
+      std::size_t l_upSize = (std::size_t) (TL_N_TYSF+TL_N_FAS) * 2 * 2 * TL_N_QTS * TL_N_QTS;
+                  l_upSize *= i_nLimPlus * sizeof(TL_T_REAL);
+      m_up = (TL_T_REAL (*) [TL_N_TYSF+TL_N_FAS][2][2][TL_N_QTS][TL_N_QTS]) io_dynMem.allocate( l_upSize );
     }
 
     /**
-     * Initializes the local Lax-Friedrichs sub-cell solver.
+     * Initializes the upwind sub-cell solver.
      *
      * @param i_firstLp first limited plus element.
      * @param i_sizeLp number of limited plus elements, which are initialized.
@@ -263,6 +357,7 @@ class edge::elastic::sc::Llf {
      * @param i_charsFa characteristics of the faces.
      * @param i_charsEl characteristics of the elements.
      * @param i_matPars material parameters.
+     * @param i_scaVis scaling for the viscosity. 0.0: no viscosity, 1.0: viscosity determined by maximum wave speed.
      *
      * @paramt TL_T_LID integral type for local ids.
      * @paramt TL_T_CHARS_VE characteristics of the vertices, providing member .coords.
@@ -284,7 +379,9 @@ class edge::elastic::sc::Llf {
                TL_T_CHARS_VE     const (*i_charsVe),
                TL_T_CHARS_FA     const (*i_charsFa),
                TL_T_CHARS_EL     const (*i_charsEl),
-               TL_T_MAT_PARS     const (*i_matPars) ) {
+               TL_T_MAT_PARS     const (*i_matPars),
+               TL_T_REAL                 i_vis = TL_T_REAL(0.05) ) {
+
       // iterate over limited plus elements
       for( TL_T_LID l_lp = i_firstLp; l_lp < i_firstLp+i_sizeLp; l_lp++ ) {
         // derive dense id
@@ -296,8 +393,6 @@ class edge::elastic::sc::Llf {
         l_mpEl[1] = i_matPars[l_el].mu;
         l_mpEl[2] = i_matPars[l_el].rho;
 
-        // element's maximum signal speed (p-wave velocity)
-        TL_T_REAL l_mssEl = elastic::common::getVelP( l_mpEl[2], l_mpEl[0], l_mpEl[1] );
 
         // assemble normals, tangents and face areas
         TL_T_REAL l_n[TL_N_TYSF][TL_N_DIS];
@@ -349,7 +444,7 @@ class edge::elastic::sc::Llf {
           }
         }
 
-        // compute unscaled central flux solvers and viscosity
+        // compute unscaled upwind solvers
         for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
           // default: sub-faces are parallel to element faces
           if( l_ty < TL_N_FAS ) {
@@ -362,52 +457,46 @@ class edge::elastic::sc::Llf {
             l_mpElAd[1] = i_matPars[l_elAd].mu;
             l_mpElAd[2] = i_matPars[l_elAd].rho;
 
-            // compute heterogeneous LLF solver
-            LlfSolver< TL_N_DIS >::centralL( l_mpElAd,
-                                             l_n[l_ty],
-                                             l_t0[l_ty],
-                                             l_t1[l_ty],
-                                             m_cen[l_lp][TL_N_TYSF+l_ty] );
-
-            // adjacent element's maximum signal speed (p-wave velocity)
-            TL_T_REAL l_mssElAd = elastic::common::getVelP( l_mpElAd[2], l_mpElAd[0], l_mpElAd[1] );
-
-
-            // set heterogeneous viscosity for left element's contribution
-            m_vis[l_lp][TL_N_TYSF+l_ty] = (TL_T_REAL) -0.5 * std::max( l_mssEl, l_mssElAd );
+            // compute heterogeneous upwind solvers
+            UpWindSolver< TL_N_DIS >::lr( l_mpEl,
+                                          l_mpElAd,
+                                          l_n[l_ty],
+                                          l_t0[l_ty],
+                                          l_t1[l_ty],
+                                          m_up[l_lp][TL_N_TYSF+l_ty][0],
+                                          m_up[l_lp][TL_N_TYSF+l_ty][1],
+                                          i_vis );
           }
 
-          // compute homogeneous LLF solver
-          LlfSolver< TL_N_DIS >::centralL( l_mpEl,
-                                           l_n[l_ty],
-                                           l_t0[l_ty],
-                                           l_t1[l_ty],
-                                           m_cen[l_lp][l_ty] );
-
-          // set homogeneous viscosity for left element's contribution
-          m_vis[l_lp][l_ty] = (TL_T_REAL) -0.5 * l_mssEl;
+          // compute homogeneous upwind solvers
+          UpWindSolver< TL_N_DIS >::lr( l_mpEl,
+                                        l_mpEl,
+                                        l_n[l_ty],
+                                        l_t0[l_ty],
+                                        l_t1[l_ty],
+                                        m_up[l_lp][l_ty][0],
+                                        m_up[l_lp][l_ty][1],
+                                        i_vis );
         }
 
 
-        // scale central flux solvers and viscosity term by sub-cells' volume and  sub-faces' area
+        // scale flux solvers and viscosity term by sub-cells' volume and  sub-faces' area
         for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
           TL_T_REAL l_sca  = l_ar[l_ty] / TL_N_SFS;
                     l_sca *= TL_N_SCS / i_charsEl[l_el].volume;
 
-          // homogeneous viscosity
-          m_vis[l_lp][l_ty] *= l_sca;
-          // heterogeneous viscosity
-          if( l_ty < TL_N_FAS )
-            m_vis[l_lp][TL_N_TYSF + l_ty] *= l_sca;
-
-          // central flux contribution
-          for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-            for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
-              // homogeneous
-              m_cen[l_lp][l_ty][l_q1][l_q2] *= l_sca;
-              // heterogeneous
-              if( l_ty < TL_N_FAS )
-                m_cen[l_lp][TL_N_TYSF+l_ty][l_q1][l_q2] *= l_sca;
+          // upwind contribution
+          for( unsigned short l_lr = 0; l_lr < 2; l_lr++ ){
+            for( unsigned short l_co = 0; l_co < 2; l_co++ ) {
+              for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
+                for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+                  // homogeneous
+                  m_up[l_lp][l_ty][l_lr][l_co][l_q1][l_q2] *= l_sca;
+                  // heterogeneous
+                  if( l_ty < TL_N_FAS )
+                    m_up[l_lp][TL_N_TYSF+l_ty][l_lr][l_co][l_q1][l_q2] *= l_sca;
+                }
+              }
             }
           }
         }
@@ -429,7 +518,7 @@ class edge::elastic::sc::Llf {
      *   ghost-sub-cells. These net-updates are added directly to the DOFs of
      *   the sub-cell. No scaling or processing in any way is performed. All
      *   other flux computations for the inner non-DG sub-faces are done through
-     *   the local Lax-Friedrichs procedure.
+     *   via the upwind solver (incl. LLF viscosity).
      *
      * @param i_dt time step.
      * @param i_lp id of the corresponding limited-plus element.
@@ -447,17 +536,17 @@ class edge::elastic::sc::Llf {
                unsigned short const i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
                unsigned short const i_scTySf[TL_N_SCS][TL_N_FAS],
                bool           const i_netUpSc[TL_N_FAS],
-               TL_T_REAL      const i_dofsSc[TL_N_QTS][TL_N_SCS+TL_N_FAS*TL_N_SFS][TL_N_CRS],
+               TL_T_REAL            io_dofsSc[TL_N_QTS][TL_N_SCS+TL_N_FAS*TL_N_SFS][TL_N_CRS],
                TL_T_REAL            o_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) const {
       // TODO: Currently, we compute the fluxes for each sub-cell.
       //       This could be reduced to one flux-computation per sub-face
 
       // iterate over the sub-cells
       for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
-
+        // init solution
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            o_dofsSc[l_qt][l_sc][l_cr] = i_dofsSc[l_qt][l_sc][l_cr];
+            o_dofsSc[l_qt][l_sc][l_cr] = io_dofsSc[l_qt][l_sc][l_cr];
 
         // iterate over faces of the sub-cell and compute net-updates
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
@@ -471,42 +560,24 @@ class edge::elastic::sc::Llf {
           if( l_ty > TL_N_FAS-1 || i_netUpSc[ l_ty%TL_N_FAS ] == false ) {
             // derive the ids of the central flux solvers and side of the sub-cell
             unsigned short l_cIds[2];
-            bool l_left = llfIds( l_ty, l_cIds );
-
-            // id of viscosity is the maximum of the central flux id (only homogeneous if both are hom.)
-            unsigned short l_vId = std::max( l_cIds[0], l_cIds[1] );
-
-            // scaling of the central flux solvers
-            TL_T_REAL l_sca = (l_left) ? i_dt : -i_dt;
+            // choose between left and right solver
+            unsigned short l_lr = ( upIds( l_ty, l_cIds ) == false );
 
             // iterate over target quantities
             for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-              // add viscosity term to net-updates
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                // own sub-cell's viscosity contribution
-                o_dofsSc[l_q1][l_sc][l_cr] +=   i_dofsSc[l_q1][l_sc][l_cr]
-                                              * m_vis[i_lp][l_vId]
-                                              * i_dt;
-
-                // adjacent sub-cell's viscosity contribution
-                o_dofsSc[l_q1][l_sc][l_cr] -=   i_dofsSc[l_q1][l_scAd][l_cr]
-                                              * m_vis[i_lp][l_vId]
-                                              * i_dt;
-              }
-
               // iterate over coupled quantities
               for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
                 // iterate over fused runs
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   // own, homogeneous central flux contribution
-                  o_dofsSc[l_q1][l_sc][l_cr] +=   i_dofsSc[l_q2][l_sc][l_cr]
-                                                * m_cen[i_lp][ l_cIds[0] ][l_q1][l_q2]
-                                                * l_sca;
+                  o_dofsSc[l_q1][l_sc][l_cr] +=   io_dofsSc[l_q2][l_sc][l_cr]
+                                                * m_up[i_lp][ l_cIds[0] ][l_lr][0][l_q1][l_q2]
+                                                * i_dt;
 
                   // neighboring, possibly heterogenous central flux contribution
-                  o_dofsSc[l_q1][l_sc][l_cr] +=   i_dofsSc[l_q2][l_scAd][l_cr]
-                                                * m_cen[i_lp][ l_cIds[1] ][l_q1][l_q2]
-                                                * l_sca;
+                  o_dofsSc[l_q1][l_sc][l_cr] +=   io_dofsSc[l_q2][l_scAd][l_cr]
+                                                * m_up[i_lp][ l_cIds[1] ][l_lr][1][l_q1][l_q2]
+                                                * i_dt;
                 }
               }
             }
@@ -515,7 +586,7 @@ class edge::elastic::sc::Llf {
           else {
             for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                o_dofsSc[l_q1][l_sc][l_cr] += i_dofsSc[l_q1][l_scAd][l_cr];
+                o_dofsSc[l_q1][l_sc][l_cr] += io_dofsSc[l_q1][l_scAd][l_cr];
           } 
         }
       }
@@ -544,17 +615,10 @@ class edge::elastic::sc::Llf {
 
         // iterate over target quantities
         for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-          // add viscosity term to net-updates
+          // init net-updates
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // own sub-cell's viscosity contribution
-            o_netUps[l_q1][l_sf][l_cr]  =   i_dofsSc[0][l_q1][l_sf][l_cr]
-                                          * m_vis[i_lp][TL_N_TYSF+i_fa] // always heterogeneous
-                                          * i_dt;
-
-            // adjacent sub-cell's viscosity contribution
-            o_netUps[l_q1][l_sf][l_cr] -=   i_dofsSc[1][l_q1][l_sf][l_cr]
-                                          * m_vis[i_lp][TL_N_TYSF+i_fa] // always heterogeneous
-                                          * i_dt;
+            o_netUps[l_q1][l_sf][l_cr] = 0;
           }
 
           // iterate over coupled quantities
@@ -563,12 +627,12 @@ class edge::elastic::sc::Llf {
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               // own, homogeneous central flux contribution
               o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[0][l_q2][l_sf][l_cr]
-                                            * m_cen[i_lp][i_fa][l_q1][l_q2]
+                                            * m_up[i_lp][i_fa][0][0][l_q1][l_q2]
                                             * i_dt;
 
               // neighboring, possibly heterogenous central flux contribution
               o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[1][l_q2][l_sf][l_cr]
-                                            * m_cen[i_lp][TL_N_TYSF+i_fa][l_q1][l_q2]
+                                            * m_up[i_lp][TL_N_TYSF+i_fa][0][1][l_q1][l_q2]
                                             * i_dt;
             }
           }

@@ -116,9 +116,10 @@ typedef edge::sc::ibnd::t_InternalBoundary< int_el,
                                             T_SDISC.ELEMENT,
                                             N_QUANTITIES > t_globalShared7;
 
-#include "impl/elastic/sc/Llf.hpp"
+//#include "impl/elastic/sc/Llf.hpp"
+#include "impl/elastic/sc/UpWind.hpp"
 #define PP_N_GLOBAL_SHARED_8 1
-typedef edge::elastic::sc::Llf< real_base,
-                                T_SDISC.ELEMENT,
-                                ORDER,
-                                N_CRUNS > t_globalShared8;
+typedef edge::elastic::sc::UpWind< real_base,
+                                   T_SDISC.ELEMENT,
+                                   ORDER,
+                                   N_CRUNS > t_globalShared8;

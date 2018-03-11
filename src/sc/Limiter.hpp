@@ -27,6 +27,7 @@
 #include "io/logging.h"
 #include "linalg/Matrix.h"
 #include "Detections.hpp"
+#include "ibnd/SuperCell.hpp"
 
 namespace edge {
   namespace sc {
@@ -281,23 +282,26 @@ class edge::sc::Limiter {
     template< typename TL_T_LID,
               typename TL_T_REAL,
               typename TL_T_SOLV_SC >
-    static void limit( TL_T_REAL              i_dt,
-                       TL_T_LID               i_lp,
-                       unsigned short const   i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
-                       unsigned short const   i_scTySf[TL_N_SCS][TL_N_FAS],
-                       unsigned short const   i_vIdElFaEl[TL_N_FAS],
-                       unsigned short const   i_fIdElFaEl[TL_N_FAS],
-                       bool           const   i_admP[TL_N_CRS],
-                       bool           const  *i_admAdP[TL_N_FAS],
-                       bool           const   i_admC[TL_N_CRS],
-                       TL_T_REAL      const   i_scatter[TL_N_MDS_EL][TL_N_SCS],
-                       TL_T_REAL      const   i_scatterSf[TL_N_FAS][TL_N_MDS_EL][TL_N_SFS],
-                       TL_T_REAL      const (*i_netUpSc[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
-                       TL_T_REAL      const   i_dofsDgP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                       TL_T_REAL      const (*i_dofsScAdP[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
-                       TL_T_REAL      const (*i_dofsDgAdP[TL_N_FAS])[TL_N_MDS_EL][TL_N_CRS],
-                       TL_T_REAL              io_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                       TL_T_SOLV_SC   const  &i_solvSc ) {
+    static void limit( TL_T_REAL                      i_dt,
+                       TL_T_LID                       i_lp,
+                       unsigned short const           i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
+                       unsigned short const           i_scTySf[TL_N_SCS][TL_N_FAS],
+                       sc::ibnd::t_SuperCell<
+                         TL_T_EL,
+                         TL_O_SP >            const  &i_iBndSt,
+                       unsigned short         const   i_vIdElFaEl[TL_N_FAS],
+                       unsigned short         const   i_fIdElFaEl[TL_N_FAS],
+                       bool                   const   i_admP[TL_N_CRS],
+                       bool                   const  *i_admAdP[TL_N_FAS],
+                       bool                   const   i_admC[TL_N_CRS],
+                       TL_T_REAL              const   i_scatter[TL_N_MDS_EL][TL_N_SCS],
+                       TL_T_REAL              const   i_scatterSf[TL_N_FAS][TL_N_MDS_EL][TL_N_SFS],
+                       TL_T_REAL              const (*i_netUpSc[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
+                       TL_T_REAL              const   i_dofsDgP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                       TL_T_REAL              const (*i_dofsScAdP[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
+                       TL_T_REAL              const (*i_dofsDgAdP[TL_N_FAS])[TL_N_MDS_EL][TL_N_CRS],
+                       TL_T_REAL                      io_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                       TL_T_SOLV_SC           const  &i_solvSc ) {
       // TODO: Use scratch memory
       TL_T_REAL l_subCell[TL_N_QTS][TL_N_SCS][TL_N_CRS];
 
@@ -367,6 +371,18 @@ class edge::sc::Limiter {
                      l_netUps,
                      l_sg,
                      io_dofsSc );
+
+      // apply super-cell stencils, if required
+      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+        if( l_netUps[l_fa] ) {
+          ibnd::SuperCell< TL_T_EL,
+                           TL_O_SP,
+                           TL_N_QTS,
+                           TL_N_CRS >::applyFa( i_iBndSt.col[l_fa],
+                                                io_dofsSc );
+        }
+      }
+
     }
 
   public:
@@ -412,44 +428,47 @@ class edge::sc::Limiter {
               typename TL_T_CHARS_FA,
               typename TL_T_MM,
               typename TL_T_SOLV_SC >
-    static void aPost( TL_T_LID                                     i_first,
-                       TL_T_LID                                     i_nLps,
-                       TL_T_REAL                                    i_dt,
-                       TL_T_REAL           const                    i_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
-                       TL_T_REAL           const                    i_fIntN[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
-                       TL_T_REAL           const                    i_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL],
+    static void aPost( TL_T_LID                                        i_first,
+                       TL_T_LID                                        i_nLps,
+                       TL_T_REAL                                       i_dt,
+                       TL_T_REAL              const                    i_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
+                       TL_T_REAL              const                    i_fIntN[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
+                       TL_T_REAL              const                    i_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL],
                        sc::t_ops<
                          TL_T_REAL,
                          TL_T_EL,
-                         TL_O_SP >         const                   &i_scOps,
+                         TL_O_SP >            const                   &i_scOps,
                        sc::t_connect<
                          TL_T_LID,
                          TL_T_EL,
-                         TL_O_SP >         const                   &i_scConn,
-                       TL_T_CHARS_FA       const                  (*i_charsFa),
-                       TL_T_REAL           const                  (*i_fsDg)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
-                       TL_T_REAL           const                  (*i_fsDgAd)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
-                       TL_T_LID            const                  (*i_elFa)[TL_N_FAS],
-                       TL_T_LID            const                  (*i_elFaEl)[TL_N_FAS],
-                       unsigned short      const                  (*i_vIdElFaEl)[TL_N_FAS],
-                       unsigned short      const                  (*i_fIdElFaEl)[TL_N_FAS],
-                       bool                const                  (*i_admP)[TL_N_CRS],
-                       bool                                       (*i_admC)[TL_N_CRS], // TODO: change back to const (currenlty modified for iBnds)
-                       bool                                       (*o_admL)[TL_N_CRS],
-                       bool                const                  (*i_lock)[TL_N_CRS],
-                       unsigned int                               (*io_limSync)[TL_N_CRS],
+                         TL_O_SP >            const                   &i_scConn,
+                       sc::ibnd::t_SuperCell<
+                         TL_T_EL,
+                         TL_O_SP >            const                   &i_iBndSt,
+                       TL_T_CHARS_FA          const                  (*i_charsFa),
+                       TL_T_REAL              const                  (*i_fsDg)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
+                       TL_T_REAL              const                  (*i_fsDgAd)[TL_N_FAS][TL_N_QTS][TL_N_QTS],
+                       TL_T_LID               const                  (*i_elFa)[TL_N_FAS],
+                       TL_T_LID               const                  (*i_elFaEl)[TL_N_FAS],
+                       unsigned short         const                  (*i_vIdElFaEl)[TL_N_FAS],
+                       unsigned short         const                  (*i_fIdElFaEl)[TL_N_FAS],
+                       bool                   const                  (*i_admP)[TL_N_CRS],
+                       bool                                          (*i_admC)[TL_N_CRS], // TODO: change back to const (currenlty modified for iBnds)
+                       bool                                          (*o_admL)[TL_N_CRS],
+                       bool                   const                  (*i_lock)[TL_N_CRS],
+                       unsigned int                                  (*io_limSync)[TL_N_CRS],
 #ifndef __INTEL_COMPILER
-                       TL_T_REAL           const (* const * const   i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
+                       TL_T_REAL              const (* const * const   i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
 #else
-                       TL_T_REAL                                 (**i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
+                       TL_T_REAL                                    (**i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
 #endif
-                       TL_T_REAL                                  (*io_dofsDg)[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                       TL_T_REAL           const                  (*i_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                       TL_T_REAL                                  (*io_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                       TL_T_REAL                                  (*i_extP)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_REAL                                  (*o_extL)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_MM             const                   &i_mm,
-                       TL_T_SOLV_SC        const                   &i_solvSc ) {
+                       TL_T_REAL                                     (*io_dofsDg)[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                       TL_T_REAL              const                  (*i_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                       TL_T_REAL                                     (*io_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                       TL_T_REAL                                     (*i_extP)[2][TL_N_QTS][TL_N_CRS],
+                       TL_T_REAL                                     (*o_extL)[2][TL_N_QTS][TL_N_CRS],
+                       TL_T_MM                const                   &i_mm,
+                       TL_T_SOLV_SC           const                   &i_solvSc ) {
       // iterate over limited plus elements
       for( TL_T_LID l_lp = i_first; l_lp < i_first+i_nLps; l_lp++ ) {
         // dense id
@@ -580,6 +599,7 @@ class edge::sc::Limiter {
                    l_lp,
                    i_scConn.scSfSc,
                    i_scConn.scTySf,
+                   i_iBndSt,
                    i_vIdElFaEl[l_el],
                    i_fIdElFaEl[l_el],
                    i_admP[l_li],

@@ -21,6 +21,7 @@
  * Compile time constants for the sub-cell limiter.
  **/
 #include "src/sc/SubCell.type"
+#include "src/sc/ibnd/SuperCell.type"
 
 #define PP_N_GLOBAL_SHARED_2 1
 typedef edge::sc::t_SubCell< int_el,

@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Initializes sub-cell data.
  **/
-#ifndef SC_INIT_HPP
-#define SC_INIT_HPP
+#ifndef EDGE_SC_INIT_HPP
+#define EDGE_SC_INIT_HPP
 
 #include "constants.hpp"
 #include "io/logging.h"
@@ -74,7 +74,9 @@ namespace edge {
 namespace edge {
   namespace sc {
     template< t_entityType   TL_T_EL,
-              unsigned short TL_O_SP >
+              unsigned short TL_O_SP,
+              unsigned short TL_N_QTS,
+              unsigned short TL_N_CRS  >
     class Init;
   }
 }
@@ -86,7 +88,9 @@ namespace edge {
  * @paramt TL_O_SP order of the used solver.
  **/
 template< t_entityType   TL_T_EL,
-          unsigned short TL_O_SP >
+          unsigned short TL_O_SP,
+          unsigned short TL_N_QTS,
+          unsigned short TL_N_CRS  >
 class edge::sc::Init {
   private:
     //! number of dimensions
@@ -383,6 +387,74 @@ class edge::sc::Init {
             }
           }
         }
+    }
+
+    /**
+     * Sets 1) all DOFs and extrema to zero,
+     *      2) admissibility to true and locks to false,
+     *      3) number of limits since sync to zero.
+     *
+     * @param i_nLim number of limited elements.
+     * @param i_nExt number of extrema elements.
+     * @param o_dofs sub-cell dofs.
+     * @param o_surf sub-cell tDofs at the elements' faces.
+     * @param o_ext extrema.
+     * @param o_adm admissibility.
+     * @param o_lock locks.
+     * @param o_limSync number of limits since synchronization.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_REAL floating point type.
+     **/
+    template< typename TL_T_LID,
+              typename TL_T_REAL >
+    static void data( TL_T_LID        i_nLim,
+                      TL_T_LID        i_nExt,
+                      TL_T_REAL    (* o_dofs)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                      TL_T_REAL    (* o_surf)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                      TL_T_REAL    (* o_ext[2])[2][TL_N_QTS][TL_N_CRS],
+                      bool         (* o_adm[3])[TL_N_CRS],
+                      bool         (* o_lock)[TL_N_CRS],
+                      unsigned int (* o_limSync)[TL_N_CRS] ) {
+      // iterate over limited elements
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+      for( TL_T_LID l_li = 0; l_li < i_nLim; l_li++ ) {
+        // init dofs
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ )
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+              o_dofs[l_li][l_qt][l_sc][l_cr] = 0;
+        // init tDofs at surface
+        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ )
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                o_surf[l_li][l_fa][l_qt][l_sf][l_cr] = 0;
+        // init admissibility
+        for( unsigned short l_ad = 0; l_ad < 3; l_ad++ )
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+            o_adm[l_ad][l_li][l_cr] = true;
+        // init locks
+        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+          o_lock[l_li][l_cr] = false;
+        // init limits since sync
+        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+          o_limSync[l_li][l_cr] = 0;
+      }
+
+      // iterate over extrema
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+      for( TL_T_LID l_ex = 0; l_ex < i_nExt; l_ex++ ) {
+        for( unsigned short l_e1 = 0; l_e1 < 2; l_e1++ )
+          for( unsigned short l_e2 = 0; l_e2 < 2; l_e2++ )
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                o_ext[l_e1][l_ex][l_e2][l_qt][l_cr] = 0;
+      }
     }
 };
 

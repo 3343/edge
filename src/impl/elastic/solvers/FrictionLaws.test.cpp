@@ -115,7 +115,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 2D.", "
          l_muRef  = l_mus[0] - l_muRef;
          l_muRef  = std::max( l_mud[0], l_muRef );
 
-  double l_sr[2], l_ss[2];
+  double l_sr[2], l_ss[2], l_st[1];
   bool l_per[1];
 
   // get solution through our solver
@@ -124,7 +124,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 2D.", "
                                                              l_mus, l_mud, l_dcInv,
                                                              l_sn0, l_ss0,
                                                              l_ms,
-                                                             l_dd, l_muf,
+                                                             l_dd, l_muf, l_st,
                                                              l_sr, l_ss,
                                                              l_msM, l_msP, l_per );
 
@@ -250,7 +250,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 3D.", "
   l_srRef[1] *= ( l_msRef[0][5] - l_ms[5][0] );
 
   // call our friction solvers
-  double l_sr[2][1], l_tr[2][1];
+  double l_sr[2][1], l_tr[2][1], l_st[1];
   bool l_per[1];
 
   edge::elastic::solvers::FrictionLaws<
@@ -268,6 +268,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 3D.", "
                    l_ms,
                    l_dd,
                    l_muf,
+                   l_st,
                    l_sr,
                    l_tr,
                    l_msM,

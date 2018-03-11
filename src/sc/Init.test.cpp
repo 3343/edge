@@ -29,8 +29,14 @@
 TEST_CASE( "Sub-cell init: Scatter operation.", "[subCellInit][scatter]" ) {
   // check constants
   unsigned short l_const;
-  l_const = edge::sc::Init< QUAD4R, 2 >::TL_N_SCS; REQUIRE( l_const == 9 );
-  l_const = edge::sc::Init< QUAD4R, 2 >::TL_N_MDS; REQUIRE( l_const == 4 );
+  l_const = edge::sc::Init< QUAD4R,
+                            2,
+                            N_QUANTITIES,
+                            N_CRUNS >::TL_N_SCS; REQUIRE( l_const == 9 );
+  l_const = edge::sc::Init< QUAD4R,
+                            2,
+                            N_QUANTITIES,
+                            N_CRUNS >::TL_N_MDS; REQUIRE( l_const == 4 );
 
   // sub-cell data
   edge::sc::t_SubCell< int,
@@ -44,7 +50,10 @@ TEST_CASE( "Sub-cell init: Scatter operation.", "[subCellInit][scatter]" ) {
   edge::data::Dynamic l_dynMem;
 
   // init sc operators
-  edge::sc::Init< T_SDISC.ELEMENT, ORDER >::ops( l_sc1.ops );
+  edge::sc::Init< T_SDISC.ELEMENT,
+                  ORDER,
+                  N_QUANTITIES,
+                  N_CRUNS >::ops( l_sc1.ops );
 
   // compilation specific (matrices are linkes) sanity checks
 #if defined PP_T_ELEMENTS_QUAD4R
@@ -118,7 +127,12 @@ TEST_CASE( "Sub-cell init: Scatter operation.", "[subCellInit][scatter]" ) {
   // computer matrix-matrix product
   for( unsigned short l_ro = 0; l_ro < N_ELEMENT_MODES; l_ro++ )
     for( unsigned short l_co = 0; l_co < N_ELEMENT_MODES; l_co++ )
-      for( unsigned int l_sc = 0; l_sc < edge::sc::Init< T_SDISC.ELEMENT, ORDER >::TL_N_SCS; l_sc++ )
+      for( unsigned int l_sc = 0;
+           l_sc < edge::sc::Init< T_SDISC.ELEMENT,
+                                  ORDER,
+                                  N_QUANTITIES,
+                                  N_CRUNS >::TL_N_SCS;
+           l_sc++ )
         l_inv[l_ro][l_co] += l_sc1.ops.scatter[l_ro][l_sc] * l_sc1.ops.gather[l_sc][l_co];
 
    // check for indentity

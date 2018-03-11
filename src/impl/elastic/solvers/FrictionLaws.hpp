@@ -86,8 +86,9 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
      * @param i_ms middle state.
      * @param io_dd slip, will be updated with slip contribution of this step.
      * @param io_muf friction coefficient, will be updated according to the friction law.
-     * @parma o_sr will be set to slip rate at this point.
-     * @parma o_tr will be set to traction at this point.
+     * @param o_st will be set to stregth of the fault.
+     * @param o_sr will be set to slip rate at this point.
+     * @param o_tr will be set to traction at this point.
      * @param o_msM will be set to perturbed minus side middle state.
      * @param o_msP will be set to perturbed plus side middle state.
      * @param o_per will be set to true if middle state was perturbed, false otherwise.
@@ -106,6 +107,7 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                                     TL_T_REAL const i_ms[5][TL_N_CRUNS],
                                     TL_T_REAL       io_dd[TL_N_CRUNS],
                                     TL_T_REAL       io_muf[TL_N_CRUNS],
+                                    TL_T_REAL       o_st[TL_N_CRUNS],
                                     TL_T_REAL       o_sr[TL_N_CRUNS],
                                     TL_T_REAL       o_tr[TL_N_CRUNS],
                                     TL_T_REAL       o_msM[5][TL_N_CRUNS],
@@ -119,28 +121,25 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
         }
       }
 
-      // fault strength
-      TL_T_REAL l_strength[TL_N_CRUNS];
-
       // determine if the fault fails
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
-        l_strength[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
 
         // strength is only relevant for negative normal stress (compression) + switch sign
-        l_strength[l_ru] = (l_strength[l_ru] < 0) ? -l_strength[l_ru] : 0;
+        o_st[l_ru] = (o_st[l_ru] < 0) ? -o_st[l_ru] : 0;
 
         // total shear stress
         TL_T_REAL l_shear = i_ss0[l_ru] + i_ms[2][l_ru];
 
         // eval failure criterion
-        o_per[l_ru] = ( std::abs(l_shear) > l_strength[l_ru] ) ? true : false;
+        o_per[l_ru] = ( std::abs(l_shear) > o_st[l_ru] ) ? true : false;
       }
 
       // perturb middle states and update friction coefficient
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // compute traction
-        o_tr[l_ru] = l_strength[l_ru] - std::abs(i_ss0[l_ru]);
+        o_tr[l_ru] = o_st[l_ru] - std::abs(i_ss0[l_ru]);
         o_tr[l_ru] = (i_ss0[l_ru] > 0) ? o_tr[l_ru] : -o_tr[l_ru];
 
         // fall back to middle state if the fault is locked
@@ -210,6 +209,7 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                    i_ms,
                    io_lswSf.dd[0],
                    io_lswSf.muf,
+                   io_lswSf.st,
                    io_lswSf.sr[0],
                    io_lswSf.tr[0],
                    (i_lswFace.lEqM) ? o_msL : o_msR,
@@ -294,8 +294,9 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
      * @param i_ms middle state.
      * @param io_dd slip, will be updated with slip contribution of this step. [0]: along-strike slip, [1]: along-dip slip.
      * @param io_muf friction coefficient, will be updated according to the friction law.
-     * @parma o_sr will be set to slip rate at this point. [0]: along-strike slip rate, [1]: along-dip slip rate.
-     * @parma o_tr will be set to traction at this point. [0]: along-strike traction, [1]: along-dip traction.
+     * @param o_st will be set to strength of the fault.
+     * @param o_sr will be set to slip rate at this point. [0]: along-strike slip rate, [1]: along-dip slip rate.
+     * @param o_tr will be set to traction at this point. [0]: along-strike traction, [1]: along-dip traction.
      * @param o_msM will be set to perturbed minus side middle state.
      * @param o_msP will be set to perturbed plus side middle state.
      * @param o_per will be set to true if the middle state was perturbed, false otherwise.
@@ -313,6 +314,7 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                                     TL_T_REAL const i_ms[9][TL_N_CRUNS],
                                     TL_T_REAL       io_dd[2][TL_N_CRUNS],
                                     TL_T_REAL       io_muf[TL_N_CRUNS],
+                                    TL_T_REAL       o_st[TL_N_CRUNS],
                                     TL_T_REAL       o_sr[2][TL_N_CRUNS],
                                     TL_T_REAL       o_tr[2][TL_N_CRUNS],
                                     TL_T_REAL       o_msM[9][TL_N_CRUNS],
@@ -328,16 +330,14 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
 
       // combined total shear stress
       TL_T_REAL l_shear[TL_N_CRUNS];
-      // fault strength
-      TL_T_REAL l_strength[TL_N_CRUNS];
 
       // determine if the fault fails
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
-        l_strength[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
 
         // strength is only relevant for negative normal stress (compression) + switch sign
-        l_strength[l_ru] = (l_strength[l_ru] < 0) ? -l_strength[l_ru] : 0;
+        o_st[l_ru] = (o_st[l_ru] < 0) ? -o_st[l_ru] : 0;
 
         // total shear stress
         TL_T_REAL l_shear1 = i_ss0[0][l_ru] + i_ms[3][l_ru];
@@ -346,13 +346,13 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
         l_shear[l_ru] = std::sqrt( l_shear1*l_shear1 + l_shear2*l_shear2 );
 
         // eval failure criterion
-        o_per[l_ru] = ( l_shear[l_ru] > l_strength[l_ru] ) ? true : false;
+        o_per[l_ru] = ( l_shear[l_ru] > o_st[l_ru] ) ? true : false;
       }
 
       // perturb middle states and update friction coefficient
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // compute traction
-        TL_T_REAL l_scale = l_strength[l_ru] / l_shear[l_ru];
+        TL_T_REAL l_scale = o_st[l_ru] / l_shear[l_ru];
 
         o_tr[0][l_ru]  = (i_ss0[0][l_ru] + i_ms[3][l_ru]) * l_scale - i_ss0[0][l_ru];
         o_tr[1][l_ru]  = (i_ss0[1][l_ru] + i_ms[5][l_ru]) * l_scale - i_ss0[1][l_ru];
@@ -440,6 +440,7 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                    i_ms,
                    io_lswSf.dd,
                    io_lswSf.muf,
+                   io_lswSf.st,
                    io_lswSf.sr,
                    io_lswSf.tr,
                    (i_lswFace.lEqM) ? o_msL : o_msR,

@@ -49,6 +49,19 @@ unsigned short l_limPlusLayout;
                            l_dynMem,
                            l_internal.m_globalShared2[0] );
 
+  // init sub-cell memory
+  edge::sc::Init< T_SDISC.ELEMENT,
+                  ORDER,
+                  N_QUANTITIES,
+                  N_CRUNS >::data( l_nLim,
+                                   l_nScExt,
+                                   l_internal.m_globalShared2[0].dofs,
+                                   l_internal.m_globalShared2[0].surf,
+                                   l_internal.m_globalShared2[0].ext,
+                                   l_internal.m_globalShared2[0].adm,
+                                   l_internal.m_globalShared2[0].lock,
+                                   l_internal.m_globalShared2[0].limSync );
+
   // link limited plus elements to dense elements (no bridge)
   edge::data::SparseEntities::linkSpDe( l_enLayouts[2].nEnts,
                                         t_enTypeShared::LIMIT_PLUS,

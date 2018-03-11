@@ -23,6 +23,8 @@
 #ifndef EDGE_SC_SUBCELL_TYPE
 #define EDGE_SC_SUBCELL_TYPE
 
+#include "ibnd/SuperCell.type"
+
 namespace edge {
   namespace sc {
     template< typename       TL_T_LID,
@@ -63,8 +65,11 @@ struct edge::sc::t_connect {
   //! number of sub-cells per element
   static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
+  //! number of vertices per face / sub-faces
+  static unsigned short const TL_N_VES_FA = C_ENT[TL_T_EL].N_FACE_VERTICES;
+
   //! number of vertices per element / sub-cell
-  static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
+  static unsigned short const TL_N_VES_EL = C_ENT[TL_T_EL].N_VERTICES;
 
   //! number of faces per element / sub-cell
   static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
@@ -73,7 +78,7 @@ struct edge::sc::t_connect {
   static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
   //! sub-vertices adjacent to sub-cells (owned + recv)
-  unsigned short scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_VES ];
+  unsigned short scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_VES_EL ];
 
   //! sub-cells adjacent to sub-cells (sub-faces as bride, owned + recv)
   unsigned short scSfSc[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_FAS ];
@@ -85,7 +90,7 @@ struct edge::sc::t_connect {
   unsigned short scTySf[TL_N_SCS][TL_N_FAS];
 
   //! sub-cell reordering based on vertex combinations of adjacent DG-elements
-  unsigned short scDgAd[TL_N_VES][TL_N_SFS];
+  unsigned short scDgAd[TL_N_VES_FA][TL_N_SFS];
 
   //! link between limited plus elements and dense elements (no bridge)
   TL_T_LID (*lpEl);
@@ -134,7 +139,7 @@ struct edge::sc::t_ops {
   static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 
   //! number of vertices per face / sub-face
-  static unsigned short const TL_N_VES_FA = C_ENT[ TL_T_EL ].N_FACE_VERTICES;
+  static unsigned short const TL_N_VES_EL_FA = C_ENT[ TL_T_EL ].N_FACE_VERTICES;
 
   //! number of faces per element / sub-cell
   static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
@@ -149,7 +154,7 @@ struct edge::sc::t_ops {
   static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
   //! number of scatter surface ops
-  static unsigned short const TL_N_SCASU = (TL_N_DIS < 3) ? 2*TL_N_FAS : TL_N_FAS+TL_N_VES_FA*TL_N_FAS;
+  static unsigned short const TL_N_SCASU = (TL_N_DIS < 3) ? 2*TL_N_FAS : TL_N_FAS+TL_N_VES_EL_FA*TL_N_FAS;
 
   //! scatter matrix
   TL_T_REAL scatter[TL_N_MDS][TL_N_SCS];
@@ -204,6 +209,10 @@ struct edge::sc::t_SubCell {
   t_ops< TL_T_REAL,
          TL_T_EL,
          TL_O_SP > ops;
+
+  //! super-cells for internal boundaries
+  ibnd::t_SuperCell< TL_T_EL,
+                     TL_O_SP > iBndSu;
 
   //! DOFs of the DG-element's sub-cell solution
   TL_T_REAL (* dofs)[TL_N_QTS][TL_N_SCS][TL_N_CRS];

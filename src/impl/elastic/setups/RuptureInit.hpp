@@ -150,7 +150,7 @@ class edge::elastic::setups::RuptureInit {
                                                      TL_O_SP,
                                                      TL_N_CRS >                                 &o_lsw ) {
       // iterate over runs and setup friction laws
-      for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {\
+      for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
         EDGE_CHECK( i_lswPars[l_ru][0] > TOL.SOLVER );
         o_lsw.gl.mus[l_ru] = i_lswPars[l_ru][0];
         EDGE_CHECK( i_lswPars[l_ru][1] > TOL.SOLVER );
@@ -201,14 +201,15 @@ class edge::elastic::setups::RuptureInit {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             // set initial values invalid
             o_lsw.sf[l_spId][l_sf].sn0[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
+            o_lsw.sf[l_spId][l_sf].st[l_ru]  = 0;
             for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
               o_lsw.sf[l_spId][l_sf].ss0[l_di][l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             }
             o_lsw.sf[l_spId][l_sf].muf[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
-              o_lsw.sf[l_spId][l_sf].dd[l_di][l_ru]  = 0;
-              o_lsw.sf[l_spId][l_sf].sr[l_di][l_ru]  = 0;
-              o_lsw.sf[l_spId][l_sf].tr[l_di][l_ru]  = 0;
+              o_lsw.sf[l_spId][l_sf].dd[l_di][l_ru] = 0;
+              o_lsw.sf[l_spId][l_sf].sr[l_di][l_ru] = 0;
+              o_lsw.sf[l_spId][l_sf].tr[l_di][l_ru] = 0;
             }
 
             // iterate over domains
@@ -245,22 +246,25 @@ class edge::elastic::setups::RuptureInit {
         l_str = "muf_"  + std::to_string(l_cr);
         strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+1)*TL_N_CRS + l_cr], l_str.c_str() );
 
+        l_str = "st_"  + std::to_string(l_cr);
+        strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+2)*TL_N_CRS + l_cr], l_str.c_str() );
+
         for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
           l_str = "ss0_" + std::to_string(l_di) + "_" + std::to_string(l_cr);;
           strcpy( o_lsw.sfQtNa[(1)*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
 
           l_str = "tr_"  + std::to_string(l_di) + "_" + std::to_string(l_cr);
-          strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+2)*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
+          strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+3)*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
 
           l_str = "sr_"  + std::to_string(l_di) + "_" + std::to_string(l_cr);
-          strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+2+(TL_N_DIS-1)  )*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
+          strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+3+(TL_N_DIS-1)  )*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
 
           l_str ="dd_"  + std::to_string(l_di) + "_" + std::to_string(l_cr);
-          strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+2+2*(TL_N_DIS-1))*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
+          strcpy( o_lsw.sfQtNa[(1+TL_N_DIS-1+3+2*(TL_N_DIS-1))*TL_N_CRS + l_di*TL_N_CRS + l_cr], l_str.c_str() );
         }
       }
       // set pointers
-      for( unsigned short l_en = 0; l_en < 3*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS; l_en++ ) {
+      for( unsigned short l_en = 0; l_en < 4*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS; l_en++ ) {
         o_lsw.sfQtNaPtr[l_en] = o_lsw.sfQtNa[l_en];
       }
     }

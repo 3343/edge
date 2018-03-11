@@ -76,6 +76,7 @@ if env['tests']:
              'sc/SubGrid.test.cpp',
              'sc/Kernels.test.cpp',
              'sc/Detections.test.cpp',
+             'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
              'mesh/regular/Base.test.cpp',
              'mesh/common.test.cpp',
