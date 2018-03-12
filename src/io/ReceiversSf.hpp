@@ -303,7 +303,7 @@ class edge::io::ReceiversSf: public Receivers {
               m_recvsSf.resize( m_recvsSf.size() + 1 );
 
               // update face type
-              io_faChars[l_fa].spType |= i_spType;
+              io_faChars[l_fa].spType |= RECEIVER;
 
               // init receiver data
               m_recvs.back().nBuff = 0;

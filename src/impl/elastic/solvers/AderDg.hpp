@@ -110,7 +110,7 @@ class edge::elastic::solvers::AderDg {
                         T               i_lam,
                         T               i_mu,
                         T              *o_A,
-                        unsigned short  i_nDim = N_DIM ) {
+                        unsigned short  i_nDim = TL_N_DIS ) {
       if( i_nDim == 2 )      elastic::common::getJac2D( i_rho, i_lam, i_mu, (T (*)[5][5]) o_A);
       else if( i_nDim == 3 ) elastic::common::getJac3D( i_rho, i_lam, i_mu, (T (*)[9][9]) o_A );
       else                   EDGE_LOG_FATAL << "dimensions not supported: " << i_nDim;
@@ -129,7 +129,7 @@ class edge::elastic::solvers::AderDg {
                             const t_vertexChars   *i_vertexChars,
                             const int_el         (*i_elVe)[TL_N_VES_EL],
                             const t_bgPars       (*i_bgPars)[1],
-                                  t_matStar      (*o_starMatrices)[N_DIM] ) {
+                                  t_matStar      (*o_starMatrices)[TL_N_DIS] ) {
       PP_INSTR_FUN("star_matrices")
 
       // iterate over elements
@@ -138,9 +138,9 @@ class edge::elastic::solvers::AderDg {
 #endif
       for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
         // derive jacobians of the pdes
-        real_base l_A[N_DIM][TL_N_QTS][TL_N_QTS];
+        real_base l_A[TL_N_DIS][TL_N_QTS][TL_N_QTS];
 
-        for( unsigned int l_di = 0; l_di < N_DIM; l_di++ ) {
+        for( unsigned int l_di = 0; l_di < TL_N_DIS; l_di++ ) {
 #if defined PP_T_KERNELS_XSMM
           for( int_qt l_nz = 0; l_nz < N_MAT_STAR; l_nz++ ) o_starMatrices[l_el][l_di].mat[l_nz] = 0;
 #else
@@ -154,17 +154,17 @@ class edge::elastic::solvers::AderDg {
 
         EDGE_CHECK( i_bgPars[l_el][0].rho > TOL.SOLVER );
 
-        getJac( i_bgPars[l_el][0].rho, i_bgPars[l_el][0].lam, i_bgPars[l_el][0].mu, l_A[0][0], N_DIM );
+        getJac( i_bgPars[l_el][0].rho, i_bgPars[l_el][0].lam, i_bgPars[l_el][0].mu, l_A[0][0], TL_N_DIS );
 
         // derive vertex coords
-        real_mesh l_veCoords[N_DIM][TL_N_VES_EL];
+        real_mesh l_veCoords[TL_N_DIS][TL_N_VES_EL];
         mesh::common< TL_T_EL >::getElVeCrds( l_el, i_elVe, i_vertexChars, l_veCoords );
 
         // get inverse jacobian
-        real_mesh l_jac[N_DIM][N_DIM];
+        real_mesh l_jac[TL_N_DIS][TL_N_DIS];
         linalg::Mappings::evalJac( TL_T_EL, l_veCoords[0], l_jac[0] );
 
-        real_mesh l_jacInv[N_DIM][N_DIM];
+        real_mesh l_jacInv[TL_N_DIS][TL_N_DIS];
 #if PP_N_DIM == 2
         linalg::Matrix::inv2x2( l_jac, l_jacInv );
 #elif PP_N_DIM == 3
@@ -175,7 +175,7 @@ class edge::elastic::solvers::AderDg {
 
         // set star matrices
         // iterate over reference dimensions
-        for( unsigned int l_d1 = 0; l_d1 < N_DIM; l_d1++ ) {
+        for( unsigned int l_d1 = 0; l_d1 < TL_N_DIS; l_d1++ ) {
 #if defined PP_T_KERNELS_XSMM
 
 #if PP_N_DIM == 2
@@ -222,7 +222,7 @@ class edge::elastic::solvers::AderDg {
 #endif
 
 #else
-          for( unsigned int l_d2 = 0; l_d2 < N_DIM; l_d2++ ) {
+          for( unsigned int l_d2 = 0; l_d2 < TL_N_DIS; l_d2++ ) {
             for( int_qt l_qt1 = 0; l_qt1 < TL_N_QTS; l_qt1++ ) {
               for( int_qt l_qt2 = 0; l_qt2 < TL_N_QTS; l_qt2++ ) {
                 o_starMatrices[l_el][l_d1].mat[l_qt1][l_qt2] += l_A[l_d2][l_qt1][l_qt2] * l_jacInv[l_d2][l_d1];
@@ -281,7 +281,7 @@ class edge::elastic::solvers::AderDg {
                        t_faceChars                 const  * i_faChars,
                        t_elementChars              const  * i_elChars,
                        t_dg                        const  & i_dg,
-                       t_matStar                   const (* i_starM)[N_DIM],
+                       t_matStar                   const (* i_starM)[TL_N_DIS],
                        t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
                        unsigned short              const (* i_vIdElFaEl)[TL_N_FAS],
                        TL_T_REAL                         (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
@@ -460,23 +460,23 @@ class edge::elastic::solvers::AderDg {
      * @param i_admP admissiblity of the previous solution.
      * @param io_admC admissiblity of the candidate solution, will be set to false if any of the DG-faces are rupture faces and the fault failed.
      * @param io_lock lock for the sub-cell solution. Will be set to true for all active rupture elements.
-     * @param io_recvsQuad receivers at quadrature points.
+     * @param io_recvsSf receivers at sub-faces.
      *
      * @paramt TL_T_LID integral type of local entity ids.
      * @paramt TL_T_REAL type used for floating point arithmetic.
      * @paramt TL_T_FRI_GL struct representing global friction data.
      * @paramt TL_T_FRI_FA struct representing face-local friction data.
-     * @paramt TL_T_FRI_QP struct representing quad-point-local friction data.
+     * @paramt TL_T_FRI_SF struct representing sub-face-local friction data.
      * @paramt TL_T_SP integer type of the sparse type.
-     * @paramt TL_T_RECVQ type of the quadrature receivers.
+     * @paramt TL_T_RECV_SF type of the sub-face receivers.
      **/
     template< typename TL_T_LID,
               typename TL_T_REAL,
               typename TL_T_FRI_GL,
               typename TL_T_FRI_FA,
-              typename TL_T_FRI_QP,
+              typename TL_T_FRI_SF,
               typename TL_T_SP,
-              typename TL_T_RECVQ >
+              typename TL_T_RECV_SF >
     static void rupture( TL_T_LID                                             i_first,
                          TL_T_LID                                             i_nBf,
                          TL_T_LID                                             i_firstSpRe,
@@ -484,7 +484,7 @@ class edge::elastic::solvers::AderDg {
                          TL_T_REAL                                            i_dt,
                          unsigned short                              const    i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                          TL_T_REAL                                   const    i_scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS],
-                         t_matStar                                   const (* i_starM)[N_DIM],
+                         t_matStar                                   const (* i_starM)[TL_N_DIS],
                          edge::sc::ibnd::t_InternalBoundary<
                            TL_T_LID,
                            TL_T_REAL,
@@ -493,7 +493,7 @@ class edge::elastic::solvers::AderDg {
                            TL_N_QTS >                                const  & i_iBnd,
                          TL_T_FRI_GL                                        & i_frictionGlobal,
                          TL_T_FRI_FA                                        * i_frictionFa,
-                         TL_T_FRI_QP                                       (* i_frictionSf)[TL_N_SFS],
+                         TL_T_FRI_SF                                       (* i_frictionSf)[TL_N_SFS],
 #ifndef __INTEL_COMPILER
                          TL_T_REAL                  const (* const * const    i_tDofsDg)[TL_N_MDS][TL_N_CRS],
 #else
@@ -504,9 +504,9 @@ class edge::elastic::solvers::AderDg {
                          bool                                        const (* i_admP)[TL_N_CRS],
                          bool                                              (* io_admC)[TL_N_CRS],
                          bool                                              (* io_lock)[TL_N_CRS],
-                         TL_T_RECVQ                                         & io_recvsQuad ) {
-//      // store sparse receiver id
-//      TL_T_LID l_faRe = i_firstSpRe;
+                         TL_T_RECV_SF                                       & io_recvsSf ) {
+     // store sparse receiver id
+     TL_T_LID l_faRe = i_firstSpRe;
 
       // scratch memory
 //      TL_T_REAL l_scratch[4][TL_N_QTS][TL_N_MDS][TL_N_CRS];
@@ -515,7 +515,7 @@ class edge::elastic::solvers::AderDg {
       struct {
         TL_T_FRI_GL  *gl;
         TL_T_FRI_FA  *fa;
-        TL_T_FRI_QP (*sf)[TL_N_SFS];
+        TL_T_FRI_SF (*sf)[TL_N_SFS];
       } l_faData;
       l_faData.gl = &i_frictionGlobal;
       l_faData.fa =  i_frictionFa+i_first;
@@ -585,7 +585,7 @@ class edge::elastic::solvers::AderDg {
           TL_O_SP,
           TL_N_CRS >::template netUpdates<
             TL_T_REAL,
-            edge::elastic::solvers::FrictionLaws< N_DIM, TL_N_CRS >
+            edge::elastic::solvers::FrictionLaws< TL_N_DIS, TL_N_CRS >
           > (  i_iBnd.mss[l_bf][0],
                i_iBnd.mss[l_bf][1],
                i_iBnd.mss[l_bf][2],
@@ -625,30 +625,30 @@ class edge::elastic::solvers::AderDg {
            }
          }
 
-//        // check if this face requires receiver output
-//        if( (i_iBnd[l_fa].spType & RECEIVER) != RECEIVER ){}
-//        else {
-//          // check if the receiver requires output
-//          if( io_recvsQuad.getRecvTimeRel( l_faRe, i_time, i_dt ) >= -TOL.TIME ) {
-//            // gather receiver data, TODO: outsource
-//            TL_T_REAL l_buff[ (N_DIM-1)*3 ][N_FACE_QUAD_POINTS][TL_N_CRS];
+       // check if this face requires receiver output
+       if( (i_iBnd.bfChars[l_bf].spType & RECEIVER) != RECEIVER ){}
+       else {
+         // check if the receiver requires output
+         if( io_recvsSf.getRecvTimeRel( l_faRe, i_time, i_dt ) >= -TOL.TIME ) {
+           // gather receiver data, TODO: outsource
+           TL_T_REAL l_buff[ (TL_N_DIS-1)*3 ][TL_N_SFS][TL_N_CRS];
 
-//            for( unsigned short l_qp = 0; l_qp < N_FACE_QUAD_POINTS; l_qp++ ) {
-//              for( unsigned short l_di = 0; l_di < N_DIM-1; l_di++ ) {
-//                for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
-//                  l_buff[          0+l_di][l_qp][l_ru] = i_frictionQuadPoint[l_fa][l_qp].tr[l_di][l_ru];
-//                  l_buff[  (N_DIM-1)+l_di][l_qp][l_ru] = i_frictionQuadPoint[l_fa][l_qp].sr[l_di][l_ru];
-//                  l_buff[2*(N_DIM-1)+l_di][l_qp][l_ru] = i_frictionQuadPoint[l_fa][l_qp].dd[l_di][l_ru];
-//                }
-//              }
-//            }
+           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+             for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
+               for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
+                 l_buff[             0+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].tr[l_di][l_ru];
+                 l_buff[  (TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].sr[l_di][l_ru];
+                 l_buff[2*(TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].dd[l_di][l_ru];
+               }
+             }
+           }
 
-//            // write the receiver info
-//            io_recvsQuad.writeRecvAll( i_time, i_dt, l_faRe, l_buff );
-//          }
+           // write the receiver info
+           io_recvsSf.writeRecvAll( i_time, i_dt, l_faRe, l_buff );
+         }
 
-//          l_faRe++;
-//        }
+         l_faRe++;
+       }
 
         // update pointers
         l_faData.fa++;
