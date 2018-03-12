@@ -27,7 +27,7 @@
 #include "data/Internal.hpp"
 #include "data/layout.hpp"
 #include "io/Receivers.h"
-#include "io/ReceiversQuad.hpp"
+#include "io/ReceiversSf.hpp"
 
 namespace edge {
   namespace time {
@@ -106,7 +106,7 @@ class edge::time::TimeGroupStatic {
      * @param i_size number of entities involved in this step and for the calling worker thread.
      * @param i_enSp sparse entities.
      * @param i_recvs receiver output (sensitive to high output frequencies).
-     * @param io_recvsQuad receivers at quad points.
+     * @param io_recvsSf receivers at sub-faces.
      **/
 
     void computeStep( unsigned short                              i_step,
@@ -114,10 +114,10 @@ class edge::time::TimeGroupStatic {
                       int_el                                      i_size,
                       t_timeRegion                        const * i_enSp,
                       io::Receivers                             & io_recvs,
-                      io::ReceiversQuad< real_base,
-                                         T_SDISC.ELEMENT,
-                                         ORDER,
-                                         N_CRUNS >              & io_recvsQuad );
+                      io::ReceiversSf< real_base,
+                                       T_SDISC.ELEMENT,
+                                       ORDER,
+                                       N_CRUNS >                & io_recvsSf );
 
     /**
      * Prepare the limiter for synchronization by resetting the ids for admissibility and extrema.

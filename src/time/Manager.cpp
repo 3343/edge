@@ -79,7 +79,7 @@ void edge::time::Manager::compute() {
       PP_INSTR_PAR_UINT64("cflow_id", (uint64_t) l_id )
 #pragma warning pop
 
-      m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs, m_recvsQuad );
+      m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs, m_recvsSf );
 
       PP_INSTR_REG_END(step)
 

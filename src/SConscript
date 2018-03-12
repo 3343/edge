@@ -90,7 +90,6 @@ if env['tests']:
 #             'setups/InitialDofs.test.cpp',
              'io/Config.test.cpp',
              'io/Receivers.test.cpp',
-             'io/ReceiversQuad.test.cpp',
              'io/InternalBoundary.test.cpp',
               ]
   if env['moab'] != False:

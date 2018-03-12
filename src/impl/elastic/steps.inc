@@ -183,7 +183,7 @@ else if ( i_step == 2 ) {
               m_internal.m_globalShared2[0].adm[ l_admId[0] ],
               m_internal.m_globalShared2[0].adm[ l_admId[1] ],
               m_internal.m_globalShared2[0].lock,
-              io_recvsQuad );
+              io_recvsSf );
 #endif
 
 #endif

@@ -84,10 +84,10 @@ void edge::time::TimeGroupStatic::computeStep( unsigned short                   
                                                int_el                                      i_size,
                                                t_timeRegion                        const * i_enSp,
                                                io::Receivers                             & io_recvs,
-                                               io::ReceiversQuad< real_base,
-                                                                  T_SDISC.ELEMENT,
-                                                                  ORDER,
-                                                                  N_CRUNS >              & io_recvsQuad  ) {
+                                               io::ReceiversSf< real_base,
+                                                                T_SDISC.ELEMENT,
+                                                                ORDER,
+                                                                N_CRUNS >                & io_recvsSf  ) {
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/inc/time/tgs_steps.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC

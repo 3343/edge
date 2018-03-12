@@ -136,7 +136,7 @@ if( m_cflow[6] == 2 && m_cflow[3] == 0 ) {
 
   // flush receivers if buffer size gets low
   m_recvs.flushIf();
-  m_recvsQuad.flushIf();
+  m_recvsSf.flushIf();
 }
 
 //  neighboring updates for send-elements done, get the MPI-recv out

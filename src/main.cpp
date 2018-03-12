@@ -37,7 +37,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "sc/Init.hpp"
 #include "sc/ibnd/SuperCell.hpp"
 #include "io/Receivers.h"
-#include "io/ReceiversQuad.hpp"
+#include "io/ReceiversSf.hpp"
 #include "io/WaveField.h"
 #include "data/Dynamic.h"
 #include "data/SparseEntities.hpp"
@@ -220,7 +220,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
                 << l_dTgts << ", " << l_dT[0] << ", " << l_dT[1] << ", " << l_dT[2];
 
   // add cluster to time manager
-  edge::time::Manager l_time(l_dTgts, l_shared, l_mpi, l_receivers, l_recvsQuad );
+  edge::time::Manager l_time(l_dTgts, l_shared, l_mpi, l_receivers, l_recvsSf );
   l_time.add( &l_cluster );
 
   // set up simulation times and synchronization intervals
@@ -305,11 +305,11 @@ l_mesh.getGIdsEl( l_gIdsEl );
     if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
       EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
       l_rupWriter.write( 0,
-                        l_enLayouts[l_rupLayoutFa].nEnts,
-                        4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                        4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                        l_internal.m_globalShared5[0].sfQtNaPtr,
-                        (real_base*) l_internal.m_globalShared5[0].sf );
+                         l_enLayouts[l_rupLayoutFa].nEnts,
+                         2*N_CRUNS + 3 * (N_DIM-1) * N_CRUNS,
+                         4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                         l_internal.m_globalShared5[0].sfQtNaPtr + (N_DIM+1)*N_CRUNS,
+                         (real_base*) l_internal.m_globalShared5[0].sf[0][0].muf );
       l_stepBnd++;
     }
 #endif

@@ -555,22 +555,23 @@ if( l_elasticConf.m_frictionLaw != "" &&
       l_crds[l_re][l_di] = l_config.m_recvCrds[1][l_re][l_di];
   }
 
-  l_recvsQuad.init(                     l_config.m_recvCrds[1].size(),
-                                        t_spTypeElastic::RUPTURE,
-                                        (N_DIM-1)*3, // TODO: hardcoded to linear slip weakening
-                                        l_config.m_recvPath[1],
-                                       &l_config.m_recvNames[1][0],
-                (real_mesh (*)[N_DIM]) &l_crds[0][0], // TODO: dimension
-                                        l_config.m_recvFreq[1],
-                                        l_internal.m_globalShared1[0].quadEval.ptsFaces,
-                                        l_enLayouts[1],
-                                        l_enLayouts[2],
-                                        l_internal.m_connect.faEl,
-                                        l_internal.m_connect.elVe,
-                                        l_internal.m_connect.elFa,
-                                        l_internal.m_vertexChars,
-                                        l_internal.m_faceChars );
-   l_recvsQuad.print();
+  l_recvsSf.init(                     l_config.m_recvCrds[1].size(),
+                                      t_spTypeElastic::RUPTURE,
+                                      (N_DIM-1)*3, // TODO: hardcoded to linear slip weakening
+                                      l_config.m_recvPath[1],
+                                      &l_config.m_recvNames[1][0],
+              (real_mesh (*)[N_DIM]) &l_crds[0][0], // TODO: dimension
+                                      l_config.m_recvFreq[1],
+                                      l_enLayouts[1],
+                                      l_enLayouts[2],
+                                      l_internal.m_globalShared2[0].connect.scSv,
+                                      l_internal.m_connect.faEl,
+                                      l_internal.m_connect.elVe,
+                                      l_internal.m_connect.elFa,
+                                      l_internal.m_globalShared2[0].svChars,
+                                      l_internal.m_vertexChars,
+                                      l_internal.m_faceChars );
+   l_recvsSf.print();
 }
 
 // init sparse, internal data structures

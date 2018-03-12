@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,11 +18,11 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Output of receivers at quadrature points.
+ * Output of receivers at sub-faces.
  **/
 
-#ifndef RECEIVERS_QUAD_HPP
-#define RECEIVERS_QUAD_HPP
+#ifndef RECEIVERS_SF_HPP
+#define RECEIVERS_SF_HPP
 
 #include "io/logging.h"
 #include "Receivers.h"
@@ -34,69 +34,81 @@
 
 namespace edge {
   namespace io {
-    template< typename TL_T_REAL, t_entityType TL_T_EL, unsigned short TL_O_QUAD, unsigned short TL_N_CRUNS >
-    class ReceiversQuad;
+    template< typename       TL_T_REAL,
+              t_entityType   TL_T_EL,
+              unsigned short TL_O_SP,
+              unsigned short TL_N_CRS >
+    class ReceiversSf;
   }
 }
 
 /**
- * Quadrature version of the receivers.
+ * Sub-face version of the receivers.
  *
  * @paramt TL_T_REAL real type used for arithmetic operations.
  * @paramt TL_T_EL element type.
- * @paramt TL_T_O_QUAD order of the quadrature.
- * @paramt TL_N_CRUNS number of fused simulations.
+ * @paramt TL_T_O_SP order of the DG-scheme in space.
+ * @paramt TL_N_CRS number of fused simulations.
  **/
-template< typename TL_T_REAL, t_entityType TL_T_EL, unsigned short TL_O_QUAD, unsigned short TL_N_CRUNS >
-class edge::io::ReceiversQuad: public Receivers {
+template< typename       TL_T_REAL,
+          t_entityType   TL_T_EL,
+          unsigned short TL_O_SP,
+          unsigned short TL_N_CRS >
+class edge::io::ReceiversSf: public Receivers {
   private:
     //! dimension of the element
-    static unsigned short const TL_N_DIM = C_ENT[TL_T_EL].N_DIM;
+    static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
+
+    //! number of sub-vertices
+    static unsigned short const TL_N_SVS = CE_N_SUB_VERTICES( TL_T_EL, TL_O_SP );
+
+    //! number of sub-cells per element
+    static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
+
+    //! number of sub-faces per element face
+    static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+    //! number of vertices per faces
+    static unsigned short const TL_N_VES_FA = C_ENT[TL_T_EL].N_FACE_VERTICES;
 
     //! number of vertices per element
-    static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
-
-    //! number of vertex options
-    static unsigned short const TL_N_FA_VEOPS = CE_N_FACE_VERTEX_OPTS(TL_T_EL);
-
-    //! number of quad points per face
-    static unsigned short const TL_N_FA_QPTS = CE_N_FACE_QUAD_POINTS( TL_T_EL, TL_O_QUAD );
+    static unsigned short const TL_N_VES_EL = C_ENT[TL_T_EL].N_VERTICES;
 
     //! number of faces
-    static unsigned short const TL_N_FA = C_ENT[TL_T_EL].N_FACES;
+    static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
-    struct RecvQuad {
-      //! quadrature point of the receiver
-      unsigned short qp;
+    struct RecvSf {
+      //! sub-face of the receiver
+      unsigned short sf;
       //! coordinates of the receiver
-      TL_T_REAL crds[TL_N_DIM];
+      TL_T_REAL crds[TL_N_DIS];
     };
 
-    //! properties specific to receivers at quadrature points
-    std::vector< RecvQuad > m_recvsQuad;
+    //! properties specific to receivers at sub-faces
+    std::vector< RecvSf > m_recvsSf;
 
   public:
     /**
      * Prints statistics of the receivers.
      **/
     void print() {
-      for( std::size_t l_re = 0; l_re < m_recvsQuad.size(); l_re++ ) {
+      for( std::size_t l_re = 0; l_re < m_recvsSf.size(); l_re++ ) {
         // get location
         std::string l_loc = "";
-        for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
           l_loc += " ";
-          l_loc += std::to_string( m_recvsQuad[l_re].crds[l_di] );
+          l_loc += std::to_string( m_recvsSf[l_re].crds[l_di] );
         }
 
         EDGE_LOG_INFO_ALL << "    receiver " << m_recvs[l_re].path
-                          << " is located at" <<  l_loc;
+                          << " is located at (average sub-vertices): " <<  l_loc;
       }
     }
 
     /**
-     * Intitializes receivers at quadrature points of faces.
+     * Intitializes receivers at sub-faces.
      *
-     * The receivers are based on the nearest found quadrature point at faces
+     * The receivers are based on the nearest found sub-face.
      * with the given sparse type.
      *
      * To avoid MPI-related issues,
@@ -110,12 +122,13 @@ class edge::io::ReceiversQuad: public Receivers {
      * @param i_recvNames names of the receivers.
      * @param i_recvCrds coordinates of the receivers.
      * @param i_freq frequency of the receiver output.
-     * @param i_qPts location of the the element face's quadrature points. Since only left elements are considered, no vertex options have to be considered. [*][][]: faces in the reference element. [][*][]: quadrature points per face, [][][*]: reference dimensions.
      * @param i_faLayout entity layout of the faces.
      * @param i_elLayout entity layout of the elements.
+     * @param i_scSv sub-vertices, adjacent to sub-cells.
      * @param i_faEl elements adjacent to the faces.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_elFa faces adjacent to the elements.
+     * @param i_svChars sub-vertex characteristics.
      * @param i_veChars vertex characteristics.
      * @param io_faChars, face characteristics, member .spType will be updated with the bitmask RECEIVER, if a receiver is located at this face.
      * @param i_bufferSize size of the receiver-buffer.
@@ -124,51 +137,53 @@ class edge::io::ReceiversQuad: public Receivers {
      * @paramt TL_T_INT_SP integer type of the sparse type.
      * @paramt TL_T_LAYOUT structure of the entity layout.
      * @paramt TL_T_INT_LID integer type of local entity ids.
+     * @paramt TL_T_CHARS_SV sub-vertex type, offering member .coords.
      * @paramt TL_T_CHARS_VE structure of the vertex characteristics. provides .coords member for the vertices' coordinates.
      * @paramt TL_T_CHARS_FA structure of the face characteristics. provides .spType member for access to the faces' sparse types.
-     * @paramt TL_T_REAL_MESH precision of mesh-releated data
+
      **/
     template< typename TL_T_INT_SP,
               typename TL_T_LAYOUT,
               typename TL_T_INT_LID,
               typename TL_T_CHARS_VE,
               typename TL_T_CHARS_FA,
-              typename TL_T_REAL_MESH >
+              typename TL_T_CHARS_SC >
     void init( unsigned int           i_nRecvs,
                TL_T_INT_SP            i_spType,
                unsigned short         i_nQts,
                std::string    const  &i_outDir,
                std::string    const (*i_recvNames),
-               TL_T_REAL_MESH const (*i_recvCrds)[TL_N_DIM],
-               double                i_freq,
-               TL_T_REAL_MESH const   i_qPts[TL_N_FA][TL_N_FA_QPTS][TL_N_DIM],
+               double         const (*i_recvCrds)[TL_N_DIS],
+               double                 i_freq,
                TL_T_LAYOUT    const  &i_faLayout,
                TL_T_LAYOUT    const  &i_elLayout,
+               unsigned short const   i_scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_VES_EL ],
                TL_T_INT_LID   const (*i_faEl)[2],
-               TL_T_INT_LID   const (*i_elVe)[TL_N_EL_VE],
-               TL_T_INT_LID   const (*i_elFa)[TL_N_FA],
+               TL_T_INT_LID   const (*i_elVe)[TL_N_VES_EL],
+               TL_T_INT_LID   const (*i_elFa)[TL_N_FAS],
+               TL_T_CHARS_SC          i_svChars[TL_N_SVS],
                TL_T_CHARS_VE  const  *i_veChars,
                TL_T_CHARS_FA         *io_faChars,
                unsigned int           i_bufferSize=100,
                double                 i_time=0  ) {
       // minimal distance to all receivers
-      std::vector< TL_T_REAL_MESH > l_minDist(i_nRecvs);
+      std::vector< TL_T_REAL > l_minDist(i_nRecvs);
       // id of face having the minimum distance to the receivers
       std::vector< TL_T_INT_LID   > l_minFa(i_nRecvs);
-      // id of quad point having the minimum distance to the receivers
-      std::vector< unsigned short > l_minQp(i_nRecvs);
-      // quad points coordinates
-      std::vector< TL_T_REAL_MESH > l_qpCrds[TL_N_DIM];
-      for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) l_qpCrds[l_di].resize( i_nRecvs );
+      // id of sub-face point having the minimum distance to the receivers
+      std::vector< unsigned short > l_minSf(i_nRecvs);
+      // sub-face coordinates
+      std::vector< TL_T_REAL > l_sfCrds[TL_N_DIS];
+      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) l_sfCrds[l_di].resize( i_nRecvs );
 
       // init minimum data structures
       for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-        l_minDist[l_re] = std::numeric_limits< TL_T_REAL_MESH >::max();
+        l_minDist[l_re] = std::numeric_limits< TL_T_REAL >::max();
         l_minFa[l_re]   = std::numeric_limits< TL_T_INT_LID   >::max();
-        l_minQp[l_re]   = std::numeric_limits< unsigned short >::max();
+        l_minSf[l_re]   = std::numeric_limits< unsigned short >::max();
 
-        for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
-          l_qpCrds[l_di][l_re] = std::numeric_limits< TL_T_REAL_MESH>::max();
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+          l_sfCrds[l_di][l_re] = std::numeric_limits< TL_T_REAL >::max();
         }
       }
 
@@ -182,7 +197,7 @@ class edge::io::ReceiversQuad: public Receivers {
 
         for( TL_T_INT_LID l_el = l_first; l_el < l_first+l_size; l_el++ ) {
           // iterate over the element's faces
-          for( unsigned short l_fa = 0; l_fa < TL_N_FA; l_fa++ ) {
+          for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
             // determine the dense id of the face
             TL_T_INT_LID l_faId = i_elFa[l_el][l_fa];
 
@@ -190,25 +205,31 @@ class edge::io::ReceiversQuad: public Receivers {
                 (io_faChars[l_faId].spType & i_spType) == i_spType && // continue if sparse type matches
                  i_faEl[l_faId][0] == l_el ) {                        // continue if "left" == trivial mapping
 
-              // iterate over the quad points
-              for( unsigned short l_qp = 0; l_qp < TL_N_FA_QPTS; l_qp++ ) {
+              // iterate over sub-faces
+              for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
                 // assemble vertex coordinates
-                TL_T_REAL_MESH l_veCrds[TL_N_DIM][TL_N_EL_VE];
-                for( unsigned short l_ve = 0; l_ve < TL_N_EL_VE; l_ve++ ) {
+                double l_veCrds[TL_N_DIS][TL_N_VES_EL];
+                for( unsigned short l_ve = 0; l_ve < TL_N_VES_EL; l_ve++ ) {
                   TL_T_INT_LID l_veId = i_elVe[l_el][l_ve];
 
-                  for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
+                  for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
                     l_veCrds[l_di][l_ve] = i_veChars[l_veId].coords[l_di];
                   }
                 }
 
-                // derive mesh coorinates of the quad point
-                TL_T_REAL_MESH l_meshCrds[TL_N_DIM];
+                // derive mesh coordinates of sub-face by averaging
+                double l_meshCrds[TL_N_DIS];
 
                 // TODO: generalize
-                TL_T_REAL_MESH l_refCrds[3] = {0, 0, 0}; // TODO: work around for non-template
-                for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
-                  l_refCrds[l_di] = i_qPts[l_fa][l_qp][l_di];
+                double l_refCrds[3] = {0, 0, 0}; // TODO: work around for non-template
+                for( unsigned short l_sv = 0; l_sv < TL_N_VES_FA; l_sv++ ) {
+                  // get id of the sub-vertex
+                  unsigned short l_svId = i_scSv[TL_N_SCS + l_fa * TL_N_SFS + l_sf][l_sv];
+
+                  for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+                    // add contribution of the sub-face
+                    l_refCrds[l_di] += i_svChars[l_svId].coords[l_di] * ( TL_T_REAL(1) / TL_N_VES_FA);
+                  }
                 }
 
 
@@ -219,17 +240,17 @@ class edge::io::ReceiversQuad: public Receivers {
 
                 // iterate over receivers and determine the distance
                 for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-                  TL_T_REAL_MESH l_dist = linalg::GeomT<TL_N_DIM>::norm( l_meshCrds,
-                                                                         i_recvCrds[l_re] );
+                  TL_T_REAL l_dist = linalg::GeomT<TL_N_DIS>::norm( l_meshCrds,
+                                                                    i_recvCrds[l_re] );
 
                   // store the info if this a new minimum
                   if( l_minDist[l_re] > l_dist ) {
                     l_minDist[l_re] = l_dist;
                     l_minFa[l_re]   = l_faId;
-                    l_minQp[l_re]   = l_qp;
+                    l_minSf[l_re]   = l_sf;
 
-                    for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
-                      l_qpCrds[l_di][l_re] = l_meshCrds[l_di];
+                    for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+                      l_sfCrds[l_di][l_re] = l_meshCrds[l_di];
                     }
                   }
                 }
@@ -279,14 +300,14 @@ class edge::io::ReceiversQuad: public Receivers {
             if( l_minFa[l_re] == l_fa ) {
               // add this receiver
               m_recvs.resize( m_recvs.size() + 1 );
-              m_recvsQuad.resize( m_recvsQuad.size() + 1 );
+              m_recvsSf.resize( m_recvsSf.size() + 1 );
 
               // update face type
               io_faChars[l_fa].spType |= i_spType;
 
               // init receiver data
               m_recvs.back().nBuff = 0;
-              m_recvs.back().buffer.resize( i_bufferSize*i_nQts*TL_N_CRUNS );
+              m_recvs.back().buffer.resize( i_bufferSize*i_nQts*TL_N_CRS );
               m_recvs.back().buffTime.resize( m_buffSize );
               m_recvs.back().time  = i_time;
               m_recvs.back().tg    = l_tg;
@@ -294,9 +315,9 @@ class edge::io::ReceiversQuad: public Receivers {
               m_recvs.back().enTg  = l_spIdTg;
               m_recvs.back().path  = i_outDir+"/"+i_recvNames[l_re]+".csv";
 
-              m_recvsQuad.back().qp = l_minQp[l_re];
-              for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ )
-                m_recvsQuad.back().crds[l_di] = l_qpCrds[l_di][l_re];
+              m_recvsSf.back().sf = l_minSf[l_re];
+              for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+                m_recvsSf.back().crds[l_di] = l_sfCrds[l_di][l_re];
 
               // set sparse entitity ids of the receivers
               if( l_reFa == false ) {
@@ -322,12 +343,12 @@ class edge::io::ReceiversQuad: public Receivers {
   /**
    * Writes the output for all receivers associated with the sparse receiver entity.
    * "All" receivers: A single sparse receiver entity might contain more than one
-   *                  quadrature point and thus might have multiple receivers per entity.
+   *                  sub-face and thus might have multiple receivers per entity.
    *
    * @param i_time time of the receiver output.
    * @param i_dt time step, the maximum of the receiver's frequency and the time step will be used to determine the next output point.
    * @param i_reSp sparse entity.
-   * @param i_data data for the receiver output. [*][][]: quantities, [][*][]: quadrature points, all of them per entity, [][][*]: fused forward simulations.
+   * @param i_data data for the receiver output. [*][][]: quantities, [][*][]: sub-faces, all of them per entity, [][][*]: fused forward simulations.
    *
    * @paramt TL_T_INT_SP integer type of the sparse entities.
    **/
@@ -335,7 +356,7 @@ class edge::io::ReceiversQuad: public Receivers {
   void writeRecvAll( double             i_time,
                      double             i_dt,
                      TL_T_INT_SP        i_reSp,
-                     TL_T_REAL   const (*i_data)[TL_N_FA_QPTS][TL_N_CRUNS] ) {
+                     TL_T_REAL   const (*i_data)[TL_N_SFS][TL_N_CRS] ) {
     // get first matching receiver
     std::size_t l_first = m_spEnToRecv[i_reSp];
     EDGE_CHECK_LT( l_first, m_recvs.size() );
@@ -350,11 +371,11 @@ class edge::io::ReceiversQuad: public Receivers {
 
         // set quantities in buffer
         for( unsigned short l_qt = 0; l_qt < m_nQts; l_qt++ ) {
-          for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
-            unsigned int l_pos  = m_recvs[l_re].nBuff*m_nQts*TL_N_CRUNS;
-                         l_pos += l_qt*TL_N_CRUNS;
+          for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
+            unsigned int l_pos  = m_recvs[l_re].nBuff*m_nQts*TL_N_CRS;
+                         l_pos += l_qt*TL_N_CRS;
                          l_pos += l_ru;
-            m_recvs[l_re].buffer[l_pos] = i_data[l_qt][m_recvsQuad[l_re].qp][l_ru];
+            m_recvs[l_re].buffer[l_pos] = i_data[l_qt][m_recvsSf[l_re].sf][l_ru];
           }
         }
 
