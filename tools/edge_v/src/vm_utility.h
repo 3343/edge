@@ -26,8 +26,10 @@
 #define VM_UTILITY_H
 
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <string>
+#include <cmath>
 
 extern "C" {
 #include "ucvm.h"
@@ -62,6 +64,7 @@ typedef struct antn_cfg {
 
   std::string ucvm_cfg_fn;
   std::string ucvm_model_list;
+  std::vector< std::string > fault_input_fns;
   ucvm_ctype_t ucvm_cmode;
   int ucvm_type;
 
@@ -166,6 +169,7 @@ typedef struct vmodel {
   vm_datum *vm_list;
 } vmodel;
 
+
 int vmNodeInit( vmodel &, const moab_mesh & );
 int vmElmtInit( vmodel &, const moab_mesh & );
 
@@ -175,6 +179,77 @@ int vmElmtFinalize( vmodel & );
 int writeVMNodes( vmodel &, const antn_cfg &, const moab_mesh & );
 int writeVMElmts( vmodel &, const antn_cfg &, const moab_mesh & );
 int writeVMTags(  vmodel &, const antn_cfg &, const moab_mesh & );
+
+
+//*****************************************
+// *** Fault Model ***
+
+class Triangle{
+public:
+  xyz_point_t m_v1, m_v2, m_v3;
+
+  Triangle() = default;
+  Triangle( xyz_point_t i_v1, xyz_point_t i_v2, xyz_point_t i_v3 ) :
+    m_v1( i_v1 ),
+    m_v2( i_v2 ),
+    m_v3( i_v3 )
+  { }
+  Triangle( double* );
+
+  xyz_point_t centroid();
+  xyz_point_t bary_to_phy( xyz_point_t );
+  std::vector< Triangle > subdivide( unsigned int );
+};
+
+class FDatum{
+public:
+  // NOTE it's important that these are type double (not typedef-ed)
+  // because they are used in conjuction with the moab MB_DOUBLE type
+  std::vector< double > m_sFric;      // static coefficient of friction
+  std::vector< double > m_nStress;    // initial normal stress
+  std::vector< double > m_sStress;    // initial shear stress
+};
+
+class FModel{
+public:
+  // Number of cells in x,y directions
+  int m_Nx, m_Ny;
+
+  // Min and Max physical coordinates
+  double m_xMin, m_xMax, m_yMin, m_yMax;
+
+  // Reciprocal of the cell width in x and y directions
+  double m_xScaleInv, m_yScaleInv;
+
+  // Angle fault makes with pos x-axis, increasing toward pos z-axis
+  double m_faultAngle;
+
+  // File names to read from; Number of fused runs is inferred from here
+  std::vector< std::string > m_filenames;
+
+  // Main data array for the model, one FDatum per grid point,
+  // datum at (nx, ny) corresponds to m_faultData[ nx + ny*(N_x+1) ]
+  FDatum *m_faultData;
+
+  FModel( std::vector< std::string > );
+  ~FModel();
+
+  // No copy or copy assignment constructors
+  FModel( const FModel& ) = delete;
+  FModel& operator=( const FModel& ) = delete;
+
+  void populate();
+  xyz_point_t proj_to_plane( xyz_point_t );
+  int get_nearest_nx( xyz_point_t );
+  int get_nearest_ny( xyz_point_t );
+  FDatum get_datum_pt( xyz_point_t );
+  FDatum get_datum_tri( Triangle );
+};
+
+moab::Range get_fault_faces( moab_mesh & );
+int fault_antn( moab_mesh &, const antn_cfg & );
+
+
 
 // *******************
 

@@ -48,7 +48,7 @@ MOABLIB=$(MOABDIR)/lib
 -include $(MOABLIB)/moab.make
 MOAB_LINKS := $(shell echo $(MOAB_LIBS_LINK) | sed 's/-all-static//g')
 
-CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp 
+CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp -std=c++11
 LDFLAGS=-L$(PROJ4LIB) -lproj -Wl,-rpath,$(PROJ4LIB)                \
         -L$(UCVMLIB)  -lucvm $(UCVMCLDFLAGS) -Wl,-rpath,$(UCVMLIB) \
         $(MOAB_LINKS) -lm -ldl
@@ -59,7 +59,7 @@ OBJDIR=./build
 RELEASE=$(PREFIX)/bin
 
 _DEPS=vm_utility.h
-_OBJ =vm_utility.o edge_v.o 
+_OBJ =vm_utility.o edge_v.o
 
 DEPS=$(patsubst %,$(SRCDIR)/%,$(_DEPS))
 OBJ =$(patsubst %,$(OBJDIR)/%,$(_OBJ))
@@ -85,4 +85,3 @@ cleanobj:
 
 clean:
 	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(RELEASE)/edge_v
-

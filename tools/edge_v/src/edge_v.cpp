@@ -215,10 +215,13 @@ int main( int argc, char **argv ) {
 
   vmNodeFinalize( vModelNodes );
 
+  fault_antn( mMsh, aCfg );
+
   writeVMElmts( vModelElmts, aCfg, mMsh );
   writeVMTags(  vModelElmts, aCfg, mMsh );
 
   vmElmtFinalize( vModelElmts );
+
   meshFinalize( mMsh );
 
   return 0;
