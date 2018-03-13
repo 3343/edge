@@ -34,7 +34,8 @@ namespace edge {
     template< t_entityType   TL_T_EL,
               unsigned short TL_O_SP,
               unsigned short TL_N_QTS,
-              unsigned short TL_N_CRS >
+              unsigned short TL_N_CRS,
+              typename       TL_T_BND_SC >
     class Limiter;
   }
 }
@@ -46,11 +47,13 @@ namespace edge {
  * @paramt TL_O_SP spatial order of the DG-solver.
  * @paramt TL_N_QTS number of quantities.
  * @paramt TL_N_CRS number of fused forward runs.
+ * @paramt TL_T_BND_SC type of the boundary conditions.
  **/
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_QTS,
-          unsigned short TL_N_CRS >
+          unsigned short TL_N_CRS,
+          typename       TL_T_BND_SC >
 class edge::sc::Limiter {
   private:
     //! number of dimensions
@@ -277,10 +280,12 @@ class edge::sc::Limiter {
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_SP sparse type.
      * @paramt TL_T_SOLV_SC type of the sub-cell solver.
      **/
     template< typename TL_T_LID,
               typename TL_T_REAL,
+              typename TL_T_SP,
               typename TL_T_SOLV_SC >
     static void limit( TL_T_REAL                      i_dt,
                        TL_T_LID                       i_lp,
@@ -291,6 +296,7 @@ class edge::sc::Limiter {
                          TL_O_SP >            const  &i_iBndSt,
                        unsigned short         const   i_vIdElFaEl[TL_N_FAS],
                        unsigned short         const   i_fIdElFaEl[TL_N_FAS],
+                       TL_T_SP                        i_spTypes[TL_N_FAS],
                        bool                   const   i_admP[TL_N_CRS],
                        bool                   const  *i_admAdP[TL_N_FAS],
                        bool                   const   i_admC[TL_N_CRS],
@@ -320,18 +326,20 @@ class edge::sc::Limiter {
       TL_T_REAL l_subCellNe[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS];
 
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-        unsigned short l_fId  = i_vIdElFaEl[l_fa] * TL_N_FAS;
-                       l_fId += i_fIdElFaEl[l_fa];
-
-        edge::sc::Kernels<
-          TL_T_EL,
-          TL_O_SP,
-          TL_N_QTS,
-          TL_N_CRS >::scatterReplaceFaVanilla( i_dofsDgAdP[l_fa],
-                                               i_scatterSf[l_fId],
-                                               i_dofsScAdP[l_fa],
-                                               i_admAdP[l_fa],
-                                               l_subCellNe[l_fa] );
+        // only continue for valid input data
+        if( i_dofsDgAdP[l_fa] != nullptr ) {
+          unsigned short l_fId  = i_vIdElFaEl[l_fa] * TL_N_FAS;
+                         l_fId += i_fIdElFaEl[l_fa];
+          edge::sc::Kernels<
+            TL_T_EL,
+            TL_O_SP,
+            TL_N_QTS,
+            TL_N_CRS >::scatterReplaceFaVanilla( i_dofsDgAdP[l_fa],
+                                                i_scatterSf[l_fId],
+                                                i_dofsScAdP[l_fa],
+                                                i_admAdP[l_fa],
+                                                l_subCellNe[l_fa] );
+        }
       }
 
       // assemble sub-grid, TODO: replace with strides in scatter ops
@@ -347,7 +355,9 @@ class edge::sc::Limiter {
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               // default case: flux computation
               if( i_netUpSc[l_fa] == nullptr ) {
-                l_sg[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = l_subCellNe[l_fa][l_qt][l_sf][l_cr];
+                if( i_dofsDgAdP[l_fa] != nullptr ) {
+                  l_sg[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = l_subCellNe[l_fa][l_qt][l_sf][l_cr];
+                }
               }
               // net-updates in ghost sub-cells
               else {
@@ -357,6 +367,10 @@ class edge::sc::Limiter {
           }
         }
       }
+
+      TL_T_BND_SC::apply( i_scSfSc,
+                          i_spTypes,
+                          l_sg );
 
       bool l_netUps[TL_N_FAS];
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
@@ -560,6 +574,8 @@ class edge::sc::Limiter {
             // DG solution of adjacent elements
             TL_T_REAL const (*l_dofsDgAdP[TL_N_FAS])[TL_N_MDS_EL][TL_N_CRS];
 
+            int_spType l_spTypes[TL_N_FAS];
+
             // assemble info of adjacent (face as bridge) elements
             for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
               unsigned short l_fId = i_fIdElFaEl[l_el][l_fa];
@@ -567,8 +583,10 @@ class edge::sc::Limiter {
               TL_T_LID l_adEl = i_elFaEl[l_el][l_fa];
               TL_T_LID l_adLi = l_lpFaLi[l_fa];
 
+              l_spTypes[l_fa] = i_charsFa[l_adFa].spType;
+
               // TODO: replace with generic ibnd sp-type
-              if( ( i_charsFa[l_adFa].spType & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
+              if( ( l_spTypes[l_fa] & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
                 l_netUpSc[l_fa] = i_tDofsSc[l_li][l_fa];
               }
               else {
@@ -602,6 +620,7 @@ class edge::sc::Limiter {
                    i_iBndSt,
                    i_vIdElFaEl[l_el],
                    i_fIdElFaEl[l_el],
+                   l_spTypes,
                    i_admP[l_li],
                    l_admAdP,
                    i_admC[l_li],

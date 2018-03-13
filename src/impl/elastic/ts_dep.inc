@@ -28,5 +28,6 @@
 #endif
 #include "sc/Steering.hpp"
 #include "sc/Limiter.hpp"
+#include "sc/Boundary.hpp"
 
 #include "solvers/Kinematics.hpp"

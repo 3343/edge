@@ -795,7 +795,10 @@ class edge::data::SparseEntities {
             TL_T_INT_LID l_aeId = i_enEn[ l_de * i_nAdjPerEn + l_ae ];
 
             // ignore undefined adjacencies
-            if( l_aeId == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
+            if( l_aeId == std::numeric_limits< TL_T_INT_LID >::max() ) {
+              o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = std::numeric_limits< TL_T_INT_LID >::max();
+              continue;
+            }
 
             if( ( i_charsTo[l_aeId].spType & i_spTypeTo ) == i_spTypeTo ) o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = l_adjDeToSp[l_aeId];
             else                                                          o_spLink[ l_spId*i_nAdjPerEn + l_ae ] = std::numeric_limits< TL_T_INT_LID >::max();

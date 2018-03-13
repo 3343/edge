@@ -151,7 +151,7 @@ if( m_cflow[4] == 2 && m_cflow[5] == 0 ) {
   }
 }
 
-// neighboring updates for inner elements done, statrt limiting inner elements
+// neighboring updates for inner elements done, start limiting inner elements
 if( m_cflow[3] == 2 && m_cflow[8] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 8);
   m_cflow[8] = 1;

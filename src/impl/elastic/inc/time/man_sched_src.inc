@@ -31,7 +31,7 @@
  */
 
 // make sure we have our eight entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 8, "entires of control flow not matching" );
+static_assert( N_ENTRIES_CONTROL_FLOW == 10, "entires of control flow not matching" );
 
 // initialize control flow if neccessary
 if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
@@ -47,6 +47,8 @@ if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
   m_cflow[4] = 0;
   m_cflow[6] = 0;
   m_cflow[7] = 0;
+  m_cflow[8] = 0;
+  m_cflow[9] = 0;
 }
 
 ////////////////////////////////////////
@@ -79,6 +81,12 @@ if( m_cflow[6] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 6) ) m_cflow
 
 // send-elements finished source computations
 if( m_cflow[7] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 7) ) m_cflow[7] = 2;
+
+// inner-elements finished limiting
+if( m_cflow[8] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 8) ) m_cflow[8] = 2;
+
+// send-elements finished limiting
+if( m_cflow[9] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 9) ) m_cflow[9] = 2;
 
 /*
  * Simple implementation: "Blocking"
@@ -199,11 +207,25 @@ if( m_cflow[4] == 2 && m_cflow[7] == 0 ) {
   m_cflow[7] = 1;
 }
 
-// src updates for local- and inner-elements done plus MPI-send is done
-// Remark: 0 depends on 4, considered as 7 here
-if( m_cflow[6] == 2 && m_cflow[7] == 2 && m_cflow[2] == 2 ) {
+// src updates for inner elements done, start limiting inner elements
+if( m_cflow[6] == 2 && m_cflow[8] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 8);
+  m_cflow[8] = 1;
+}
+
+// src updates for send elements done, start limiting send elements
+if( m_cflow[7] == 2 && m_cflow[9] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 9);
+  m_cflow[9] = 1;
+}
+
+// limiter for local- and inner-elements done plus MPI-send is done
+// Remark: 0 depends on 4, considered as 9 here
+if( m_cflow[8] == 2 && m_cflow[9] == 2 && m_cflow[2] == 2 ) {
   EDGE_CHECK( m_cflow[3] == 2 );
   EDGE_CHECK( m_cflow[4] == 2 );
+  EDGE_CHECK( m_cflow[6] == 2 );
+  EDGE_CHECK( m_cflow[7] == 2 );
   EDGE_CHECK( m_cflow[5] == 0 );
 
   // time step complete, update the ts-info
@@ -226,5 +248,6 @@ if( m_cflow[6] == 2 && m_cflow[7] == 2 && m_cflow[2] == 2 ) {
   // reset the four cflow-entities
   m_cflow[3] = m_cflow[4] = 0;
   m_cflow[6] = m_cflow[7] = 0;
+  m_cflow[8] = m_cflow[9] = 0;
 }
 #endif

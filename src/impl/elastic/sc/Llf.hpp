@@ -311,6 +311,9 @@ class edge::elastic::sc::Llf {
             // get id of the the adjacent element
             TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
 
+            // use own element, if at a boudary
+            if( l_elAd == std::numeric_limits< TL_T_LID >::max() ) l_elAd = l_el;
+
             // get face's id
             TL_T_LID l_faId = i_elFa[l_el][l_ty];
 

@@ -257,7 +257,13 @@ class edge::elastic::setups::KinematicsInit {
 
       // iterate over dense elements and determine size
       for( TL_T_INT_LID l_el = 0; l_el < i_nEl; l_el++ ) {
-        if( (i_elChars[l_el].spType & i_spTypeSrcs) == i_spTypeSrcs ) l_nElSrc++;
+        if( (i_elChars[l_el].spType & i_spTypeSrcs) == i_spTypeSrcs ) {
+          // check that the solver is unlimited, since we don't have sources for sub-cells
+          EDGE_CHECK( (i_elChars[l_el].spType & LIMIT) != LIMIT )
+            << "Sources in sub-cell limited elements are not supported.";
+          // increase size
+          l_nElSrc++;
+        }
       }
 
       // allocate memory for the mapping

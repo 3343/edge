@@ -40,6 +40,21 @@
                                        (int_spType) t_enTypeShared::LIMIT,
                                                     l_internal.m_elementChars );
 
+  // propagate sparse info of free-surface boundary to elements
+  edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
+                                       2,
+                                       l_internal.m_connect.faEl[0],
+                                       t_spTypeElastic::FREE_SURFACE,
+                                       t_spTypeElastic::FREE_SURFACE,
+                                       l_internal.m_faceChars,
+                                       l_internal.m_elementChars );
+
+  // inherit limited from free-surface boundaries
+  edge::data::SparseEntities::inherit(              l_internal.m_nElements,
+                                       (int_spType) t_spTypeElastic::FREE_SURFACE,
+                                       (int_spType) t_enTypeShared::LIMIT,
+                                                    l_internal.m_elementChars );
+
   // inherit limit plus and extrema, which are supersets of limited elements
   int_spType l_limitSup[2] = { t_enTypeShared::LIMIT_PLUS, t_enTypeShared::EXTREMA };
   for( unsigned short l_ih = 0; l_ih < 2; l_ih++ ) {
@@ -684,7 +699,7 @@ edge::elastic::solvers::common::setupSolvers( l_internal.m_nElements,
                                               l_internal.m_elementShared2,
                                               l_internal.m_elementShared3 );
 
-// set up sub-cell local lax-friedrichs solvers
+// set up sub-cell local solvers
 l_internal.m_globalShared8[0].alloc( l_enLayouts[l_limPlusLayout].nEnts,
                                      l_dynMem );
 l_internal.m_globalShared8[0].init(  0,

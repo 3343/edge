@@ -222,8 +222,8 @@ class edge::elastic::sc::UpWindSolver< 3 > {
           l_entFix[l_ro][l_co] = 0;
       l_entFix[1][1]  = l_mssEl;
       l_entFix[1][1] *= i_vis;
-      l_entFix[2][2] = l_entFix[2][2];
-      l_entFix[4][4] = l_entFix[2][2];
+      l_entFix[2][2]  = l_entFix[1][1];
+      l_entFix[4][4]  = l_entFix[1][1];
 
       // do the matrix mults
       TL_T_REAL l_tmp[9][9];
@@ -357,7 +357,7 @@ class edge::elastic::sc::UpWind {
      * @param i_charsFa characteristics of the faces.
      * @param i_charsEl characteristics of the elements.
      * @param i_matPars material parameters.
-     * @param i_scaVis scaling for the viscosity. 0.0: no viscosity, 1.0: viscosity determined by maximum wave speed.
+     * @param i_vis amount of viscosity (0.5 is LLF w.r.t. zero-waves).
      *
      * @paramt TL_T_LID integral type for local ids.
      * @paramt TL_T_CHARS_VE characteristics of the vertices, providing member .coords.
@@ -381,7 +381,6 @@ class edge::elastic::sc::UpWind {
                TL_T_CHARS_EL     const (*i_charsEl),
                TL_T_MAT_PARS     const (*i_matPars),
                TL_T_REAL                 i_vis = TL_T_REAL(0.05) ) {
-
       // iterate over limited plus elements
       for( TL_T_LID l_lp = i_firstLp; l_lp < i_firstLp+i_sizeLp; l_lp++ ) {
         // derive dense id
@@ -450,6 +449,9 @@ class edge::elastic::sc::UpWind {
           if( l_ty < TL_N_FAS ) {
             // get id of the the adjacent element
             TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
+
+            // use own element, if at a boudary
+            if( l_elAd == std::numeric_limits< TL_T_LID >::max() ) l_elAd = l_el;
 
             // get material parameters of the adjacent element
             TL_T_REAL l_mpElAd[3];

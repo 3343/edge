@@ -414,7 +414,9 @@ class edge::elastic::solvers::AderDg {
 
           // iterate over DG-faces
           for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-            unsigned l_vId = i_vIdElFaEl[l_el][l_fa];
+            unsigned short l_vId = i_vIdElFaEl[l_el][l_fa];
+            // default to 0 if not defined (boundary conditions)
+            if( l_vId >= TL_N_VES_EL ) l_vId = 0;
 
             // iterate over quantities
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
