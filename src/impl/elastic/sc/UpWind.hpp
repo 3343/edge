@@ -68,6 +68,7 @@ class edge::elastic::sc::UpWindSolver< 2 > {
      * @param o_upL will be set to solver for left element update [0]: own contribution, [1]: neighboring contribution.
      * @param o_upR will be set to solver for right element update [0]: own contribution, [1]: neighboring contribution.
      * @param i_vis scaling for the viscosity.
+     * @param i_fs if true, waves 0 and 2 of the right solver are mirrored for free-surface boundaries.
      *
      * @paramt TL_T_REAL floating point precision.
      **/
@@ -79,14 +80,16 @@ class edge::elastic::sc::UpWindSolver< 2 > {
                     TL_T_REAL const *,
                     TL_T_REAL       o_upL[2][5][5],
                     TL_T_REAL       o_upR[2][5][5],
-                    TL_T_REAL       i_vis = TL_T_REAL(1.0) ) {
+                    TL_T_REAL       i_vis,
+                    bool            i_fs ) {
 
       solvers::common::setupSolver2d( i_mpL[2], i_mpR[2],
                                       i_mpL[0], i_mpR[0],
                                       i_mpL[1], i_mpR[1],
                                       i_n[0], i_n[1], 0,
                                       o_upL[0],
-                                      o_upL[1] );
+                                      o_upL[1],
+                                      i_fs );
 
       solvers::common::setupSolver2d( i_mpL[2], i_mpR[2],
                                       i_mpL[0], i_mpR[0],
@@ -166,6 +169,7 @@ class edge::elastic::sc::UpWindSolver< 3 > {
      * @param o_upL will be set to solver for left element update [0]: own contribution, [1]: neighboring contribution.
      * @param o_upR will be set to solver for right element update [0]: own contribution, [1]: neighboring contribution.
      * @param i_vis scaling for the viscosity.
+     * @param i_fs if true, waves 0, 3 and 5 of the left solver are mirrored for free-surface boundaries.
      * 
      * @paramt TL_T_REAL floating point precision.
      **/
@@ -177,7 +181,8 @@ class edge::elastic::sc::UpWindSolver< 3 > {
                     TL_T_REAL const i_t1[3],
                     TL_T_REAL       o_upL[2][9][9],
                     TL_T_REAL       o_upR[2][9][9],
-                    TL_T_REAL       i_vis=TL_T_REAL(1) ) {
+                    TL_T_REAL       i_vis,
+                    bool            i_fs ) {
       solvers::common::setupSolver3d( i_mpL[2], i_mpR[2],
                                       i_mpL[0], i_mpR[0],
                                       i_mpL[1], i_mpR[1],
@@ -185,7 +190,8 @@ class edge::elastic::sc::UpWindSolver< 3 > {
                                       i_t0[0], i_t0[1], i_t0[2],
                                       i_t1[0], i_t1[1], i_t1[2],
                                       o_upL[0],
-                                      o_upL[1] );
+                                      o_upL[1],
+                                      i_fs );
 
       solvers::common::setupSolver3d( i_mpL[2], i_mpR[2],
                                       i_mpL[0], i_mpR[0],
@@ -292,38 +298,32 @@ class edge::elastic::sc::UpWind {
     static unsigned short const TL_N_TYSF = (TL_T_EL != TET4) ? TL_N_FAS : 6;
 
     // upwind solvers.
-    // 0 - TL_N_TYSF-1: homogeneous (incorporates the element's material parameters)
-    // TL_N_TYSF - TL_N_TYSF+TL_N_FAS-1: heterogeneous (incorporates material parameters of the adjacent elements)
-    // [][0]: solver for left update [][1]: solver for right update
-    // [][][0]: local contribution
-    // [][][1]: neighboring contribution
-    TL_T_REAL (* m_up)[TL_N_TYSF+TL_N_FAS][2][2][TL_N_QTS][TL_N_QTS];
+    // 0 - TL_N_TYSF-1: homogeneous (incorporates the element's material parameters), left update
+    // TL_N_TYSF - 2*TL_N_TYSF-1: homogeneous, right update
+    // 2*TL_N_TYSF-1 - 2*TL_N_TYSF-1+TL_N_FAS-1: heterogeneous (incorporates material parameters of the adjacent elements)
+    // [][0]: local contribution
+    // [][1]: neighboring contribution
+    TL_T_REAL (* m_up)[TL_N_TYSF*2+TL_N_FAS][2][TL_N_QTS][TL_N_QTS];
 
   private:
     /**
      * Derives the upwinds solver's ids and side, based on the sub-cell's face-type.
      *
      * @param i_scTySf sub-cell's face type, DG-surf left: 0 - TL_N_FAS-1, DG-surf right: TL_N_FAS - 2*TL_N_FAS-1, Inner left: 2*TL_N_FAS - 2*TL_N_FAS+TL_N_TYSF-1, Inner right: 2*TL_N_FAS+TL_N_TYSF - 2*TL_N_FAS+2*TL_N_TYSF.
-     * @param o_lffIds will be set to LLF solver's id.
-     * @return true if sub-cell is left w.r.t. to DG-face's outer-pointing normal.
+     * @return id of the pair of upwind solvers.
      **/
-    static bool upIds( unsigned short  i_scTySf,
-                       unsigned short  o_upIds[2] ) {
+    static unsigned short upId( unsigned short i_scTySf ) {
       // DG surface or inner sub-face
       bool l_dgs = (i_scTySf < 2*TL_N_FAS) ? true : false;
 
-      // contribution of the sub-cell (always homogeneous)
-      o_upIds[0] = (l_dgs) ?  i_scTySf               % TL_N_FAS:
-                             (i_scTySf - 2*TL_N_FAS) % TL_N_TYSF;
+      // contribution of the sub-cell
+      unsigned short l_upId = (l_dgs) ?  i_scTySf : // implicitly assuming that there is no "right" for DG
+                                        (i_scTySf - 2*TL_N_FAS);
 
-      // contribution of the adjacent sub-cell
-      o_upIds[1]  = o_upIds[0];
-      // jump to heterogeneous solver if required
-      o_upIds[1] += l_dgs * TL_N_TYSF;
+      // switch between homogeneous and heterogeneous
+      l_upId += (l_dgs) ? 2*TL_N_TYSF : 0;
 
-      // return true if sub-cell is on the left side
-      return (l_dgs) ?  i_scTySf               < TL_N_FAS:
-                       (i_scTySf - 2*TL_N_FAS) < TL_N_TYSF;
+      return l_upId;
     }
 
   public:
@@ -339,9 +339,9 @@ class edge::elastic::sc::UpWind {
     void alloc( TL_T_LID              i_nLimPlus,
                 edge::data::Dynamic  &io_dynMem ) {
       // size of the homogenous and heterogeneous central flux solver per limited plus element
-      std::size_t l_upSize = (std::size_t) (TL_N_TYSF+TL_N_FAS) * 2 * 2 * TL_N_QTS * TL_N_QTS;
+      std::size_t l_upSize = (std::size_t) (2*TL_N_TYSF+TL_N_FAS) * 2 * TL_N_QTS * TL_N_QTS;
                   l_upSize *= i_nLimPlus * sizeof(TL_T_REAL);
-      m_up = (TL_T_REAL (*) [TL_N_TYSF+TL_N_FAS][2][2][TL_N_QTS][TL_N_QTS]) io_dynMem.allocate( l_upSize );
+      m_up = (TL_T_REAL (*) [2*TL_N_TYSF+TL_N_FAS][2][TL_N_QTS][TL_N_QTS]) io_dynMem.allocate( l_upSize );
     }
 
     /**
@@ -459,15 +459,22 @@ class edge::elastic::sc::UpWind {
             l_mpElAd[1] = i_matPars[l_elAd].mu;
             l_mpElAd[2] = i_matPars[l_elAd].rho;
 
+            // dummy solver for right element
+            TL_T_REAL l_upDummy[2][TL_N_QTS][TL_N_QTS];
+
             // compute heterogeneous upwind solvers
+            // free surface boundary conditions for the second solver in the case of undefined adjacency.
+            // valid for outflow boundaries, since we use zero-valued ghost cells in that case.
             UpWindSolver< TL_N_DIS >::lr( l_mpEl,
                                           l_mpElAd,
                                           l_n[l_ty],
                                           l_t0[l_ty],
                                           l_t1[l_ty],
-                                          m_up[l_lp][TL_N_TYSF+l_ty][0],
-                                          m_up[l_lp][TL_N_TYSF+l_ty][1],
-                                          i_vis );
+                                          m_up[l_lp][2*TL_N_TYSF+l_ty],
+                                          l_upDummy,
+                                          i_vis,
+                                          (i_elFaEl[l_el][l_ty] == std::numeric_limits< TL_T_LID >::max())
+                                        );
           }
 
           // compute homogeneous upwind solvers
@@ -476,9 +483,10 @@ class edge::elastic::sc::UpWind {
                                         l_n[l_ty],
                                         l_t0[l_ty],
                                         l_t1[l_ty],
-                                        m_up[l_lp][l_ty][0],
-                                        m_up[l_lp][l_ty][1],
-                                        i_vis );
+                                        m_up[l_lp][l_ty],
+                                        m_up[l_lp][TL_N_TYSF+l_ty],
+                                        i_vis,
+                                        false );
         }
 
 
@@ -488,16 +496,15 @@ class edge::elastic::sc::UpWind {
                     l_sca *= TL_N_SCS / i_charsEl[l_el].volume;
 
           // upwind contribution
-          for( unsigned short l_lr = 0; l_lr < 2; l_lr++ ){
-            for( unsigned short l_co = 0; l_co < 2; l_co++ ) {
-              for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-                for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
-                  // homogeneous
-                  m_up[l_lp][l_ty][l_lr][l_co][l_q1][l_q2] *= l_sca;
-                  // heterogeneous
-                  if( l_ty < TL_N_FAS )
-                    m_up[l_lp][TL_N_TYSF+l_ty][l_lr][l_co][l_q1][l_q2] *= l_sca;
-                }
+          for( unsigned short l_co = 0; l_co < 2; l_co++ ) {
+            for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
+              for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+                // homogeneous
+                m_up[l_lp][              l_ty][l_co][l_q1][l_q2] *= l_sca;
+                m_up[l_lp][    TL_N_TYSF+l_ty][l_co][l_q1][l_q2] *= l_sca;
+                // heterogeneous
+                if( l_ty < TL_N_FAS )
+                  m_up[l_lp][2*TL_N_TYSF+l_ty][l_co][l_q1][l_q2] *= l_sca;
               }
             }
           }
@@ -560,10 +567,8 @@ class edge::elastic::sc::UpWind {
 
           // default case: flux computation
           if( l_ty > TL_N_FAS-1 || i_netUpSc[ l_ty%TL_N_FAS ] == false ) {
-            // derive the ids of the central flux solvers and side of the sub-cell
-            unsigned short l_cIds[2];
-            // choose between left and right solver
-            unsigned short l_lr = ( upIds( l_ty, l_cIds ) == false );
+            // choose solver pair
+            unsigned short l_upId = upId( l_ty );
 
             // iterate over target quantities
             for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
@@ -571,14 +576,14 @@ class edge::elastic::sc::UpWind {
               for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
                 // iterate over fused runs
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  // own, homogeneous central flux contribution
+                  // own flux contribution
                   o_dofsSc[l_q1][l_sc][l_cr] +=   io_dofsSc[l_q2][l_sc][l_cr]
-                                                * m_up[i_lp][ l_cIds[0] ][l_lr][0][l_q1][l_q2]
+                                                * m_up[i_lp][ l_upId ][0][l_q1][l_q2]
                                                 * i_dt;
 
-                  // neighboring, possibly heterogenous central flux contribution
+                  // neighboring flux contribution
                   o_dofsSc[l_q1][l_sc][l_cr] +=   io_dofsSc[l_q2][l_scAd][l_cr]
-                                                * m_up[i_lp][ l_cIds[1] ][l_lr][1][l_q1][l_q2]
+                                                * m_up[i_lp][ l_upId ][1][l_q1][l_q2]
                                                 * i_dt;
                 }
               }
@@ -627,14 +632,14 @@ class edge::elastic::sc::UpWind {
           for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
             // iterate over fused runs
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              // own, homogeneous central flux contribution
+              // own flux contribution
               o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[0][l_q2][l_sf][l_cr]
-                                            * m_up[i_lp][i_fa][0][0][l_q1][l_q2]
+                                            * m_up[i_lp][2*TL_N_TYSF+i_fa][0][l_q1][l_q2]
                                             * i_dt;
 
-              // neighboring, possibly heterogenous central flux contribution
+              // neighboring flux contribution
               o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[1][l_q2][l_sf][l_cr]
-                                            * m_up[i_lp][TL_N_TYSF+i_fa][0][1][l_q1][l_q2]
+                                            * m_up[i_lp][2*TL_N_TYSF+i_fa][1][l_q1][l_q2]
                                             * i_dt;
             }
           }
