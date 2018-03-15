@@ -42,7 +42,7 @@ template< unsigned short TL_N_QTS,
 class edge::sc::Detections {
   private:
     //! epsilon determing the maximum allowed delta of new extrema in the candidate solution w.r.t. to the current solution
-    constexpr static const double m_eps  = 0.001;
+    constexpr static const double m_eps  = 0.0001;
 
     //! minimum allowed delta of new extrema in the candidate solution
     constexpr static const double m_eps0 = 0.0001;

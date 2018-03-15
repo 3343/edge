@@ -32,18 +32,16 @@ const unsigned short N_STEPS_PER_UPDATE=3;
 const unsigned short N_ENTRIES_CONTROL_FLOW=10;
 #else
 // TODO: Add limiter
-const unsigned short N_ENTRIES_CONTROL_FLOW=8;
+const unsigned short N_ENTRIES_CONTROL_FLOW=10;
 #endif
-
-const real_base C_SCALE_ENTROPY_FIX_HARTEN = 0.05;
 
 #if PP_ORDER > 9
 #error not supported
 #endif
-// CFL-numbers based on (experimental) 1D-stability of advection equation
-const double SCALE_CFL_ORDER[9] = { 0.45, 0.9, 0.8, 0.7, 0.6, 0.5, 0.45, 0.4, 0.4};
+// CFL-number
+const double SCALE_CFL_ORDER[9] = { 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9 };
 
-const double SCALE_CFL=0.5*SCALE_CFL_ORDER[PP_ORDER-1];
+const double SCALE_CFL=(1.0/N_DIM)*SCALE_CFL_ORDER[PP_ORDER-1];
 
 /*
  * Bitsmasks for elastics.
