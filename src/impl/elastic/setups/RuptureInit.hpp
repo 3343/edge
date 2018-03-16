@@ -178,7 +178,7 @@ class edge::elastic::setups::RuptureInit {
         // set minus-plus distinction
         o_lsw.fa[l_spId].lEqM = (l_sProd < 0);
 
-        // compute shear stress divided by Lame parmeter mu
+        // compute shear modulus divided by Lame parmeter mu
         TL_T_REAL_COMP l_csDivMuL  = std::sqrt( (TL_T_REAL_COMP) 1 / (i_bgPars[l_elL].mu * i_bgPars[l_elL].rho) );
         TL_T_REAL_COMP l_csDivMuR  = std::sqrt( (TL_T_REAL_COMP) 1 / (i_bgPars[l_elR].mu * i_bgPars[l_elR].rho) );
         o_lsw.fa[l_spId].csDmuM = o_lsw.fa[l_spId].lEqM  ? l_csDivMuL : l_csDivMuR;
