@@ -667,13 +667,13 @@ class edge::sc::Limiter {
                                                               l_exDgL[0],
                                                               l_exDgL[1] );
 
-            edge::sc::Detections< TL_N_QTS,
-                                  TL_N_CRS >::dmp( i_extP[ i_scConn.liEx[l_li] ],
-                                                   i_extP,
-                                                   l_exDgL,
-                                                   i_scConn.liVeEx[l_li+1]-i_scConn.liVeEx[l_li],
-                                                   i_scConn.liVeEx[l_li],
-                                                   l_admL );
+            edge::sc::Detections< TL_T_EL,
+                                  TL_N_QTS,
+                                  TL_N_CRS >::dmpFa( i_extP[l_lp],
+                                                     i_extP,
+                                                     l_exDgL,
+                                                     i_scConn.lpFaLp[l_lp],
+                                                     l_admL );
 
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               // lock solution in sub-cell space if required
@@ -700,12 +700,12 @@ class edge::sc::Limiter {
                 io_limSync[l_li][l_cr]++;
 
                 if( l_admL[l_cr] == false ) {
-                  o_extL[ i_scConn.liEx[l_li] ][0][0][l_cr] = l_extSc[0][0][l_cr];
-                  o_extL[ i_scConn.liEx[l_li] ][1][0][l_cr] = l_extSc[1][0][l_cr];
+                  o_extL[l_lp][0][0][l_cr] = l_extSc[0][0][l_cr];
+                  o_extL[l_lp][1][0][l_cr] = l_extSc[1][0][l_cr];
                 }
                 else {
-                  o_extL[ i_scConn.liEx[l_li] ][0][0][l_cr] = l_exDgL[0][0][l_cr];
-                  o_extL[ i_scConn.liEx[l_li] ][1][0][l_cr] = l_exDgL[1][0][l_cr];
+                  o_extL[l_lp][0][0][l_cr] = l_exDgL[0][0][l_cr];
+                  o_extL[l_lp][1][0][l_cr] = l_exDgL[1][0][l_cr];
                 }
               }
             }

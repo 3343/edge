@@ -55,13 +55,25 @@
                                        (int_spType) t_enTypeShared::LIMIT,
                                                     l_internal.m_elementChars );
 
-  // inherit limit plus and extrema, which are supersets of limited elements
-  int_spType l_limitSup[2] = { t_enTypeShared::LIMIT_PLUS, t_enTypeShared::EXTREMA };
-  for( unsigned short l_ih = 0; l_ih < 2; l_ih++ ) {
+  // perform sweeps over face-neighbors to extend limited region
+  for( unsigned short l_sw = 0; l_sw < 3; l_sw++ ) {
+    // inherit limit plus from limited elements (superset)
     edge::data::SparseEntities::inherit(              l_internal.m_nElements,
                                          (int_spType) t_enTypeShared::LIMIT,
-                                                      l_limitSup[l_ih],
+                                         (int_spType) t_enTypeShared::LIMIT_PLUS,
                                                       l_internal.m_elementChars );
+
+    // propagate limit through faces
+    edge::data::SparseEntities::propAdj(              l_internal.m_nElements,
+                                                      C_ENT[T_SDISC.ELEMENT].N_FACES,
+                                                      l_internal.m_connect.elFaEl[0],
+                                         (int_spType) t_enTypeShared::LIMIT_PLUS,
+                                         (int_spType) t_enTypeShared::LIMIT,
+                                                      l_internal.m_elementChars,
+                                                      l_internal.m_elementChars );
+#ifdef PP_USE_MPI
+EDGE_LOG_FATAL << "missing exchange of sparse types";
+#endif
   }
 
   // limit plus are the limited elements and their face neighbors
@@ -76,15 +88,13 @@
   // store DG DOFS for all limit plus elements
   edge::data::SparseEntities::inherit(              l_internal.m_nElements,
                                        (int_spType) t_enTypeShared::LIMIT_PLUS,
-                                                    C_LTS_EL[t_ltsEl::EL_DOFS],
+                                       (int_spType) C_LTS_EL[t_ltsEl::EL_DOFS],
                                                     l_internal.m_elementChars );
 
-  // store extrema for all limited elements and those adjacent through vertices
-  edge::data::SparseEntities::propAdj(              l_internal.m_nElements,
-                                                    l_internal.m_connect.elVeEl,
-                                       (int_spType) t_enTypeShared::LIMIT,
+  // store extrema for all limit plus elements
+  edge::data::SparseEntities::inherit(              l_internal.m_nElements,
+                                       (int_spType) t_enTypeShared::LIMIT_PLUS,
                                        (int_spType) t_enTypeShared::EXTREMA,
-                                                    l_internal.m_elementChars,
                                                     l_internal.m_elementChars );
 }
 

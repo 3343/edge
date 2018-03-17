@@ -92,6 +92,9 @@ struct edge::sc::t_connect {
   //! sub-cell reordering based on vertex combinations of adjacent DG-elements
   unsigned short scDgAd[TL_N_VES_FA][TL_N_SFS];
 
+  //! link between limited elements and limited plus elements (no bridge)
+  TL_T_LID (*liLp);
+
   //! link between limited plus elements and dense elements (no bridge)
   TL_T_LID (*lpEl);
 

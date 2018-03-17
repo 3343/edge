@@ -62,6 +62,13 @@ unsigned short l_limPlusLayout;
                                    l_internal.m_globalShared2[0].lock,
                                    l_internal.m_globalShared2[0].limSync );
 
+  // link limited elements to limited plus elements
+  edge::data::SparseEntities::linkSpSp( l_enLayouts[2].nEnts,
+                                        t_enTypeShared::LIMIT,
+                                        t_enTypeShared::LIMIT_PLUS,
+                                        l_internal.m_elementChars,
+                                        l_internal.m_globalShared2[0].connect.liLp );
+
   // link limited plus elements to dense elements (no bridge)
   edge::data::SparseEntities::linkSpDe( l_enLayouts[2].nEnts,
                                         t_enTypeShared::LIMIT_PLUS,
@@ -91,34 +98,4 @@ unsigned short l_limPlusLayout;
                                         t_enTypeShared::EXTREMA,
                                         l_internal.m_elementChars,
                                         l_internal.m_globalShared2[0].connect.liEx );
-
-  // link limited elements to sub-cell extrema (vertices as bridge)
-  int_el l_nLinkRaw;
-  int_el l_nLinkPtr;
-
-  // get number of raw entries and pointers
-  edge::data::SparseEntities::nLinkSpAdjDst( l_enLayouts[2].nEnts,
-                                             l_internal.m_connect.elVeEl,
-                                             t_enTypeShared::LIMIT,
-                                             t_enTypeShared::EXTREMA,
-                                             l_internal.m_elementChars,
-                                             l_internal.m_elementChars,
-                                             l_nLinkRaw,
-                                             l_nLinkPtr );
-
-  // check that the number of pointers match our expectations
-  EDGE_CHECK_EQ( l_nLinkPtr, l_nLim );
-
-  // allocate data for the raw entries
-  int_el *l_raw = (int_el *) l_dynMem.allocate( l_nLinkRaw * sizeof(int_el) );
-
-  // derive link
-  edge::data::SparseEntities::linkSpAdjDst( l_enLayouts[2].nEnts,
-                                            l_internal.m_connect.elVeEl,
-                                            t_enTypeShared::LIMIT,
-                                            t_enTypeShared::EXTREMA,
-                                            l_internal.m_elementChars,
-                                            l_internal.m_elementChars,
-                                            l_raw,
-                                            l_internal.m_globalShared2[0].connect.liVeEx );
 }

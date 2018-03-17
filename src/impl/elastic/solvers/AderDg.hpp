@@ -663,14 +663,15 @@ class edge::elastic::solvers::AderDg {
      *
      * @param i_first first element considered.
      * @param i_nElements number of elements.
-     * @param i_firstLe first limited element.
+     * @param i_firstLi first limited element.
      * @param i_firstEx first element computing extrema.
      * @param i_dg constant DG data.
      * @param i_scatter scatter opterators (DG -> sub-cells).
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_fluxSolvers flux solvers for the neighboring elements' contribution.
-     * @param i_liVeEx extrema elements adjacent to limited elements (vertices as bridge).
+     * @param i_liLp limited plus ids of limited elements.
+     * @param i_lpFaLp limited plus elements adjacent to limited plus (faces as bridge).
      * @param i_elFa elements' adjacent faces.
      * @param i_elFaEl face-neighboring elements.
      * @param i_fIdElFaEl local face ids of face-neighboring elememts.
@@ -691,18 +692,15 @@ class edge::elastic::solvers::AderDg {
               typename TL_T_MM >
     static void neigh( TL_T_LID                              i_first,
                        TL_T_LID                              i_nElements,
-                       TL_T_LID                              i_firstLe,
+                       TL_T_LID                              i_firstLi,
                        TL_T_LID                              i_firstEx,
                        t_dg           const                & i_dg,
                        TL_T_REAL      const                  i_scatter[TL_N_MDS][TL_N_SCS],
                        t_faceChars    const                * i_faChars,
                        t_elementChars const                * i_elChars,
                        t_fluxSolver   const               (* i_fluxSolvers)[TL_N_FAS],
-#ifndef __INTEL_COMPILER
-                       TL_T_LID       const       (* const * i_liVeEx),
-#else
-                       TL_T_LID                           **i_liVeEx,
-#endif
+                       TL_T_LID       const                * i_liLp,
+                       TL_T_LID       const               (* i_lpFaLp)[TL_N_FAS],
                        TL_T_LID       const               (* i_elFa)[TL_N_FAS],
                        TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
                        unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
@@ -721,7 +719,7 @@ class edge::elastic::solvers::AderDg {
       TL_T_LID l_ex = i_firstEx;
 
       // counter for limited elements
-      TL_T_LID l_le = i_firstLe;
+      TL_T_LID l_li = i_firstLi;
 
       // temporary product for three-way mult
       TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
@@ -808,26 +806,28 @@ class edge::elastic::solvers::AderDg {
             bool l_adm[TL_N_CRS];
 
             // check for admissibility of the DG solutions through discrete maximum principle
-            edge::sc::Detections< TL_N_QTS,
-                                  TL_N_CRS >::dmp( i_extP[l_ex],
-                                                   i_extP,
-                                                   o_extC[l_ex],
-                                                   i_liVeEx[l_le+1]-i_liVeEx[l_le],
-                                                   i_liVeEx[l_le],
-                                                   l_adm );
+            TL_T_LID l_lp = i_liLp[l_li];
+
+            edge::sc::Detections< TL_T_EL,
+                                  TL_N_QTS,
+                                  TL_N_CRS >::dmpFa( i_extP[l_ex],
+                                                     i_extP,
+                                                     o_extC[l_ex],
+                                                     i_lpFaLp[l_lp],
+                                                     l_adm );
 
             // update admissibility
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
               if( l_adm[l_cr] == false )
-                io_admC[l_le][l_cr] = false;
+                io_admC[l_li][l_cr] = false;
             }
 
             // increase counter of limited elements
-            l_le++;
+            l_li++;
           }
 
-          // increase counter of extrema elemetns
+          // increase counter of extrema elements
           l_ex++;
         }
       }
