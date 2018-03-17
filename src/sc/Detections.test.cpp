@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -213,12 +213,12 @@ TEST_CASE( "Detection criteria: Admissibility through discrete maximum principle
     }
   }
 
-  edge::sc::Detections< 3, 2 >::dmp( l_extCur1[l_elId1],
-                                     l_extCur1,
-                                     l_extCan1[l_elId1],
-                                     l_nElVeEl,
-                                     l_elVeEl1,
-                                     l_admiss1 );
+  edge::sc::Detections< TRIA3, 3, 2 >::dmpVe( l_extCur1[l_elId1],
+                                              l_extCur1,
+                                              l_extCan1[l_elId1],
+                                              l_nElVeEl,
+                                              l_elVeEl1,
+                                              l_admiss1 );
 
   // check admissibility
   REQUIRE( l_admiss1[0] == true );
@@ -241,12 +241,12 @@ TEST_CASE( "Detection criteria: Admissibility through discrete maximum principle
   l_extCan1[4][0][0][1] = 0.1961; // valid
   l_extCan1[4][1][2][0] = 5.0102; // invalid
 
-  edge::sc::Detections< 3, 2 >::dmp( l_extCur1[l_elId1],
-                                     l_extCur1,
-                                     l_extCan1[l_elId1],
-                                     l_nElVeEl,
-                                     l_elVeEl1,
-                                     l_admiss1 );
+  edge::sc::Detections< TRIA3, 3, 2 >::dmpVe( l_extCur1[l_elId1],
+                                              l_extCur1,
+                                              l_extCan1[l_elId1],
+                                              l_nElVeEl,
+                                              l_elVeEl1,
+                                              l_admiss1 );
 
   // check admissibility
   REQUIRE( l_admiss1[0] == false );
@@ -268,12 +268,12 @@ TEST_CASE( "Detection criteria: Admissibility through discrete maximum principle
   l_extCan1[4][0][0][1] = 0.1959; // invalid
   l_extCan1[4][1][2][0] = 5.010;  // valid
 
-  edge::sc::Detections< 3, 2 >::dmp( l_extCur1[l_elId1],
-                                     l_extCur1,
-                                     l_extCan1[l_elId1],
-                                     l_nElVeEl,
-                                     l_elVeEl1,
-                                     l_admiss1 );
+  edge::sc::Detections< TRIA3, 3, 2 >::dmpVe( l_extCur1[l_elId1],
+                                              l_extCur1,
+                                              l_extCan1[l_elId1],
+                                              l_nElVeEl,
+                                              l_elVeEl1,
+                                              l_admiss1 );
 
   // check admissibility
   REQUIRE( l_admiss1[0] == true );
@@ -295,12 +295,12 @@ TEST_CASE( "Detection criteria: Admissibility through discrete maximum principle
   l_extCan1[4][0][0][1] = 0.1959; // invalid
   l_extCan1[4][1][2][0] = 5.0102; // invalid
 
-  edge::sc::Detections< 3, 2 >::dmp( l_extCur1[l_elId1],
-                                     l_extCur1,
-                                     l_extCan1[l_elId1],
-                                     l_nElVeEl,
-                                     l_elVeEl1,
-                                     l_admiss1 );
+  edge::sc::Detections< TRIA3, 3, 2 >::dmpVe( l_extCur1[l_elId1],
+                                              l_extCur1,
+                                              l_extCan1[l_elId1],
+                                              l_nElVeEl,
+                                              l_elVeEl1,
+                                              l_admiss1 );
 
   // check admissibility
   REQUIRE( l_admiss1[0] == false );
@@ -322,12 +322,12 @@ TEST_CASE( "Detection criteria: Admissibility through discrete maximum principle
   l_extCan1[4][0][0][1] = 0.1961; // valid
   l_extCan1[4][1][2][0] = 5.010;  // valid
 
-  edge::sc::Detections< 3, 2 >::dmp( l_extCur1[l_elId1],
-                                     l_extCur1,
-                                     l_extCan1[l_elId1],
-                                     l_nElVeEl,
-                                     l_elVeEl1,
-                                     l_admiss1 );
+  edge::sc::Detections< TRIA3, 3, 2 >::dmpVe( l_extCur1[l_elId1],
+                                              l_extCur1,
+                                              l_extCan1[l_elId1],
+                                              l_nElVeEl,
+                                              l_elVeEl1,
+                                              l_admiss1 );
 
   // check admissibility
   REQUIRE( l_admiss1[0] == true );
