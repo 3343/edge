@@ -21,11 +21,11 @@
  * Output of receivers.
  **/
 
-#ifndef RECEIVERS_H
-#define RECEIVERS_H
+#ifndef EDGE_IO_RECEIVERS_H
+#define EDGE_IO_RECEIVERS_H
 
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include <string>
 
 namespace edge {

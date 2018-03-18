@@ -21,11 +21,11 @@
  * Regular meshes in EDGE.
  **/
 
-#ifndef REGULAR_H_
-#define REGULAR_H_
+#ifndef EDGE_MESH_REGULAR_H_
+#define EDGE_MESH_REGULAR_H_
 
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 
 namespace edge {
   namespace mesh {

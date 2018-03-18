@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Support for sparse entities.
  **/
 
-#ifndef SPARSE_ENTITIES_HPP
-#define SPARSE_ENTITIES_HPP
+#ifndef EDGE_DATA_SPARSE_ENTITIES_HPP
+#define EDGE_DATA_SPARSE_ENTITIES_HPP
 
 #include <limits>
 #include "io/logging.h"
@@ -730,7 +730,7 @@ class edge::data::SparseEntities {
      *
      * @param i_nEn number of dense entities which having adjacent entities.
      * @param i_nAdjPerEn number of adjacent entities (to) for each of the dense entities (from).
-     * @param i_enEn adjacency information.nAdjPerEn. Adjacency information with std::numeric_limits< TL_T_INT_LID > is ignored (assuming boundary conditions).
+     * @param i_enEn adjacency information. Adjacency information with std::numeric_limits< TL_T_INT_LID >::max being ignored (assuming boundary conditions).
      * @param i_spTypeFrom sparse type used for the bit comparisons of the from-entities.
      * @param i_spTypeTo sparse type used for the bit comparisons of the to-entities.
      * @param i_charsFrom characteristics of the from entities (having a member .spType).

@@ -20,13 +20,13 @@
  * @section DESCRIPTION
  * Common functions for the mesh
  **/
-#ifndef MESH_COMMON_HPP
-#define MESH_COMMON_HPP
+#ifndef EDGE_MESH_COMMON_HPP
+#define EDGE_MESH_COMMON_HPP
 
 #include "io/logging.h"
 #include "monitor/instrument.hpp"
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "linalg/Geom.hpp"
 #include "linalg/Matrix.h"
 #include <cassert>

@@ -21,13 +21,13 @@
  * Output of receivers at sub-faces.
  **/
 
-#ifndef RECEIVERS_SF_HPP
-#define RECEIVERS_SF_HPP
+#ifndef EDGE_IO_RECEIVERS_SF_HPP
+#define EDGE_IO_RECEIVERS_SF_HPP
 
 #include "io/logging.h"
 #include "Receivers.h"
 #include <string>
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "linalg/Mappings.hpp"
 #include "linalg/Geom.hpp"
 #include <limits>

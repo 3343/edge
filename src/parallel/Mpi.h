@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,14 +20,14 @@
  * @section DESCRIPTION
  * MPI parallelization.
  **/
-#ifndef MPI_H_
-#define MPI_H_
+#ifndef EDGE_PARALLEL_MPI_H_
+#define EDGE_PARALLEL_MPI_H_
 
 #ifdef PP_USE_MPI
 #include "mpi_wrapper.inc"
 #endif
 #include <string>
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 
 #include "parallel/global.h"
 

@@ -40,6 +40,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "io/ReceiversSf.hpp"
 #include "io/WaveField.h"
 #include "data/Dynamic.h"
+#include "data/DataLayout.hpp"
 #include "data/SparseEntities.hpp"
 #include "data/Internal.hpp"
 #include "time/Manager.h"

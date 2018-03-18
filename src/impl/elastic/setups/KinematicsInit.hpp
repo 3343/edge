@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,13 +21,13 @@
  * Initialization of kinematic sources.
  **/
 
-#ifndef KINEMATICS_SETUP_HPP
-#define KINEMATICS_SETUP_HPP
+#ifndef EDGE_SEISMIC_SETUP_KINEMATICS_INIT_HPP
+#define EDGE_SEISMIC_SETUP_KINEMATICS_INIT_HPP
 
 #include "data/Dynamic.h"
 #include "../solvers/Kinematics.type"
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "mesh/common.hpp"
 #include "dg/Basis.h"
 #include "linalg/Mappings.hpp"

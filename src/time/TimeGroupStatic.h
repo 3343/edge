@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,11 +21,11 @@
  * LTS cluster of EDGE with static, data-independent time step characterisitcs.
  **/
 
-#ifndef EDGE_TIME_GROUP_STATIC_H
-#define EDGE_TIME_GROUP_STATIC_H
+#ifndef EDGE_TIME_TIME_GROUP_STATIC_H
+#define EDGE_TIME_TIME_GROUP_STATIC_H
 
 #include "data/Internal.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "io/Receivers.h"
 #include "io/ReceiversSf.hpp"
 
