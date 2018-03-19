@@ -464,23 +464,13 @@ class edge::elastic::solvers::AderDg {
 
         // get sub-cell solution at DG-faces
         TL_T_REAL l_dofsSc[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
-        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ )
-          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ )
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                l_dofsSc[l_sd][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[l_sd] ][ l_fIdBfEl[l_sd] ])[l_qt][l_sf][l_cr];
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+            unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
 
-        // at this point both faces are reordered: fix storage of left element's sub-cells by reapplying the permutation
-        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-          unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
-          // only permute one time
-          if( l_sfRe <= l_sf ) continue;
-
-          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              TL_T_REAL l_dofTmp = l_dofsSc[0][l_qt][l_sf][l_cr];
-              l_dofsSc[0][l_qt][l_sf][l_cr] = l_dofsSc[0][l_qt][l_sfRe][l_cr];
-              l_dofsSc[0][l_qt][l_sfRe][l_cr] = l_dofTmp;
+              l_dofsSc[0][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sfRe][l_cr];
+              l_dofsSc[1][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf  ][l_cr];
             }
           }
         }
@@ -732,7 +722,6 @@ class edge::elastic::solvers::AderDg {
             // set admissibility
             if( ( i_elChars[l_el].spType & LIMIT ) == LIMIT ) {
               bool l_adm[TL_N_CRS];
-
               edge::sc::Detections< TL_T_EL,
                                     TL_N_QTS,
                                     TL_N_CRS >::dmpFa( i_extP[l_ex],
