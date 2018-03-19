@@ -155,10 +155,14 @@ class edge::sc::Detections {
       // reduce over face neighborhood
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         TL_T_INT_LID l_elAd = i_elFaEl[l_fa];
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            l_extCurRed[0][l_qt][l_cr] = std::min( l_extCurRed[0][l_qt][l_cr], i_extCurAd[l_elAd][0][l_qt][l_cr] );
-            l_extCurRed[1][l_qt][l_cr] = std::max( l_extCurRed[1][l_qt][l_cr], i_extCurAd[l_elAd][1][l_qt][l_cr] );
+
+        // ignore undefined (boundary conditions)
+        if( l_elAd != std::numeric_limits< TL_T_INT_LID >::max() ) {
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              l_extCurRed[0][l_qt][l_cr] = std::min( l_extCurRed[0][l_qt][l_cr], i_extCurAd[l_elAd][0][l_qt][l_cr] );
+              l_extCurRed[1][l_qt][l_cr] = std::max( l_extCurRed[1][l_qt][l_cr], i_extCurAd[l_elAd][1][l_qt][l_cr] );
+            }
           }
         }
       }
