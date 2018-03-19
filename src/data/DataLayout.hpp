@@ -106,8 +106,9 @@ class edge::data::DataLayout {
 
           // ignore if that doesn't match our sparse type
           if( l_enAd == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
-          if(     i_enSpEn != nullptr
-               && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
+          if(    i_enSpEn != nullptr
+              && i_enSpEn[l_in] == std::numeric_limits< TL_T_INT_LID >::max()
+              && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
           // check if the adjacency is defined
           EDGE_CHECK_EQ( o_ptrs[l_in][l_ad], nullptr );
@@ -131,7 +132,8 @@ class edge::data::DataLayout {
 
             // ignore if that doesn't match our sparse type
             if( l_enAd == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
-            if(     i_enSpEn != nullptr
+            if(    i_enSpEn != nullptr
+                && i_enSpEn[l_se] == std::numeric_limits< TL_T_INT_LID >::max()
                 && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
             // check if data for this adjacency should be added
@@ -181,7 +183,8 @@ class edge::data::DataLayout {
 
             // ignore if that doesn't match our sparse type
             if( l_enAd == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
-            if(     i_enSpEn != nullptr
+            if(    i_enSpEn != nullptr
+                && i_enSpEn[l_se] == std::numeric_limits< TL_T_INT_LID >::max()
                 && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
             // add, if and only if this connects us to the respective receive region
@@ -221,7 +224,8 @@ class edge::data::DataLayout {
 
             // ignore if that doesn't match our sparse type
             if( l_enAd == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
-            if(     i_enSpEn != nullptr
+            if(    i_enSpEn != nullptr
+                && i_enSpEn[l_re] == std::numeric_limits< TL_T_INT_LID >::max()
                 && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
             // add, if and only if this connects us to the respective send region
