@@ -38,7 +38,7 @@ class edge::sc::Steering {
      * Gets the admissiblity ids based on the number of performed time steps since the last synchronization.
      *   First entry: Admissibility id of the previous solution (corresponds to input time step id).
      *   Second entry: Admissiblity id for the candidate solution.
-     *   Third entry: Admissiblity id for the limited solution.
+     *   Third and fourth entry: Admissiblity id for the limited solution.
      * 
      * @param i_nTs number of time steps since last synchronization.
      * @param o_admIds will be set to admissibility ids.
@@ -47,21 +47,18 @@ class edge::sc::Steering {
      **/
     template< typename TL_T_TS >
     static void getAdmIds( TL_T_TS        i_nTs,
-                           unsigned short o_admIds[3] ) {
-      if( (i_nTs%3) == 0 ) {
+                           unsigned short o_admIds[4] ) {
+      if( (i_nTs%2) == 0 ) {
         o_admIds[0] = 0;
         o_admIds[1] = 1;
         o_admIds[2] = 2;
-      }
-      else if( (i_nTs%3) == 1 ) {
-        o_admIds[0] = 2;
-        o_admIds[1] = 0;
-        o_admIds[2] = 1;
+        o_admIds[3] = 3;
       }
       else {
-        o_admIds[0] = 1;
-        o_admIds[1] = 2;
+        o_admIds[0] = 2;
+        o_admIds[1] = 3;
         o_admIds[2] = 0;
+        o_admIds[3] = 1;
       }
     }
 
@@ -71,16 +68,34 @@ class edge::sc::Steering {
      *   Second entry: Id of the candidate/limited solution.
      *
      * @param i_nTs number of time steps since last synchronization.
-     * @param o_admIds will be set to ids of extrema.
+     * @param o_extIds will be set to ids of extrema.
      *
      * @paramt TL_T_TS integral type of the time step id.
      **/
     template< typename TL_T_TS >
     static void getExtIds( TL_T_TS        i_nTs,
-                           unsigned short o_admIds[2] ) {
-      o_admIds[0] =  i_nTs   %2;
-      o_admIds[1] = (i_nTs+1)%2;
+                           unsigned short o_exIds[2] ) {
+      o_exIds[0] =  i_nTs   %2;
+      o_exIds[1] = (i_nTs+1)%2;
     }
+
+    /**
+     * Gets the ids of the subcell dofs based on the number of time steps since the last synchronization.
+     *   First entry: Id of the previous solution.
+     *   Second entry: Id of the candidate/limited solution.
+     *
+     * @param i_nTs number of time steps since last synchronization.
+     * @param o_dofsIds will be set to ids of extrema.
+     *
+     * @paramt TL_T_TS integral type of the time step id.
+     **/
+    template< typename TL_T_TS >
+    static void getDofsIds( TL_T_TS       i_nTs,
+                           unsigned short o_dofsIds[2] ) {
+      o_dofsIds[0] =  i_nTs   %2;
+      o_dofsIds[1] = (i_nTs+1)%2;
+    }
+
 
     /**
      * Resets the position of the limited elements' admissibility information.
@@ -97,19 +112,54 @@ class edge::sc::Steering {
     template< typename       TL_T_TS,
               unsigned short TL_N_CRS >
     static void resetAdm( TL_T_TS   i_nTs,
-                          bool    (*io_adm[3])[TL_N_CRS] ) {
+                          bool    (*io_adm[4])[TL_N_CRS] ) {
       // get admissibility ids
-      unsigned short l_admIds[3];
+      unsigned short l_admIds[4];
       getAdmIds( i_nTs, l_admIds );
 
       // store current info
-      bool (*l_adm[3])[TL_N_CRS];
-      for( unsigned short l_am = 0; l_am < 3; l_am++ )
+      bool (*l_adm[4])[TL_N_CRS];
+      for( unsigned short l_am = 0; l_am < 4; l_am++ )
         l_adm[l_am] = io_adm[l_am];
 
       // reorder the array
-      for( unsigned short l_am = 0; l_am < 3; l_am++ )
+      for( unsigned short l_am = 0; l_am < 4; l_am++ )
         io_adm[l_am] = l_adm[ l_admIds[l_am] ];
+    }
+
+    /**
+     * Resets the position of the limited elements' dofs.
+     * Afterwards the first pointer holds the dofs of the previous solution.
+     * The second those of the outdated next time step.
+     *
+     * @param i_nTs number of time steps since the last synchronization.
+     * @param io_dofs sub-cell dofs.
+     *
+     * @paramt TL_T_TS intgral type of the time step ids.
+     * @paramt TL_T_REAL floating point arithmetic.
+     * @paramt TL_N_FAS number of faces.
+     * @paramt TL_N_SFS number sub-faces per face.
+     * @paramt TL_N_QTS number of quantities.
+     * @paramt TL_N_CRS number of fused simulations.
+     **/
+    template< typename       TL_T_TS,
+              typename       TL_T_REAL,
+              unsigned short TL_N_FAS,
+              unsigned short TL_N_SFS,
+              unsigned short TL_N_QTS,
+              unsigned short TL_N_CRS >
+    static void resetDofs( TL_T_TS         i_nTs,
+                           TL_T_REAL (* (* io_dofs[2]) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
+      // get dof ids
+      unsigned short l_dofsIds[2];
+      getDofsIds( i_nTs, l_dofsIds );
+
+      // store current info
+      TL_T_REAL (* (* l_dofs[2]) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS];
+      for( unsigned short l_do = 0; l_do < 2; l_do++ ) l_dofs[l_do] = io_dofs[l_do];
+
+      // reorder dofs
+      for( unsigned short l_do = 0; l_do < 2; l_do++ ) io_dofs[l_do] = l_dofs[ l_dofsIds[l_do] ];
     }
 
     /**

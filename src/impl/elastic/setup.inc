@@ -731,7 +731,7 @@ edge::elastic::common::getTimeStepStatsCFL( l_internal.m_nElements,
 
 // setup shared memory parallelization
 for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
-  int_spType l_spType[4] = { RECEIVER, SOURCE, LIMIT, EXTREMA };
+  int_spType l_spType[5] = { RECEIVER, SOURCE, LIMIT, LIMIT_PLUS, EXTREMA };
 
   // local inner-elements
   l_shared.regWrkRgn( l_tg,
@@ -740,7 +740,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_tg,
-                      3, l_spType, l_internal.m_elementChars );
+                      1, l_spType, l_internal.m_elementChars );
 
   // local send-elements
   l_shared.regWrkRgn( l_tg,
@@ -751,7 +751,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_enLayouts[2].timeGroups.size() + l_tg,
-                      3, l_spType, l_internal.m_elementChars );
+                      1, l_spType, l_internal.m_elementChars );
 
   // neigh inner-elements
   l_shared.regWrkRgn( l_tg,
@@ -760,7 +760,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_tg,
-                      2, l_spType+2, l_internal.m_elementChars );
+                      3, l_spType+2, l_internal.m_elementChars );
 
   // neigh send-elements
   l_shared.regWrkRgn( l_tg,
@@ -771,7 +771,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_enLayouts[2].timeGroups.size() + l_tg,
-                      2, l_spType+2, l_internal.m_elementChars );
+                      3, l_spType+2, l_internal.m_elementChars );
 
   if( l_elasticConf.m_frictionLaw == "" ) {
     // src inner-elements

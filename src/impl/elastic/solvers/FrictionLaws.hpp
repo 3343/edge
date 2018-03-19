@@ -354,9 +354,8 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
         // compute traction
         TL_T_REAL l_scale = o_st[l_ru] / l_shear[l_ru];
 
-        o_tr[0][l_ru]  = (i_ss0[0][l_ru] + i_ms[3][l_ru]) * l_scale - i_ss0[0][l_ru];
-        o_tr[1][l_ru]  = (i_ss0[1][l_ru] + i_ms[5][l_ru]) * l_scale - i_ss0[1][l_ru];
-
+        o_tr[0][l_ru] = (i_ss0[0][l_ru] + i_ms[3][l_ru]) * l_scale - i_ss0[0][l_ru];
+        o_tr[1][l_ru] = (i_ss0[1][l_ru] + i_ms[5][l_ru]) * l_scale - i_ss0[1][l_ru];
 
         // fall back to middle state if the fault is locked
         o_tr[0][l_ru] = (o_per[l_ru]) ? o_tr[0][l_ru] : i_ms[3][l_ru];

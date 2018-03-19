@@ -50,6 +50,12 @@ template< t_entityType   TL_T_EL,
           unsigned short TL_N_CRS >
 class edge::sc::Kernels {
   private:
+    //! number of faces
+    static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+    //! number of vertices per face
+    static unsigned short const TL_N_VES_FA = C_ENT[TL_T_EL].N_FACE_VERTICES;
+
     //! number of sub-faces per element face
     static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
@@ -70,7 +76,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void scatterVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                 TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
                                 TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
@@ -94,7 +100,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void scatterFaVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                   TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
                                   TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
@@ -121,7 +127,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void scatterReplaceVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                        TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
                                        TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
@@ -157,7 +163,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void scatterReplaceFaVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                          TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
                                          TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS],
@@ -192,7 +198,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void gatherVanilla( TL_T_REAL const i_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                                TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                                TL_T_REAL       o_dgDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
@@ -204,6 +210,55 @@ class edge::sc::Kernels {
                                      i_scDofs[0][0],               // A
                                      i_mat[0],                     // B
                                      o_dgDofs[0][0] );             // C
+    }
+
+    /**
+     * Gathers the DOFs of sub-cells at the surface of the element and stores them.
+     * The sub-cells are stored from the view of the face-adjacent element and account for possible face-vertex combinations.
+     *
+     * @param i_scDofs sub-cell DOFs of the element.
+     * @param i_faSfSc sub-cells adjacent to the sub-faces of a face.
+     * @param i_scDgAd sub-cell reordering, based for adjacent element.
+     * @param i_vIdElFaEl vertex combis.
+     * @param o_scSurfDofs will be set to the surface DOFs, unless a nullptr is set.
+     * @param i_adm if not nullptr, only fused non-admissible fused runs are updated
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template< typename TL_T_REAL >
+    static void gatherSurfDofs( TL_T_REAL      const    i_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                                unsigned short const    i_faSfSc[TL_N_FAS][TL_N_SFS],
+                                unsigned short const    i_scDgAd[TL_N_VES_FA][TL_N_SFS],
+                                unsigned short const    i_vIdElFaEl[TL_N_FAS],
+                                TL_T_REAL            (* o_scSurfDofs [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                                bool           const    i_adm[TL_N_CRS] = nullptr ) {
+      // iterate over faces
+      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+        // only continue if the DOFs are required
+        if( o_scSurfDofs[l_fa] != nullptr ) {
+          // get vertex combination
+          unsigned short l_vId = i_vIdElFaEl[l_fa];
+
+          // iterate over quantities
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+            // iterate over sub-faces
+            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+              // determine sub-face from the view of the adjacent element
+              unsigned short l_sfRe = i_scDgAd[l_vId][l_sf];
+
+              // get id of copy sub-cell (faces as bridge)
+              unsigned short l_sc = i_faSfSc[l_fa][l_sfRe];
+
+              // copy over the sub-cell DOFs
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                if( i_adm == nullptr || i_adm[l_cr] == false )
+                  (*o_scSurfDofs[l_fa])[l_qt][l_sf][l_cr] = i_scDofs[l_qt][l_sc][l_cr];
+              }
+            }
+          }
+
+        }
+      }
     }
 
     /**
@@ -239,7 +294,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void scExtrema( TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                            TL_T_REAL       o_min[TL_N_QTS][TL_N_CRS],
                            TL_T_REAL       o_max[TL_N_QTS][TL_N_CRS] ) {
@@ -273,7 +328,7 @@ class edge::sc::Kernels {
      *
      * @paramt TL_T_REAL floating point type.
      **/
-    template < typename TL_T_REAL >
+    template< typename TL_T_REAL >
     static void dgExtremaVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                   TL_T_REAL const i_matScatter[TL_N_MDS][TL_N_SCS],
                                   TL_T_REAL       o_subcell[TL_N_QTS][TL_N_SCS][TL_N_CRS],

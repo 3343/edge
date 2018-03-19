@@ -199,6 +199,9 @@ struct edge::sc::t_SubCell {
   //! number of sub-faces per element face
   static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
+  //! number of faces
+  static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
   //! connectivity info
   t_connect< TL_T_LID,
              TL_T_EL, 
@@ -220,14 +223,17 @@ struct edge::sc::t_SubCell {
   //! DOFs of the DG-element's sub-cell solution
   TL_T_REAL (* dofs)[TL_N_QTS][TL_N_SCS][TL_N_CRS];
 
-  //! DOFs of DG-elemetn's sub-cell solution sub-cell solution for sub-cells adjacent to the DG-element's faces
-  TL_T_REAL (* surf)[C_ENT[TL_T_EL].N_FACES][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+  //! raw data of tDofs of sub-cell solutions, incl. limited plus
+  TL_T_REAL (* tDofsRaw[2])[TL_N_QTS][TL_N_SFS][TL_N_CRS];
+
+  //! pointer to tDofs of sub-cell solutions
+  TL_T_REAL (* (* tDofs[2]) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS];
 
   //! minima and maxima of elements providing extrema
   TL_T_REAL (*ext[2])[2][TL_N_QTS][TL_N_CRS];
 
-  //! admissibility of the DG solution; three-way admissibility in alternating order for 1) previous, valid solution 2) candidate solution 3) limited solution
-  bool (*adm[3])[TL_N_CRS];
+  //! admissibility of the DG solution; four-way admissibility in alternating order for 1) previous, valid solution 2) candidate solution 3) limited solution 4) candidate solution of next time step, initialized with limited solution
+  bool (*adm[4])[TL_N_CRS];
 
   //! locks the solution in sub-cell space; if false, elements are projected to DG space after application of the limiter if the projection doesn't lead to oscillations (DMP)
   bool (*lock)[TL_N_CRS];

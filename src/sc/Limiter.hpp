@@ -411,7 +411,8 @@ class edge::sc::Limiter {
      * @param i_fIntT transposed flux integration mattrices.
      * @param i_scOps sub-cell operators.
      * @param i_scConn sub-cell connectivity.
-     * @parma i_charsFa face characteristics.
+     * @param i_iBndSt super-cell stencils at internal boundaries.
+     * @param i_charsFa face characteristics.
      * @param i_fsDg DG flux solvers for local contributions.
      * @param i_fsDgAd DG flux solvers for contributions of adjacent elements.
      * @param i_elFa DG faces adjacent to elements (no bridge).
@@ -420,11 +421,14 @@ class edge::sc::Limiter {
      * @param i_fIdElFaEl face ids of adjacent DG-elements (faces as bridge).
      * @param i_admP admissibility of the previous solution.
      * @param i_admC admissibility of the candidate solution.
-     * @param o_admL will be set to admissibility of the limited solution.
-     * @param i_lock if set to true, the solution is locked in sub-cell space.
+     * @param o_admL0 will be set to admissibility of the limited solution.
+     * @param o_admL1 will be set to admissibility of the limtied solution.
+     * @param io_lock if set to true, the solution is locked in sub-cell space; will be reset to false.
+     * @param io_limSync counter for number of limits since synchronization. Will be updated if appropiate.
      * @param i_tDofsDg temporary DOFs of the DG-solution.
      * @param io_dofsDg will be updated with DG-projection of the limited solution.
-     * @param i_tDofsSc temporary sub-cell solution for sub-cells adjacent to DG-faces.
+     * @param i_tDofsScP previous sub-cell solution for sub-cells adjacent to DG-faces.
+     * @param i_tDofsScL will be set to sub-cell tDofs of limited solution.
      * @param io_dofsSc will be updated with sub-cell solution.
      * @param i_extP extrema of the previous solution.
      * @param o_extL will be set to extrema of the limited solution.
@@ -468,8 +472,9 @@ class edge::sc::Limiter {
                        unsigned short         const                  (*i_fIdElFaEl)[TL_N_FAS],
                        bool                   const                  (*i_admP)[TL_N_CRS],
                        bool                                          (*i_admC)[TL_N_CRS], // TODO: change back to const (currenlty modified for iBnds)
-                       bool                                          (*o_admL)[TL_N_CRS],
-                       bool                   const                  (*i_lock)[TL_N_CRS],
+                       bool                                          (*o_admL0)[TL_N_CRS],
+                       bool                                          (*o_admL1)[TL_N_CRS],
+                       bool                                          (*io_lock)[TL_N_CRS],
                        unsigned int                                  (*io_limSync)[TL_N_CRS],
 #ifndef __INTEL_COMPILER
                        TL_T_REAL              const (* const * const   i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
@@ -477,7 +482,8 @@ class edge::sc::Limiter {
                        TL_T_REAL                                    (**i_tDofsDg[2])[TL_N_MDS_EL][TL_N_CRS],
 #endif
                        TL_T_REAL                                     (*io_dofsDg)[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                       TL_T_REAL              const                  (*i_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                       TL_T_REAL                                  (* (*i_tDofsScP) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                       TL_T_REAL                                  (* (*o_tDofsScL) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                        TL_T_REAL                                     (*io_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                        TL_T_REAL                                     (*i_extP)[2][TL_N_QTS][TL_N_CRS],
                        TL_T_REAL                                     (*o_extL)[2][TL_N_QTS][TL_N_CRS],
@@ -517,6 +523,7 @@ class edge::sc::Limiter {
         // iterate over faces and replace DG surface integral with sub-cell surface integral if required
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
           TL_T_LID l_liAd = l_lpFaLi[l_fa];
+          TL_T_LID l_lpAd = i_scConn.lpFaLp[l_lp][l_fa];
 
           // only continue if the face is adjacent to a limited element
           if( l_liAd != std::numeric_limits< TL_T_LID >::max() ) {
@@ -544,7 +551,7 @@ class edge::sc::Limiter {
                        i_fsDgAd[l_el][l_fa],
                        i_tDofsDg[0][l_el],
                        i_tDofsDg[0][l_elAd],
-                       i_tDofsSc[l_liAd][l_fId],
+                     *(i_tDofsScP[l_lpAd][l_fId]),
                        i_tDofsDg[1][l_el],
                        i_tDofsDg[1][l_elAd],
                        io_dofsDg[l_el],
@@ -561,7 +568,8 @@ class edge::sc::Limiter {
           bool l_lim = false;
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             l_lim = l_lim || (i_admC[l_li][l_cr] == false);
-            o_admL[l_li][l_cr] = i_admC[l_li][l_cr];
+            o_admL0[l_li][l_cr] = i_admC[l_li][l_cr];
+            o_admL1[l_li][l_cr] = i_admC[l_li][l_cr];
           }
 
           if( l_lim ) {
@@ -582,12 +590,13 @@ class edge::sc::Limiter {
               TL_T_LID l_adFa = i_elFa[l_el][l_fa];
               TL_T_LID l_adEl = i_elFaEl[l_el][l_fa];
               TL_T_LID l_adLi = l_lpFaLi[l_fa];
+              TL_T_LID l_adLp = i_scConn.lpFaLp[l_lp][l_fa];
 
               l_spTypes[l_fa] = i_charsFa[l_adFa].spType;
 
               // TODO: replace with generic ibnd sp-type
               if( ( l_spTypes[l_fa] & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
-                l_netUpSc[l_fa] = i_tDofsSc[l_li][l_fa];
+                l_netUpSc[l_fa] = *(i_tDofsScP[l_lp][l_fa]);
               }
               else {
                 l_netUpSc[l_fa] = nullptr;
@@ -604,7 +613,7 @@ class edge::sc::Limiter {
               // set adjacent admissibility and SC dofs
               if( l_adLi < std::numeric_limits< TL_T_LID >::max() ) {
                 l_admAdP[l_fa]    = i_admP[l_adLi];
-                l_dofsScAdP[l_fa] = i_tDofsSc[l_adLi][l_fId];
+                l_dofsScAdP[l_fa] = *(i_tDofsScP[l_adLp][l_fId]);
               }
               else {
                 l_admAdP[l_fa]    = nullptr;
@@ -677,11 +686,12 @@ class edge::sc::Limiter {
 
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               // lock solution in sub-cell space if required
-              l_admL[l_cr] = l_admL[l_cr] && !i_lock[l_li][l_cr];
+              l_admL[l_cr] = l_admL[l_cr] && !io_lock[l_li][l_cr];
 
               // set admissibility of the limited solution
               if( i_admC[l_li][l_cr] == false ) {
-                o_admL[l_li][l_cr] = l_admL[l_cr];
+                o_admL0[l_li][l_cr] = l_admL[l_cr];
+                o_admL1[l_li][l_cr] = l_admL[l_cr];
               }
             }
 
@@ -712,6 +722,37 @@ class edge::sc::Limiter {
 
 
           }
+        }
+
+
+        // everything is updated: the final solution is either DG or SC: update sub-cell tDofs for next time step
+        for( unsigned short l_fa = 0 ; l_fa < TL_N_FAS; l_fa++ ) {
+          if( o_tDofsScL[l_lp][l_fa] != nullptr ) {
+            unsigned short l_fMatId  = i_vIdElFaEl[l_el][l_fa] * TL_N_FAS;
+                           l_fMatId += l_fa;
+            edge::sc::Kernels<
+              TL_T_EL,
+              TL_O_SP,
+              TL_N_QTS,
+              TL_N_CRS >::scatterFaVanilla(   io_dofsDg[l_el],
+                                              i_scOps.scatterSurf[TL_N_FAS+l_fMatId],
+                                            *(o_tDofsScL[l_lp][l_fa]) );
+          }
+        }
+        if( l_li != std::numeric_limits< TL_T_LID >::max() ) {
+          // reset lock
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+            io_lock[l_li][l_cr] = false;
+
+          edge::sc::Kernels< TL_T_EL,
+                             TL_O_SP,
+                             TL_N_QTS,
+                             TL_N_CRS >::gatherSurfDofs( io_dofsSc[l_li],
+                                                         i_scConn.faSfSc,
+                                                         i_scConn.scDgAd,
+                                                         i_vIdElFaEl[l_el],
+                                                         o_tDofsScL[l_lp],
+                                                         o_admL0[l_li] );
         }
 
       }

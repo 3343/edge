@@ -395,9 +395,10 @@ class edge::sc::Init {
      *      3) number of limits since sync to zero.
      *
      * @param i_nLim number of limited elements.
+     * @param i_nLimP number of limited plus elements.
      * @param i_nExt number of extrema elements.
      * @param o_dofs sub-cell dofs.
-     * @param o_surf sub-cell tDofs at the elements' faces.
+     * @param o_tDofs sub-cell (dual-buffered) dofs at the surface.
      * @param o_ext extrema.
      * @param o_adm admissibility.
      * @param o_lock locks.
@@ -409,9 +410,10 @@ class edge::sc::Init {
     template< typename TL_T_LID,
               typename TL_T_REAL >
     static void data( TL_T_LID        i_nLim,
+                      TL_T_LID        i_nLimP,
                       TL_T_LID        i_nExt,
                       TL_T_REAL    (* o_dofs)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                      TL_T_REAL    (* o_surf)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                      TL_T_REAL    (* o_tDofsRaw[2])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                       TL_T_REAL    (* o_ext[2])[2][TL_N_QTS][TL_N_CRS],
                       bool         (* o_adm[3])[TL_N_CRS],
                       bool         (* o_lock)[TL_N_CRS],
@@ -426,14 +428,8 @@ class edge::sc::Init {
           for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ )
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               o_dofs[l_li][l_qt][l_sc][l_cr] = 0;
-        // init tDofs at surface
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ )
-          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ )
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                o_surf[l_li][l_fa][l_qt][l_sf][l_cr] = 0;
         // init admissibility
-        for( unsigned short l_ad = 0; l_ad < 3; l_ad++ )
+        for( unsigned short l_ad = 0; l_ad < 4; l_ad++ )
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
             o_adm[l_ad][l_li][l_cr] = true;
         // init locks
@@ -443,6 +439,19 @@ class edge::sc::Init {
         for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
           o_limSync[l_li][l_cr] = 0;
       }
+
+      // itearate over two-way buffers
+      for( unsigned short l_bu = 0; l_bu < 2; l_bu++ )
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+        // iterate over limited plus elements
+        for( TL_T_LID l_lp = 0; l_lp < i_nLimP; l_lp++ )
+          for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ )
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+              for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ )
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                  o_tDofsRaw[l_bu][l_lp*TL_N_FAS + l_fa][l_qt][l_sf][l_cr] = 0;
 
       // iterate over extrema
 #ifdef PP_USE_OMP

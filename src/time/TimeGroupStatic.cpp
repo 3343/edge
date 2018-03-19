@@ -103,6 +103,9 @@ void edge::time::TimeGroupStatic::limSync() {
   sc::Steering::resetAdm( m_updatesSync,
                           m_internal.m_globalShared2[0].adm );
 
+  sc::Steering::resetDofs( m_updatesSync,
+                           m_internal.m_globalShared2[0].tDofs );
+
   sc::Steering::resetExt( m_updatesSync,
                           m_internal.m_globalShared2[0].ext );
 }

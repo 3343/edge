@@ -22,9 +22,14 @@
  **/
 
 // get admissibility ids
-unsigned short l_admId[3];
+unsigned short l_admId[4];
 edge::sc::Steering::getAdmIds( m_updatesSync,
                                l_admId );
+
+// get sc tDofs ids
+unsigned short l_tDofsIds[2];
+edge::sc::Steering::getDofsIds( m_updatesSync,
+                                l_tDofsIds );
 
 // get extrema ids
 unsigned short l_extIds[2];
@@ -58,24 +63,13 @@ if( i_step == 0 ) {
             i_size,
             m_covSimTime,
             m_dT,
-            i_enSp[2].first,
             i_enSp[0].first,
-            m_internal.m_globalShared2[0].connect.faSfSc,
-            m_internal.m_globalShared2[0].connect.scDgAd,
-            m_internal.m_connect.elFa,
-            m_internal.m_faceChars,
             m_internal.m_elementChars,
             m_internal.m_globalShared1[0],
             m_internal.m_elementShared4,
             m_internal.m_elementShared2,
-            m_internal.m_connect.vIdElFaEl,
             m_internal.m_elementModePrivate1,
-            m_internal.m_globalShared2[0].dofs,
             m_internal.m_globalShared6,
-            m_internal.m_globalShared2[0].surf,
-            m_internal.m_globalShared2[0].adm[ l_admId[0] ],
-            m_internal.m_globalShared2[0].adm[ l_admId[1] ],
-            m_internal.m_globalShared2[0].lock,
             io_recvs,
             m_internal.m_mm );
 #endif
@@ -108,12 +102,14 @@ else if( i_step == 1 ) {
             i_size,
             i_enSp[0].first,
             i_enSp[1].first,
+            i_enSp[2].first,
             m_internal.m_globalShared1[0],
             m_internal.m_globalShared2[0].ops.scatter,
             m_internal.m_faceChars,
             m_internal.m_elementChars,
             m_internal.m_elementShared3,
-            m_internal.m_globalShared2[0].connect.liLp,
+            m_internal.m_globalShared2[0].connect.faSfSc,
+            m_internal.m_globalShared2[0].connect.scDgAd,
             m_internal.m_globalShared2[0].connect.lpFaLp,
             m_internal.m_connect.elFa,
             m_internal.m_connect.elFaEl,
@@ -124,6 +120,7 @@ else if( i_step == 1 ) {
             m_internal.m_globalShared2[0].adm[ l_admId[1] ],
             m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
             m_internal.m_globalShared2[0].ext[ l_extIds[1] ],
+            m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[1] ],
             m_internal.m_mm
           );
 #endif
@@ -172,15 +169,13 @@ else if ( i_step == 2 ) {
   (real_base) m_covSimTime,
   (real_base) m_dT,
               m_internal.m_globalShared2[0].connect.scDgAd,
-              m_internal.m_globalShared2[0].ops.scatterSurf,
+              m_internal.m_globalShared2[0].connect.liLp,
               m_internal.m_elementShared4,
               m_internal.m_globalShared7[0],
               m_internal.m_globalShared5[0].gl,
               m_internal.m_globalShared5[0].fa,
               m_internal.m_globalShared5[0].sf,
-              m_internal.m_globalShared6[1],
-              m_internal.m_globalShared2[0].surf,
-              m_internal.m_faceSparseShared4,
+              m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[0] ],
               m_internal.m_globalShared2[0].adm[ l_admId[0] ],
               m_internal.m_globalShared2[0].adm[ l_admId[1] ],
               m_internal.m_globalShared2[0].lock,
@@ -226,11 +221,13 @@ else if( i_step == 3 ) {
                           m_internal.m_globalShared2[0].adm[ l_admId[0] ],
                           m_internal.m_globalShared2[0].adm[ l_admId[1] ],
                           m_internal.m_globalShared2[0].adm[ l_admId[2] ],
+                          m_internal.m_globalShared2[0].adm[ l_admId[3] ],
                           m_internal.m_globalShared2[0].lock,
                           m_internal.m_globalShared2[0].limSync,
                           m_internal.m_globalShared6,
                           m_internal.m_elementModePrivate1,
-                          m_internal.m_globalShared2[0].surf,
+                          m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[0] ],
+                          m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[1] ],
                           m_internal.m_globalShared2[0].dofs,
                           m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
                           m_internal.m_globalShared2[0].ext[ l_extIds[1] ],

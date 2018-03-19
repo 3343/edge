@@ -54,9 +54,10 @@ unsigned short l_limPlusLayout;
                   ORDER,
                   N_QUANTITIES,
                   N_CRUNS >::data( l_nLim,
+                                   l_enLayouts[l_limPlusLayout].nEnts,
                                    l_nScExt,
                                    l_internal.m_globalShared2[0].dofs,
-                                   l_internal.m_globalShared2[0].surf,
+                                   l_internal.m_globalShared2[0].tDofsRaw,
                                    l_internal.m_globalShared2[0].ext,
                                    l_internal.m_globalShared2[0].adm,
                                    l_internal.m_globalShared2[0].lock,
@@ -98,4 +99,16 @@ unsigned short l_limPlusLayout;
                                         t_enTypeShared::EXTREMA,
                                         l_internal.m_elementChars,
                                         l_internal.m_globalShared2[0].connect.liEx );
+
+  // setup pointer data structure for sub-cell tDofs (dual buffer)
+  std::vector< std::vector< unsigned char * > > l_tDofsScMpi[2][2];
+  for( unsigned short l_bu = 0; l_bu < 2; l_bu++ )
+    edge::data::DataLayout::adj( C_ENT[T_SDISC.ELEMENT].N_FACES,
+                                 l_internal.m_globalShared2[0].connect.lpFaLp[0],
+                                 l_enLayouts[l_limPlusLayout],
+                                 l_internal.m_globalShared2[0].tDofsRaw[l_bu],
+                                 l_internal.m_globalShared2[0].tDofs[l_bu],
+                                 l_tDofsScMpi[l_bu][0],
+                                 l_tDofsScMpi[l_bu][1],
+                                 l_internal.m_globalShared2[0].connect.lpLi );
 }

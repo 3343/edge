@@ -75,15 +75,25 @@ class edge::sc::Memory {
       //! number of sub-faces per element face
       const unsigned short TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
+      //! number of faces
+      const unsigned short TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
       // DOFs
       std::size_t l_dofsSize  = TL_N_QTS * (std::size_t) TL_N_SCS * TL_N_CRS;
                   l_dofsSize *= i_nLim * sizeof(TL_T_REAL);
       o_lim.dofs =  (TL_T_REAL (*) [TL_N_QTS][TL_N_SCS][TL_N_CRS]) io_dynMem.allocate( l_dofsSize );
 
-      // DOFs at DG-element boundaries
-      std::size_t l_surfSize  = C_ENT[TL_T_EL].N_FACES * TL_N_QTS * (std::size_t) TL_N_SFS * TL_N_CRS;
-                  l_surfSize *= i_nLim * sizeof(TL_T_REAL);
-      o_lim.surf =  (TL_T_REAL (*) [C_ENT[TL_T_EL].N_FACES][TL_N_QTS][TL_N_SFS][TL_N_CRS]) io_dynMem.allocate( l_surfSize );
+      // tDofs (this overestimates the memory requirements, as lp only requires selcted faces)
+      std::size_t l_tDofsRawSize  = TL_N_FAS * TL_N_QTS * (std::size_t) TL_N_SFS * TL_N_CRS;
+                  l_tDofsRawSize *= i_nLimPlus * sizeof(TL_T_REAL);
+      for( unsigned short l_bu = 0; l_bu < 2; l_bu++ )
+        o_lim.tDofsRaw[l_bu] = (TL_T_REAL (*) [TL_N_QTS][TL_N_SFS][TL_N_CRS]) io_dynMem.allocate( l_tDofsRawSize );
+
+      // size of the tDofs pointer structures
+      std::size_t l_tDofsPtrSize  = TL_N_FAS;
+                  l_tDofsPtrSize *= i_nLimPlus * sizeof(TL_T_REAL*);
+      for( unsigned short l_bu = 0; l_bu < 2; l_bu++ )
+        o_lim.tDofs[l_bu] =  (TL_T_REAL (* (*) [TL_N_FAS]) [TL_N_QTS][TL_N_SFS][TL_N_CRS]) io_dynMem.allocate( l_tDofsPtrSize );
 
       // admissibility of the DG solution
       std::size_t l_admSize =  TL_N_CRS;
@@ -91,6 +101,7 @@ class edge::sc::Memory {
       o_lim.adm[0] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
       o_lim.adm[1] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
       o_lim.adm[2] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
+      o_lim.adm[3] = (bool (*) [TL_N_CRS]) io_dynMem.allocate( l_admSize );
 
       // lock for sub-cell solution
       std::size_t l_lockSize =  TL_N_CRS;

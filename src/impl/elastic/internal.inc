@@ -53,11 +53,6 @@ typedef edge::elastic::solvers::t_LinSlipWeak< real_base,
                                                T_SDISC.ELEMENT,
                                                ORDER,
                                                N_CRUNS> t_globalShared5;
-
-// updates for left and right side
-#define PP_N_FACE_SPARSE_SHARED_4 2
-typedef real_base t_faceSparseShared4[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS];
-
 // DOFs of the rupture elements
 #define PP_N_ELEMENT_SPARSE_SHARED_3 1
 typedef real_base t_elementSparseShared3[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS];

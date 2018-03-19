@@ -241,24 +241,13 @@ class edge::elastic::solvers::AderDg {
      * @param i_nElements number of elements.
      * @param i_time time of the initial DOFs.
      * @param i_dt time step.
-     * @param i_firstSpLe first limited element.
      * @param i_firstSpRe first sparse receiver entity.
-     * @param i_faSfSc sub-cells adjacent to DG-faces (sub-faces as "bridge").
-     * @param i_scDgAd adjacency of sub-cells at faces of face-adjacent elements.
-     * @param i_elFa faces adjacent to the elements.
-     * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_dg const DG data.
      * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers for the local element's contribution.
-     * @param i_vIdElFaEl vertex combinations of adajcent elements (faces as bridge).
      * @param io_dofs DOFs.
-     * @param i_dofsSc sub-cell limited solution.
      * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
-     * @param o_tDofsSc will be set to temporary sub-cell solution for sub-cells adjacent to DG-faces.
-     * @param i_admP admissibility of the previous solution.
-     * @param o_admC admissibility of the candidate solution, which will be initilizated with the previous solution.
-     * @param o_lock lock for the sub-cell solution will be set to false for all limited elements.
      * @param io_recvs will be updated with receiver info.
      * @param i_mm matrix-matrix multiplication kernels for the local step.
      *
@@ -273,30 +262,15 @@ class edge::elastic::solvers::AderDg {
                        TL_T_LID                             i_nElements,
                        double                               i_time,
                        double                               i_dt,
-                       TL_T_LID                             i_firstSpLe,
                        TL_T_LID                             i_firstSpRe,
-                       unsigned short const                 i_faSfSc[TL_N_FAS][TL_N_SFS],
-                       unsigned short const                 i_scDgAd[TL_N_VES_FA][TL_N_SFS],
-                       TL_T_LID                    const (* i_elFa)[TL_N_FAS],
-                       t_faceChars                 const  * i_faChars,
                        t_elementChars              const  * i_elChars,
                        t_dg                        const  & i_dg,
                        t_matStar                   const (* i_starM)[TL_N_DIS],
                        t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
-                       unsigned short              const (* i_vIdElFaEl)[TL_N_FAS],
                        TL_T_REAL                         (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL                   const (* i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                        TL_T_REAL        (* const * const    o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL                         (* o_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                       bool                        const (* i_admP)[TL_N_CRS],
-                       bool                              (* o_admC)[TL_N_CRS],
-                       bool                              (* o_lock)[TL_N_CRS],
                        edge::io::Receivers                & io_recvs,
-                       TL_T_MM                     const  & i_mm
-                     ) {
-      // counter for limited elements
-      TL_T_LID l_le = i_firstSpLe;
-
+                       TL_T_MM                     const  & i_mm ) {
       // counter for receivers
       unsigned int l_enRe = i_firstSpRe;
 
@@ -402,42 +376,6 @@ class edge::elastic::solvers::AderDg {
                                     l_tmpFa,
                                     l_preDofs,
                                     l_preTint );
-
-        // set admissibility and store limited solution where required
-        if( (i_elChars[l_el].spType & LIMIT) != LIMIT ) {}
-        else {
-          // init admissibility
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            o_admC[l_le][l_cr] = i_admP[l_le][l_cr];
-            o_lock[l_le][l_cr] = false;
-          }
-
-          // iterate over DG-faces
-          for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-            unsigned short l_vId = i_vIdElFaEl[l_el][l_fa];
-            // default to 0 if not defined (boundary conditions)
-            if( l_vId >= TL_N_VES_EL ) l_vId = 0;
-
-            // iterate over quantities
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-              // iterate over sub-faces
-              for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-                // determine sub-face from the view of the adjacent element
-                unsigned short l_sfRe = i_scDgAd[l_vId][l_sf];
-
-                // get id of copy sub-cell (faces as bridge)
-                TL_T_LID l_sc = i_faSfSc[l_fa][l_sfRe];
-
-                // copy over the sub-cell DOFs; we already respect possible vertex combis and the change in orientation
-                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  o_tDofsSc[l_le][l_fa][l_qt][l_sf][l_cr] = i_dofsSc[l_le][l_qt][l_sc][l_cr];
-                }
-              }
-            }
-          }
-
-          l_le++;
-        }
       }
     }
 
@@ -446,19 +384,16 @@ class edge::elastic::solvers::AderDg {
      *
      * @param i_first first rupture faces.
      * @param i_nBf number of rupture faces at the internal boundary.
-     * @param i_firstReSp first sparse id of the receivers.
+     * @param i_firstSpRe first sparse id of the receivers.
      * @param i_time current time of the faces.
      * @param i_dt time step of the two adjacent elements.
      * @param i_scDgAd adjacency of sub-cells at the faces of face-adjacent elements.
-     * @param i_scatterSurf scatter operator for sub-cells at the DG-faces.
      * @param i_starM star matrices.
      * @param i_iBnd internal boundary data.
      * @param i_frictionGlobal global data of the friction law.
      * @param i_frictionFa face-local data of the friction law.
      * @param i_frictionSf data of the friction law local to the sub-faces of the DG-faces.
-     * @param i_tDofsDg temporary DG DOFs.
-     * @param i_tDofsSc temporary sub-cell DOFs.
-     * @param o_updates will be set to element-updates resulting from the flux computation. [0]: left side, [1]: right side.
+     * @param io_tDofs sub-cell tDOFs, which will be updated with net-updates.
      * @param i_admP admissiblity of the previous solution.
      * @param io_admC admissiblity of the candidate solution, will be set to false if any of the DG-faces are rupture faces and the fault failed.
      * @param io_lock lock for the sub-cell solution. Will be set to true for all active rupture elements.
@@ -479,39 +414,30 @@ class edge::elastic::solvers::AderDg {
               typename TL_T_FRI_SF,
               typename TL_T_SP,
               typename TL_T_RECV_SF >
-    static void rupture( TL_T_LID                                             i_first,
-                         TL_T_LID                                             i_nBf,
-                         TL_T_LID                                             i_firstSpRe,
-                         TL_T_REAL                                            i_time,
-                         TL_T_REAL                                            i_dt,
-                         unsigned short                              const    i_scDgAd[TL_N_VES_FA][TL_N_SFS],
-                         TL_T_REAL                                   const    i_scatterSurf[TL_N_FAS*2][TL_N_MDS][TL_N_SFS],
-                         t_matStar                                   const (* i_starM)[TL_N_DIS],
+    static void rupture( TL_T_LID                                       i_first,
+                         TL_T_LID                                       i_nBf,
+                         TL_T_LID                                       i_firstSpRe,
+                         TL_T_REAL                                      i_time,
+                         TL_T_REAL                                      i_dt,
+                         unsigned short                      const      i_scDgAd[TL_N_VES_FA][TL_N_SFS],
+                         TL_T_LID                            const   (* i_liLp),
+                         t_matStar                           const   (* i_starM)[TL_N_DIS],
                          edge::sc::ibnd::t_InternalBoundary<
                            TL_T_LID,
                            TL_T_REAL,
                            TL_T_SP,
                            TL_T_EL,
-                           TL_N_QTS >                                const  & i_iBnd,
-                         TL_T_FRI_GL                                        & i_frictionGlobal,
-                         TL_T_FRI_FA                                        * i_frictionFa,
-                         TL_T_FRI_SF                                       (* i_frictionSf)[TL_N_SFS],
-#ifndef __INTEL_COMPILER
-                         TL_T_REAL                  const (* const * const    i_tDofsDg)[TL_N_MDS][TL_N_CRS],
-#else
-                         TL_T_REAL                                         (**i_tDofsDg)[TL_N_MDS][TL_N_CRS],
-#endif
-                         TL_T_REAL                                         (* io_tDofsSc)[TL_N_FAS][TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                         TL_T_REAL                                         (* o_updates)[2][TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                         bool                                        const (* i_admP)[TL_N_CRS],
-                         bool                                              (* io_admC)[TL_N_CRS],
-                         bool                                              (* io_lock)[TL_N_CRS],
-                         TL_T_RECV_SF                                       & io_recvsSf ) {
+                           TL_N_QTS >                        const     & i_iBnd,
+                         TL_T_FRI_GL                                   & i_frictionGlobal,
+                         TL_T_FRI_FA                                   * i_frictionFa,
+                         TL_T_FRI_SF                                  (* i_frictionSf)[TL_N_SFS],
+                         TL_T_REAL                                  (* (*io_tDofs) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                         bool                                const    (* i_admP)[TL_N_CRS],
+                         bool                                         (* io_admC)[TL_N_CRS],
+                         bool                                         (* io_lock)[TL_N_CRS],
+                         TL_T_RECV_SF                                  & io_recvsSf ) {
      // store sparse receiver id
      TL_T_LID l_faRe = i_firstSpRe;
-
-      // scratch memory
-//      TL_T_REAL l_scratch[4][TL_N_QTS][TL_N_MDS][TL_N_CRS];
 
       // struct for the pertubation of the middle states
       struct {
@@ -525,39 +451,24 @@ class edge::elastic::solvers::AderDg {
 
       // iterate over internal boundary faces
       for( TL_T_LID l_bf = i_first; l_bf < i_first+i_nBf; l_bf++ ) {
-        // get sparse rupture elements
-        TL_T_LID const *l_be = i_iBnd.connect.bfBe[l_bf];
-
         // get limited elements
-        TL_T_LID const *l_le = i_iBnd.connect.bfLe[l_bf];
+        TL_T_LID const *l_li = i_iBnd.connect.bfLe[l_bf];
 
-        // get local face ids
+        // get corresponding limited plus elements
+        TL_T_LID l_lp[2];
+        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) l_lp[l_sd] = i_liLp[ l_li[l_sd] ];
+
+        // get local face ids and vertex id
         unsigned short const *l_fIdBfEl = i_iBnd.bfChars[l_bf].fIdBfEl;
+        unsigned short const l_vIdFaEl = i_iBnd.bfChars[l_bf].vIdFaElR;
 
         // get sub-cell solution at DG-faces
         TL_T_REAL l_dofsSc[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
-
-        // vertex combination
-        unsigned short l_vIdFaEl = i_iBnd.bfChars[l_bf].vIdFaElR;
-
-        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-          // get dense element
-          TL_T_LID l_el = i_iBnd.connect.beEl[ l_be[l_sd] ];
-
-          unsigned short l_fId  = TL_N_FAS;             // jump of local scatter ops
-                         l_fId += l_vIdFaEl * TL_N_FAS; // jump over vertex combis
-                         l_fId += l_fIdBfEl[l_sd];      // jump over faces
-
-          edge::sc::Kernels<
-            TL_T_EL,
-            TL_O_SP,
-            TL_N_QTS,
-            TL_N_CRS >::scatterReplaceFaVanilla( i_tDofsDg[l_el],
-                                                 i_scatterSurf[l_fId],
-                                                 io_tDofsSc[ l_le[l_sd] ][ l_fIdBfEl[l_sd] ],
-                                                 i_admP[ l_le[l_sd] ],
-                                                 l_dofsSc[l_sd] );
-        }
+        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ )
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                l_dofsSc[l_sd][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[l_sd] ][ l_fIdBfEl[l_sd] ])[l_qt][l_sf][l_cr];
 
         // at this point both faces are reordered: fix storage of left element's sub-cells by reapplying the permutation
         for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
@@ -607,8 +518,8 @@ class edge::elastic::solvers::AderDg {
              unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
 
              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-               io_tDofsSc[ l_le[0] ][ l_fIdBfEl[0] ][l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
-               io_tDofsSc[ l_le[1] ][ l_fIdBfEl[1] ][l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
+               (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
+               (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
              }
            }
          }
@@ -618,11 +529,11 @@ class edge::elastic::solvers::AderDg {
            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
              // set admissibility and lock only for active rupture (avoids trouble in shared memory parallelization)
              if( l_rup[l_sf][l_cr] ) {
-               io_admC[ l_le[0] ][l_cr] = false;
-               io_admC[ l_le[1] ][l_cr] = false;
+               io_admC[ l_li[0] ][l_cr] = false;
+               io_admC[ l_li[1] ][l_cr] = false;
 
-               io_lock[ l_le[0] ][l_cr] = true;
-               io_lock[ l_le[1] ][l_cr] = true;
+               io_lock[ l_li[0] ][l_cr] = true;
+               io_lock[ l_li[1] ][l_cr] = true;
              }
            }
          }
@@ -664,13 +575,13 @@ class edge::elastic::solvers::AderDg {
      * @param i_first first element considered.
      * @param i_nElements number of elements.
      * @param i_firstLi first limited element.
+     * @param i_firstLp first limited plus element.
      * @param i_firstEx first element computing extrema.
      * @param i_dg constant DG data.
      * @param i_scatter scatter opterators (DG -> sub-cells).
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_fluxSolvers flux solvers for the neighboring elements' contribution.
-     * @param i_liLp limited plus ids of limited elements.
      * @param i_lpFaLp limited plus elements adjacent to limited plus (faces as bridge).
      * @param i_elFa elements' adjacent faces.
      * @param i_elFaEl face-neighboring elements.
@@ -693,13 +604,15 @@ class edge::elastic::solvers::AderDg {
     static void neigh( TL_T_LID                              i_first,
                        TL_T_LID                              i_nElements,
                        TL_T_LID                              i_firstLi,
+                       TL_T_LID                              i_firstLp,
                        TL_T_LID                              i_firstEx,
                        t_dg           const                & i_dg,
                        TL_T_REAL      const                  i_scatter[TL_N_MDS][TL_N_SCS],
                        t_faceChars    const                * i_faChars,
                        t_elementChars const                * i_elChars,
                        t_fluxSolver   const               (* i_fluxSolvers)[TL_N_FAS],
-                       TL_T_LID       const                * i_liLp,
+                       unsigned short const                  i_faSfSc[TL_N_FAS][TL_N_SFS],
+                       unsigned short const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                        TL_T_LID       const               (* i_lpFaLp)[TL_N_FAS],
                        TL_T_LID       const               (* i_elFa)[TL_N_FAS],
                        TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
@@ -714,9 +627,13 @@ class edge::elastic::solvers::AderDg {
                        bool                               (* io_admC)[TL_N_CRS],
                        TL_T_REAL      const               (* i_extP)[2][TL_N_QTS][TL_N_CRS],
                        TL_T_REAL                          (* o_extC)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_MM        const               & i_mm ) {
+                       TL_T_REAL                        (* (*o_tDofsSc) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                       TL_T_MM        const                & i_mm ) {
       // counter for elements computing extrema
       TL_T_LID l_ex = i_firstEx;
+
+      // counter for limited plus elements
+      TL_T_LID l_lp = i_firstLp;
 
       // counter for limited elements
       TL_T_LID l_li = i_firstLi;
@@ -801,30 +718,41 @@ class edge::elastic::solvers::AderDg {
                                                             o_extC[l_ex][0],
                                                             o_extC[l_ex][1] );
 
-          // set admissibility
-          if( ( i_elChars[l_el].spType & LIMIT ) == LIMIT ) {
-            bool l_adm[TL_N_CRS];
+          // store the surface sub-cells
+          if( ( i_elChars[l_el].spType & LIMIT_PLUS ) == LIMIT_PLUS ) {
+            edge::sc::Kernels< TL_T_EL,
+                               TL_O_SP,
+                               TL_N_QTS,
+                               TL_N_CRS >::gatherSurfDofs( l_subCell,
+                                                           i_faSfSc,
+                                                           i_scDgAd,
+                                                           i_vIdElFaEl[l_el],
+                                                           o_tDofsSc[l_lp] );
 
-            // check for admissibility of the DG solutions through discrete maximum principle
-            TL_T_LID l_lp = i_liLp[l_li];
+            // set admissibility
+            if( ( i_elChars[l_el].spType & LIMIT ) == LIMIT ) {
+              bool l_adm[TL_N_CRS];
 
-            edge::sc::Detections< TL_T_EL,
-                                  TL_N_QTS,
-                                  TL_N_CRS >::dmpFa( i_extP[l_ex],
-                                                     i_extP,
-                                                     o_extC[l_ex],
-                                                     i_lpFaLp[l_lp],
-                                                     l_adm );
+              edge::sc::Detections< TL_T_EL,
+                                    TL_N_QTS,
+                                    TL_N_CRS >::dmpFa( i_extP[l_ex],
+                                                       i_extP,
+                                                       o_extC[l_ex],
+                                                       i_lpFaLp[l_lp],
+                                                       l_adm );
 
-            // update admissibility
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
-              if( l_adm[l_cr] == false )
-                io_admC[l_li][l_cr] = false;
+              // update admissibility
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
+                if( l_adm[l_cr] == false )
+                  io_admC[l_li][l_cr] = false;
+              }
+
+              // increase counter of limited elements
+              l_li++;
             }
-
-            // increase counter of limited elements
-            l_li++;
+            // increase counter of limited plus elements
+            l_lp++;
           }
 
           // increase counter of extrema elements
