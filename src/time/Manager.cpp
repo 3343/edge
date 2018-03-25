@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,6 +23,7 @@
 
 #include "Manager.h"
 #include "monitor/instrument.hpp"
+#include "sc/Steering.hpp"
 
 void edge::time::Manager::schedule() {
 #if defined PP_T_EQUATIONS_ADVECTION

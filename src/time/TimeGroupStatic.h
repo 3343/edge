@@ -65,7 +65,7 @@ class edge::time::TimeGroupStatic {
     double m_covSimTime;
 
     //! elements/faces under control of this cluster
-    data::Internal m_internal;
+    data::Internal &m_internal;
 
     /**
      * Sets the time step for the current update.
@@ -80,9 +80,9 @@ class edge::time::TimeGroupStatic {
      * @param i_funMult global rate with respect to the fundamental time step.
      * @param i_internal data under control of this cluster.
      **/
-    TimeGroupStatic(       int_ts          i_rate,
-                           int_ts          i_funMult,
-                     const data::Internal &i_internal );
+    TimeGroupStatic( int_ts          i_rate,
+                     int_ts          i_funMult,
+                     data::Internal &i_internal );
 
     /**
      * Sets up the cluster for iterations until the given synchronization point.
@@ -139,6 +139,13 @@ class edge::time::TimeGroupStatic {
     int_ts getUpdatesPer() { return m_updatesPer; }
 
     /**
+     * Gets the covered simulation time.
+     *
+     * @return covered simulation time.
+     **/
+    double getCovSimTime() { return m_covSimTime; };
+
+    /**
      * Checks if the cluster is performing its last time step
      *
      * @return true if the cluster is performing its last time step. false otherwise
@@ -154,6 +161,36 @@ class edge::time::TimeGroupStatic {
      **/
     bool finished() const {
       return m_updatesReq == 0;
+    }
+
+    /**
+     * Gets the unique identifier for the data of the admissibility.
+     *
+     * @param i_adm local id of the admissibility (previous, canditate, limited #1, limited #2).
+     **/
+    std::uintptr_t getAdmDataId( unsigned short i_adm ) {
+      EDGE_CHECK_LT( i_adm, 4 );
+      return reinterpret_cast< std::intptr_t >( m_internal.m_globalShared2[0].adm[i_adm] );
+    }
+
+    /**
+     * Gets the unique identifier for the data of the SC Dofs.
+     *
+     * @param i_do local id of the SC DOFs (previous/current).
+     **/
+    std::uintptr_t getDofsScDataId( unsigned short i_do ) {
+      EDGE_CHECK_LT( i_do, 2 );
+      return reinterpret_cast< std::intptr_t >( m_internal.m_globalShared2[0].tDofs[i_do] );
+    }
+
+    /**
+     * Gets the unique identifier for the data of the extrema.
+     *
+     * @param i_ex local id of the extrema (previous/current).
+     **/
+    std::uintptr_t getExDataId( unsigned short i_ex ) {
+      EDGE_CHECK_LT( i_ex, 2 );
+      return reinterpret_cast< std::intptr_t >( m_internal.m_globalShared2[0].ext[i_ex] );
     }
 };
 

@@ -134,7 +134,7 @@ class edge::elastic::solvers::AderDg {
 
       // iterate over elements
 #ifdef PP_USE_OMP
-#pragma omp parallel for num_threads( std::max( parallel::g_nThreads-1, 1 ) )
+#pragma omp parallel for
 #endif
       for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
         // derive jacobians of the pdes
@@ -388,13 +388,13 @@ class edge::elastic::solvers::AderDg {
      * @param i_time current time of the faces.
      * @param i_dt time step of the two adjacent elements.
      * @param i_scDgAd adjacency of sub-cells at the faces of face-adjacent elements.
+     * @parma i_liDoLiDu possibly duplicated limited elements, adjacent to an the dominant one.
      * @param i_starM star matrices.
      * @param i_iBnd internal boundary data.
      * @param i_frictionGlobal global data of the friction law.
      * @param i_frictionFa face-local data of the friction law.
      * @param i_frictionSf data of the friction law local to the sub-faces of the DG-faces.
      * @param io_tDofs sub-cell tDOFs, which will be updated with net-updates.
-     * @param i_admP admissiblity of the previous solution.
      * @param io_admC admissiblity of the candidate solution, will be set to false if any of the DG-faces are rupture faces and the fault failed.
      * @param io_lock lock for the sub-cell solution. Will be set to true for all active rupture elements.
      * @param io_recvsSf receivers at sub-faces.
@@ -420,6 +420,7 @@ class edge::elastic::solvers::AderDg {
                          TL_T_REAL                                      i_time,
                          TL_T_REAL                                      i_dt,
                          unsigned short                      const      i_scDgAd[TL_N_VES_FA][TL_N_SFS],
+                         TL_T_LID                            const   (* i_liDoLiDu)[TL_N_FAS],
                          TL_T_LID                            const   (* i_liLp),
                          t_matStar                           const   (* i_starM)[TL_N_DIS],
                          edge::sc::ibnd::t_InternalBoundary<
@@ -432,12 +433,11 @@ class edge::elastic::solvers::AderDg {
                          TL_T_FRI_FA                                   * i_frictionFa,
                          TL_T_FRI_SF                                  (* i_frictionSf)[TL_N_SFS],
                          TL_T_REAL                                  (* (*io_tDofs) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                         bool                                const    (* i_admP)[TL_N_CRS],
                          bool                                         (* io_admC)[TL_N_CRS],
                          bool                                         (* io_lock)[TL_N_CRS],
                          TL_T_RECV_SF                                  & io_recvsSf ) {
-     // store sparse receiver id
-     TL_T_LID l_faRe = i_firstSpRe;
+      // store sparse receiver id
+      TL_T_LID l_faRe = i_firstSpRe;
 
       // struct for the pertubation of the middle states
       struct {
@@ -501,57 +501,90 @@ class edge::elastic::solvers::AderDg {
                i_dt,
               &l_faData );
 
-         // store net-updates
-         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-             // sub-cells are ordered based on the left element; reorder for right element
-             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
+        // store net-updates
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+            // sub-cells are ordered based on the left element; reorder for right element
+            unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
 
-             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
                (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
-             }
-           }
-         }
+            }
+          }
+        }
 
-         // update admissibility
-         for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-             // set admissibility and lock only for active rupture (avoids trouble in shared memory parallelization)
-             if( l_rup[l_sf][l_cr] ) {
-               io_admC[ l_li[0] ][l_cr] = false;
-               io_admC[ l_li[1] ][l_cr] = false;
+        // update admissibility
+        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            // set admissibility and lock only for active rupture (avoids trouble in shared memory parallelization)
+            if( l_rup[l_sf][l_cr] ) {
+              io_admC[ l_li[0] ][l_cr] = false;
+              io_admC[ l_li[1] ][l_cr] = false;
 
-               io_lock[ l_li[0] ][l_cr] = true;
-               io_lock[ l_li[1] ][l_cr] = true;
-             }
-           }
-         }
+              io_lock[ l_li[0] ][l_cr] = true;
+              io_lock[ l_li[1] ][l_cr] = true;
+            }
+          }
+        }
 
-       // check if this face requires receiver output
-       if( (i_iBnd.bfChars[l_bf].spType & RECEIVER) != RECEIVER ){}
-       else {
-         // check if the receiver requires output
-         if( io_recvsSf.getRecvTimeRel( l_faRe, i_time, i_dt ) >= -TOL.TIME ) {
-           // gather receiver data, TODO: outsource
-           TL_T_REAL l_buff[ (TL_N_DIS-1)*3 ][TL_N_SFS][TL_N_CRS];
+        // synchronize possible duplicates
+        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+          for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+            TL_T_LID l_liDu = i_liDoLiDu[ l_li[l_sd] ][l_fa];
 
-           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-             for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
-               for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
-                 l_buff[             0+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].tr[l_di][l_ru];
-                 l_buff[  (TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].sr[l_di][l_ru];
-                 l_buff[2*(TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].dd[l_di][l_ru];
-               }
-             }
-           }
+            if( l_liDu == std::numeric_limits< TL_T_LID >::max() ) break;
+            else {
+              // copy over admissibility and lock
+              for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                  if( l_rup[l_sf][l_cr] ) {
+                    io_admC[ l_liDu ][l_cr] = false;
+                    io_lock[ l_liDu ][l_cr] = true;
+                  }
+                }
+              }
 
-           // write the receiver info
-           io_recvsSf.writeRecvAll( i_time, i_dt, l_faRe, l_buff );
-         }
+              TL_T_LID l_lpDu = i_liLp[ l_liDu ];
 
-         l_faRe++;
-       }
+              // copy over data
+              for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+                for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+                  // sub-cells are ordered based on the left element; reorder for right element
+                  unsigned short l_sfRe = (l_sd == 0) ? l_sf : i_scDgAd[l_vIdFaEl][l_sf];
+
+                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                    (*io_tDofs[ l_lpDu ][ l_fIdBfEl[l_sd] ])[l_qt][l_sf][l_cr] = l_netUps[l_sd][l_qt][l_sfRe][l_cr];
+                }
+              }
+            }
+          }
+        }
+
+        // check if this face requires receiver output
+        if( (i_iBnd.bfChars[l_bf].spType & RECEIVER) != RECEIVER ){}
+        else {
+          // check if the receiver requires output
+          if( io_recvsSf.getRecvTimeRel( l_faRe, i_time, i_dt ) >= -TOL.TIME ) {
+            // gather receiver data, TODO: outsource
+            TL_T_REAL l_buff[ (TL_N_DIS-1)*3 ][TL_N_SFS][TL_N_CRS];
+
+            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+              for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
+                for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
+                  l_buff[             0+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].tr[l_di][l_ru];
+                  l_buff[  (TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].sr[l_di][l_ru];
+                  l_buff[2*(TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].dd[l_di][l_ru];
+                }
+              }
+            }
+
+            // write the receiver info
+            io_recvsSf.writeRecvAll( i_time, i_dt, l_faRe, l_buff );
+          }
+
+          l_faRe++;
+        }
 
         // update pointers
         l_faData.fa++;
@@ -710,31 +743,24 @@ class edge::elastic::solvers::AderDg {
 
           // store the surface sub-cells
           if( ( i_elChars[l_el].spType & LIMIT_PLUS ) == LIMIT_PLUS ) {
-            edge::sc::Kernels< TL_T_EL,
-                               TL_O_SP,
-                               TL_N_QTS,
-                               TL_N_CRS >::gatherSurfDofs( l_subCell,
-                                                           i_faSfSc,
-                                                           i_scDgAd,
-                                                           i_vIdElFaEl[l_el],
-                                                           o_tDofsSc[l_lp] );
-
             // set admissibility
             if( ( i_elChars[l_el].spType & LIMIT ) == LIMIT ) {
-              bool l_adm[TL_N_CRS];
-              edge::sc::Detections< TL_T_EL,
-                                    TL_N_QTS,
-                                    TL_N_CRS >::dmpFa( i_extP[l_ex],
-                                                       i_extP,
-                                                       o_extC[l_ex],
-                                                       i_lpFaLp[l_lp],
-                                                       l_adm );
+              if( ( i_elChars[l_el].spType & RUPTURE ) != RUPTURE ) {
+                bool l_adm[TL_N_CRS];
+                edge::sc::Detections< TL_T_EL,
+                                      TL_N_QTS,
+                                      TL_N_CRS >::dmpFa( i_extP[l_ex],
+                                                        i_extP,
+                                                        o_extC[l_ex],
+                                                        i_lpFaLp[l_lp],
+                                                        l_adm );
 
-              // update admissibility
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
-                if( l_adm[l_cr] == false )
-                  io_admC[l_li][l_cr] = false;
+                // update admissibility
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                  // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
+                  if( l_adm[l_cr] == false )
+                    io_admC[l_li][l_cr] = false;
+                }
               }
 
               // increase counter of limited elements

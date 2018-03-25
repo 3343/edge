@@ -169,6 +169,7 @@ else if ( i_step == 2 ) {
   (real_base) m_covSimTime,
   (real_base) m_dT,
               m_internal.m_globalShared2[0].connect.scDgAd,
+              m_internal.m_globalShared2[0].connect.liDoLiDu,
               m_internal.m_globalShared2[0].connect.liLp,
               m_internal.m_elementShared4,
               m_internal.m_globalShared7[0],
@@ -176,7 +177,6 @@ else if ( i_step == 2 ) {
               m_internal.m_globalShared5[0].fa,
               m_internal.m_globalShared5[0].sf,
               m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[0] ],
-              m_internal.m_globalShared2[0].adm[ l_admId[0] ],
               m_internal.m_globalShared2[0].adm[ l_admId[1] ],
               m_internal.m_globalShared2[0].lock,
               io_recvsSf );

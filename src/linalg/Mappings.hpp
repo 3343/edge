@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,9 +42,12 @@ class edge::linalg::Mappings {
      *
      * @param i_pts coords of points.
      * @return distance.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static real_mesh distPts( const real_mesh i_pts[3][2] ) {
-      real_mesh l_dist  = ( i_pts[0][1] - i_pts[0][0] ) * ( i_pts[0][1] - i_pts[0][0] );
+    template< typename TL_T_REAL >
+    static TL_T_REAL distPts( const TL_T_REAL i_pts[3][2] ) {
+      TL_T_REAL l_dist  = ( i_pts[0][1] - i_pts[0][0] ) * ( i_pts[0][1] - i_pts[0][0] );
                 l_dist += ( i_pts[1][1] - i_pts[1][0] ) * ( i_pts[1][1] - i_pts[1][0] );
                 l_dist += ( i_pts[2][1] - i_pts[2][0] ) * ( i_pts[2][1] - i_pts[2][0] );
                 l_dist  = std::sqrt( l_dist );
@@ -71,19 +74,22 @@ class edge::linalg::Mappings {
      * @param i_veCoordsTo coordinates of 2nd elements vertices.
      * @param i_coordsIn coordinates of 1st elements point, which is mapped to the second element.
      * @param o_coordsOut will be set to coordinates of input point w.r.t. to the second element.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void map2dLine( const real_mesh i_veCoordsFrom[3][2],
-                           const real_mesh i_veCoordsTo[3][2],
-                           const real_mesh i_coordsIn[3],
-                                 real_mesh o_coordsOut[3] ) {
+    template< typename TL_T_REAL >
+    static void map2dLine( const TL_T_REAL i_veCoordsFrom[3][2],
+                           const TL_T_REAL i_veCoordsTo[3][2],
+                           const TL_T_REAL i_coordsIn[3],
+                                 TL_T_REAL o_coordsOut[3] ) {
       // compute distance of 1st element's first vertex and input
-      real_mesh l_distIn  = ( i_coordsIn[0] - i_veCoordsFrom[0][0] ) * ( i_coordsIn[0] - i_veCoordsFrom[0][0] );
+      TL_T_REAL l_distIn  = ( i_coordsIn[0] - i_veCoordsFrom[0][0] ) * ( i_coordsIn[0] - i_veCoordsFrom[0][0] );
                 l_distIn += ( i_coordsIn[1] - i_veCoordsFrom[1][0] ) * ( i_coordsIn[1] - i_veCoordsFrom[1][0] );
                 l_distIn += ( i_coordsIn[2] - i_veCoordsFrom[2][0] ) * ( i_coordsIn[2] - i_veCoordsFrom[2][0] );
                 l_distIn  = std::sqrt( l_distIn );
 
       // compute distance of 1st element's first and second vertex
-      real_mesh l_distVe1  = distPts( i_veCoordsFrom );
+      TL_T_REAL l_distVe1  = distPts( i_veCoordsFrom );
 
       // derive output by starting at 2nd element's first vertex
       o_coordsOut[0] = i_veCoordsTo[0][0];
@@ -91,7 +97,7 @@ class edge::linalg::Mappings {
       o_coordsOut[2] = i_veCoordsTo[2][0];
 
       // move towards the 2nd vertex by the given length
-      real_mesh l_scale = l_distIn / l_distVe1;
+      TL_T_REAL l_scale = l_distIn / l_distVe1;
       o_coordsOut[0] += l_scale * ( i_veCoordsTo[0][1] - i_veCoordsTo[0][0] );
       o_coordsOut[1] += l_scale * ( i_veCoordsTo[1][1] - i_veCoordsTo[1][0] );
       o_coordsOut[2] += l_scale * ( i_veCoordsTo[2][1] - i_veCoordsTo[2][0] );

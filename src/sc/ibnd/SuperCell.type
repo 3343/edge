@@ -52,7 +52,7 @@ struct edge::sc::ibnd::t_stCol {
   static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
   //! number of stencils
-  static unsigned short const TL_N_ST = (TL_T_EL == TET4) ? TL_N_SFS - TL_N_SES : 0;
+  static unsigned short const TL_N_ST = (TL_T_EL == TET4) ? (TL_N_SFS - TL_N_SES)/2 : 0;
 
   //! sub-cells of the stencils
   unsigned short sc[ CE_MAX( TL_N_ST, (unsigned short) 1 ) ][2];

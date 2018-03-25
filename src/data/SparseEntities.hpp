@@ -25,6 +25,7 @@
 #define EDGE_DATA_SPARSE_ENTITIES_HPP
 
 #include <limits>
+#include "parallel/Mpi.h"
 #include "io/logging.h"
 
 #include "EntityLayout.h"
@@ -256,13 +257,17 @@ class edge::data::SparseEntities {
           l_buffSend[l_nr] = o_spLayout.timeGroups[l_tg].send[l_nr].size;
         }
 
+        // fix MPI-tags below as the default 0 might lead to colliding messages
+        // if more than one message goes out to the same rank (multiple time groups)
+        EDGE_CHECK_EQ( l_tg, 0 );
+
         // exchange the data
-        parallel::Mpi::iSendTgRg( (char *) &l_buffSend[0],
+        parallel::Mpi::iSendTgRg( (unsigned char *) &l_buffSend[0],
                                   sizeof(TL_T_INT_LID),
                                   l_nRgns,
                                   &o_spLayout.timeGroups[l_tg].neRanks[0],
                                   &l_reqSend[0] );
-        parallel::Mpi::iRecvTgRg( (char *) &l_buffRecv[0],
+        parallel::Mpi::iRecvTgRg( (unsigned char *) &l_buffRecv[0],
                                   sizeof(TL_T_INT_LID),
                                   l_nRgns,
                                   &o_spLayout.timeGroups[l_tg].neRanks[0],
@@ -375,6 +380,33 @@ class edge::data::SparseEntities {
     }
 
     /**
+     * Syncs the entity characteristics, of duplicated entities.
+     *
+     * @param i_nEn number of entities.
+     * @param i_enDaMe mapping of entity ids: data-to-mesh.
+     * @param i_enMeDa mapping of element ids: mesh-to-data.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_CHARS entity characteristics, offering member .spType.
+     **/
+    template< typename TL_T_LID,
+              typename TL_T_CHARS >
+    static void syncDupl( TL_T_LID          i_nEn,
+                          TL_T_LID   const *i_enDaMe,
+                          TL_T_LID   const *i_enMeDa,
+                          TL_T_CHARS       *io_chars ) {
+      // iterate over entities
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+      for( TL_T_LID l_en = 0; l_en < i_nEn; l_en++ ) {
+        TL_T_LID l_enDo = i_enDaMe[ l_en   ];
+                 l_enDo = i_enMeDa[ l_enDo ];
+        io_chars[l_en].spType = io_chars[l_enDo].spType;
+      }
+    }
+
+    /**
      * Propagates sparse information to adjacent entities.
      *
      * Example (i_spTypeIn == i_spTypeOut):
@@ -397,34 +429,54 @@ class edge::data::SparseEntities {
      * @param i_spTypeOut sparse type which is set in elements adjacent to a triggered element.
      * @param i_charsEn0 characteristics of entity type en0 (has to provide the member .spType).
      * @param i_charsEn1 characteristics of entity type en1 (has to provide the member .spType) which will be updated via bit-wise | if an adjacent en0 entity has the respective sparse type.
+     * @param i_enDaMe mapping of entity ids: data-to-mesh.
+     * @param i_enMeDa mapping of element ids: mesh-to-data.
      *
-     * @paramt TL_T_INT_LID integer type of local ids.
+     * @paramt TL_T_LID integer type of local ids.
      * @paramt TL_T_INT_SP integer type of the sparse type.
      * @paramt TL_T_EN0_CHARS struct of the en0 entities' characteristics. Offers a member .spType for comparison with i_spType.
      * @paramt TL_T_EN1_CHARS struct of the en1 entities' characteristics. Offers a member .spType for comparison with i_spType.
      **/
-    template< typename TL_T_INT_LID,
+    template< typename TL_T_LID,
               typename TL_T_INT_SP,
               typename TL_T_EN0_CHARS,
               typename TL_T_EN1_CHARS >
-    static void propAdj( TL_T_INT_LID           i_nEn0,
+    static void propAdj( TL_T_LID               i_nEn0,
                          unsigned short         i_nEn0PerEn1,
-                         TL_T_INT_LID   const * i_en0En1,
+                         TL_T_LID       const * i_en0En1,
                          TL_T_INT_SP            i_spTypeIn,
                          TL_T_INT_SP            i_spTypeOut,
                          TL_T_EN0_CHARS const * i_charsEn0,
-                         TL_T_EN1_CHARS       * o_charsEn1 ) {
+                         TL_T_EN1_CHARS       * o_charsEn1,
+                         TL_T_LID       const * i_enDaMe = nullptr,
+                         TL_T_LID       const * i_enMeDa = nullptr ) {
+      // maximum number of modified output entities
+      TL_T_LID l_nEn1 = 0;
+
       // iterate over en0
-      for( TL_T_INT_LID l_en = 0; l_en < i_nEn0; l_en++ ) {
+      for( TL_T_LID l_en = 0; l_en < i_nEn0; l_en++ ) {
         // check for sparse type
         if( (i_charsEn0[l_en].spType & i_spTypeIn) == i_spTypeIn ) {
           // iterate over adjacent entities
           for( unsigned short l_ae = 0; l_ae < i_nEn0PerEn1; l_ae++ ) {
-            TL_T_INT_LID l_aeId = i_en0En1[ l_en*i_nEn0PerEn1 + l_ae ];
+            TL_T_LID l_aeId = i_en0En1[ l_en*i_nEn0PerEn1 + l_ae ];
+
             // propagate the info (if entity exists)
-            if( l_aeId != std::numeric_limits< TL_T_INT_LID >::max() ) o_charsEn1[l_aeId].spType |= i_spTypeOut;
+            if( l_aeId != std::numeric_limits< TL_T_LID >::max() ) {
+              l_nEn1 = std::max( l_nEn1, l_aeId+1 );
+              o_charsEn1[l_aeId].spType |= i_spTypeOut;
+            }
           }
         }
+      }
+
+      // synchronize output characteristics
+      if( i_enDaMe != nullptr ) {
+        EDGE_CHECK_NE( i_enMeDa, nullptr );
+        syncDupl( l_nEn1,
+                  i_enDaMe,
+                  i_enMeDa,
+                  o_charsEn1 );
       }
     }
 
@@ -439,33 +491,53 @@ class edge::data::SparseEntities {
      * @param i_spTypeOut sparse type which is set in elements adjacent to a triggered element.
      * @param i_charsEn0 characteristics of entity type en0 (has to provide the member .spType).
      * @param i_charsEn1 characteristics of entity type en1 (has to provide the member .spType) which will be updated via bit-wise | if an adjacent en0 entity has the respective sparse type.
+     * @param i_enDaMe mapping of entity ids: data-to-mesh.
+     * @param i_enMeDa mapping of element ids: mesh-to-data.
      *
-     * @paramt TL_T_INT_LID integer type of local ids.
+     * @paramt TL_T_LID integer type of local ids.
      * @paramt TL_T_INT_SP integer type of the sparse type.
      * @paramt TL_T_EN0_CHARS struct of the en0 entities' characteristics. Offers a member .spType for comparison with i_spType.
      * @paramt TL_T_EN1_CHARS struct of the en1 entities' characteristics. Offers a member .spType for comparison with i_spType.
      **/
-    template< typename TL_T_INT_LID,
+    template< typename TL_T_LID,
               typename TL_T_INT_SP,
               typename TL_T_EN0_CHARS,
               typename TL_T_EN1_CHARS >
-    static void propAdj( TL_T_INT_LID                   i_nEn0,
-                         TL_T_INT_LID   const * const * i_en0En1,
+    static void propAdj( TL_T_LID                   i_nEn0,
+                         TL_T_LID   const * const * i_en0En1,
                          TL_T_INT_SP                    i_spTypeIn,
                          TL_T_INT_SP                    i_spTypeOut,
                          TL_T_EN0_CHARS         const * i_charsEn0,
-                         TL_T_EN1_CHARS               * o_charsEn1 ) {
+                         TL_T_EN1_CHARS               * o_charsEn1,
+                         TL_T_LID               const * i_enDaMe = nullptr,
+                         TL_T_LID               const * i_enMeDa = nullptr ) {
+      // maximum number of modified output entities
+      TL_T_LID l_nEn1 = 0;
+
       // iterate over en0
-      for( TL_T_INT_LID l_en = 0; l_en < i_nEn0; l_en++ ) {
+      for( TL_T_LID l_en = 0; l_en < i_nEn0; l_en++ ) {
         // check for sparse type
         if( (i_charsEn0[l_en].spType & i_spTypeIn) == i_spTypeIn ) {
           // iterate over adjacent entities
           for( unsigned short l_ae = 0; l_ae < i_en0En1[l_en+1]-i_en0En1[l_en]; l_ae++ ) {
-            TL_T_INT_LID l_aeId = i_en0En1[l_en][l_ae];
+            TL_T_LID l_aeId = i_en0En1[l_en][l_ae];
+
             // propagate the info (if entity exists)
-            if( l_aeId != std::numeric_limits< TL_T_INT_LID >::max() ) o_charsEn1[l_aeId].spType |= i_spTypeOut;
+            if( l_aeId != std::numeric_limits< TL_T_LID >::max() ) {
+              o_charsEn1[l_aeId].spType |= i_spTypeOut;
+              l_nEn1 = std::max( l_nEn1, l_aeId+1 );
+            }
           }
         }
+      }
+
+      // synchronize output characteristics
+      if( i_enDaMe != nullptr ) {
+        EDGE_CHECK_NE( i_enMeDa, nullptr );
+        syncDupl( l_nEn1,
+                  i_enDaMe,
+                  i_enMeDa,
+                  o_charsEn1 );
       }
     }
 

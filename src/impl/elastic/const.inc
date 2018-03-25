@@ -29,7 +29,7 @@
 // 2) sources
 const unsigned short N_STEPS_PER_UPDATE=3;
 #ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
-const unsigned short N_ENTRIES_CONTROL_FLOW=10;
+const unsigned short N_ENTRIES_CONTROL_FLOW=16;
 #else
 // TODO: Add limiter
 const unsigned short N_ENTRIES_CONTROL_FLOW=10;

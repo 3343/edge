@@ -319,7 +319,7 @@ void edge::mesh::Unstructured::getConnect( const t_vertexChars *i_veChars,
   getElementsAdjacentFaces(    o_connect.elFa   );
   getFacesAdjacentElements(    o_connect.faEl   );
   getFacesAdjacentVertices(    o_connect.faVe   );
-  getElVeEl(                   o_connect.elVeEl );
+  //getElVeEl(                   o_connect.elVeEl );
   getElementsFaceNeighbors(    o_connect.elFaEl );
 
   // get the element and face layout

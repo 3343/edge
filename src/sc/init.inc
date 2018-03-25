@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,12 +20,17 @@
  * @section DESCRIPTION
  * Performs the init of sub-cell data, once limited, limited plus and and extrema sparse types are derived.
  **/
+unsigned short l_limLayout;
 unsigned short l_limPlusLayout;
+unsigned short l_extLayout ;
 {
-  // get number of limited elements
-  int_el l_nLim = edge::data::SparseEntities::nSp( l_enLayouts[2].nEnts,
-                                                   t_enTypeShared::LIMIT,
-                                                   l_internal.m_elementChars );
+  // derive an entity layout for the limited elements
+  l_enLayouts.resize( l_enLayouts.size() + 1 );
+  edge::data::SparseEntities::denseToSparse( t_enTypeShared::LIMIT,
+                                             l_internal.m_elementChars,
+                                             l_enLayouts[2],
+                                             l_enLayouts.back() );
+  l_limLayout = l_enLayouts.size()-1;
 
   // derive an entity layout for the limited plus elements
   l_enLayouts.resize( l_enLayouts.size() + 1 );
@@ -34,18 +39,27 @@ unsigned short l_limPlusLayout;
                                              l_enLayouts[2],
                                              l_enLayouts.back() );
   l_limPlusLayout = l_enLayouts.size()-1;
-  EDGE_CHECK_LE( l_nLim, l_enLayouts[l_limPlusLayout].nEnts );
 
-  // get number of sub-cell extrema
-  int_el l_nScExt = edge::data::SparseEntities::nSp( l_enLayouts[2].nEnts,
-                                                     t_enTypeShared::EXTREMA,
-                                                     l_internal.m_elementChars );
-  EDGE_CHECK_LE( l_enLayouts[l_limPlusLayout].nEnts, l_nScExt );
+  // derive an layout for extrema
+  l_enLayouts.resize( l_enLayouts.size() + 1 );
+  edge::data::SparseEntities::denseToSparse( t_enTypeShared::EXTREMA,
+                                             l_internal.m_elementChars,
+                                             l_enLayouts[2],
+                                             l_enLayouts.back() );
+  l_extLayout = l_enLayouts.size()-1;
+
+  // get sub-cell specific entity counts and perform sanity checks
+  int_el l_nLi = l_enLayouts[l_limLayout    ].nEnts;
+  int_el l_nLp = l_enLayouts[l_limPlusLayout].nEnts;
+  int_el l_nEx = l_enLayouts[l_extLayout    ].nEnts;
+
+  EDGE_CHECK_LE( l_nLi, l_nLp );
+  EDGE_CHECK_LE( l_nLp, l_nEx );
 
   // allocate sub-cell memory
-  edge::sc::Memory::alloc( l_nLim,
-                           l_enLayouts[l_limPlusLayout].nEnts,
-                           l_nScExt,
+  edge::sc::Memory::alloc( l_nLi,
+                           l_nLp,
+                           l_nEx,
                            l_dynMem,
                            l_internal.m_globalShared2[0] );
 
@@ -53,9 +67,9 @@ unsigned short l_limPlusLayout;
   edge::sc::Init< T_SDISC.ELEMENT,
                   ORDER,
                   N_QUANTITIES,
-                  N_CRUNS >::data( l_nLim,
+                  N_CRUNS >::data( l_nLi,
                                    l_enLayouts[l_limPlusLayout].nEnts,
-                                   l_nScExt,
+                                   l_nEx,
                                    l_internal.m_globalShared2[0].dofs,
                                    l_internal.m_globalShared2[0].tDofsRaw,
                                    l_internal.m_globalShared2[0].ext,
@@ -111,4 +125,52 @@ unsigned short l_limPlusLayout;
                                  l_tDofsScMpi[l_bu][0],
                                  l_tDofsScMpi[l_bu][1],
                                  l_internal.m_globalShared2[0].connect.lpLi );
+
+  // assemble dominant, limited
+  edge::sc::Init< T_SDISC.ELEMENT,
+                  ORDER,
+                  N_QUANTITIES,
+                  N_CRUNS >::liDoLiDu(  l_enLayouts[l_limLayout],
+                                        l_internal.m_globalShared2[0].connect.liLp,
+                                        l_internal.m_globalShared2[0].connect.lpEl,
+                                       &l_mesh.getInMap()->elDaMe[0],
+                                       &l_mesh.getInMap()->elMeDa[0],
+                                        l_internal.m_globalShared2[0].connect.liDoLiDu  );
+
+#ifdef PP_USE_MPI
+  // register MPI layouts
+  EDGE_CHECK_EQ( l_enLayouts[l_limPlusLayout].timeGroups.size(), 1 );
+
+  // candidate admissibility in even time steps since sync
+  l_mpi.addDefault( l_enLayouts[l_limLayout],
+                    l_internal.m_globalShared2[0].adm[1],
+                    N_CRUNS*sizeof(bool),
+                    0,
+                    1,
+                    reinterpret_cast< std::intptr_t >( l_internal.m_globalShared2[0].adm[1] ) );
+
+  // candidate admissibility in odd time steps since sync
+  l_mpi.addDefault( l_enLayouts[l_limLayout],
+                    l_internal.m_globalShared2[0].adm[3],
+                    N_CRUNS*sizeof(bool),
+                    0,
+                    1,
+                    reinterpret_cast< std::intptr_t >( l_internal.m_globalShared2[0].adm[3] ) );
+
+  for( unsigned short l_bu = 0; l_bu < 2; l_bu++ ) {
+    l_mpi.addCustom( l_enLayouts[l_limPlusLayout],
+                     l_tDofsScMpi[l_bu][0],
+                     l_tDofsScMpi[l_bu][1],
+                     0,
+                     1,
+                     reinterpret_cast< std::intptr_t >( l_internal.m_globalShared2[0].tDofs[l_bu] ) );
+
+    l_mpi.addDefault( l_enLayouts[l_extLayout],
+                      l_internal.m_globalShared2[0].ext[l_bu],
+                      2*N_QUANTITIES*N_CRUNS*sizeof(real_base),
+                      0,
+                      1,
+                      reinterpret_cast< std::intptr_t >( l_internal.m_globalShared2[0].ext[l_bu] ) );
+  }
+#endif
 }

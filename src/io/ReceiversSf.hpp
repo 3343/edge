@@ -167,23 +167,23 @@ class edge::io::ReceiversSf: public Receivers {
                unsigned int           i_bufferSize=100,
                double                 i_time=0  ) {
       // minimal distance to all receivers
-      std::vector< TL_T_REAL > l_minDist(i_nRecvs);
+      std::vector< double > l_minDist(i_nRecvs);
       // id of face having the minimum distance to the receivers
-      std::vector< TL_T_INT_LID   > l_minFa(i_nRecvs);
+      std::vector< TL_T_INT_LID > l_minFa(i_nRecvs);
       // id of sub-face point having the minimum distance to the receivers
       std::vector< unsigned short > l_minSf(i_nRecvs);
       // sub-face coordinates
-      std::vector< TL_T_REAL > l_sfCrds[TL_N_DIS];
+      std::vector< double > l_sfCrds[TL_N_DIS];
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) l_sfCrds[l_di].resize( i_nRecvs );
 
       // init minimum data structures
       for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-        l_minDist[l_re] = std::numeric_limits< TL_T_REAL >::max();
+        l_minDist[l_re] = std::numeric_limits< double >::max();
         l_minFa[l_re]   = std::numeric_limits< TL_T_INT_LID   >::max();
         l_minSf[l_re]   = std::numeric_limits< unsigned short >::max();
 
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-          l_sfCrds[l_di][l_re] = std::numeric_limits< TL_T_REAL >::max();
+          l_sfCrds[l_di][l_re] = std::numeric_limits< double >::max();
         }
       }
 
@@ -228,7 +228,7 @@ class edge::io::ReceiversSf: public Receivers {
 
                   for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
                     // add contribution of the sub-face
-                    l_refCrds[l_di] += i_svChars[l_svId].coords[l_di] * ( TL_T_REAL(1) / TL_N_VES_FA);
+                    l_refCrds[l_di] += i_svChars[l_svId].coords[l_di] * ( double(1) / TL_N_VES_FA);
                   }
                 }
 
@@ -240,8 +240,8 @@ class edge::io::ReceiversSf: public Receivers {
 
                 // iterate over receivers and determine the distance
                 for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-                  TL_T_REAL l_dist = linalg::GeomT<TL_N_DIS>::norm( l_meshCrds,
-                                                                    i_recvCrds[l_re] );
+                  double l_dist = linalg::GeomT<TL_N_DIS>::norm( l_meshCrds,
+                                                                 i_recvCrds[l_re] );
 
                   // store the info if this a new minimum
                   if( l_minDist[l_re] > l_dist ) {
@@ -264,8 +264,11 @@ class edge::io::ReceiversSf: public Receivers {
         l_first += i_elLayout.timeGroups[l_tg].nEntsNotOwn;
     }
 
-    // TODO: Eliminate MPI-duplicates here
-    EDGE_CHECK( i_elLayout.timeGroups[0].neRanks.size() == 0 );
+    // determine if we hold the sub-face with the minimum distance to the receiver
+    std::vector< unsigned short > l_recvOwn( i_nRecvs );
+    parallel::Mpi::min( i_nRecvs,
+                        l_minDist.data(),
+                        l_recvOwn.data() );
 
     /*
      * set up the receivers data structures
@@ -297,7 +300,8 @@ class edge::io::ReceiversSf: public Receivers {
 
           // iterate over receivers
           for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-            if( l_minFa[l_re] == l_fa ) {
+            if(    l_recvOwn[l_re] == 1
+                && l_minFa[l_re] == l_fa ) {
               // add this receiver
               m_recvs.resize( m_recvs.size() + 1 );
               m_recvsSf.resize( m_recvsSf.size() + 1 );

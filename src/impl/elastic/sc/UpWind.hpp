@@ -350,6 +350,7 @@ class edge::elastic::sc::UpWind {
      * @param i_firstLp first limited plus element.
      * @param i_sizeLp number of limited plus elements, which are initialized.
      * @param i_lpEl connectivity: limited plus element -> dense element.
+     * @param i_gId global ids of the dense elements.
      * @param i_elVe connectivity: dense elemenet -> dense vertex.
      * @param i_elFa connectivity: dense element -> dense face.
      * @param i_elFaEl dense element -> dense element (faces as bridge).
@@ -360,19 +361,22 @@ class edge::elastic::sc::UpWind {
      * @param i_vis amount of viscosity (0.5 is LLF w.r.t. zero-waves).
      *
      * @paramt TL_T_LID integral type for local ids.
+     * @paramt TL_T_GID integral type for gloval ids.
      * @paramt TL_T_CHARS_VE characteristics of the vertices, providing member .coords.
      * @paramt TL_T_CHARS_FA characteristics of the faces, providing members .outNormal, .tangent0, tangent1, .area.
      * @paramt TL_T_CHARS_EL characteristics of the elements, providing member .volume.
      * @paramt TL_T_MAT_PARS material parameters, providing members .rho, .lam, and .mu (Lame parameters).
      **/
     template< typename TL_T_LID,
+              typename TL_T_GID,
               typename TL_T_CHARS_VE,
               typename TL_T_CHARS_FA,
               typename TL_T_CHARS_EL,
               typename TL_T_MAT_PARS >
-    void init( TL_T_LID                 i_firstLp,
-               TL_T_LID                 i_sizeLp,
+    void init( TL_T_LID                  i_firstLp,
+               TL_T_LID                  i_sizeLp,
                TL_T_LID          const (*i_lpEl),
+               TL_T_GID          const (*i_gId),
                TL_T_LID          const (*i_elVe)[TL_N_VES],
                TL_T_LID          const (*i_elFa)[TL_N_FAS],
                TL_T_LID          const (*i_elFaEl)[TL_N_FAS],
@@ -414,8 +418,9 @@ class edge::elastic::sc::UpWind {
               l_t1[l_ty][l_di] = i_charsFa[l_faId].tangent1[ l_di];
             }
 
-            // change direction of normal, if the local element is right
-            if( l_el > l_elAd ) {
+            // change direction of normal, if the local element is right (order of face -> element is global)
+            if(    l_elAd != std::numeric_limits< TL_T_LID >::max()
+                && i_gId[l_el] > i_gId[l_elAd] ) {
               for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
                 l_n[l_ty][l_di] *= -1;
             }

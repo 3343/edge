@@ -145,13 +145,11 @@ class edge::sc::Detections {
       // reduced extrema of current solution
       TL_T_REAL l_extCurRed[2][TL_N_QTS][TL_N_CRS];
       // init with element itself
-      for( unsigned short l_ex = 0; l_ex < 2; l_ex++ ) {
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+      for( unsigned short l_ex = 0; l_ex < 2; l_ex++ )
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
             l_extCurRed[l_ex][l_qt][l_cr] = i_extCur[l_ex][l_qt][l_cr];
-          }
-        }
-      }
+
       // reduce over face neighborhood
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         TL_T_INT_LID l_elAd = i_elFaEl[l_fa];

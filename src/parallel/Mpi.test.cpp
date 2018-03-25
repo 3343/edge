@@ -28,7 +28,7 @@
 
 TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
   edge::parallel::Mpi l_mpi;
-#ifdef USE_MPI
+#ifdef PP_USE_MPI
   /**
    * Setup example entity layout:
    *
@@ -47,10 +47,12 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
   l_enLa.timeGroups[0].send.resize(    3 );
   l_enLa.timeGroups[0].receive.resize( 3 );
   l_enLa.timeGroups[0].neRanks.resize( 3 );
+  l_enLa.timeGroups[0].neTgs.resize(   3);
 
   l_enLa.timeGroups[1].send.resize(    2 );
   l_enLa.timeGroups[1].receive.resize( 2 );
   l_enLa.timeGroups[1].neRanks.resize( 2 );
+  l_enLa.timeGroups[1].neTgs.resize(   2 );
 
   // assign regions
   l_enLa.timeGroups[0].nEntsOwn         =  91;
@@ -75,6 +77,9 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
   l_enLa.timeGroups[0].neRanks[0] = 0;
   l_enLa.timeGroups[0].neRanks[1] = 3;
   l_enLa.timeGroups[0].neRanks[2] = 4;
+  l_enLa.timeGroups[0].neTgs[0] = 0;
+  l_enLa.timeGroups[0].neTgs[1] = 0;
+  l_enLa.timeGroups[0].neTgs[2] = 1;
 
   l_enLa.timeGroups[1].nEntsOwn         =  46;
   l_enLa.timeGroups[1].nEntsNotOwn      =  30;
@@ -93,11 +98,45 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
 
   l_enLa.timeGroups[1].neRanks[0] = 1;
   l_enLa.timeGroups[1].neRanks[1] = 3;
+  l_enLa.timeGroups[1].neTgs[0] = 0;
+  l_enLa.timeGroups[1].neTgs[1] = 1;
 
   l_enLa.timeGroups[2].nEntsOwn         = 732;
   l_enLa.timeGroups[2].nEntsNotOwn      =   0;
   l_enLa.timeGroups[2].inner.first      = 189;
   l_enLa.timeGroups[2].inner.size       = 732;
+
+
+  // customized communication layout
+  std::vector< std::vector< unsigned char * > > l_sendData1;
+  std::vector< std::vector< unsigned char * > > l_recvData1;
+
+  l_sendData1.resize( 3 );
+  l_sendData1[0].resize( 3+1 );
+  l_sendData1[1].resize( 2+1 );
+  l_sendData1[2].resize( 1 ); 
+  l_recvData1.resize( 3 );
+  l_recvData1[0].resize( 3+1 );
+  l_recvData1[1].resize( 2+1 );
+  l_recvData1[2].resize( 1 ); 
+
+  l_sendData1[0][0] = (unsigned char*) 0;
+  l_sendData1[0][1] = (unsigned char*) 4;
+  l_sendData1[0][2] = (unsigned char*) 5;
+  l_sendData1[0][3] = (unsigned char*) 5;
+  l_sendData1[1][0] = (unsigned char*) 8;
+  l_sendData1[1][1] = (unsigned char*) 20;
+  l_sendData1[1][2] = (unsigned char*) 27;
+  l_sendData1[2][0] = (unsigned char*) 27;
+
+  l_recvData1[0][0] = (unsigned char*) 19;
+  l_recvData1[0][1] = (unsigned char*) 19;
+  l_recvData1[0][2] = (unsigned char*) 28;
+  l_recvData1[0][3] = (unsigned char*) 42;
+  l_recvData1[1][0] = (unsigned char*) 44;
+  l_recvData1[1][1] = (unsigned char*) 49;
+  l_recvData1[1][2] = (unsigned char*) 50;
+  l_recvData1[2][0] = (unsigned char*) 50;
 
 
   // create a dummy pointer
@@ -110,100 +149,125 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
   edge::parallel::g_rank = 2;
   edge::parallel::g_nRanks = 21;
 
-  l_mpi.initLayout( l_enLa, l_dPtr, l_bytes, 2, 5 );
+  l_mpi.addDefault( l_enLa, l_dPtr, l_bytes, 2, 5 );
+  l_mpi.addCustom( l_enLa,
+                   l_sendData1,
+                   l_recvData1,
+                   2,
+                   5 );
 
   // check for sizes and ne ranks
-  REQUIRE( l_mpi.m_send.size() == 3 );
-  REQUIRE( l_mpi.m_recv.size() == 3 );
+  REQUIRE( l_mpi.m_grps[0].send.size() == 3 );
+  REQUIRE( l_mpi.m_grps[0].recv.size() == 3 );
 
   for( int_tg l_tg = 0; l_tg < 3; l_tg++ ) {
-    REQUIRE( l_mpi.m_send[l_tg].size() == l_enLa.timeGroups[l_tg].neRanks.size() );
-    REQUIRE( l_mpi.m_recv[l_tg].size() == l_enLa.timeGroups[l_tg].neRanks.size() );
+    REQUIRE( l_mpi.m_grps[0].send[l_tg].size() == l_enLa.timeGroups[l_tg].neRanks.size() );
+    REQUIRE( l_mpi.m_grps[0].recv[l_tg].size() == l_enLa.timeGroups[l_tg].neRanks.size() );
 
-    for( std::size_t l_ne = 0 ; l_ne < l_mpi.m_send[l_tg].size(); l_ne++ ) {
-      REQUIRE( l_mpi.m_send[l_tg][l_ne].rank == l_enLa.timeGroups[l_tg].neRanks[l_ne] );
-      REQUIRE( l_mpi.m_recv[l_tg][l_ne].rank == l_enLa.timeGroups[l_tg].neRanks[l_ne] );
+    for( std::size_t l_ne = 0 ; l_ne < l_mpi.m_grps[0].send[l_tg].size(); l_ne++ ) {
+      REQUIRE( l_mpi.m_grps[0].send[l_tg][l_ne].rank == l_enLa.timeGroups[l_tg].neRanks[l_ne] );
+      REQUIRE( l_mpi.m_grps[0].recv[l_tg][l_ne].rank == l_enLa.timeGroups[l_tg].neRanks[l_ne] );
     }
   }
 
-  // check tags
-// TODO: Refactor the tests for the tags according to structure negleting MPI-info.
-  REQUIRE( l_mpi.m_send[0][0].tag ==   2     * (5 * 21)    // own rank
-                                     + (2+0) *  21         // time group
-                                     + 0                ); // neighboring rank
+  // check tags of default messages
+  REQUIRE( l_mpi.m_grps[0].send[0][0].tag == 2 * 5 + 0 );
+  REQUIRE( l_mpi.m_grps[0].send[0][1].tag == 2 * 5 + 0 );
+  REQUIRE( l_mpi.m_grps[0].send[0][2].tag == 2 * 5 + 1 );
 
-  REQUIRE( l_mpi.m_send[0][1].tag ==   2     * (5 * 21)    // own rank
-                                     + (2+0) *  21         // time group
-                                     + 3                ); // neighboring rank
-
-  REQUIRE( l_mpi.m_send[0][2].tag ==   2     * (5 * 21)    // own rank
-                                     + (2+0) *  21         // time group
-                                     + 4                ); // neighboring rank
-
-  REQUIRE( l_mpi.m_recv[0][0].tag ==   0     * (5 * 21)    // neighboring rank
-                                     + (2+0) *  21         // time group
-                                     + 2                ); // own rank
-
-  REQUIRE( l_mpi.m_recv[0][1].tag ==   3     * (5 * 21)    // neighboring rank
-                                     + (2+0) *  21         // time group
-                                     + 2                ); // own rank
-
-  REQUIRE( l_mpi.m_recv[0][2].tag ==   4     * (5 * 21)    // neighboring rank
-                                     + (2+0) *  21         // time group
-                                     + 2                ); // own rank
+  REQUIRE( l_mpi.m_grps[0].recv[0][0].tag == 0 * 5 + 2 );
+  REQUIRE( l_mpi.m_grps[0].recv[0][1].tag == 0 * 5 + 2 );
+  REQUIRE( l_mpi.m_grps[0].recv[0][2].tag == 1 * 5 + 2 );
 
 
-  REQUIRE( l_mpi.m_send[1][0].tag ==   2     * (5 * 21)    // own rank
-                                     + (2+1) *  21         // time group
-                                     + 1                ); // neighboring rank
+  REQUIRE( l_mpi.m_grps[0].send[1][0].tag == 3 * 5 + 0 );
+  REQUIRE( l_mpi.m_grps[0].send[1][1].tag == 3 * 5 + 1 );
 
-  REQUIRE( l_mpi.m_send[1][1].tag ==   2     * (5 * 21)    // own rank
-                                     + (2+1) *  21         // time group
-                                     + 3                ); // neighboring rank
+  REQUIRE( l_mpi.m_grps[0].recv[1][0].tag == 0 * 5 + 3 );
+  REQUIRE( l_mpi.m_grps[0].recv[1][1].tag == 1 * 5 + 3 );
 
-  REQUIRE( l_mpi.m_recv[1][0].tag ==   1     * (5 * 21)    // neighboring rank
-                                     + (2+1) *  21         // time group
-                                     + 2                ); // own rank
+  // check the ptrs and message size of the default messages
+  REQUIRE( l_mpi.m_grps[0].send[0][0].ptr  == (unsigned char*) ( l_dPtr +  11 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].send[0][0].size ==                              11 * (20 * 9 * 8) * 8   );
 
-  REQUIRE( l_mpi.m_recv[1][1].tag ==   3     * (5 * 21)    // neighboring rank
-                                     + (2+1) *  21         // time group
-                                     + 2                ); // own rank
+  REQUIRE( l_mpi.m_grps[0].send[0][1].ptr  == (unsigned char*) ( l_dPtr +  22 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].send[0][1].size ==                              20 * (20 * 9 * 8) * 8   );
 
-  // check the ptrs and message size
-  REQUIRE( l_mpi.m_send[0][0].ptr  == l_dPtr +  11 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_send[0][0].size ==           11 * (20 * 9 * 8) * 8 );
-
-  REQUIRE( l_mpi.m_send[0][1].ptr  == l_dPtr +  22 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_send[0][1].size ==           20 * (20 * 9 * 8) * 8 );
-
-  REQUIRE( l_mpi.m_send[0][2].ptr  == l_dPtr +  42 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_send[0][2].size ==           50 * (20 * 9 * 8) * 8 );
+  REQUIRE( l_mpi.m_grps[0].send[0][2].ptr  == (unsigned char*) ( l_dPtr +  42 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].send[0][2].size ==                              50 * (20 * 9 * 8) * 8   );
 
 
-  REQUIRE( l_mpi.m_recv[0][0].ptr  == l_dPtr +  92 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_recv[0][0].size ==           12 * (20 * 9 * 8) * 8 );
+  REQUIRE( l_mpi.m_grps[0].recv[0][0].ptr  == (unsigned char*) ( l_dPtr +  92 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].recv[0][0].size ==                              12 * (20 * 9 * 8) * 8   );
 
-  REQUIRE( l_mpi.m_recv[0][1].ptr  == l_dPtr + 104 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_recv[0][1].size ==            6 * (20 * 9 * 8) * 8 );
+  REQUIRE( l_mpi.m_grps[0].recv[0][1].ptr  == (unsigned char*) ( l_dPtr + 104 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].recv[0][1].size ==                             6 * (20 * 9 * 8) * 8     );
 
-  REQUIRE( l_mpi.m_recv[0][2].ptr  == l_dPtr + 110 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_recv[0][2].size ==            3 * (20 * 9 * 8) * 8 );
-
-
-  REQUIRE( l_mpi.m_send[1][0].ptr  == l_dPtr + 118 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_send[1][0].size ==            2 * (20 * 9 * 8) * 8 );
-
-  REQUIRE( l_mpi.m_send[1][1].ptr  == l_dPtr + 120 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_send[1][1].size ==           39 * (20 * 9 * 8) * 8 );
+  REQUIRE( l_mpi.m_grps[0].recv[0][2].ptr  == (unsigned char*) ( l_dPtr + 110 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].recv[0][2].size ==                               3 * (20 * 9 * 8) * 8   );
 
 
-  REQUIRE( l_mpi.m_recv[1][0].ptr  == l_dPtr + 159 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_recv[1][0].size ==           13 * (20 * 9 * 8) * 8 );
+  REQUIRE( l_mpi.m_grps[0].send[1][0].ptr  == (unsigned char*) ( l_dPtr + 118 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].send[1][0].size ==                             2 * (20 * 9 * 8) * 8     );
 
-  REQUIRE( l_mpi.m_recv[1][1].ptr  == l_dPtr + 172 * (20 * 9 * 8)     );
-  REQUIRE( l_mpi.m_recv[1][1].size ==           17 * (20 * 9 * 8) * 8 );
+  REQUIRE( l_mpi.m_grps[0].send[1][1].ptr  == (unsigned char*) ( l_dPtr + 120 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].send[1][1].size ==                              39 * (20 * 9 * 8) * 8   );
 
-  // check number of messages
-  REQUIRE( l_mpi.m_nMsgs == 10 );
+
+  REQUIRE( l_mpi.m_grps[0].recv[1][0].ptr  == (unsigned char*) ( l_dPtr + 159 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].recv[1][0].size ==                              13 * (20 * 9 * 8) * 8   );
+
+  REQUIRE( l_mpi.m_grps[0].recv[1][1].ptr  == (unsigned char*) ( l_dPtr + 172 * (20 * 9 * 8)     ) );
+  REQUIRE( l_mpi.m_grps[0].recv[1][1].size ==                              17 * (20 * 9 * 8) * 8   );
+
+  // check tags of customized messags
+  REQUIRE( l_mpi.m_grps[1].send[0][0].tag == 25 + 2 * 5 + 0 );
+  REQUIRE( l_mpi.m_grps[1].send[0][1].tag == 25 + 2 * 5 + 0 );
+  REQUIRE( l_mpi.m_grps[1].send[0][2].tag == 25 + 2 * 5 + 1 );
+
+  REQUIRE( l_mpi.m_grps[1].recv[0][0].tag == 25 + 0 * 5 + 2 );
+  REQUIRE( l_mpi.m_grps[1].recv[0][1].tag == 25 + 0 * 5 + 2 );
+  REQUIRE( l_mpi.m_grps[1].recv[0][2].tag == 25 + 1 * 5 + 2 );
+
+
+  REQUIRE( l_mpi.m_grps[1].send[1][0].tag == 25 + 3 * 5 + 0 );
+  REQUIRE( l_mpi.m_grps[1].send[1][1].tag == 25 + 3 * 5 + 1 );
+
+  REQUIRE( l_mpi.m_grps[1].recv[1][0].tag == 25 + 0 * 5 + 3 );
+  REQUIRE( l_mpi.m_grps[1].recv[1][1].tag == 25 + 1 * 5 + 3 );
+
+  // check ptrs and sizes of customized messages
+  REQUIRE( l_mpi.m_grps[1].recv[0][0].ptr  == (unsigned char*) 19 );
+  REQUIRE( l_mpi.m_grps[1].recv[0][0].size ==                   0 );
+
+  REQUIRE( l_mpi.m_grps[1].recv[0][1].ptr  == (unsigned char*) 19 );
+  REQUIRE( l_mpi.m_grps[1].recv[0][1].size ==                   9 );
+
+  REQUIRE( l_mpi.m_grps[1].recv[0][2].ptr  == (unsigned char*) 28 );
+  REQUIRE( l_mpi.m_grps[1].recv[0][2].size ==                  14 );
+
+
+  REQUIRE( l_mpi.m_grps[1].recv[1][0].ptr  == (unsigned char*) 44 );
+  REQUIRE( l_mpi.m_grps[1].recv[1][0].size ==                   5 );
+
+  REQUIRE( l_mpi.m_grps[1].recv[1][1].ptr  == (unsigned char*) 49 );
+  REQUIRE( l_mpi.m_grps[1].recv[1][1].size ==                   1 );
+
+
+  REQUIRE( l_mpi.m_grps[1].send[0][0].ptr  == (unsigned char*)  0 );
+  REQUIRE( l_mpi.m_grps[1].send[0][0].size ==                   4 );
+
+  REQUIRE( l_mpi.m_grps[1].send[0][1].ptr  == (unsigned char*)  4 );
+  REQUIRE( l_mpi.m_grps[1].send[0][1].size ==                   1 );
+
+  REQUIRE( l_mpi.m_grps[1].send[0][2].ptr  == (unsigned char*)  5 );
+  REQUIRE( l_mpi.m_grps[1].send[0][2].size ==                   0 );
+
+
+  REQUIRE( l_mpi.m_grps[1].send[1][0].ptr  == (unsigned char*)  8 );
+  REQUIRE( l_mpi.m_grps[1].send[1][0].size ==                  12 );
+
+  REQUIRE( l_mpi.m_grps[1].send[1][1].ptr  == (unsigned char*) 20 );
+  REQUIRE( l_mpi.m_grps[1].send[1][1].size ==                   7 );
 #endif
 }

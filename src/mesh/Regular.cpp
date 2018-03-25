@@ -879,7 +879,7 @@ void edge::mesh::Regular::getConnect( const t_vertexChars *i_veChars,
   getElementsAdjacentFaces(    o_connect.elFa   );
   getFacesAdjacentVertices(    o_connect.faVe   );
   getFacesAdjacentElements(    o_connect.faEl   );
-  getElVeEl(                   o_connect.elVeEl );
+  //getElVeEl(                   o_connect.elVeEl );
   getElementsFaceNeighbors(    o_connect.elFaEl );
 
   t_enLayout l_veLayout, l_faLayout, l_elLayout;

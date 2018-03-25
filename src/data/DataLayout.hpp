@@ -46,10 +46,6 @@ class edge::data::DataLayout {
      * For example, if we communicate data of faces, all of these entries for a communication region would
      * be stored linearly in memory.
      *
-     * Here, entity duplication is assumed.
-     * Write something about redundancy for send -> inner.
-     * but not for send -> ghost.
-     *
      * @param i_nAdPerEn number of adjacent entities for each entity.
      * @param i_enAdEn adjacent entities.
      * @param i_lay entity layout.
@@ -96,9 +92,10 @@ class edge::data::DataLayout {
       o_send.resize( o_send.size()+1 );
       o_recv.resize( o_recv.size()+1 );
 
-      // iterate over inner entities
       TL_T_INT_LID l_inFirst = i_lay.timeGroups[l_tg].inner.first;
       TL_T_INT_LID l_inSize  = i_lay.timeGroups[l_tg].inner.size;
+
+      // iterate over inner entities
       for( TL_T_INT_LID l_in = l_inFirst; l_in < l_inFirst+l_inSize; l_in++ ) {
         // iterate over adjacent entities
         for( unsigned short l_ad = 0; l_ad < i_nAdPerEn; l_ad++ ) {
@@ -119,7 +116,9 @@ class edge::data::DataLayout {
         }
       }
 
-      // iterate over send regions and set everything which goes to owned entities
+      TL_T_INT_LID l_nOwn    = i_lay.timeGroups[l_tg].nEntsOwn;
+
+      // iterate over send regions and set everything which goes to entities, not associated with this send region
       for( std::size_t l_sr = 0; l_sr < i_lay.timeGroups[l_tg].send.size(); l_sr++ ) {
         // iterate over send entities
         TL_T_INT_LID l_seFirst = i_lay.timeGroups[l_tg].send[l_sr].first;
@@ -136,22 +135,10 @@ class edge::data::DataLayout {
                 && i_enSpEn[l_se] == std::numeric_limits< TL_T_INT_LID >::max()
                 && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
-            // check if data for this adjacency should be added
-            bool l_add = false;
-
-            // iterate over time groups
-            for( std::size_t l_at = 0; l_at < i_lay.timeGroups.size(); l_at++ ) {
-              // get first and size of owned entities
-              TL_T_INT_LID l_atFirst = i_lay.timeGroups[l_at].inner.first;
-              TL_T_INT_LID l_atSize  = i_lay.timeGroups[l_at].nEntsOwn;
-
-              // check if the adjacent entity is part of this
-              if(    l_enAd >= l_atFirst
-                  && l_enAd  < l_atFirst+l_atSize ) l_add = true;
-              break;
-            }
-
-            if( l_add ) {
+            // check if this goes to an entity, not associated with the send region
+            TL_T_INT_LID l_reFirst = i_lay.timeGroups[l_tg].receive[l_sr].first;
+            TL_T_INT_LID l_reSize  = i_lay.timeGroups[l_tg].receive[l_sr].size;
+            if( l_enAd < l_reFirst || l_enAd >= l_reFirst+l_reSize ) {
               EDGE_CHECK_EQ( o_ptrs[l_se][l_ad], nullptr );
               // assign data
               o_ptrs[l_se][l_ad] = l_raw;
@@ -162,7 +149,7 @@ class edge::data::DataLayout {
         }
       }
 
-      // iterate over send regions and set everything, which goes to corresponding ghost-entities
+      // iterate over send regions and set everything, which goes to corresponding, unique recv-entities
       for( std::size_t l_sr = 0; l_sr < i_lay.timeGroups[l_tg].send.size(); l_sr++ ) {
         // add communication data for the send-region
         o_send.back().push_back( (unsigned char *) l_raw );
@@ -203,17 +190,13 @@ class edge::data::DataLayout {
       // add final pointer for size computations of messages
       o_send.back().push_back( (unsigned char *) l_raw );
 
-      // iterate over recv regions and set everything, which goes to corresponding send-entities
+      // iterate over recv regions and set everything, which goes to a send-entity
       for( std::size_t l_rr = 0; l_rr < i_lay.timeGroups[l_tg].receive.size(); l_rr++ ) {
         // add communication data for the recv-region
         o_recv.back().push_back( (unsigned char *) l_raw );
 
         TL_T_INT_LID l_reFirst = i_lay.timeGroups[l_tg].receive[l_rr].first;
         TL_T_INT_LID l_reSize  = i_lay.timeGroups[l_tg].receive[l_rr].size;
-
-        // corresponding send region
-        TL_T_INT_LID l_seFirst = i_lay.timeGroups[l_tg].send[l_rr].first;
-        TL_T_INT_LID l_seSize  = i_lay.timeGroups[l_tg].send[l_rr].size;
 
         // iterate over receive entities
         for( TL_T_INT_LID l_re = l_reFirst; l_re < l_reFirst+l_reSize; l_re++ ) {
@@ -228,9 +211,10 @@ class edge::data::DataLayout {
                 && i_enSpEn[l_re] == std::numeric_limits< TL_T_INT_LID >::max()
                 && i_enSpEn[l_enAd] == std::numeric_limits< TL_T_INT_LID >::max() ) continue;
 
-            // add, if and only if this connects us to the respective send region
-            if(    l_enAd >= l_seFirst
-                && l_enAd  < l_seFirst+l_seSize ) {
+            // add, if adjacent to an owned entity (remark: send entities might be duplicated and the respective adjacency might go to a different non-assoc region)
+            EDGE_CHECK_GE( l_enAd, l_inFirst + l_inSize );
+            EDGE_CHECK_EQ( l_tg, 0 ) << "check correctness for LTS";
+            if( l_enAd < l_inFirst + l_nOwn ) {
               EDGE_CHECK_EQ( o_ptrs[l_re][l_ad], nullptr );
 
               // assign data
@@ -244,7 +228,6 @@ class edge::data::DataLayout {
 
       // add final pointer for size computations of messages
       o_recv.back().push_back( (unsigned char *) l_raw );
-
     }
   }
 };

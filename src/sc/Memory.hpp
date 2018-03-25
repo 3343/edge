@@ -119,6 +119,11 @@ class edge::sc::Memory {
       o_lim.ext[0] = (TL_T_REAL (*)[2][TL_N_QTS][TL_N_CRS]) io_dynMem.allocate( l_extSize );
       o_lim.ext[1] = (TL_T_REAL (*)[2][TL_N_QTS][TL_N_CRS]) io_dynMem.allocate( l_extSize );
 
+      // link between between dominant limited possibly redundant (no bridge)
+      std::size_t l_liDoLiDuSize  = TL_N_FAS;
+                  l_liDoLiDuSize *= i_nLim * sizeof(TL_T_LID);
+      o_lim.connect.liDoLiDu = (TL_T_LID (*)[TL_N_FAS]) io_dynMem.allocate( l_liDoLiDuSize );
+
       // link between limited and limited plus (no bridge)
       std::size_t l_liLpSize = i_nLim * sizeof(TL_T_LID);
       o_lim.connect.liLp = (TL_T_LID*) io_dynMem.allocate( l_liLpSize );

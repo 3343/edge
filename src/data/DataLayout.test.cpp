@@ -75,7 +75,7 @@ TEST_CASE( "Data Layout: Sparse adjacency.", "[dataLayout][spAd]" ) {
     {2,0,3},
     {std::numeric_limits< int >::max(),0,6},
     {2,std::numeric_limits< int >::max(),8},
-    {8,std::numeric_limits< int >::max(),5},
+    {7,std::numeric_limits< int >::max(),5},
     {8,4,2},
     {0,std::numeric_limits< int >::max(),std::numeric_limits< int >::max()},
     {std::numeric_limits< int >::max(),3,4},
@@ -110,44 +110,44 @@ TEST_CASE( "Data Layout: Sparse adjacency.", "[dataLayout][spAd]" ) {
   // send
   REQUIRE( l_dataPtrs1[3][0] == l_dataRaw1 +  7 );
   REQUIRE( l_dataPtrs1[3][1] == nullptr         );
-  REQUIRE( l_dataPtrs1[3][2] == l_dataRaw1 + 12 );
+  REQUIRE( l_dataPtrs1[3][2] == l_dataRaw1 + 13 );
 
-  REQUIRE( l_dataPtrs1[4][0] == l_dataRaw1 + 13 );
+  REQUIRE( l_dataPtrs1[4][0] == l_dataRaw1 + 14 );
   REQUIRE( l_dataPtrs1[4][1] == nullptr         );
   REQUIRE( l_dataPtrs1[4][2] == l_dataRaw1 +  8 );
 
-  REQUIRE( l_dataPtrs1[5][0] == nullptr         );
-  REQUIRE( l_dataPtrs1[5][1] == l_dataRaw1 +  9 );
-  REQUIRE( l_dataPtrs1[5][2] == l_dataRaw1 + 10 );
+  REQUIRE( l_dataPtrs1[5][0] == l_dataRaw1 +  9 );
+  REQUIRE( l_dataPtrs1[5][1] == l_dataRaw1 + 10 );
+  REQUIRE( l_dataPtrs1[5][2] == l_dataRaw1 + 11 );
 
-  REQUIRE( l_dataPtrs1[6][0] == l_dataRaw1 + 11 );
+  REQUIRE( l_dataPtrs1[6][0] == l_dataRaw1 + 12 );
   REQUIRE( l_dataPtrs1[6][1] == nullptr         );
   REQUIRE( l_dataPtrs1[6][2] == nullptr         );
 
   REQUIRE( l_dataPtrs1[7][0] == nullptr         );
-  REQUIRE( l_dataPtrs1[7][1] == l_dataRaw1 + 14 );
-  REQUIRE( l_dataPtrs1[7][2] == l_dataRaw1 + 15 );
+  REQUIRE( l_dataPtrs1[7][1] == l_dataRaw1 + 15 );
+  REQUIRE( l_dataPtrs1[7][2] == l_dataRaw1 + 16 );
 
-  REQUIRE( l_dataPtrs1[8][0] == nullptr         );
-  REQUIRE( l_dataPtrs1[8][1] == l_dataRaw1 + 16 );
+  REQUIRE( l_dataPtrs1[8][0] == l_dataRaw1 + 17 );
+  REQUIRE( l_dataPtrs1[8][1] == l_dataRaw1 + 18 );
   REQUIRE( l_dataPtrs1[8][2] == nullptr         );
 
-  REQUIRE( l_dataPtrs1[9][0] == nullptr         );
-  REQUIRE( l_dataPtrs1[9][1] == nullptr         );
-  REQUIRE( l_dataPtrs1[9][2] == l_dataRaw1 + 17 );
+  REQUIRE( l_dataPtrs1[9][0] == l_dataRaw1 + 19 );
+  REQUIRE( l_dataPtrs1[9][1] == l_dataRaw1 + 20 );
+  REQUIRE( l_dataPtrs1[9][2] == l_dataRaw1 + 21 );
 
   REQUIRE( l_send1.size() == 1 );
   REQUIRE( l_recv1.size() == 1 );
   REQUIRE( l_send1[0].size() == 3+1 );
   REQUIRE( l_recv1[0].size() == 3+1 );
 
-  REQUIRE( l_send1[0][0] == (unsigned char*) (l_dataRaw1 + 12) );
-  REQUIRE( l_send1[0][1] == (unsigned char*) (l_dataRaw1 + 14) );
-  REQUIRE( l_send1[0][2] == (unsigned char*) (l_dataRaw1 + 14) );
-  REQUIRE( l_send1[0][3] == (unsigned char*) (l_dataRaw1 + 14) );
+  REQUIRE( l_send1[0][0] == (unsigned char*) (l_dataRaw1 + 13) );
+  REQUIRE( l_send1[0][1] == (unsigned char*) (l_dataRaw1 + 15) );
+  REQUIRE( l_send1[0][2] == (unsigned char*) (l_dataRaw1 + 15) );
+  REQUIRE( l_send1[0][3] == (unsigned char*) (l_dataRaw1 + 15) );
 
-  REQUIRE( l_recv1[0][0] == (unsigned char*) (l_dataRaw1 + 14) );
-  REQUIRE( l_recv1[0][1] == (unsigned char*) (l_dataRaw1 + 17) );
-  REQUIRE( l_recv1[0][2] == (unsigned char*) (l_dataRaw1 + 17) );
-  REQUIRE( l_recv1[0][3] == (unsigned char*) (l_dataRaw1 + 18) );
+  REQUIRE( l_recv1[0][0] == (unsigned char*) (l_dataRaw1 + 15) );
+  REQUIRE( l_recv1[0][1] == (unsigned char*) (l_dataRaw1 + 19) );
+  REQUIRE( l_recv1[0][2] == (unsigned char*) (l_dataRaw1 + 19) );
+  REQUIRE( l_recv1[0][3] == (unsigned char*) (l_dataRaw1 + 22) );
 }

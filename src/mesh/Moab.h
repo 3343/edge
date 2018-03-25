@@ -77,7 +77,7 @@ class edge::mesh::Moab {
     //! faces (including duplicated and ghost faces)
     std::vector< moab::EntityHandle > m_faces;
 
-    //! elements (including duplicated ghost elements)
+    //! elements (including duplicated and ghost elements)
     std::vector< moab::EntityHandle > m_elements;
 
     //! mapping of indices from mesh to data and data to mesh

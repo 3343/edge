@@ -151,8 +151,8 @@ int main( int i_argc, char *i_argv[] ) {
   l_mesh.getVeChars( l_internal.m_vertexChars  );
   l_mesh.getElChars( l_internal.m_elementChars );
   l_mesh.getFaChars( l_internal.m_faceChars    );
-  int_el l_nElVeEl = l_mesh.getNelVeEl();
-  l_internal.m_connect.elVeEl[0] = (int_el*) l_dynMem.allocate( l_nElVeEl * sizeof(int_el) );
+  // int_el l_nElVeEl = l_mesh.getNelVeEl();
+  // l_internal.m_connect.elVeEl[0] = (int_el*) l_dynMem.allocate( l_nElVeEl * sizeof(int_el) );
   l_mesh.getConnect( l_internal.m_vertexChars,
                      l_internal.m_faceChars,
                      l_internal.m_connect      );

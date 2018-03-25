@@ -465,6 +465,58 @@ class edge::sc::Init {
                 o_ext[l_e1][l_ex][l_e2][l_qt][l_cr] = 0;
       }
     }
+
+    /**
+     * Initializes link between dominant and possibly duplicated limited elements.
+     *
+     * @param i_layoutLim entity layout of the limited elements.
+     * @param i_liLp mapping from limited elements to limited plus elements.
+     * @param i_lpEl mapping from limited plus elements to dense elements.
+     * @param i_elDaMe mapping from data to mesh.
+     * @param i_elMeDa mapping from mesh to data.
+     * @param o_liDoLiDu will be set to link between dominant limited and duplicates. If none, numeric_limits< TL_T_LID >::max() is set.
+     **/
+    template< typename TL_T_LID >
+    static void liDoLiDu( t_enLayout const  & i_layoutLim,
+                          TL_T_LID   const  * i_liLp,
+                          TL_T_LID          * i_lpEl,
+                          TL_T_LID   const  * i_elDaMe,
+                          TL_T_LID   const  * i_elMeDa,
+                          TL_T_LID         (* o_liDoLiDu)[TL_N_FAS] ) {
+      for( TL_T_LID l_li = 0; l_li < i_layoutLim.nEnts; l_li++ )
+        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ )
+          o_liDoLiDu[l_li][l_fa] = std::numeric_limits< TL_T_LID >::max();
+
+      TL_T_LID l_seFirst = i_layoutLim.timeGroups[0].inner.first + i_layoutLim.timeGroups[0].inner.size;
+      TL_T_LID l_seSize  = i_layoutLim.timeGroups[0].nEntsOwn - i_layoutLim.timeGroups[0].inner.size;
+
+      for( TL_T_LID l_l1 = l_seFirst; l_l1 < l_seFirst+l_seSize; l_l1++ ) {
+        TL_T_LID l_lp = i_liLp[l_l1];
+        TL_T_LID l_el = i_lpEl[l_lp];
+
+        TL_T_LID l_elDaMe = i_elDaMe[l_el];
+        TL_T_LID l_elDo   = i_elMeDa[l_elDaMe];
+
+        // assemble the limited element, holding the dominant dense one
+        if( l_elDo != l_el ) {
+          for( TL_T_LID l_l2 = l_seFirst; l_l2 < l_seFirst+l_seSize; l_l2++ ) {
+            TL_T_LID l_lpAd = i_liLp[l_l2];
+            TL_T_LID l_elAd = i_lpEl[l_lpAd];
+
+            if( l_elAd == l_elDo ) {
+              for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+                if( o_liDoLiDu[l_l2][l_fa] == std::numeric_limits< TL_T_LID >::max() ) {
+                  o_liDoLiDu[l_l2][l_fa] = l_l1;
+                  break;
+                }
+                EDGE_CHECK_NE( l_fa, TL_N_FAS-1 );
+              }
+            }
+
+          }
+        }
+      }
+    }
 };
 
 #endif

@@ -462,20 +462,6 @@ class edge::sc::Limiter {
             l_lpFaLi[l_fa] = std::numeric_limits< TL_T_LID >::max();
         }
 
-
-        // trigger sub-cell solver on both sides of internal boundary faces
-        // TODO: Intermediate solution.
-        // TODO: Consider using default-solver w/o net-updates if the fault is not slipping.
-        // TODO: Consider doing the sync in the internal boundary solver (requires neighboring updates before rupture computations).
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          TL_T_LID l_adFa = i_elFa[l_el][l_fa];
-          if( ( i_charsFa[l_adFa].spType & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              i_admC[l_li][l_cr] = i_admC[l_li][l_cr] && i_admC[ l_lpFaLi[l_fa] ][l_cr];
-            }
-          }
-        }
-
         // iterate over faces and replace DG surface integral with sub-cell surface integral if required
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
           TL_T_LID l_liAd = l_lpFaLi[l_fa];
@@ -639,7 +625,6 @@ class edge::sc::Limiter {
               if( i_admC[l_li][l_cr] == false ) {
                 // increase counter for number of limited solutions since synchronization
                 io_limSync[l_li][l_cr]++;
-
                 if( l_admL[l_cr] == false ) {
                   o_extL[l_lp][0][0][l_cr] = l_extSc[0][0][l_cr];
                   o_extL[l_lp][1][0][l_cr] = l_extSc[1][0][l_cr];

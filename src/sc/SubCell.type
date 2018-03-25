@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -92,8 +92,11 @@ struct edge::sc::t_connect {
   //! sub-cell reordering based on vertex combinations of adjacent DG-elements
   unsigned short scDgAd[TL_N_VES_FA][TL_N_SFS];
 
+  // link between between dominant limited possibly redundant (no bridge)
+  TL_T_LID (*liDoLiDu)[TL_N_FAS];
+
   //! link between limited elements and limited plus elements (no bridge)
-  TL_T_LID (*liLp);
+  TL_T_LID *liLp;
 
   //! link between limited plus elements and dense elements (no bridge)
   TL_T_LID (*lpEl);

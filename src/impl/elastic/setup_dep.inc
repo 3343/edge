@@ -21,6 +21,7 @@
  * Dependendencies of the setup.
  **/
 
+#include "setups/InitialDofs.hpp"
 #include "impl/elastic/io/Config.h"
 #include "impl/elastic/setups/MmKernels.hpp"
 #if PP_ORDER > 1
