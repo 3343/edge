@@ -813,6 +813,14 @@ class edge::mesh::common {
                                      unsigned short        (*o_vIdElFaEl)[TL_N_EL_FAS],
                                      bool                    i_periodic=false,
                                const t_vertexChars          *i_veChars=NULL ) {
+      // init
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+      for( int_el l_el = 0; l_el < i_elLayout.nEnts; l_el++ )
+        for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ )
+          o_vIdElFaEl[l_el][l_fa] = std::numeric_limits< unsigned short >::max();
+
       for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
         int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
         int_el l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;

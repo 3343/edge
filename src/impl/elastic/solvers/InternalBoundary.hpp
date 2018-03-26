@@ -288,7 +288,11 @@ class edge::elastic::solvers::InternalBoundary {
 template< t_entityType TL_T_EL >
 class edge::elastic::solvers::InternalBoundaryTypes {
   private:
+    //! number of vertices per element
+    static unsigned short const TL_N_EL_VE = C_ENT[T_SDISC.ELEMENT].N_VERTICES;
+    //! number of faces per element
     static unsigned short const TL_N_EL_FA = C_ENT[T_SDISC.ELEMENT].N_FACES;
+
 
   public:
     /**
@@ -334,8 +338,12 @@ class edge::elastic::solvers::InternalBoundaryTypes {
         // set the sparse type
         o_bfChars[l_bf].spType = (TL_T_SP) i_charsFa[l_fa].spType;
 
+        o_bfChars[l_bf].vIdFaElR = std::numeric_limits< unsigned short >::max();
+
         // iterate over adjacent elements
         for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+          o_bfChars[l_bf].fIdBfEl[l_sd] = std::numeric_limits< unsigned short >::max();
+
           TL_T_LID l_el = i_faEl[l_fa][l_sd];
           EDGE_CHECK( l_el != std::numeric_limits< TL_T_LID >::max() );
 
@@ -344,14 +352,22 @@ class edge::elastic::solvers::InternalBoundaryTypes {
             if( i_elFa[l_el][l_fe] == l_fa ) {
               o_bfChars[l_bf].fIdBfEl[l_sd] = l_fe;
 
-              // face holds the right elements vertex id
-              if( l_sd == 0 ) o_bfChars[l_bf].vIdFaElR = i_vIdElFaEl[l_el][l_fe];
+              EDGE_CHECK(    o_bfChars[l_bf].vIdFaElR == std::numeric_limits< unsigned short >::max()
+                          || i_vIdElFaEl[l_el][l_fe]  == std::numeric_limits< unsigned short >::max()
+                          || o_bfChars[l_bf].vIdFaElR == i_vIdElFaEl[l_el][l_fe] );
+
+              // compute minimum, as one of the elements might be recv
+              o_bfChars[l_bf].vIdFaElR = std::min( o_bfChars[l_bf].vIdFaElR,
+                                                   i_vIdElFaEl[l_el][l_fe] );
               break;
             }
             // check that we found every thing
-            EDGE_CHECK( l_fe != TL_N_EL_FA-1 );
+            EDGE_CHECK_NE( l_fe, TL_N_EL_FA-1 );
           }
         }
+        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ )
+          EDGE_CHECK_LT( o_bfChars[l_bf].fIdBfEl[l_sd], TL_N_EL_FA );
+        EDGE_CHECK_LT( o_bfChars[l_bf].vIdFaElR , TL_N_EL_VE );
 
         l_bf++;
       }
