@@ -284,12 +284,12 @@ if( m_cflow[9] == 2 && m_cflow[10] == 2 ) {
   // perform safety checks
   EDGE_CHECK_EQ( m_cflow[ 0], 2 );
   EDGE_CHECK_EQ( m_cflow[ 1], 2 );
-
+  EDGE_CHECK_EQ( m_cflow[ 2], 2 );
   EDGE_CHECK_EQ( m_cflow[ 3], 2 );
   EDGE_CHECK_EQ( m_cflow[ 4], 2 );
   EDGE_CHECK_EQ( m_cflow[ 5], 2 );
   EDGE_CHECK_EQ( m_cflow[ 6], 2 );
-  EDGE_CHECK_EQ( m_cflow[ 8], 2 );
+
   // fire and forget
   EDGE_CHECK_EQ( m_cflow[ 7], 2 );
   EDGE_CHECK_EQ( m_cflow[11], 2 );
@@ -339,6 +339,7 @@ if( m_cflow[9] == 2 && m_cflow[10] == 2 ) {
   else {
     // wait and progress possibly ongoing communication before leaving for synchronization
     while(    m_mpi.finSends( 0, 0       ) == false     // DG DOFs: send
+           || m_mpi.finSends( 0, l_ad[0] ) == false     // candidate admissibility
            || m_mpi.finSends( 0, l_sc[1] ) == false     // SC DOFs: send
            || m_mpi.finRecvs( 0, l_sc[1] ) == false     // SC DOFS: recv
            || m_mpi.finSends( 0, l_ex[1] ) == false     // extrema: send
