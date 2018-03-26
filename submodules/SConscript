@@ -103,8 +103,11 @@ if env['moab'] != False:
   conf.CheckLibWithHeaderFlags( 'quadmath' )
   conf.CheckLibWithHeaderFlags( 'gfortran' )
 
-  # forward openblas if available
-  conf.CheckLibWithHeaderFlags( 'openblas' )
+  # forward ifcore, blas and lapack if available
+  env.AppendUnique( LIBPATH=[ env['moab']+'/lib64'] )
+  conf.CheckLibWithHeaderFlags( 'ifcore' )
+  conf.CheckLibWithHeaderFlags( 'blas' )
+  conf.CheckLibWithHeaderFlags( 'lapack' )
 
   if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
     env.AppendUnique( CPPDEFINES=['PP_T_MESH_UNSTRUCTURED'] )
