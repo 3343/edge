@@ -90,12 +90,11 @@ class edge::elastic::setups::RuptureInit {
       // allocate sub-face local data
       std::size_t l_sfSize  = std::size_t(i_nRf) * CE_N_SUB_FACES(TL_T_EL, TL_O_SP);
                   l_sfSize *= sizeof( solvers::t_LinSlipWeakSubFace< TL_T_REAL,
-                                                                     C_ENT[TL_T_EL].N_DIM,
+                                                                     TL_N_DIS,
                                                                      TL_N_CRS > );
-      o_lsw.sf = ( solvers::t_LinSlipWeakSubFace<
-                              TL_T_REAL,
-                              C_ENT[TL_T_EL].N_DIM,
-                              TL_N_CRS > (*) [CE_N_SUB_FACES(TL_T_EL, TL_O_SP)] ) io_dynMem.allocate( l_sfSize );
+      o_lsw.sf = ( solvers::t_LinSlipWeakSubFace< TL_T_REAL,
+                                                  TL_N_DIS,
+                                                  TL_N_CRS > (*) [CE_N_SUB_FACES(TL_T_EL, TL_O_SP)] ) io_dynMem.allocate( l_sfSize );
     }
     /////////////////////////////////////////////////
     // TODO: Add support for per-sub-face-point setup! //
