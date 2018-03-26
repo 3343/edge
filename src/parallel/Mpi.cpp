@@ -319,26 +319,29 @@ void edge::parallel::Mpi::beginSends( int_tg         i_tg,
 
 #ifdef PP_USE_MPI
   for( std::size_t l_msg = 0; l_msg < m_grps[i_mg].send[i_tg].size(); l_msg++ ) {
-    // only issue non-empty messages
-    if( m_grps[i_mg].send[i_tg][l_msg].size == 0 ) continue;
-
     // get message
     volatile t_msg *l_send = &m_grps[i_mg].send[i_tg][l_msg];
 
-    MPI_Request l_req;
-    int l_error = MPI_Isend(  l_send->ptr,
-                              l_send->size,
-                              MPI_BYTE,
-                              l_send->rank,
-                              l_send->tag,
-                              m_comm,
-                             &l_req );
-    EDGE_CHECK( l_error == MPI_SUCCESS );
+    // only issue non-empty messages
+    if( m_grps[i_mg].send[i_tg][l_msg].size == 0 ) {
+      l_send->test = 1;
+    }
+    else {
+      MPI_Request l_req;
+      int l_error = MPI_Isend(  l_send->ptr,
+                                l_send->size,
+                                MPI_BYTE,
+                                l_send->rank,
+                                l_send->tag,
+                                m_comm,
+                              &l_req );
+      EDGE_CHECK( l_error == MPI_SUCCESS );
 
-    // update message info
-    l_send->request = l_req;
-    l_send->test = 0;
-    l_send->cmmTd = -1;
+      // update message info
+      l_send->request = l_req;
+      l_send->test = 0;
+      l_send->cmmTd = -1;
+    }
   }
 #endif
 }
@@ -350,26 +353,29 @@ void edge::parallel::Mpi::beginRecvs( int_tg         i_tg,
 
 #ifdef PP_USE_MPI
   for( std::size_t l_msg = 0; l_msg < m_grps[i_mg].recv[i_tg].size(); l_msg++ ) {
-    // only issue non-empty messages
-    if( m_grps[i_mg].recv[i_tg][l_msg].size == 0 ) continue;
-
     // get message
     volatile t_msg *l_recv = &m_grps[i_mg].recv[i_tg][l_msg];
 
-    MPI_Request l_req;
-    int l_error = MPI_Irecv(   l_recv->ptr,
-                               l_recv->size,
-                               MPI_BYTE,
-                               l_recv->rank,
-                               l_recv->tag,
-                               m_comm,
-                              &l_req );
-    EDGE_CHECK( l_error == MPI_SUCCESS );
+    // only issue non-empty messages
+    if( m_grps[i_mg].recv[i_tg][l_msg].size == 0 ) {
+      l_recv->test = 1;
+    }
+    else {
+      MPI_Request l_req;
+      int l_error = MPI_Irecv(   l_recv->ptr,
+                                l_recv->size,
+                                MPI_BYTE,
+                                l_recv->rank,
+                                l_recv->tag,
+                                m_comm,
+                                &l_req );
+      EDGE_CHECK( l_error == MPI_SUCCESS );
 
-    // update message info
-    l_recv->request = l_req;
-    l_recv->test = 0;
-    l_recv->cmmTd = -1;
+      // update message info
+      l_recv->request = l_req;
+      l_recv->test = 0;
+      l_recv->cmmTd = -1;
+    }
   }
 #endif
 }

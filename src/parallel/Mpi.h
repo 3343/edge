@@ -188,6 +188,7 @@ class edge::parallel::Mpi {
 
     /**
      * Begins the send-operations for the specified time group.
+     * Empty messages are directly set to finished.
      *
      * @param i_tg time group for which send-operations are issued.
      * @param i_mg mpi group for which send-operations are issued.
@@ -197,6 +198,7 @@ class edge::parallel::Mpi {
 
     /**
      * Begins the receive-operations for the specified time group.
+     * Empty messages are directly set to finished.
      *
      * @param i_tg time group for which receive-operations are issued.
      * @param i_mg mpi group for which receive-operations are issued.
