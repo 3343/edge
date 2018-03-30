@@ -37,24 +37,12 @@ edge::io::WaveField::WaveField(       std::string      i_type,
                                 const t_vertexChars   *i_veChars,
                                 const t_elementChars  *i_elChars,
                                 const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-                                const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] ):
-
-  m_veChars(i_veChars), m_elChars(i_elChars), m_elVe(i_elVe), m_dofs(i_dofs) {
-  if(      i_type == "vtk_ascii"  ) m_type = vtkAscii;
-  else if( i_type == "vtk_binary" ) m_type = vtkBinary;
-  else                              m_type = none;
-
-  // create new directory only for non-empty paths
-  if( m_type != none ) {
-    EDGE_LOG_INFO << "setting up wave field output";
-    FileSystem::createDir( i_outFile );
-  }
-
-  m_nVe = i_inMap->veDaMe.size();
-
-  m_writeStep  = 0;
-  m_outFile    = i_outFile;
-
+                                const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+                                      int_spType       i_spType ):
+ m_veChars(i_veChars),
+ m_elChars(i_elChars),
+ m_elVe(i_elVe),
+ m_dofs(i_dofs) {
   // derive the print elements
   for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
     int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
@@ -65,7 +53,10 @@ edge::io::WaveField::WaveField(       std::string      i_type,
       int_el l_elUn = i_inMap->elDaMe[ l_el   ];
              l_elUn = i_inMap->elMeDa[ l_elUn ];
 
-      m_elPrint.push_back( l_elUn );
+      // only add if element has the desired sparse type
+      if(     i_spType == std::numeric_limits< int_spType >::max()
+          || (i_elChars[l_el].spType & i_spType) == i_spType )
+        m_elPrint.push_back( l_elUn );
     }
   }
   // remove duplicates
@@ -73,37 +64,55 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   m_elPrint.erase( unique( m_elPrint.begin(), m_elPrint.end() ), m_elPrint.end() );
 
   /*
-   * derive sparse id of limited elements.
+   * derive sparse ids of limited elements.
    */
-  m_lePrint.resize( m_elPrint.size() );
-
-  // counter for limited elements
-  int_el l_le = 0;
+  m_liPrint.resize( m_elPrint.size() );
 
   // last print element
-  int_el l_lastPrint = m_elPrint.back();
+  int_el l_lastPrint = (m_elPrint.size() == 0) ? 0 : m_elPrint.back();
 
-  // counter for print elements
-  int_el l_pe = 0;
+  // current print element
+  int_el l_ep = 0;
 
-  // iterate over elements
+  //! counter for limited elements
+  int_el l_li = 0;
+
+  // iterate over dense elements
   for( int_el l_el = 0; l_el <= l_lastPrint; l_el++ ) {
+    // ignore if not print
+    if( l_el != m_elPrint[l_ep] ) continue;
+
     // check if element is limited
     bool l_lim = false;
     if( ( m_elChars[l_el].spType & LIMIT ) == LIMIT ) l_lim = true;
 
-    // set info if element is print
-    if( l_el == m_elPrint[l_pe] ) {
-      if( l_lim ) m_lePrint[l_pe] = l_le;
-      else        m_lePrint[l_pe] = std::numeric_limits< int_el >::max();
-
-      // increase counter for print elements
-      l_pe++;
+    if( l_lim ) {
+      m_liPrint[l_ep] = l_li;
+      l_li++;
     }
+    else
+      m_liPrint[l_ep] = std::numeric_limits< int_el >::max();
 
-    // increase counter for limited elements
-    if( l_lim ) l_le++;
+    // increase counter for print elements
+    l_ep++;
   }
+
+  if(      i_type == "vtk_ascii"  ) m_type = vtkAscii;
+  else if( i_type == "vtk_binary" ) m_type = vtkBinary;
+  else                              m_type = none;
+
+  // create new directory
+  if( m_type != none ) {
+    EDGE_LOG_INFO << "setting up wave field output";
+    if( m_elPrint.size() > 0 )
+      FileSystem::createDir( i_outFile );
+  }
+
+  m_nVe = i_inMap->veDaMe.size();
+
+  m_writeStep = 0;
+  m_outFile   = i_outFile;
+
 }
 
 void edge::io::WaveField::write( double         i_time,
@@ -117,15 +126,16 @@ void edge::io::WaveField::write( double         i_time,
     l_outFile += "_" + parallel::g_rankStr + "_" + std::to_string((unsigned long long) m_writeStep) + ".vtk";
 
     // write output
-    m_vtk.write( l_outFile,
-                 m_type==vtkBinary,
-                 m_nVe,
-                 m_elPrint,
-                 m_lePrint,
-                 m_veChars,
-                 m_elVe,
-                 m_dofs,
-                 i_limSync );
+    if( m_elPrint.size() > 0 )
+      m_vtk.write( l_outFile,
+                   m_type==vtkBinary,
+                   m_nVe,
+                   m_elPrint,
+                   m_liPrint,
+                   m_veChars,
+                   m_elVe,
+                   m_dofs,
+                   i_limSync );
   }
 
   m_writeStep++;

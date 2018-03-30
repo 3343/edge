@@ -27,6 +27,7 @@
 #include "Vtk.h"
 
 #include <string>
+#include <limits>
 #include "constants.hpp"
 #include "data/EntityLayout.type"
 
@@ -73,7 +74,7 @@ class edge::io::WaveField {
     std::vector< int_el > m_elPrint;
 
     //! sparse ids of limited print element (std::limit<int_el>::max() if not a limited element)
-    std::vector< int_el > m_lePrint;
+    std::vector< int_el > m_liPrint;
 
   public:
     /**
@@ -87,6 +88,7 @@ class edge::io::WaveField {
      * @param i_elChars characteristics of the elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_dofs location of degrees of freedom, which will get written in corresponding calls.
+     * @param i_spType sparse type for elements, which are printed. If numeric_limits<>::max(), all elements are printed.
      **/
     WaveField(       std::string      i_type,
                      std::string      i_outFile,
@@ -95,7 +97,8 @@ class edge::io::WaveField {
                const t_vertexChars   *i_veChars,
                const t_elementChars  *i_elChars,
                const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-               const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] );
+               const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+                     int_spType       i_spType = std::numeric_limits< int_spType >::max() );
 
     /**
      * Writes the given dofs.
