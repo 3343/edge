@@ -184,6 +184,8 @@ void edge::io::Config::printConfig() {
   if( m_waveFieldType != "" ) {
     EDGE_LOG_INFO << "  wave_field:";
     EDGE_LOG_INFO << "    type: " << m_waveFieldType;
+    if( m_waveFieldSpType != std::numeric_limits< int_spType >::max() )
+      EDGE_LOG_INFO << "    sparse_type: " << m_waveFieldSpType;
     EDGE_LOG_INFO << "    file: " << m_waveFieldFile;
     EDGE_LOG_INFO << "    int: "  << m_waveFieldInt;
   }
@@ -354,6 +356,9 @@ edge::io::Config::Config( std::string i_xmlPath ):
   if( m_waveFieldType != "" ) {
     m_waveFieldFile = l_output.child("wave_field").child("file").text().as_string();
     m_waveFieldInt  = l_output.child("wave_field").child("int").text().as_double();
+
+    if( l_output.child("wave_field").find_child([]( pugi::xml_node i_node ){ return std::string(i_node.name()) == "sparse_type";}) )
+      m_waveFieldSpType = l_output.child("wave_field").child("sparse_type").text().as_uint();
   }
   EDGE_CHECK_GT( m_waveFieldInt, TOL.TIME );
 

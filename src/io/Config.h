@@ -224,7 +224,10 @@ class edge::io::Config {
     //! end time of the simulations
     double m_endTime;
 
-    //! type of the wave field output
+    //! sparse type of the wave field output
+    int_spType m_waveFieldSpType = std::numeric_limits< int_spType >::max();
+
+    //! plot type of the wave field output
     std::string m_waveFieldType;
 
     //! name of the output file for the wave field
