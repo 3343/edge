@@ -69,16 +69,16 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   m_liPrint.resize( m_elPrint.size() );
 
   // last print element
-  int_el l_lastPrint = (m_elPrint.size() == 0) ? 0 : m_elPrint.back();
+  int_el l_lastPrint = (m_elPrint.size() == 0) ? 0 : m_elPrint.back()+1;
 
   // current print element
-  int_el l_ep = 0;
+  std::size_t l_ep = 0;
 
   //! counter for limited elements
   int_el l_li = 0;
 
   // iterate over dense elements
-  for( int_el l_el = 0; l_el <= l_lastPrint; l_el++ ) {
+  for( int_el l_el = 0; l_el < l_lastPrint; l_el++ ) {
     // ignore if not print
     if( l_el != m_elPrint[l_ep] ) continue;
 
@@ -95,6 +95,8 @@ edge::io::WaveField::WaveField(       std::string      i_type,
 
     // increase counter for print elements
     l_ep++;
+
+    if( l_ep >= m_elPrint.size() ) break;
   }
 
   if(      i_type == "vtk_ascii"  ) m_type = vtkAscii;
@@ -112,7 +114,6 @@ edge::io::WaveField::WaveField(       std::string      i_type,
 
   m_writeStep = 0;
   m_outFile   = i_outFile;
-
 }
 
 void edge::io::WaveField::write( double         i_time,
