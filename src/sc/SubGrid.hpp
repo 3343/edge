@@ -49,8 +49,24 @@ class edge::sc::SubGrid {
     //! number of vertices per DG-element / sub-cell
     static unsigned short const TL_N_VES = C_ENT[TL_T_EL].N_VERTICES;
 
+    //! number of faces
+    static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+    //! number of vertices per face
+    static unsigned short const TL_N_FA_VES = C_ENT[TL_T_EL].N_FACE_VERTICES;
+
+    //! number of sub-vertices per element face
+    static unsigned short const TL_N_FA_SVS = CE_N_SUB_VERTICES( C_ENT[TL_T_EL].TYPE_FACES, TL_O_SP );
+
+    //! number of vertices per element
+    static unsigned short const TL_N_EL_VES = C_ENT[TL_T_EL].N_VERTICES;
+
     //! number of sub-vertices
     static unsigned short const TL_N_SVS = CE_N_SUB_VERTICES( TL_T_EL, TL_O_SP );
+
+    //! number of sub-faces per element face
+    static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
 
     //! number of sub-cells per element
     static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
@@ -99,6 +115,54 @@ class edge::sc::SubGrid {
       }
 
       return l_scM;
+    }
+
+    /**
+     * Derives the face-local "sub-grid" in reference coordinats.
+     *
+     * @param i_scSv sub-vertices adjacent to the sub-cells (no bridge).
+     * @param o_faSfSvL will be set to sub-vertices adjacent to sub-faces of a face as local sub-grid ids.
+     * @param o_faSvR will be set to sub-vertex ids of the new "sub-grid" in terms of the original volume sub-grid.
+     **/
+    static void faSg( unsigned short const i_scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_EL_VES ],
+                      unsigned short       o_faSfSvL[TL_N_FAS][TL_N_SFS][TL_N_FA_VES],
+                      unsigned short       o_faSvR[TL_N_FAS][TL_N_FA_SVS] ) {
+      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+        // init with invalid values
+        for( unsigned short l_sv = 0; l_sv < TL_N_FA_SVS; l_sv++ )
+          o_faSvR[l_fa][l_sv] = std::numeric_limits< unsigned short >::max();
+
+        // iterate over sub-faces
+        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+          // corresponding receive sub-cell
+          unsigned short l_scRecv = TL_N_SCS + l_fa * TL_N_SFS + l_sf;
+
+          // assign the sub-vertex ids
+          for( unsigned short l_sv = 0; l_sv < TL_N_FA_VES; l_sv++ ) {
+            for( unsigned short l_cu = 0; l_cu < TL_N_FA_SVS; l_cu++ ) {
+              // assign if we reached the current maximum
+              if( o_faSvR[l_fa][l_cu] == i_scSv[l_scRecv][l_sv] ) {
+                // store and break
+                o_faSfSvL[l_fa][l_sf][l_sv] = l_cu;
+                break;
+              }
+              else if( o_faSvR[l_fa][l_cu] == std::numeric_limits< unsigned short >::max() ) {
+                // store and break
+                o_faSvR[l_fa][l_cu] = i_scSv[l_scRecv][l_sv];
+                o_faSfSvL[l_fa][l_sf][l_sv] = l_cu;
+                break;
+              }
+            }
+          }
+
+          // reorder for quad-faces to avoid diagonals when plotting
+          if( TL_T_EL == HEX8R ) {
+            unsigned short l_svTmp = o_faSfSvL[l_fa][l_sf][0];
+            o_faSfSvL[l_fa][l_sf][0] = o_faSfSvL[l_fa][l_sf][1];
+            o_faSfSvL[l_fa][l_sf][1] = l_svTmp;
+          }
+        }
+      }
     }
 };
 

@@ -74,7 +74,7 @@ class edge::io::Receivers {
     /**
      * Touches the output for the first time and writes the headers.
      *
-     * i_outDir output directory which gets created if it does not exist.
+     * @param i_outDir output directory which gets created if it does not exist.
      **/
     void touchOutput( const std::string &i_outDir );
 

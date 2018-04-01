@@ -106,13 +106,26 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   // create new directory
   if( m_type != none ) {
     EDGE_LOG_INFO << "setting up wave field output";
-    FileSystem::createDir( i_outFile );
+    std::string l_dir, l_file;
+    FileSystem::splitPathLast( i_outFile, l_dir, l_file );
+
+    if( parallel::g_rank == 0 ) {
+      for( int l_ra = 0; l_ra < parallel::g_nRanks; l_ra++ ) {
+        std::string l_dirCreate = l_dir + "/" + std::to_string(l_ra);
+        FileSystem::createDir( l_dirCreate );
+      }
+    }
+#ifdef PP_USE_MPI
+    MPI_Barrier( MPI_COMM_WORLD );
+#endif
+
+    l_dir = l_dir + "/" + std::to_string(parallel::g_rank) + '/';
+    m_outFile = l_dir + l_file;
   }
 
   m_nVe = i_inMap->veDaMe.size();
 
   m_writeStep = 0;
-  m_outFile   = i_outFile;
 }
 
 void edge::io::WaveField::write( double         i_time,

@@ -28,6 +28,7 @@
 #include "data/Dynamic.h"
 #include "FileSystem.hpp"
 #include "linalg/Mappings.hpp"
+#include "sc/SubGrid.hpp"
 #include "submodules/include/visit_writer.h"
 
 namespace edge {
@@ -85,7 +86,7 @@ class edge::io::InternalBoundary {
     float **m_bPtrs;
 
     //! output base path
-    std::string const m_outPath;
+    std::string m_outPath;
 
     //! number of steps written to disk
     unsigned int m_writeStep = 0;
@@ -95,54 +96,6 @@ class edge::io::InternalBoundary {
 
     //! visit element type
     int m_visitElType;
-
-    /**
-     * Derives the face-local "sub-grid" in reference coordinats.
-     *
-     * @param i_scSv sub-vertices adjacent to the sub-cells (no bridge).
-     * @param o_faSfSvL will be set to sub-vertices adjacent to sub-faces of a face as local sub-grid ids.
-     * @param o_faSvR will be set to sub-vertex ids of the new "sub-grid" in terms of the original volume sub-grid.
-     **/
-    void faSg( unsigned short const i_scSv[ TL_N_SCS + TL_N_FAS * TL_N_SFS ][ TL_N_EL_VES ],
-               unsigned short       o_faSfSvL[TL_N_FAS][TL_N_SFS][TL_N_FA_VES],
-               unsigned short       o_faSvR[TL_N_FAS][TL_N_FA_SVS] ) {
-      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-        // init with invalid values
-        for( unsigned short l_sv = 0; l_sv < TL_N_FA_SVS; l_sv++ )
-          o_faSvR[l_fa][l_sv] = std::numeric_limits< unsigned short >::max();
-
-        // iterate over sub-faces
-        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-          // corresponding receive sub-cell
-          unsigned short l_scRecv = TL_N_SCS + l_fa * TL_N_SFS + l_sf;
-
-          // assign the sub-vertex ids
-          for( unsigned short l_sv = 0; l_sv < TL_N_FA_VES; l_sv++ ) {
-            for( unsigned short l_cu = 0; l_cu < TL_N_FA_SVS; l_cu++ ) {
-              // assign if we reached the current maximum
-              if( o_faSvR[l_fa][l_cu] == i_scSv[l_scRecv][l_sv] ) {
-                // store and break
-                o_faSfSvL[l_fa][l_sf][l_sv] = l_cu;
-                break;
-              }
-              else if( o_faSvR[l_fa][l_cu] == std::numeric_limits< unsigned short >::max() ) {
-                // store and break
-                o_faSvR[l_fa][l_cu] = i_scSv[l_scRecv][l_sv];
-                o_faSfSvL[l_fa][l_sf][l_sv] = l_cu;
-                break;
-              }
-            }
-          }
-
-          // reorder for quad-faces to avoid diagonals when plotting
-          if( TL_T_EL == HEX8R ) {
-            unsigned short l_svTmp = o_faSfSvL[l_fa][l_sf][0];
-            o_faSfSvL[l_fa][l_sf][0] = o_faSfSvL[l_fa][l_sf][1];
-            o_faSfSvL[l_fa][l_sf][1] = l_svTmp;
-          }
-        }
-      }
-    }
 
     /**
      * Copies the given data to the output data.
@@ -200,10 +153,25 @@ class edge::io::InternalBoundary {
      * @param i_outPath base path to where the output is written.
      **/
     InternalBoundary( std::string &i_outPath,
-                      bool i_binary=1 ): m_outPath(i_outPath), m_binary(i_binary) {
-      // init directory if given
-      if( m_outPath != "")
-        FileSystem::createDir( m_outPath );
+                      bool i_binary=1 ): m_binary(i_binary) {
+      // init directories if given
+      if( i_outPath != "") {
+        std::string l_dir, l_file;
+        FileSystem::splitPathLast( i_outPath, l_dir, l_file );
+
+        if( parallel::g_rank == 0 ) {
+          for( int l_ra = 0; l_ra < parallel::g_nRanks; l_ra++ ) {
+            std::string l_dirCreate = l_dir + '/' + std::to_string(l_ra);
+            FileSystem::createDir( l_dirCreate );
+          }
+        }
+#ifdef PP_USE_MPI
+        MPI_Barrier( MPI_COMM_WORLD );
+#endif
+
+        l_dir = l_dir + "/" + std::to_string(parallel::g_rank) + '/';
+        m_outPath = l_dir + l_file;
+      }
 
       // set plotting type
       if(       C_ENT[TL_T_EL].TYPE_FACES == LINE   ) m_visitElType = VISIT_LINE;
@@ -279,9 +247,10 @@ class edge::io::InternalBoundary {
       // get face "subgrid"
       unsigned short l_faSfSvL[TL_N_FAS][TL_N_SFS][TL_N_FA_VES];
       unsigned short l_faSvR[TL_N_FAS][TL_N_FA_SVS];
-      faSg( i_scSv,
-            l_faSfSvL,
-            l_faSvR );
+      sc::SubGrid< TL_T_EL,
+                   TL_O_SP >::faSg( i_scSv,
+                                    l_faSfSvL,
+                                    l_faSvR );
 
       // iterate over boundary faces
 #ifdef PP_USE_OMP
