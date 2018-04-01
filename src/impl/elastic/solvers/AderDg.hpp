@@ -467,7 +467,6 @@ class edge::elastic::solvers::AderDg {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
-
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               l_dofsSc[0][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sfRe][l_cr];
               l_dofsSc[1][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf  ][l_cr];
@@ -517,14 +516,12 @@ class edge::elastic::solvers::AderDg {
         // update admissibility
         for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            // set admissibility and lock only for active rupture (avoids trouble in shared memory parallelization)
-            if( l_rup[l_sf][l_cr] ) {
-              io_admC[ l_li[0] ][l_cr] = false;
-              io_admC[ l_li[1] ][l_cr] = false;
+            // enforce sub-cell solver for DR
+            io_admC[ l_li[0] ][l_cr] = false;
+            io_admC[ l_li[1] ][l_cr] = false;
 
-              io_lock[ l_li[0] ][l_cr] = true;
-              io_lock[ l_li[1] ][l_cr] = true;
-            }
+            io_lock[ l_li[0] ][l_cr] = true;
+            io_lock[ l_li[1] ][l_cr] = true;
           }
         }
 
@@ -538,10 +535,8 @@ class edge::elastic::solvers::AderDg {
               // copy over admissibility and lock
               for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  if( l_rup[l_sf][l_cr] ) {
-                    io_admC[ l_liDu ][l_cr] = false;
-                    io_lock[ l_liDu ][l_cr] = true;
-                  }
+                  io_admC[ l_liDu ][l_cr] = false;
+                  io_lock[ l_liDu ][l_cr] = true;
                 }
               }
 
