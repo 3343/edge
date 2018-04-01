@@ -106,8 +106,7 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   // create new directory
   if( m_type != none ) {
     EDGE_LOG_INFO << "setting up wave field output";
-    if( m_elPrint.size() > 0 )
-      FileSystem::createDir( i_outFile );
+    FileSystem::createDir( i_outFile );
   }
 
   m_nVe = i_inMap->veDaMe.size();
