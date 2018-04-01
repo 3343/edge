@@ -229,7 +229,6 @@ class edge::elastic::sc::UpWindSolver< 3 > {
       l_entFix[1][1]  = l_mssEl;
       l_entFix[1][1] *= i_vis;
       l_entFix[2][2]  = l_entFix[1][1];
-      l_entFix[4][4]  = l_entFix[1][1];
 
       // do the matrix mults
       TL_T_REAL l_tmp[9][9];
@@ -384,7 +383,8 @@ class edge::elastic::sc::UpWind {
                TL_T_CHARS_FA     const (*i_charsFa),
                TL_T_CHARS_EL     const (*i_charsEl),
                TL_T_MAT_PARS     const (*i_matPars),
-               TL_T_REAL                 i_vis = TL_T_REAL(0.05) ) {
+               TL_T_REAL                 i_visDrHom = TL_T_REAL(0.025),
+               TL_T_REAL                 i_visDrHet = TL_T_REAL(0.01) ) {
       // iterate over limited plus elements
       for( TL_T_LID l_lp = i_firstLp; l_lp < i_firstLp+i_sizeLp; l_lp++ ) {
         // derive dense id
@@ -402,6 +402,26 @@ class edge::elastic::sc::UpWind {
         TL_T_REAL l_t0[TL_N_TYSF][TL_N_DIS];
         TL_T_REAL l_t1[TL_N_TYSF][TL_N_DIS];
         TL_T_REAL l_ar[TL_N_TYSF];
+
+        // determine DR viscosity
+        TL_T_REAL l_drVisHom  = (i_charsEl[l_el].spType & RUPTURE) == RUPTURE;
+                  l_drVisHom *= i_visDrHom;
+        TL_T_REAL l_drVisHet[TL_N_FAS];
+        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+          l_drVisHet[l_fa] = 0;
+
+          TL_T_LID l_elAd = i_elFaEl[l_el][l_fa];
+          bool l_ruEl =     l_elAd != std::numeric_limits< TL_T_LID >::max()
+                        && (i_charsEl[l_el].spType & RUPTURE) == RUPTURE;
+
+          bool l_ruAd =     l_elAd != std::numeric_limits< TL_T_LID >::max()
+                        && (i_charsEl[l_elAd].spType & RUPTURE) == RUPTURE;
+
+          // add heterogeneous viscosity only for rupture elements and sub-cells adjacent to rupture elements
+          if( l_ruAd || l_ruEl ) {
+            l_drVisHet[l_fa] = i_visDrHet;
+          }
+        }
 
         for( unsigned short l_ty = 0; l_ty < TL_N_TYSF; l_ty++ ) {
           // default: sub-faces are parallel to element faces
@@ -477,7 +497,7 @@ class edge::elastic::sc::UpWind {
                                           l_t1[l_ty],
                                           m_up[l_lp][2*TL_N_TYSF+l_ty],
                                           l_upDummy,
-                                          i_vis,
+                                          l_drVisHet[l_ty],
                                           (i_elFaEl[l_el][l_ty] == std::numeric_limits< TL_T_LID >::max())
                                         );
           }
@@ -490,7 +510,7 @@ class edge::elastic::sc::UpWind {
                                         l_t1[l_ty],
                                         m_up[l_lp][l_ty],
                                         m_up[l_lp][TL_N_TYSF+l_ty],
-                                        i_vis,
+                                        l_drVisHom,
                                         false );
         }
 
