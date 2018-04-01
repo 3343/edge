@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2017, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -240,7 +240,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
                                 l_internal.m_vertexChars,
                                 l_internal.m_elementChars,
                                 l_internal.m_connect.elVe,
-                                l_internal.m_elementModePrivate1 );
+                                l_internal.m_elementModePrivate1,
+                                l_config.m_waveFieldSpType );
 
   // write setup
   EDGE_LOG_INFO << "reached synchronization point #0: " << l_simTime;
