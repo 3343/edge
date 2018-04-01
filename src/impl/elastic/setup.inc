@@ -63,12 +63,6 @@
                                     l_internal.m_elementChars );
 #endif
 
-  // inherit limited from free-surface boundaries
-  edge::data::SparseEntities::inherit(              l_internal.m_nElements,
-                                       (int_spType) t_spTypeElastic::FREE_SURFACE,
-                                       (int_spType) t_enTypeShared::LIMIT,
-                                                    l_internal.m_elementChars );
-
   // perform sweeps over face-neighbors to extend limited region
   for( unsigned short l_sw = 0; l_sw < 3; l_sw++ ) {
     // inherit limit plus from limited elements (superset)
