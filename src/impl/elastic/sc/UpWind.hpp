@@ -384,7 +384,7 @@ class edge::elastic::sc::UpWind {
                TL_T_CHARS_EL     const (*i_charsEl),
                TL_T_MAT_PARS     const (*i_matPars),
                TL_T_REAL                 i_visDrHom = TL_T_REAL(0.025),
-               TL_T_REAL                 i_visDrHet = TL_T_REAL(0.01) ) {
+               TL_T_REAL                 i_visDrHet = TL_T_REAL(0.05) ) {
       // iterate over limited plus elements
       for( TL_T_LID l_lp = i_firstLp; l_lp < i_firstLp+i_sizeLp; l_lp++ ) {
         // derive dense id
