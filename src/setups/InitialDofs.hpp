@@ -166,69 +166,77 @@ class edge::setups::InitialDofs {
                     TL_T_LID            (*i_elVe)[TL_N_VES],
                     TL_T_VE_CHARS const  *i_veChars,
                     TL_T_REAL           (*o_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
-      // coordinates
-      TL_T_REAL l_crds[TL_N_DIMS];
-
-      // quantities
-      TL_T_REAL l_qts[TL_N_CRS][TL_N_QTS];
-
-      // expressions
-      edge::data::Expression< TL_T_REAL > l_exprs[TL_N_CRS];
-
-      // bind and compile expressions
-      bc( i_exprStrs, l_crds, l_qts, l_exprs );
-
       // iterate over DG-elements
-      for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
-        // get quad-points
-        std::vector< TL_T_REAL > l_pts[3], l_wes;
-        qps( TL_O_SP+1,
-             l_el,
-             i_elVe,
-             i_veChars,
-             l_pts,
-             l_wes );
-        EDGE_CHECK( l_wes.size() == TL_N_QPS1 ); // check compability of work-around
+#ifdef PP_USE_OMP
+#pragma omp parallel
+#endif
+      {
+        // coordinates
+        TL_T_REAL l_crds[TL_N_DIMS];
 
-        // solution at quad points
-        TL_T_REAL l_q0[TL_N_CRS][TL_N_QTS][TL_N_QPS1];
+        // quantities
+        TL_T_REAL l_qts[TL_N_CRS][TL_N_QTS];
 
-        // get solution at quad points
-        for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
-          // copy coordinates
-          for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ )
-            l_crds[l_di] = l_pts[l_di][l_qp];
+        // expressions
+        edge::data::Expression< TL_T_REAL > l_exprs[TL_N_CRS];
 
-          // eval expressions and store results
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            // reset quantities
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-              l_qts[l_cr][l_qt]  = 0;
+        // bind and compile expressions
+        bc( i_exprStrs, l_crds, l_qts, l_exprs );
 
-            l_exprs[l_cr].eval();
+#ifdef PP_USE_OMP
+#pragma omp for
+#endif
+        for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
+          // get quad-points
+          std::vector< TL_T_REAL > l_pts[3], l_wes;
+          qps( TL_O_SP+1,
+              l_el,
+              i_elVe,
+              i_veChars,
+              l_pts,
+              l_wes );
+          EDGE_CHECK( l_wes.size() == TL_N_QPS1 ); // check compability of work-around
 
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-              l_q0[l_cr][l_qt][l_qp] = l_qts[l_cr][l_qt];
-          }
-        }
+          // solution at quad points
+          TL_T_REAL l_q0[TL_N_CRS][TL_N_QTS][TL_N_QPS1];
 
-        // project to modes
-        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-            TL_T_REAL l_mds[TL_N_MDS];
+          // get solution at quad points
+          for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
+            // copy coordinates
+            for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ )
+              l_crds[l_di] = l_pts[l_di][l_qp];
 
-            i_basis.qpts2modal( l_q0[l_cr][l_qt],
-                                TL_O_SP+1,
-                                l_mds );
+            // eval expressions and store results
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              // reset quantities
+              for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+                l_qts[l_cr][l_qt]  = 0;
 
-            // store modes
-            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
-              o_dofs[l_el][l_qt][l_md][l_cr] = l_mds[l_md];
+              l_exprs[l_cr].eval();
+
+              for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+                l_q0[l_cr][l_qt][l_qp] = l_qts[l_cr][l_qt];
             }
-
           }
-        }
 
+          // project to modes
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+              TL_T_REAL l_mds[TL_N_MDS];
+
+              i_basis.qpts2modal( l_q0[l_cr][l_qt],
+                                  TL_O_SP+1,
+                                  l_mds );
+
+              // store modes
+              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+                o_dofs[l_el][l_qt][l_md][l_cr] = l_mds[l_md];
+              }
+
+            }
+          }
+
+        }
       }
     }
 
