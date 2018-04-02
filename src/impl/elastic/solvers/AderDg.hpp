@@ -275,7 +275,7 @@ class edge::elastic::solvers::AderDg {
       unsigned int l_enRe = i_firstSpRe;
 
       // temporary data structurre for product for two-way mult and receivers
-      TL_T_REAL (*l_tmp)[TL_N_MDS][TL_N_CRS] = parallel::g_scratchMem->tRes;
+      TL_T_REAL (*l_tmp)[TL_N_MDS][TL_N_CRS] = parallel::g_scratchMem->tRes[0];
 
       // buffer for derivatives
       TL_T_REAL (*l_derBuffer)[TL_N_QTS][TL_N_MDS][TL_N_CRS] = parallel::g_scratchMem->dBuf;
@@ -360,8 +360,7 @@ class edge::elastic::solvers::AderDg {
           * compute local surface contribution
           */
         // reuse derivative buffer
-        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
-          (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
+        TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
         // call kernel
         SurfInt< TL_T_EL,
                  TL_N_QTS,
@@ -463,7 +462,7 @@ class edge::elastic::solvers::AderDg {
         unsigned short const l_vIdFaEl = i_iBnd.bfChars[l_bf].vIdFaElR;
 
         // get sub-cell solution at DG-faces
-        TL_T_REAL l_dofsSc[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+        TL_T_REAL (*l_dofsSc)[TL_N_QTS][TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa;
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
@@ -478,7 +477,7 @@ class edge::elastic::solvers::AderDg {
         bool l_rup[TL_N_SFS][TL_N_CRS];
 
         // net-updates
-        TL_T_REAL l_netUps[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+        TL_T_REAL (*l_netUps)[TL_N_QTS][TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa+2;
 
         // call the rupture solver
         edge::elastic::solvers::InternalBoundary<
@@ -657,8 +656,7 @@ class edge::elastic::solvers::AderDg {
       TL_T_LID l_li = i_firstLi;
 
       // temporary product for three-way mult
-      TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] =
-        (TL_T_REAL (*)[N_QUANTITIES][N_FACE_MODES][N_CRUNS]) parallel::g_scratchMem->dBuf;
+      TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
 
       // iterate over elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
@@ -724,7 +722,7 @@ class edge::elastic::solvers::AderDg {
         if( (i_elChars[l_el].spType & EXTREMA) != EXTREMA ) {}
         else {
           //! TODO: Use dedicated scratch memory for this
-          TL_T_REAL l_subCell[TL_N_QTS][TL_N_SCS][TL_N_CRS];
+          TL_T_REAL (*l_sg)[TL_N_SCS][TL_N_CRS] = parallel::g_scratchMem->sg;
 
           // compute DG extrema
           edge::sc::Kernels< TL_T_EL,
@@ -732,7 +730,7 @@ class edge::elastic::solvers::AderDg {
                              TL_N_QTS,
                              TL_N_CRS >::dgExtrema(  io_dofs[l_el],
                                                      i_scatter,
-                                                     l_subCell,
+                                                     l_sg,
                                                      o_extC[l_ex][0],
                                                      o_extC[l_ex][1] );
 

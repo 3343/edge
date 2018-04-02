@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2017, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -664,9 +664,13 @@ constexpr struct {
   } BASE;
   int CRUNS;   // concurrent forward runs
   struct {
-    int PRIVATE; // modes on run-private data (wrapping cruns)
-    int SHARED;  // modes on shared data (no cruns)
+    int PRIVATE; // element modes on run-private data (wrapping cruns)
+    int SHARED;  // element modes on shared data (no cruns)
   } ELEMENT_MODES;
+  struct {
+    int PRIVATE; // face modes on run-private data (wrapping cruns)
+    int SHARED;  // face modes on shared data (no cruns)
+  } FACE_MODES;
 }
 ALIGNMENT = {
   {
@@ -677,6 +681,10 @@ ALIGNMENT = {
   {
     CE_MUL_2(N_CRUNS*N_ELEMENT_MODES) * (PP_PRECISION==64 ? 8 : 4),
     CE_MUL_2(        N_ELEMENT_MODES) * (PP_PRECISION==64 ? 8 : 4)
+  },
+  {
+    CE_MUL_2(N_CRUNS*N_FACE_MODES) * (PP_PRECISION==64 ? 8 : 4),
+    CE_MUL_2(        N_FACE_MODES) * (PP_PRECISION==64 ? 8 : 4)
   }
 };
 static_assert( ALIGNMENT.BASE.HEAP  >= ALIGNMENT.BASE.STACK,
@@ -686,6 +694,10 @@ static_assert( ALIGNMENT.BASE.STACK >= ALIGNMENT.ELEMENT_MODES.PRIVATE,
 static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.CRUNS,
               "crun alingnment smaller than private alignemnt" );
 static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.ELEMENT_MODES.SHARED,
+               "private alignment smaller than shared alignment" );
+static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.CRUNS,
+              "crun alingnment smaller than private alignemnt" );
+static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.FACE_MODES.SHARED,
                "private alignment smaller than shared alignment" );
 
 /**

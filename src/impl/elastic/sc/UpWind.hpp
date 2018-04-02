@@ -2,6 +2,7 @@
  * @file This file is part of EDGE.
  *
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Junyi Qiu (juq005 AT ucsd.edu)
  *
  * @section LICENSE
  * Copyright (c) 2018, Regents of the University of California
@@ -570,17 +571,29 @@ class edge::elastic::sc::UpWind {
                unsigned short const i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
                unsigned short const i_scTySf[TL_N_SCS][TL_N_FAS],
                bool           const i_netUpSc[TL_N_FAS],
-               TL_T_REAL            io_dofsSc[TL_N_QTS][TL_N_SCS+TL_N_FAS*TL_N_SFS][TL_N_CRS],
+               TL_T_REAL      const i_dofsSc[TL_N_QTS][TL_N_SCS+TL_N_FAS*TL_N_SFS][TL_N_CRS],
                TL_T_REAL            o_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) const {
-      // TODO: Currently, we compute the fluxes for each sub-cell.
-      //       This could be reduced to one flux-computation per sub-face
-
+#if __has_builtin(__builtin_assume_aligned)
+      (void) __builtin_assume_aligned(i_dofsSc, ALIGNMENT.CRUNS);
+      (void) __builtin_assume_aligned(o_dofsSc, ALIGNMENT.CRUNS);
+#endif
       // iterate over the sub-cells
       for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
-        // init solution
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+        // init solution in the local array
+        TL_T_REAL l_dofsScOut[TL_N_QTS][TL_N_CRS];
+        for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ )
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            o_dofsSc[l_qt][l_sc][l_cr] = io_dofsSc[l_qt][l_sc][l_cr];
+            l_dofsScOut[l_q1][l_cr] = i_dofsSc[l_q1][l_sc][l_cr];
+
+        // scale DOFs of the local sub-cell
+        TL_T_REAL l_dofsScL[TL_N_QTS][TL_N_CRS];
+        for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+#pragma omp simd
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_dofsScL[l_q2][l_cr] = i_dofsSc[l_q2][l_sc][l_cr] * i_dt;
+          }
+        }
 
         // iterate over faces of the sub-cell and compute net-updates
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
@@ -592,24 +605,45 @@ class edge::elastic::sc::UpWind {
 
           // default case: flux computation
           if( l_ty > TL_N_FAS-1 || i_netUpSc[ l_ty%TL_N_FAS ] == false ) {
-            // choose solver pair
+            // choose solver id
             unsigned short l_upId = upId( l_ty );
 
-            // iterate over target quantities
-            for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-              // iterate over coupled quantities
-              for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+#ifdef __INTEL_COMPILER
+#pragma unroll(TL_N_QTS)
+#endif
+            // iterate over coupled quantities
+            for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+              // iterate over target quantities
+              for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
                 // iterate over fused runs
+#pragma omp simd
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   // own flux contribution
-                  o_dofsSc[l_q1][l_sc][l_cr] +=   io_dofsSc[l_q2][l_sc][l_cr]
-                                                * m_up[i_lp][ l_upId ][0][l_q1][l_q2]
-                                                * i_dt;
+                  l_dofsScOut[l_q1][l_cr] +=   l_dofsScL[l_q2][l_cr]
+                                             * m_up[i_lp][ l_upId ][0][l_q1][l_q2];
+                }
+              }
+            }
 
+#ifdef __INTEL_COMPILER
+#pragma unroll(TL_N_QTS)
+#endif
+            // iterate over coupled quantities
+            for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+              // scale DOFs of the adjacent sub-cell
+              TL_T_REAL l_dofsScAd[TL_N_CRS];
+#pragma omp simd
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                l_dofsScAd[l_cr] = i_dofsSc[l_q2][l_scAd][l_cr] * i_dt;
+              }
+              // iterate over target quantities
+              for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
+                // iterate over fused runs
+#pragma omp simd
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   // neighboring flux contribution
-                  o_dofsSc[l_q1][l_sc][l_cr] +=   io_dofsSc[l_q2][l_scAd][l_cr]
-                                                * m_up[i_lp][ l_upId ][1][l_q1][l_q2]
-                                                * i_dt;
+                  l_dofsScOut[l_q1][l_cr] +=   l_dofsScAd[l_cr]
+                                             * m_up[i_lp][ l_upId ][1][l_q1][l_q2];
                 }
               }
             }
@@ -617,9 +651,18 @@ class edge::elastic::sc::UpWind {
           // net-updates are provided for the DG sub-face
           else {
             for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ )
+#pragma omp simd
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                o_dofsSc[l_q1][l_sc][l_cr] += io_dofsSc[l_q1][l_scAd][l_cr];
+                l_dofsScOut[l_q1][l_cr] += i_dofsSc[l_q1][l_scAd][l_cr];
           } 
+        }
+
+        // write solution to the output array
+        for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
+#pragma omp simd
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            o_dofsSc[l_q1][l_sc][l_cr] = l_dofsScOut[l_q1][l_cr];
+          }
         }
       }
     }
@@ -642,34 +685,89 @@ class edge::elastic::sc::UpWind {
                  unsigned short i_fa,
                  TL_T_REAL      i_dofsSc[2][TL_N_QTS][TL_N_SFS][TL_N_CRS],
                  TL_T_REAL      o_netUps[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) const {
+#if __has_builtin(__builtin_assume_aligned)
+      (void) __builtin_assume_aligned(i_dofsSc, ALIGNMENT.CRUNS);
+      (void) __builtin_assume_aligned(o_netUps, ALIGNMENT.CRUNS);
+#endif
+
       // iterate over sub-faces at DG-boundary
       for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
 
+        // init net-updates in the local array
+        TL_T_REAL l_netUpsOut[TL_N_QTS][TL_N_CRS];
         // iterate over target quantities
         for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
-          // init net-updates
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // own sub-cell's viscosity contribution
-            o_netUps[l_q1][l_sf][l_cr] = 0;
+            l_netUpsOut[l_q1][l_cr] = 0;
           }
+        }
 
-          // iterate over coupled quantities
-          for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+        // scale DOFs of the limited plus (left) adjacent sub-cell
+        TL_T_REAL l_dofsSc0[TL_N_QTS][TL_N_CRS];
+        // iterate over coupled quantities
+        for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+          // iterate over fused runs
+#pragma omp simd
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_dofsSc0[l_q2][l_cr] = i_dofsSc[0][l_q2][l_sf][l_cr] * i_dt;
+          }
+        }
+        // iterate over coupled quantities
+#ifdef __INTEL_COMPILER
+        #pragma unroll( TL_N_QTS )
+#endif
+        for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+          // iterate over target quantities
+          for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
             // iterate over fused runs
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               // own flux contribution
-              o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[0][l_q2][l_sf][l_cr]
-                                            * m_up[i_lp][2*TL_N_TYSF+i_fa][0][l_q1][l_q2]
-                                            * i_dt;
-
-              // neighboring flux contribution
-              o_netUps[l_q1][l_sf][l_cr] +=   i_dofsSc[1][l_q2][l_sf][l_cr]
-                                            * m_up[i_lp][2*TL_N_TYSF+i_fa][1][l_q1][l_q2]
-                                            * i_dt;
+              l_netUpsOut[l_q1][l_cr] +=   l_dofsSc0[l_q2][l_cr]
+                                         * m_up[i_lp][2*TL_N_TYSF+i_fa][0][l_q1][l_q2];
             }
           }
         }
 
+        // scale DOFs of the right adjacent sub-cell
+        TL_T_REAL l_dofsSc1[TL_N_QTS][TL_N_CRS];
+        // iterate over coupled quantities
+        for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+          // iterate over fused runs
+#pragma omp simd
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_dofsSc1[l_q2][l_cr] = i_dofsSc[1][l_q2][l_sf][l_cr] * i_dt;
+          }
+        }
+        // iterate over coupled quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
+        for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+          // iterate over target quantities
+          for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
+            // iterate over fused runs
+#pragma omp simd
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              // neighboring flux contribution
+              l_netUpsOut[l_q1][l_cr] +=   l_dofsSc1[l_q2][l_cr]
+                                         * m_up[i_lp][2*TL_N_TYSF+i_fa][1][l_q1][l_q2];
+            }
+          }
+        }
+
+        // write net-updates to the output array
+        // iterate over target quantities
+        for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
+          // iterate over fused runs
+#pragma omp simd
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            // own sub-cell's viscosity contribution
+            o_netUps[l_q1][l_sf][l_cr] = l_netUpsOut[l_q1][l_cr];
+          }
+        }
       }
     }
 };

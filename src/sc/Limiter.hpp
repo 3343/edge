@@ -145,7 +145,7 @@ class edge::sc::Limiter {
       // only continue if a rollback is required
       if( l_rb ) {
         // sub-cell solution on both sides of the DG element's face
-        TL_T_REAL l_scFa[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+        TL_T_REAL (*l_scFa)[TL_N_QTS][TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa;
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             unsigned short l_sfRe = i_scDgAd[l_sf];
@@ -159,7 +159,7 @@ class edge::sc::Limiter {
 
 
         // compute sub-cell FV fluxes between the two DG elements
-        TL_T_REAL l_fluxes[TL_N_QTS][TL_N_SFS][TL_N_CRS];
+        TL_T_REAL (*l_fluxes)[TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa[2];
         i_solvSc.nuFaSf( i_dt,
                          i_lp,
                          i_fa,
@@ -181,7 +181,7 @@ class edge::sc::Limiter {
         }
 
         // face integral of the sub-cell fluxes
-        TL_T_REAL l_sIntSc[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS];
+        TL_T_REAL (*l_sIntSc)[TL_N_MDS_EL][TL_N_CRS] = parallel::g_scratchMem->tRes[0];
 
         // integrate fluxes over DG element's boundary and project back to DG space
         edge::sc::Kernels<
@@ -193,13 +193,13 @@ class edge::sc::Limiter {
                              l_sIntSc );
 
         // face integral of the DG fluxes
-        TL_T_REAL l_sIntDg[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS];
+        TL_T_REAL (*l_sIntDg)[TL_N_MDS_EL][TL_N_CRS] = parallel::g_scratchMem->tRes[1];
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               l_sIntDg[l_qt][l_md][l_cr] = 0;
 
-        TL_T_REAL l_scratch[2][TL_N_QTS][TL_N_MDS_FA][TL_N_CRS];
+        TL_T_REAL (*l_scratch)[TL_N_QTS][TL_N_MDS_FA][TL_N_CRS] = parallel::g_scratchMem->tResSurf;
 
         // local
         elastic::solvers::SurfInt< TL_T_EL,
@@ -284,8 +284,8 @@ class edge::sc::Limiter {
                        TL_T_REAL              const (*i_dofsScAdP[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
                        TL_T_REAL                      io_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                        TL_T_SOLV_SC           const  &i_solvSc ) {
-      // TODO: Use scratch memory
-      TL_T_REAL l_subCell[TL_N_QTS][TL_N_SCS][TL_N_CRS];
+      // sub-grid of owned sub-cell
+      TL_T_REAL (*l_sg)[TL_N_SCS][TL_N_CRS] = parallel::g_scratchMem->sg;
 
       // derive element's sub-cell solution
       edge::sc::Kernels<
@@ -296,14 +296,14 @@ class edge::sc::Limiter {
                                     i_scatter,
                                     io_dofsSc,
                                     i_admP,
-                                    l_subCell );
+                                    l_sg );
 
-      // assemble sub-grid, TODO: replace with strides in scatter ops
-      TL_T_REAL l_sg[TL_N_QTS][TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_CRS];
+      // assemble sub-grid including ghost sub-cells, TODO: replace with strides in scatter ops
+      TL_T_REAL (*l_sgGh)[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->sgGh;
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
         for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ )
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            l_sg[l_qt][l_sc][l_cr] = l_subCell[l_qt][l_sc][l_cr];
+            l_sgGh[l_qt][l_sc][l_cr] = l_sg[l_qt][l_sc][l_cr];
 
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
@@ -312,12 +312,12 @@ class edge::sc::Limiter {
               // default case: flux computation
               if( i_netUpSc[l_fa] == nullptr ) {
                 if( i_dofsScAdP[l_fa] != nullptr ) {
-                  l_sg[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = i_dofsScAdP[l_fa][l_qt][l_sf][l_cr];
+                  l_sgGh[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = i_dofsScAdP[l_fa][l_qt][l_sf][l_cr];
                 }
               }
               // net-updates in ghost sub-cells
               else {
-                l_sg[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = i_netUpSc[l_fa][l_qt][l_sf][l_cr];
+                l_sgGh[l_qt][TL_N_SCS + l_fa*TL_N_SFS + l_sf][l_cr] = i_netUpSc[l_fa][l_qt][l_sf][l_cr];
               }
             }
           }
@@ -326,7 +326,7 @@ class edge::sc::Limiter {
 
       TL_T_BND_SC::apply( i_scSfSc,
                           i_spTypes,
-                          l_sg );
+                          l_sgGh );
 
       bool l_netUps[TL_N_FAS];
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
@@ -339,7 +339,7 @@ class edge::sc::Limiter {
                      i_scSfSc,
                      i_scTySf,
                      l_netUps,
-                     l_sg,
+                     l_sgGh,
                      io_dofsSc );
 
       // apply super-cell stencils, if required
@@ -427,7 +427,7 @@ class edge::sc::Limiter {
                        unsigned short         const                  (*i_vIdElFaEl)[TL_N_FAS],
                        unsigned short         const                  (*i_fIdElFaEl)[TL_N_FAS],
                        bool                   const                  (*i_admP)[TL_N_CRS],
-                       bool                                          (*i_admC)[TL_N_CRS], // TODO: change back to const (currenlty modified for iBnds)
+                       bool                   const                  (*i_admC)[TL_N_CRS],
                        bool                                          (*o_admL0)[TL_N_CRS],
                        bool                                          (*o_admL1)[TL_N_CRS],
                        bool                                          (*io_lock)[TL_N_CRS],

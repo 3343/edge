@@ -69,6 +69,9 @@ class edge::sc::Memory {
                                   TL_O_SP,
                                   TL_N_QTS,
                                   TL_N_CRS > &o_lim ) {
+      //! number of bytes for based pointer aligned of all DOF-related data structures
+      const std::size_t TL_N_ALIGN = CE_MAX( TL_N_CRS * sizeof(TL_T_REAL), std::size_t(64) );
+
       //! number of sub-cells per element
       const unsigned short TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
@@ -81,13 +84,13 @@ class edge::sc::Memory {
       // DOFs
       std::size_t l_dofsSize  = TL_N_QTS * (std::size_t) TL_N_SCS * TL_N_CRS;
                   l_dofsSize *= i_nLim * sizeof(TL_T_REAL);
-      o_lim.dofs =  (TL_T_REAL (*) [TL_N_QTS][TL_N_SCS][TL_N_CRS]) io_dynMem.allocate( l_dofsSize );
+      o_lim.dofs =  (TL_T_REAL (*) [TL_N_QTS][TL_N_SCS][TL_N_CRS]) io_dynMem.allocate( l_dofsSize, TL_N_ALIGN );
 
       // tDofs (this overestimates the memory requirements, as lp only requires selcted faces)
       std::size_t l_tDofsRawSize  = TL_N_FAS * TL_N_QTS * (std::size_t) TL_N_SFS * TL_N_CRS;
                   l_tDofsRawSize *= i_nLimPlus * sizeof(TL_T_REAL);
       for( unsigned short l_bu = 0; l_bu < 2; l_bu++ )
-        o_lim.tDofsRaw[l_bu] = (TL_T_REAL (*) [TL_N_QTS][TL_N_SFS][TL_N_CRS]) io_dynMem.allocate( l_tDofsRawSize );
+        o_lim.tDofsRaw[l_bu] = (TL_T_REAL (*) [TL_N_QTS][TL_N_SFS][TL_N_CRS]) io_dynMem.allocate( l_tDofsRawSize, TL_N_ALIGN );
 
       // size of the tDofs pointer structures
       std::size_t l_tDofsPtrSize  = TL_N_FAS;
@@ -116,8 +119,8 @@ class edge::sc::Memory {
       // extrema of the DG / sub-cell solution
       std::size_t l_extSize  = 2 * (std::size_t) TL_N_QTS * TL_N_CRS;
                   l_extSize *= i_nExt * sizeof(TL_T_REAL);
-      o_lim.ext[0] = (TL_T_REAL (*)[2][TL_N_QTS][TL_N_CRS]) io_dynMem.allocate( l_extSize );
-      o_lim.ext[1] = (TL_T_REAL (*)[2][TL_N_QTS][TL_N_CRS]) io_dynMem.allocate( l_extSize );
+      o_lim.ext[0] = (TL_T_REAL (*)[2][TL_N_QTS][TL_N_CRS]) io_dynMem.allocate( l_extSize, TL_N_ALIGN );
+      o_lim.ext[1] = (TL_T_REAL (*)[2][TL_N_QTS][TL_N_CRS]) io_dynMem.allocate( l_extSize,TL_N_ALIGN );
 
       // link between between dominant limited possibly redundant (no bridge)
       std::size_t l_liDoLiDuSize  = TL_N_FAS;
