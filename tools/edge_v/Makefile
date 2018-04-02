@@ -48,25 +48,28 @@ MOABLIB=$(MOABDIR)/lib
 -include $(MOABLIB)/moab.make
 MOAB_LINKS := $(shell echo $(MOAB_LIBS_LINK) | sed 's/-all-static//g')
 
-CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp -std=c++11
+CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp -std=c++11 -Wall
 LDFLAGS=-L$(PROJ4LIB) -lproj -Wl,-rpath,$(PROJ4LIB)                \
         -L$(UCVMLIB)  -lucvm $(UCVMCLDFLAGS) -Wl,-rpath,$(UCVMLIB) \
         $(MOAB_LINKS) -lm -ldl
-
 
 SRCDIR=./src
 OBJDIR=./build
 RELEASE=$(PREFIX)/bin
 
 _DEPS=vm_utility.h
-_OBJ =vm_utility.o edge_v.o
+_OBJ=vm_utility.o edge_v.o
+_POS=vm_utility.o write_pos.o
 
 DEPS=$(patsubst %,$(SRCDIR)/%,$(_DEPS))
-OBJ =$(patsubst %,$(OBJDIR)/%,$(_OBJ))
+OBJ=$(patsubst %,$(OBJDIR)/%,$(_OBJ))
+POS=$(patsubst %,$(OBJDIR)/%,$(_POS))
 
-all: build
+all: build write_pos
 
 build: $(OBJDIR)/edge_v
+
+write_pos: $(OBJDIR)/write_pos
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(DEPS)
 	if [ ! -d $(OBJDIR)  ]; then mkdir -p $(OBJDIR) ; fi
@@ -77,11 +80,15 @@ $(OBJDIR)/edge_v: $(OBJ)
 	if [ ! -d $(RELEASE) ]; then mkdir -p $(RELEASE); fi
 	cp $(OBJDIR)/edge_v $(RELEASE)/
 
+$(OBJDIR)/write_pos: $(POS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+	if [ ! -d $(RELEASE) ]; then mkdir -p $(RELEASE); fi
+	cp $(OBJDIR)/write_pos $(RELEASE)/
 
 .PHONY: cleanobj clean
 
 cleanobj:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(OBJDIR)/write_pos
 
 clean:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(RELEASE)/edge_v
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(OBJDIR)/write_pos $(RELEASE)/edge_v $(RELEASE)/write_pos
