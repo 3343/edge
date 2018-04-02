@@ -201,6 +201,7 @@ class edge::elastic::setups::RuptureInit {
             // set initial values invalid
             o_lsw.sf[l_spId][l_sf].sn0[l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             o_lsw.sf[l_spId][l_sf].st[l_ru]  = 0;
+            o_lsw.sf[l_spId][l_sf].ss0A[l_ru] = 0;
             for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
               o_lsw.sf[l_spId][l_sf].ss0[l_di][l_ru] = std::numeric_limits< TL_T_REAL_COMP >::max();
             }
