@@ -188,9 +188,9 @@ class edge::sc::Limiter {
           TL_T_EL,
           TL_O_SP,
           TL_N_QTS,
-          TL_N_CRS >::sfIntVanilla( l_fluxes,
-                                    i_sfInt,
-                                    l_sIntSc );
+          TL_N_CRS >::sfInt( l_fluxes,
+                             i_sfInt,
+                             l_sIntSc );
 
         // face integral of the DG fluxes
         TL_T_REAL l_sIntDg[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS];
@@ -292,11 +292,11 @@ class edge::sc::Limiter {
         TL_T_EL,
         TL_O_SP,
         TL_N_QTS,
-        TL_N_CRS >::scatterReplaceVanilla( i_dofsDgP,
-                                           i_scatter,
-                                           io_dofsSc,
-                                           i_admP,
-                                           l_subCell );
+        TL_N_CRS >::scatterReplace( i_dofsDgP,
+                                    i_scatter,
+                                    io_dofsSc,
+                                    i_admP,
+                                    l_subCell );
 
       // assemble sub-grid, TODO: replace with strides in scatter ops
       TL_T_REAL l_sg[TL_N_QTS][TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_CRS];
@@ -565,9 +565,9 @@ class edge::sc::Limiter {
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
                                TL_N_QTS,
-                               TL_N_CRS >::gatherVanilla( io_dofsSc[l_li],
-                                                          i_scOps.gather,
-                                                          l_dofsDg );
+                               TL_N_CRS >::gather( io_dofsSc[l_li],
+                                                   i_scOps.gather,
+                                                   l_dofsDg );
             // copy only relevant DOFs back
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -587,11 +587,11 @@ class edge::sc::Limiter {
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
                                TL_N_QTS,
-                               TL_N_CRS >::dgExtremaVanilla(  io_dofsDg[l_el],
-                                                              i_scOps.scatter,
-                                                              l_scDgL,
-                                                              l_exDgL[0],
-                                                              l_exDgL[1] );
+                               TL_N_CRS >::dgExtrema(  io_dofsDg[l_el],
+                                                       i_scOps.scatter,
+                                                       l_scDgL,
+                                                       l_exDgL[0],
+                                                       l_exDgL[1] );
 
             edge::sc::Detections< TL_T_EL,
                                   TL_N_QTS,
@@ -650,9 +650,9 @@ class edge::sc::Limiter {
               TL_T_EL,
               TL_O_SP,
               TL_N_QTS,
-              TL_N_CRS >::scatterFaVanilla(   io_dofsDg[l_el],
-                                              i_scOps.scatterSurf[TL_N_FAS+l_fMatId],
-                                            *(o_tDofsScL[l_lp][l_fa]) );
+              TL_N_CRS >::scatterFa(   io_dofsDg[l_el],
+                                       i_scOps.scatterSurf[TL_N_FAS+l_fMatId],
+                                     *(o_tDofsScL[l_lp][l_fa]) );
           }
         }
         if( l_li != std::numeric_limits< TL_T_LID >::max() ) {

@@ -454,16 +454,15 @@ class edge::sc::Init {
                   o_tDofsRaw[l_bu][l_lp*TL_N_FAS + l_fa][l_qt][l_sf][l_cr] = 0;
 
       // iterate over extrema
+      for( unsigned short l_e1 = 0; l_e1 < 2; l_e1++ )
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-      for( TL_T_LID l_ex = 0; l_ex < i_nExt; l_ex++ ) {
-        for( unsigned short l_e1 = 0; l_e1 < 2; l_e1++ )
+        for( TL_T_LID l_ex = 0; l_ex < i_nExt; l_ex++ )
           for( unsigned short l_e2 = 0; l_e2 < 2; l_e2++ )
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 o_ext[l_e1][l_ex][l_e2][l_qt][l_cr] = 0;
-      }
     }
 
     /**

@@ -730,11 +730,11 @@ class edge::elastic::solvers::AderDg {
           edge::sc::Kernels< TL_T_EL,
                              TL_O_SP,
                              TL_N_QTS,
-                             TL_N_CRS >::dgExtremaVanilla(  io_dofs[l_el],
-                                                            i_scatter,
-                                                            l_subCell,
-                                                            o_extC[l_ex][0],
-                                                            o_extC[l_ex][1] );
+                             TL_N_CRS >::dgExtrema(  io_dofs[l_el],
+                                                     i_scatter,
+                                                     l_subCell,
+                                                     o_extC[l_ex][0],
+                                                     o_extC[l_ex][1] );
 
           // store the surface sub-cells
           if( ( i_elChars[l_el].spType & LIMIT_PLUS ) == LIMIT_PLUS ) {

@@ -67,7 +67,7 @@ class edge::sc::Kernels {
 
   public:
     /**
-     * Applies the scatter matrix using vanilla kernels.
+     * Applies the scatter matrix.
      * Scatter: Projects DG solution to sub-cell solution.
      *
      * @param i_dofsDg DOFs of DG solution.
@@ -77,9 +77,9 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                                TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
-                                TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
+    static void scatter( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                         TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
+                         TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
       // project element's DG solution to sub-cells
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_SCS, TL_N_MDS, // m, n, k
@@ -91,7 +91,7 @@ class edge::sc::Kernels {
     }
 
     /**
-     * Applies the scatter matrix for sub-cells at the element's face using vanilla kernels.
+     * Applies the scatter matrix for sub-cells at the element's face.
      * Scatter: Projects DG solution to sub-cell solution.
      *
      * @param i_dofsDg DOFs of DG solution.
@@ -101,9 +101,9 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterFaVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                                  TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
-                                  TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
+    static void scatterFa( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
+                           TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
       // project element's DG solution to sub-cells
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_SFS, TL_N_MDS, // m, n, k
@@ -128,15 +128,15 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterReplaceVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                                       TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
-                                       TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                                       bool      const i_admP[TL_N_CRS],
-                                       TL_T_REAL       o_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
+    static void scatterReplace( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                                TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
+                                TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                                bool      const i_admP[TL_N_CRS],
+                                TL_T_REAL       o_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
       // project DG to sub-cell solution
-      scatterVanilla( i_dofsDg,
-                      i_mat,
-                      o_dofsSc );
+      scatter( i_dofsDg,
+               i_mat,
+               o_dofsSc );
 
       // overwrite project sub-cell solution with stored sub-cell solution
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -164,15 +164,15 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterReplaceFaVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                                         TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
-                                         TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                                         bool      const i_admP[TL_N_CRS],
-                                         TL_T_REAL       o_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
+    static void scatterReplaceFa( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                                  TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
+                                  TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                                  bool      const i_admP[TL_N_CRS],
+                                  TL_T_REAL       o_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
       // project DG to sub-cell solution
-      scatterFaVanilla( i_dofsDg,
-                        i_mat,
-                        o_dofsSc );
+      scatterFa( i_dofsDg,
+                 i_mat,
+                 o_dofsSc );
 
       // overwrite project sub-cell solution with stored sub-cell solution
       if( i_admP != nullptr ) {
@@ -189,7 +189,7 @@ class edge::sc::Kernels {
     }
 
     /**
-     * Applies the gather matrix using vanilla kernels.
+     * Applies the gather matrix.
      * Gather: Projects sub-cell solution to DG-solution.
      *
      * @param i_scDofs DOFs of sub-cell solution.
@@ -199,9 +199,9 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void gatherVanilla( TL_T_REAL const i_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                               TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
-                               TL_T_REAL       o_dgDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
+    static void gather( TL_T_REAL const i_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                        TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
+                        TL_T_REAL       o_dgDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution to DG solution
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_MDS, TL_N_SCS, // m, n, k
@@ -262,7 +262,7 @@ class edge::sc::Kernels {
     }
 
     /**
-     * Applies the sfInt operator using vanilla kernels.
+     * Applies the sfInt operator.
      * sfInt: Integration of piecewise-constant fluxes of a DG-face.
      *
      * @param i_scFluxes fluxes of the sub-cell solution at the face.
@@ -272,9 +272,9 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void sfIntVanilla( TL_T_REAL const i_scFluxes[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                              TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
-                              TL_T_REAL       o_int[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
+    static void sfInt( TL_T_REAL const i_scFluxes[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                       TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
+                       TL_T_REAL       o_int[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution at faces to DG solution
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_MDS, TL_N_SFS, // m, n, k
@@ -329,15 +329,15 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void dgExtremaVanilla( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                                  TL_T_REAL const i_matScatter[TL_N_MDS][TL_N_SCS],
-                                  TL_T_REAL       o_subcell[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                                  TL_T_REAL       o_min[TL_N_QTS][TL_N_CRS],
-                                  TL_T_REAL       o_max[TL_N_QTS][TL_N_CRS] ) {
+    static void dgExtrema( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL const i_matScatter[TL_N_MDS][TL_N_SCS],
+                           TL_T_REAL       o_subcell[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                           TL_T_REAL       o_min[TL_N_QTS][TL_N_CRS],
+                           TL_T_REAL       o_max[TL_N_QTS][TL_N_CRS] ) {
       // determine sub-cell solution
-      scatterVanilla( i_dofsDg,
-                      i_matScatter,
-                      o_subcell );
+      scatter( i_dofsDg,
+               i_matScatter,
+               o_subcell );
 
       // determine extrema
       scExtrema( o_subcell,

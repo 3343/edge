@@ -5,7 +5,7 @@
  * @author Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2017 Intel Corporation
  * All rights reserved.
  *
@@ -23,8 +23,8 @@
  * Matrices.
  **/
 
-#ifndef MATRIX_HPP
-#define MATRIX_HPP
+#ifndef EDGE_LINALG_MATRIX_HPP
+#define EDGE_LINALG_MATRIX_HPP
 
 #include <vector>
 #include <iomanip>
@@ -32,6 +32,10 @@
 #include <io/logging.h>
 #include <cmath>
 #include "constants.hpp"
+
+#if PP_T_KERNELS_XSMM_DENSE_SINGLE
+#include <libxsmm.h>
+#endif
 
 /*
  * Sparse matrix format: Coordinate.
@@ -431,6 +435,22 @@ class edge::linalg::Matrix {
                                const TL_T_REAL      *i_a,
                                const TL_T_REAL      *i_b,
                                      TL_T_REAL      *o_c ) {
+#ifdef PP_T_KERNELS_XSMM_DENSE_SINGLE
+      EDGE_CHECK_EQ( i_r, 1 );
+      TL_T_REAL l_alpha = TL_T_REAL(1);
+      libxsmm_blasint l_m   = i_m;
+      libxsmm_blasint l_n   = i_n;
+      libxsmm_blasint l_k   = i_k;
+      libxsmm_blasint l_ldA = i_ldA;
+      libxsmm_blasint l_ldB = i_ldB;
+      libxsmm_blasint l_ldC = i_ldC;
+
+      libxsmm_gemm(  NULL, NULL,
+                     l_n, l_m, l_k,
+                    &l_alpha, i_b, &l_ldB,
+                              i_a, &l_ldA,
+                    &i_beta,  o_c, &l_ldC );
+#else
       // init result matrix
       for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
         for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
@@ -449,6 +469,7 @@ class edge::linalg::Matrix {
           }
         }
       }
+#endif
     }
 
     /**
