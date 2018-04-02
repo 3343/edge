@@ -60,7 +60,6 @@ function sendGeo() {
   printf "Time taken: $duration s\n\n"
 }
 
-
 # Function to mesh on remote client
 function mesh() {
   declare bgmPos=''
