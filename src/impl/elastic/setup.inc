@@ -217,6 +217,8 @@ for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
       for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
         l_internal.m_elementModePrivate1[l_el][l_qt][l_md][l_ru] = 0;
         l_internal.m_globalShared6[0][l_el][l_qt][l_md][l_ru] = 0;
+        if( l_internal.m_globalShared6[1][l_el] != nullptr )
+          l_internal.m_globalShared6[1][l_el][l_qt][l_md][l_ru] = 0;
       }
     }
   }
