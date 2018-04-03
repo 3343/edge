@@ -211,7 +211,9 @@ class edge::sc::Limiter {
                                                       i_mm,
                                                       l_sIntDg,
                                                       l_scratch,
-                                                      i_tDofsDgAdP );
+                                                      i_tDofsDgAdP,
+                                                      i_fa,
+                                                      i_fa );
 
         // adjacent
         elastic::solvers::SurfInt< TL_T_EL,
@@ -225,7 +227,9 @@ class edge::sc::Limiter {
                                                       i_mm,
                                                       l_sIntDg,
                                                       l_scratch,
-                                                      io_dofsDg );
+                                                      io_dofsDg,
+                                                      i_fa,
+                                                      i_fMatId+TL_N_FAS );
 
         // update the DOFs accordingly
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
