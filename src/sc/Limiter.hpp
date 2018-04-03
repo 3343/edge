@@ -91,11 +91,10 @@ class edge::sc::Limiter {
      * @param i_dt time step.
      * @param i_lp id of the limited plus element.
      * @param i_fa respective face of the limited plus element.
+     * @param i_fMatId id of the neighboring flux intergration matrix.
      * @param i_admAdP admissibility of the adjacent element's DG solution for the previous solution.
      * @param i_admAdC admissibility of the adjacent element's DG solution for the candidate solution.
-     * @param i_fIntL local flux matrix.
-     * @param i_fIntN neighboring flux matrix.
-     * @param i_fIntT transposed flux matrix.
+     * @param i_dgMat DG matrices.
      * @param i_scatterSf scatter operator for the element's sub-cells adjacent to the face in the reference element.
      * @param i_scatterSfAd scatter operator for the adjacent element's sub-cells adjacent to the face w.r.t. the reference element.
      * @param i_sfInt sfInt operator, which computes the DG face integral from the sub-cell fluxes.
@@ -118,24 +117,23 @@ class edge::sc::Limiter {
              typename TL_T_REAL,
              typename TL_T_MM,
              typename TL_T_SOLV_SC >
-   static void surfIntRb( TL_T_REAL           i_dt,
-                          TL_T_LID            i_lp,
-                          unsigned short      i_fa,
-                          bool         const  i_admAdC[TL_N_CRS],
-                          unsigned short const i_scDgAd[TL_N_SFS],
-                          TL_T_REAL    const  i_fIntL[TL_N_MDS_EL][TL_N_MDS_FA],
-                          TL_T_REAL    const  i_fIntN[TL_N_MDS_EL][TL_N_MDS_FA],
-                          TL_T_REAL    const  i_fIntT[TL_N_MDS_FA][TL_N_MDS_EL],
-                          TL_T_REAL    const  i_sfInt[TL_N_SFS][TL_N_MDS_EL],
-                          TL_T_REAL    const  i_fluxSolver[TL_N_QTS][TL_N_QTS],
-                          TL_T_REAL    const  i_fluxSolverAd[TL_N_QTS][TL_N_QTS],
-                          TL_T_REAL    const  i_tDofsDgP[  TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                          TL_T_REAL    const  i_tDofsDgAdP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                          TL_T_REAL    const  i_tDofsScP[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                          TL_T_REAL    const  i_tDofsScAdP[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                          TL_T_REAL           io_dofsDg[   TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
-                          TL_T_MM      const &i_mm,
-                          TL_T_SOLV_SC const &i_solvSc ) {
+   static void surfIntRb( TL_T_REAL             i_dt,
+                          TL_T_LID              i_lp,
+                          unsigned short        i_fa,
+                          unsigned short        i_fMatId,
+                          bool           const  i_admAdC[TL_N_CRS],
+                          unsigned short const  i_scDgAd[TL_N_SFS],
+                          t_dgMat        const &i_dgMat,
+                          TL_T_REAL      const  i_sfInt[TL_N_SFS][TL_N_MDS_EL],
+                          TL_T_REAL      const  i_fluxSolver[TL_N_QTS][TL_N_QTS],
+                          TL_T_REAL      const  i_fluxSolverAd[TL_N_QTS][TL_N_QTS],
+                          TL_T_REAL      const  i_tDofsDgP[  TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                          TL_T_REAL      const  i_tDofsDgAdP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                          TL_T_REAL      const  i_tDofsScP[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                          TL_T_REAL      const  i_tDofsScAdP[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                          TL_T_REAL             io_dofsDg[   TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
+                          TL_T_MM        const &i_mm,
+                          TL_T_SOLV_SC   const &i_solvSc ) {
       // determine if a rollback is required: a single fused sim of the adjacent limited element is not admissible
       bool l_rb = false;
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -206,8 +204,8 @@ class edge::sc::Limiter {
                                    TL_N_QTS,
                                    TL_O_SP,
                                    TL_O_SP,
-                                   TL_N_CRS >::neigh( i_fIntL,
-                                                      i_fIntT,
+                                   TL_N_CRS >::neigh( i_dgMat.fluxL[i_fa],
+                                                      i_dgMat.fluxT[i_fa],
                                                       i_fluxSolver,
                                                       i_tDofsDgP,
                                                       i_mm,
@@ -220,8 +218,8 @@ class edge::sc::Limiter {
                                    TL_N_QTS,
                                    TL_O_SP,
                                    TL_O_SP,
-                                   TL_N_CRS >::neigh( i_fIntN,
-                                                      i_fIntT,
+                                   TL_N_CRS >::neigh( i_dgMat.fluxN[i_fMatId],
+                                                      i_dgMat.fluxT[i_fa],
                                                       i_fluxSolverAd,
                                                       i_tDofsDgAdP,
                                                       i_mm,
@@ -362,9 +360,7 @@ class edge::sc::Limiter {
      * @param i_first first limited plus element (limited + adjacent elements through faces).
      * @param i_nLps number of limited plus elements.
      * @param i_dt time step.
-     * @param i_fIntL local flux integration matrices.
-     * @param i_fIntN neighboring flux integration matrices.
-     * @param i_fIntT transposed flux integration mattrices.
+     * @param i_dg DG matrices.
      * @param i_scOps sub-cell operators.
      * @param i_scConn sub-cell connectivity.
      * @param i_iBndSt super-cell stencils at internal boundaries.
@@ -405,9 +401,7 @@ class edge::sc::Limiter {
     static void aPost( TL_T_LID                                        i_first,
                        TL_T_LID                                        i_nLps,
                        TL_T_REAL                                       i_dt,
-                       TL_T_REAL              const                    i_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
-                       TL_T_REAL              const                    i_fIntN[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
-                       TL_T_REAL              const                    i_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL],
+                       t_dgMat                const                   &i_dgMat,
                        sc::t_ops<
                          TL_T_REAL,
                          TL_T_EL,
@@ -481,11 +475,10 @@ class edge::sc::Limiter {
             surfIntRb( i_dt,
                        l_lp,
                        l_fa,
+                       l_fMatId,
                        i_admC[l_liAd],
                        i_scConn.scDgAd[ i_vIdElFaEl[l_el][l_fa] ],
-                       i_fIntL[l_fa],
-                       i_fIntN[l_fMatId],
-                       i_fIntT[l_fa],
+                       i_dgMat,
                        i_scOps.sfInt[l_fa],
                        i_fsDg[l_el][l_fa],
                        i_fsDgAd[l_el][l_fa],
