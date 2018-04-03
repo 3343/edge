@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -146,6 +146,10 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
   // create dummy size per entry
   std::size_t l_bytes = 20 * 9 * 8 * sizeof(double);
 
+  // store rank info
+  int l_rank = edge::parallel::g_rank;
+  int l_nRanks = edge::parallel::g_nRanks;
+
   edge::parallel::g_rank = 2;
   edge::parallel::g_nRanks = 21;
 
@@ -269,5 +273,9 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
 
   REQUIRE( l_mpi.m_grps[1].send[1][1].ptr  == (unsigned char*) 20 );
   REQUIRE( l_mpi.m_grps[1].send[1][1].size ==                   7 );
+
+  // reset rank info
+  edge::parallel::g_rank = l_rank;
+  edge::parallel::g_nRanks = l_nRanks;
 #endif
 }

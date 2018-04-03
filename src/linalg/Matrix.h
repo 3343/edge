@@ -436,40 +436,43 @@ class edge::linalg::Matrix {
                                const TL_T_REAL      *i_b,
                                      TL_T_REAL      *o_c ) {
 #ifdef PP_T_KERNELS_XSMM_DENSE_SINGLE
-      EDGE_CHECK_EQ( i_r, 1 );
-      TL_T_REAL l_alpha = TL_T_REAL(1);
-      libxsmm_blasint l_m   = i_m;
-      libxsmm_blasint l_n   = i_n;
-      libxsmm_blasint l_k   = i_k;
-      libxsmm_blasint l_ldA = i_ldA;
-      libxsmm_blasint l_ldB = i_ldB;
-      libxsmm_blasint l_ldC = i_ldC;
+      if( i_r == 1 ) {
+        TL_T_REAL l_alpha = TL_T_REAL(1);
+        libxsmm_blasint l_m   = i_m;
+        libxsmm_blasint l_n   = i_n;
+        libxsmm_blasint l_k   = i_k;
+        libxsmm_blasint l_ldA = i_ldA;
+        libxsmm_blasint l_ldB = i_ldB;
+        libxsmm_blasint l_ldC = i_ldC;
 
-      libxsmm_gemm(  NULL, NULL,
-                     l_n, l_m, l_k,
-                    &l_alpha, i_b, &l_ldB,
-                              i_a, &l_ldA,
-                    &i_beta,  o_c, &l_ldC );
-#else
-      // init result matrix
-      for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-        for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
-          for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != TL_T_REAL(0)) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
-          }
-        }
+        libxsmm_gemm(  NULL, NULL,
+                      l_n, l_m, l_k,
+                      &l_alpha, i_b, &l_ldB,
+                                i_a, &l_ldA,
+                      &i_beta,  o_c, &l_ldC );
       }
-
-      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+      else
+#endif
+      {
+        // init result matrix
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA*i_r + l_k*i_r + l_r] * i_b[l_k*i_ldB + l_n];
+              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != TL_T_REAL(0)) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
+            }
+          }
+        }
+
+        for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+          for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+            for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+              for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
+                o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA*i_r + l_k*i_r + l_r] * i_b[l_k*i_ldB + l_n];
+              }
             }
           }
         }
       }
-#endif
     }
 
     /**

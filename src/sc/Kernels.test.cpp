@@ -52,7 +52,7 @@ TEST_CASE( "Sub-cell kernels: Scatter operation.", "[subCellKernels][scatter]" )
   float l_scDofs1[2][9][2];
 
   // perform scatter operation
-  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::scatterVanilla( l_dgDofs1, l_scatter1, l_scDofs1 );
+  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::scatter( l_dgDofs1, l_scatter1, l_scDofs1 );
 
   // result (1st fused run)
   float l_ut1[2][9] = { {  -2.3, -3.19,  -2.1,  -0.9,  2.5,   -0.7,    0.5,  -1.6, -2.6 },
@@ -87,7 +87,7 @@ TEST_CASE( "Sub-cell kernels: Gather operation.", "[subCellKernels][gather]" ) {
   float l_dgDofs1[3][4][2];
 
   // perform gather operation
-  edge::sc::Kernels< QUAD4R, 2, 3, 2 >::gatherVanilla( l_scDofs1, l_gather1, l_dgDofs1 );
+  edge::sc::Kernels< QUAD4R, 2, 3, 2 >::gather( l_scDofs1, l_gather1, l_dgDofs1 );
 
   float l_ut1[3][4] = { { -28.631, -13.652, -16.573,  -13.684},
                         {  50.907,  52.852,  12.449, -144.052},
@@ -146,7 +146,7 @@ TEST_CASE( "Sub-cell kernels: DG extrema.", "[subCellKernels][dgExtrema]" ) {
   double l_scratch1[2][9][2];
 
   // determine extrema through sub-cell resolution
-  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::dgExtremaVanilla( l_dgDofs1, l_scatter1, l_scratch1, l_min1, l_max1 );
+  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::dgExtrema( l_dgDofs1, l_scatter1, l_scratch1, l_min1, l_max1 );
 
   // check results
   REQUIRE( l_min1[0][0] == Approx(-3.19) );
