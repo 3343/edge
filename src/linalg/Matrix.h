@@ -33,7 +33,7 @@
 #include <cmath>
 #include "constants.hpp"
 
-#if PP_T_KERNELS_XSMM_DENSE_SINGLE
+#ifdef PP_T_KERNELS_XSMM_DENSE_SINGLE
 #include <libxsmm.h>
 #endif
 
