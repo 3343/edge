@@ -39,7 +39,7 @@ writePos='PLACEHOLDER'
 
 # ssh variables (use remoteMsh=1 to mesh on a remote client; by default 0)
 # IMPORTANT: use only if you have a working SSH public key with the remote client!!
-declare -g remoteMsh=1
+declare -g remoteMsh=0
 declare -g remoteUsr='PLACEHOLDER'
 declare -g remoteClient='PLACEHOLDER'
 declare -g remoteGmshDir='PLACEHOLDER'
