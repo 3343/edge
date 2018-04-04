@@ -212,9 +212,10 @@ int main( int i_argc, char **i_argv ) {
 
   vmNodeFinalize( l_vModelNodes );
 
-  faultAntn( l_msh, l_aCfg );
-
   writeVMElmts( l_vModelElmts, l_aCfg, l_msh );
+
+  faultAntn( l_aCfg, l_msh );
+
   writeVMTags(  l_vModelElmts, l_aCfg, l_msh );
 
   vmElmtFinalize( l_vModelElmts );

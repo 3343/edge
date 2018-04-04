@@ -43,6 +43,8 @@ int antnInit(       antn_cfg    &i_cfg,
   i_cfg.m_hypoc.m_lon   = 0.0;
   i_cfg.m_hypoc.m_lat   = 0.0;
 
+  i_cfg.m_tetRefinement = 0;
+
   std::cout << "Reading Config File: " << i_cfgFn << "... " << std::flush;
 
   std::ifstream l_mshFs( i_cfgFn.c_str(), std::ios::in );
@@ -99,6 +101,8 @@ int antnInit(       antn_cfg    &i_cfg,
       i_cfg.m_hypoc.m_lat   = atof( l_varValue.c_str() );
     else if( l_varName.compare( "fault_input_file" ) == 0 )
       i_cfg.m_faultInputFns.push_back( l_varValue );
+    else if( l_varName.compare( "tet_refinement" ) == 0 )
+      i_cfg.m_tetRefinement = std::stoi( l_varValue );
     else if( l_varName.compare( "mesh_file" ) == 0 )
       i_cfg.m_meshFn        = l_varValue;
     else if( l_varName.compare( "node_vm_file" ) == 0 )
@@ -511,7 +515,7 @@ int writePos( const posModel  &i_posModel,
 // ************************************
 // * Begin Triangle class definitions *
 // ************************************
-Triangle::Triangle( const double *i_coords ) {
+Triangle::Triangle( const real *i_coords ) {
   if( i_coords == nullptr ) {
     std::cerr << "Error: Attempted to dereference null ptr in Triangle ctor"
               << std::endl;
@@ -589,7 +593,7 @@ std::vector< Triangle > Triangle::subdivide( const int &i_refine ) {
       l_bary3.m_y = l_j * l_h;
       l_bary3.m_z = (l_i + 1) * l_h;
 
-      l_bary4.m_x = 1 - (l_j + 1) * l_h + (l_i + 1) * l_h;
+      l_bary4.m_x = 1 - (l_j + 1) * l_h - (l_i + 1) * l_h;
       l_bary4.m_y = (l_j + 1) * l_h;
       l_bary4.m_z = (l_i + 1) * l_h;
 
@@ -617,21 +621,24 @@ std::vector< Triangle > Triangle::subdivide( const int &i_refine ) {
 // ************************************
 // ** Begin FModel class definitions **
 //*************************************
-FModel::FModel( const std::vector< std::string > &i_fInputFns ) {
-  //! Open Fault Input File
+FModel::FModel( const std::vector< std::string >& i_fInputFns ){
+  // Open Fault Input File
   m_filenames = i_fInputFns;
-  std::cout << "Reading Fault Input File header from: " << m_filenames[0]
-            << "... " << std::flush;
+  std::cout << "Initializing fault model from: " << std::endl;
+  for( const auto& l_filename : m_filenames ){
+    std::cout << "    > " << l_filename << std::endl;
+  }
 
   std::ifstream l_faultIfs( m_filenames[0], std::ios::in );
-  if( !l_faultIfs.is_open() ) {
+  if( !l_faultIfs.is_open() ){
     std::cout << "Failed." << std::endl;
-    std::cerr << "Error: Cannot open the fault input file." << std::endl;
+    std::cerr << "Error: Cannot open " << m_filenames[0] << std::endl;
     exit( EXIT_FAILURE );
   }
 
-  //! Read the header
+  // Read the header
   std::string l_lineBuf;
+  std::string l_wordBuf;
   getline( l_faultIfs, l_lineBuf );
   std::istringstream l_lineStream( l_lineBuf );
 
@@ -642,79 +649,74 @@ FModel::FModel( const std::vector< std::string > &i_fInputFns ) {
   l_lineStream >> m_yMin;
   l_lineStream >> m_yMax;
 
-  l_faultIfs.close();
-  std::cout << "Done!" << std::endl;
+  while( l_lineStream >> l_wordBuf){
+    m_qtyNames.push_back( l_wordBuf );
+  }
 
   size_t l_modelSize = (m_Nx + 1) * (m_Ny + 1);
-  m_faultData = new FDatum[l_modelSize];
+  m_faultData = new FDatum[ l_modelSize ];
 
-  //! Finally, compute the inverse of the width of the grid cells for future
-  //! convenience, and set fault angle
-  m_faultAngle  = 0.0 * M_PI / 180.0;
-  m_xScaleInv   = m_Nx / (m_xMax - m_xMin);
-  m_yScaleInv   = m_Ny / (m_yMax - m_yMin);
+  // Finally, compute the inverse of the width of the grid cells for future
+  // convenience, and set fault angle
+  real FAULT_ANGLE = 0;
+  m_faultAngle = FAULT_ANGLE * M_PI/180.;
+  m_xScaleInv = m_Nx / (m_xMax - m_xMin);
+  m_yScaleInv = m_Ny / (m_yMax - m_yMin);
 
-  std::cout << " | Number of cells (x-axis): " << m_Nx         << std::endl;
-  std::cout << " | Number of cells (y-axis): " << m_Ny         << std::endl;
-  std::cout << " | Min x coordinate:         " << m_xMin       << std::endl;
-  std::cout << " | Max x coordinate:         " << m_xMax       << std::endl;
-  std::cout << " | Min y coordinate:         " << m_yMin       << std::endl;
-  std::cout << " | Max y coordinate:         " << m_yMax       << std::endl;
-  std::cout << " | Fault Angle:              " << m_faultAngle << std::endl;
+  l_faultIfs.close();
 
-  std::cout << "Fault model parameter setup completed." << std::endl;
+  populate();
+
+  std::cout << "...Done!" << std::flush;
 }
 
-FModel::~FModel() {
-  if( m_faultData != nullptr ) {
+
+FModel::~FModel(){
+  if( m_faultData != nullptr ){
     delete[] m_faultData;
-  } else {
+  }
+  else{
     std::cerr << "Warning: Attempted to delete non-existant Fault Model Data"
               << std::endl;
   }
 }
 
-void FModel::populate() {
+
+void FModel::populate(){
   int                 l_nx, l_ny;
-  double              l_x, l_y;
-  double              l_sFric, l_sStress;
+  real                l_x, l_y, l_z;
+  real                l_numBuf;
   std::string         l_lineBuf;
   std::ifstream       l_faultIfs;
   std::istringstream  l_lineStream;
 
-  std::cout << "Populating fault model from: " << std::endl;
-  for( const auto &l_filename : m_filenames ) {
-    std::cout << "    > " << l_filename << std::endl;
-
+  for( const auto& l_filename : m_filenames ){
     l_faultIfs.open( l_filename, std::ios::in );
-    if( !l_faultIfs.is_open() ) {
+    if( !l_faultIfs.is_open() ){
       std::cout << "Failed." << std::endl;
       std::cerr << "Error: Cannot open " << l_filename << std::endl;
       exit( EXIT_FAILURE );
     }
 
-    getline( l_faultIfs, l_lineBuf );   //! Ignore the first line (header)
-    while( getline( l_faultIfs, l_lineBuf ) ) {
+    getline( l_faultIfs, l_lineBuf );   // Ignore the first line (header)
+    while( getline( l_faultIfs, l_lineBuf ) ){
       l_lineStream.clear();
       l_lineStream.str( l_lineBuf );
 
-      l_lineStream >> l_nx;     //! integer x coord, (indexed from 0)
-      l_lineStream >> l_ny;     //! integer y coord, (indexed from 0)
-      l_lineStream >> l_x;      //! physical x coord
-      l_lineStream >> l_y;      //! physical y coord
+      l_lineStream >> l_nx;    // integer x coord, (indexed from 0)
+      l_lineStream >> l_ny;    // integer y coord, (indexed from 0)
+      l_lineStream >> l_x;     // physical x coord
+      l_lineStream >> l_y;     // physical y coord
+      l_lineStream >> l_z;     // physical z coord
 
-      l_lineStream >> l_sFric;
-      l_lineStream >> l_sStress;
-
-      m_faultData[l_nx+l_ny*(m_Nx+1)].m_sFric.push_back( l_sFric );
-      m_faultData[l_nx+l_ny*(m_Nx+1)].m_nStress.push_back( 60.0 );
-      m_faultData[l_nx+l_ny*(m_Nx+1)].m_sStress.push_back( l_sStress );
+      for( const auto& l_qtyName : m_qtyNames ){
+        l_lineStream >> l_numBuf;
+        m_faultData[ l_nx + l_ny * (m_Nx+1) ][ l_qtyName ].push_back( l_numBuf );
+      }
     }
 
     l_faultIfs.close();
   }
-
-  std::cout << "... Done!" << std::endl;
 }
 
 //! Assumes fault plane is rotated about axis x=0,z=0 only
@@ -722,8 +724,8 @@ void FModel::populate() {
 xyz_point_t FModel::projToPlane( const xyz_point_t &i_pt ) {
   xyz_point_t l_proj;
 
-  double l_s = sin( m_faultAngle );
-  double l_c = cos( m_faultAngle );
+  real l_s = sin( m_faultAngle );
+  real l_c = cos( m_faultAngle );
   l_proj.m_x = i_pt.m_x * l_c * l_c + i_pt.m_z * l_s * l_c;
   l_proj.m_y = i_pt.m_y;
   l_proj.m_z = i_pt.m_x * l_s * l_c + i_pt.m_z * l_s * l_s;
@@ -818,116 +820,122 @@ moab::Range getFaultFaces( moab_mesh &i_mesh ) {
 }
 
 
-/** Create MOAB tag and tag each fault entity with array of doubles.
- *  Each tag is an array representing the different initial
- *  rupture parameters at each subtriangle and each fused run
- *  See diagram:
- *
- *  x------------------------------------------------------------x
- *  |                         Fault Face                         |
- *  x-----------------------------x------------------------------x
- *  |         subtriangle1        |          subtriangle2        |
- *  x---------x---------x---------x------------------------------x
- *  | n_stress| s_stress| s_fric  |
- *  x---------x---------x---------x
- *  |cfr |cfr |
- *  x----x----x
- **/
-int faultAntn(       moab_mesh &i_mesh,
-               const antn_cfg  &i_antnCfg ) {
-  if( i_antnCfg.m_faultInputFns.empty() ) {
-    std::cout << "No fault input files... Skipping fault annotation"
+// Create MOAB tags and tag each fault entity with array of doubles.
+// Each tag is an array representing a different initial
+// rupture parameter at each subtriangle and each fused run
+// See diagram:
+//
+//  x------------------------------------------------------------x
+//  |                         Fault Face                         |
+//  x---------------------x------------------x-------------------x
+//  |      subtri 1       |     subtri 2     |     subtri 3      |
+//  x------x------x-------x------------------x-------------------x
+//  | cfr1 | cfr2 | cfr3  |
+//  x------x------x-------x
+int faultAntn( const  antn_cfg  &i_antnCfg,
+                      moab_mesh &i_mesh     )
+{
+  clock_t l_t = clock();
+
+  if( i_antnCfg.m_faultInputFns.empty() ){
+    std::cout << "No fault input files... skipping fault annotation"
               << std::endl;
     return 0;
   }
-
-  if( i_mesh.m_intf == nullptr ) {
+  if( i_mesh.m_intf == nullptr ){
     std::cout << "Failed." << std::endl;
     std::cerr << "Error: Attempted to annotate an uninitialized mesh (fault data)."
               << std::endl;
     exit( EXIT_FAILURE );
   }
 
-  //! Set parameters for constructing and querying fault model
-  const int l_nCfr    = i_antnCfg.m_faultInputFns.size(); //! Number of fused runs
-  const int l_refine  = 0;                                //! Subtri. refinement lvl
-  const int l_nSubTri = pow( l_refine + 1, 2 );           //! Subtris. per tet face
+  // Set parameters for constructing and querying fault model
+  const int l_nCfr = i_antnCfg.m_faultInputFns.size();// Number of fused runs
+  const int l_refine = i_antnCfg.m_tetRefinement;      // Subtri. refinement lvl
+  const int l_nSubTri = pow( l_refine+1, 2 );         // Subtris. per tet face
+  const int l_tagSize = l_nSubTri * l_nCfr;
 
-  //! Set up fault_model
+  // Set up fault_model
   FModel fault_model( i_antnCfg.m_faultInputFns );
-  fault_model.populate();
 
-  //! Get moab Range of all faces on fault
-  moab::ErrorCode         l_rval;
-  moab::Interface        *l_face          = i_mesh.m_intf;
-  moab::Range             l_faultFaces    = getFaultFaces( i_mesh );
-  const int               l_numFaultFaces = l_faultFaces.size();
-  const int               l_fdSize        = l_nCfr * 3;
-  const int               l_tagSize       = l_nSubTri * l_fdSize;
+  l_t = clock() - l_t;
+  std::cout << " (" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
+  l_t = clock();
 
-  //! Declare some more data structures to be used in the mesh annotation
-  Triangle                l_tri;
-  std::vector< Triangle > l_subtriangles;
-  moab::Range             l_faceVerts;
-  double                  l_faceVertsCoords[9];
-  moab::Tag               l_tagFData;
-  FDatum                  l_fd;
+  // Create maps of tags and data arrays
+  moab::ErrorCode                     l_rval;
+  moab::Interface*                    l_iface = i_mesh.m_intf;
+  std::map< std::string, real* >    l_qtyData;
+  std::map< std::string, moab::Tag >  l_tags;
 
-  double                 *l_entData = new double[l_tagSize];
+  for( const auto& l_qtyName : fault_model.m_qtyNames ){
+    l_qtyData[ l_qtyName ] = new real[ l_tagSize ];
 
-  //! Get tag to hold fault parameters, creating it if it doesn't exist
-  l_rval = l_face->tag_get_handle( "FAULT_DATA", l_tagSize,
-                                   moab::MB_TYPE_DOUBLE, l_tagFData,
-                                   moab::MB_TAG_CREAT | moab::MB_TAG_DENSE );
-  assert( l_rval == moab::MB_SUCCESS );
+    l_rval = l_iface->tag_get_handle( l_qtyName.c_str(),
+                                      l_tagSize,
+                                      moab::MB_TYPE_DOUBLE,
+                                      l_tags[ l_qtyName ],
+                                      moab::MB_TAG_CREAT|moab::MB_TAG_DENSE );
+    assert( l_rval == moab::MB_SUCCESS );
+  }
 
-  //! Loop over all fault faces, annotating mesh as we go
-  int l_count = 0;
-  std::cout << "Annotating mesh with fault stresses... " << std::endl;
-  std::cout << l_count << " of " << l_numFaultFaces << " fault entities annotated."
-            << std::flush;
+  // Loop over all fault faces, annotating mesh as we go
+  Triangle                  l_tri;
+  std::vector< Triangle >   l_subtriangles;
+  moab::Range               l_faceVerts;
+  real                      l_faceVertsCoords[9];
+  FDatum                    l_fd;
 
-  for( const auto &l_faceHandle : l_faultFaces ) {
+  moab::Range l_faultFaces = getFaultFaces( i_mesh );
+
+  std::cout << "Annotating mesh with fault stresses... " << std::flush;
+  for( const auto& l_faceHandle : l_faultFaces ){
     l_faceVerts.clear();
-    l_rval = l_face->get_adjacencies( &l_faceHandle, 1, 0, false, l_faceVerts );
+    l_rval = l_iface->get_adjacencies( &l_faceHandle, 1, 0, false, l_faceVerts );
     assert( l_rval == moab::MB_SUCCESS );
 
-    //! Ensure that vertices in triangle are ordered according to increasing id
-    //! Can compare entity handles since entity type is the same for all verts
+    // Ensure that vertices in triangle are ordered according to increasing id
+    // Can compare entity handles since entity type is the same for all verts
     assert( l_faceVerts[0] < l_faceVerts[1] );
     assert( l_faceVerts[1] < l_faceVerts[2] );
-    l_rval = l_face->get_coords( l_faceVerts, l_faceVertsCoords );
+    l_rval = l_iface->get_coords( l_faceVerts, l_faceVertsCoords );
     assert( l_rval == moab::MB_SUCCESS );
 
-    //! Build a triangle from the vertices of triangle entity, and subdivide
+    // Build a triangle from the vertices of triangle entity, and subdivide
     l_tri = Triangle( l_faceVertsCoords );
     l_subtriangles = l_tri.subdivide( l_refine );
     assert( l_nSubTri == l_subtriangles.size() );
 
-    //! Loop over each subtriangle and get approximate fault data
-    for( int l_st = 0; l_st < l_nSubTri; l_st++ ) {
-      l_fd = fault_model.getDatumTri( l_subtriangles[l_st] );
+    // Loop over each subtriangle and get approximate fault data
+    for( int l_st = 0; l_st < l_nSubTri; l_st++ ){
+      l_fd = fault_model.getDatumTri( l_subtriangles[ l_st ] );
 
-      for( int l_cfr = 0; l_cfr < l_nCfr; l_cfr++ ) {
-        l_entData[l_st*l_fdSize+l_cfr]          = l_fd.m_nStress[l_cfr];
-        l_entData[l_st*l_fdSize+l_nCfr+l_cfr]   = l_fd.m_sStress[l_cfr];
-        l_entData[l_st*l_fdSize+2*l_nCfr+l_cfr] = l_fd.m_sFric[l_cfr];
+      for( int l_cfr = 0; l_cfr < l_nCfr; l_cfr++ ){
+        for( const auto& l_qtyName : fault_model.m_qtyNames ){
+          l_qtyData[ l_qtyName ][ l_st * l_nCfr + l_cfr ] = l_fd[ l_qtyName ][ l_cfr ];
+        }
       }
     }
 
-    //! Tag the mesh with the array of stresses
-    l_rval = l_face->tag_set_data( l_tagFData, &l_faceHandle, 1, l_entData );
-    assert( l_rval == moab::MB_SUCCESS);
-
-    //! Print out the progress of the mesh annotation
-    l_count++;
-    std::cout << "\r" << std::setw( 70 ) << "\r" << std::flush;
-    std::cout << l_count << " of " << l_numFaultFaces << " completed"
-              << std::flush;
+    // Tag the mesh with each quantity
+    for( const auto& l_qtyName : fault_model.m_qtyNames ){
+      l_rval = l_iface->tag_set_data( l_tags[ l_qtyName ],
+                                      &l_faceHandle,
+                                      1,
+                                      l_qtyData[ l_qtyName ] );
+      assert( l_rval == moab::MB_SUCCESS);
+    }
   }
 
-  std::cout << std::endl;
-  std::cout << "Done!" << std::endl;
+  std::cout << "Done!" << std::flush;
+
+  // Clean Up
+  for( const auto& l_qtyName : fault_model.m_qtyNames ){
+    delete[] l_qtyData[ l_qtyName ];
+  }
+
+  l_t = clock() - l_t;
+  std::cout << " (" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
 
   return 0;
 }
