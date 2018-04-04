@@ -668,6 +668,31 @@ if( l_elasticConf.m_frictionLaw != "" ) {
            l_internal.m_globalShared7[0].mss,
            l_elasticConf.m_faultCrds );
 
+  // query mesh for fault data
+  unsigned short l_faultMesh = std::numeric_limits< unsigned short >::max();
+  EDGE_LOG_INFO << "    querying mesh for fault data";
+
+  struct t_FaultData{ double sn0[CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS];
+                      double ss0[N_DIM-1][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS];
+                    } *l_faultData;
+
+  l_faultData = new t_FaultData[ l_enLayouts[l_rupLayoutFa].nEnts ];
+  std::string l_faultPars[3] = { "N_STRESS",
+                                 "S_STRESS_STK",
+                                 "S_STRESS_DIP" };
+
+  l_faultMesh = l_mesh.getParsDe(                                   N_DIM-1,
+                                                                    3,
+                                                                    l_faultPars,
+    ( double (*)[CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] ) l_faultData,
+                                                                    RUPTURE,
+                                                                    l_internal.m_faceChars );
+
+  if(      l_faultMesh == 0 ){ EDGE_LOG_INFO << "      succesfully queried mesh for fault data"; }
+  else if( l_faultMesh == 1 ){ EDGE_LOG_INFO << "      couldn't find all fault data parameters mesh, continuoing w/o"; }
+  else if( l_faultMesh == 2 ){ EDGE_LOG_INFO << "      a fault data paramter doesn't match requirements, continuoing w/o"; }
+  else{ EDGE_LOG_FATAL; };
+
   // set up rupture physics
   EDGE_LOG_INFO << "  setting up rupture physics";
    edge::elastic::setups::RuptureInit<
@@ -681,19 +706,24 @@ if( l_elasticConf.m_frictionLaw != "" ) {
   edge::elastic::setups::RuptureInit<
     T_SDISC.ELEMENT,
     ORDER,
-    N_CRUNS >::linSlipWeak(
-      l_enLayouts[1].nEnts,
-      t_spTypeElastic::RUPTURE,
-      l_internal.m_connect.faVe,
-      l_internal.m_connect.faEl,
-      l_internal.m_vertexChars,
-      l_internal.m_faceChars,
-      l_internal.m_elementShared1[0],
-      l_elasticConf.m_faultCrds,
-      l_elasticConf.m_lsw,
-      l_elasticConf.m_rupDoms,
-      l_elasticConf.m_stressInit,
-      l_internal.m_globalShared5[0] );
+    N_CRUNS >::linSlipWeak( l_enLayouts[1].nEnts,
+                            t_spTypeElastic::RUPTURE,
+                            l_internal.m_globalShared2[0].connect.scDgAd,
+                            l_internal.m_connect.faVe,
+                            l_internal.m_connect.faEl,
+                            l_internal.m_connect.elVe,
+                            l_internal.m_connect.elFa,
+                            l_internal.m_vertexChars,
+                            l_internal.m_faceChars,
+                            l_internal.m_elementShared1[0],
+                            l_elasticConf.m_faultCrds,
+                            l_elasticConf.m_lsw,
+                            l_elasticConf.m_rupDoms,
+                            l_elasticConf.m_stressInit,
+                            l_internal.m_globalShared5[0],
+       (l_faultMesh == 0) ? l_faultData : nullptr );
+
+  delete[] l_faultData;
 }
 
 #if PP_ORDER > 1

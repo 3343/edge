@@ -58,10 +58,20 @@ class edge::elastic::setups::RuptureInit {
     static t_entityType const TL_T_FA = C_ENT[TL_T_EL].TYPE_FACES;
 
     //! #vertices of the faces
-    static unsigned short const TL_N_FA_VE = C_ENT[TL_T_FA].N_VERTICES;
+    static unsigned short const TL_N_VES_FA = C_ENT[TL_T_FA].N_VERTICES;
+
+    //! #vertices of the elements
+    static unsigned short const TL_N_VES_EL = C_ENT[TL_T_EL].N_VERTICES;
+
+    //! #faces of the elements
+    static unsigned short const TL_N_FAS_EL = C_ENT[TL_T_EL].N_FACES;
 
     //! number of sub-faces per DG-face
     static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+    // dummy fault data
+    typedef struct { double sn0[TL_N_SFS][TL_N_CRS];
+                     double ss0[TL_N_DIS-1][TL_N_SFS][TL_N_CRS]; } t_faultDataDummy;
 
   public:
     /**
@@ -105,8 +115,11 @@ class edge::elastic::setups::RuptureInit {
      *
      * @param i_nFaces number of dense faces.
      * @param i_spType sparse type of the rupture faces.
+     * @param i_scDgAd sub-cell reordering based on DG connectivity.
      * @param i_faVe vertices adjacent to the dense faces.
      * @param i_faEl elements adjacent to the dense faces.
+     * @param i_elVe vertices adjacent to the elements.
+     * @param i_elFa faces adjacent to the faces.
      * @param i_veChars vertex characteristics.
      * @param i_faChars face characteristics.
      * @param i_bgPars background parameters of the dense elements.
@@ -115,8 +128,9 @@ class edge::elastic::setups::RuptureInit {
      * @param i_doms domains where initial stress values at the fault are defined.
      * @param i_stressInit initial normal and shear stress values in the domains.
      * @param o_lsw linear slip weakening data.
+     * @param i_faultData input fault data. Only used if not nullptr. If both domains and fault data are given, domains have priority.
      *
-     * @paramt TL_T_INT_LID integer type of per-rank local ids.
+     * @paramt TL_T_LID integer type of per-rank local ids.
      * @paramt TL_T_INT_SP integer type of the sparse type.
      * @paramt TL_T_VE_CHARS struct summarizing the vertex characteristics.
      * @paramt TL_T_FA_CHARS struct summarizing the face characteristics.
@@ -124,30 +138,36 @@ class edge::elastic::setups::RuptureInit {
      * @paramt TL_T_REAL_MESH type used in floating point arithmetic for mesh-related data.
      * @paramt TL_T_REAL_COMP type used in floating point arithmetic for computational data.
      * @paramt TL_T_DOM class implementing the concept of a domain.
+     * @paramt TL_T_FAULT_DATA type of the fault data, offering members .ss0 for shear stresses and .sn0 for normal stress.
      **/
-    template< typename TL_T_INT_LID,
+    template< typename TL_T_LID,
               typename TL_T_INT_SP,
               typename TL_T_VE_CHARS,
               typename TL_T_FA_CHARS,
               typename TL_T_BG_PARS,
               typename TL_T_REAL_MESH,
               typename TL_T_REAL_COMP,
-              typename TL_T_DOM >
-    static void linSlipWeak( TL_T_INT_LID                                               const    i_nFaces,
-                             TL_T_INT_SP                                                const    i_spType,
-                             TL_T_INT_LID                                               const (* i_faVe)[TL_N_FA_VE],
-                             TL_T_INT_LID                                               const (* i_faEl)[2],
-                             TL_T_VE_CHARS                                              const  * i_veChars,
-                             TL_T_FA_CHARS                                              const  * i_faChars,
-                             TL_T_BG_PARS                                               const  * i_bgPars,
-                             TL_T_REAL_MESH                                             const    i_faultCrdSys[TL_N_DIS][TL_N_DIS],
-                             TL_T_REAL_COMP                                             const    i_lswPars[TL_N_CRS][3],
-                             std::vector< TL_T_DOM >                                    const    i_doms[TL_N_CRS],
-                             std::vector< std::array< TL_T_REAL_COMP, TL_N_DIS > >      const    i_stressInit[TL_N_CRS],
+              typename TL_T_DOM,
+              typename TL_T_FAULT_DATA = t_faultDataDummy >
+    static void linSlipWeak( TL_T_LID                                              const    i_nFaces,
+                             TL_T_INT_SP                                           const    i_spType,
+                             unsigned short                                        const    i_scDgAd[TL_N_VES_FA][TL_N_SFS],
+                             TL_T_LID                                              const (* i_faVe)[TL_N_VES_FA],
+                             TL_T_LID                                              const (* i_faEl)[2],
+                             TL_T_LID                                              const (* i_elVe)[TL_N_VES_EL],
+                             TL_T_LID                                              const (* i_elFa)[TL_N_FAS_EL],
+                             TL_T_VE_CHARS                                         const  * i_veChars,
+                             TL_T_FA_CHARS                                         const  * i_faChars,
+                             TL_T_BG_PARS                                          const  * i_bgPars,
+                             TL_T_REAL_MESH                                        const    i_faultCrdSys[TL_N_DIS][TL_N_DIS],
+                             TL_T_REAL_COMP                                        const    i_lswPars[TL_N_CRS][3],
+                             std::vector< TL_T_DOM >                               const    i_doms[TL_N_CRS],
+                             std::vector< std::array< TL_T_REAL_COMP, TL_N_DIS > > const    i_stressInit[TL_N_CRS],
                              solvers::t_LinSlipWeak< TL_T_REAL_COMP,
                                                      TL_T_EL,
                                                      TL_O_SP,
-                                                     TL_N_CRS >                                 &o_lsw ) {
+                                                     TL_N_CRS >                           & o_lsw,
+                             TL_T_FAULT_DATA                                        const * i_faultData = nullptr ) {
       // iterate over runs and setup friction laws
       for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
         EDGE_CHECK( i_lswPars[l_ru][0] > TOL.SOLVER );
@@ -159,15 +179,15 @@ class edge::elastic::setups::RuptureInit {
       } 
 
       // iterate over dense faces
-      TL_T_INT_LID l_spId = 0;
+      TL_T_LID l_spId = 0;
 
-      for( TL_T_INT_LID l_fa = 0; l_fa < i_nFaces; l_fa++ ) {
+      for( TL_T_LID l_fa = 0; l_fa < i_nFaces; l_fa++ ) {
         // ignore all non-rupture faces
         if( (i_faChars[l_fa].spType & i_spType) != i_spType ) continue;
 
         // adjacent elements id
-        TL_T_INT_LID l_elL = i_faEl[l_fa][0];
-        TL_T_INT_LID l_elR = i_faEl[l_fa][1];
+        TL_T_LID l_elL = i_faEl[l_fa][0];
+        TL_T_LID l_elR = i_faEl[l_fa][1];
 
         // set up face data
         TL_T_REAL_MESH l_sProd = (TL_N_DIS == 2) ? linalg::Geom::sprod2( i_faultCrdSys[0], i_faChars[l_fa].outNormal ) :
@@ -188,10 +208,31 @@ class edge::elastic::setups::RuptureInit {
         TL_T_REAL_MESH l_pt[TL_N_DIS];
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
           l_pt[l_di] = 0;
-          for( unsigned short l_ve = 0; l_ve < TL_N_FA_VE; l_ve++ ) {
+          for( unsigned short l_ve = 0; l_ve < TL_N_VES_FA; l_ve++ ) {
             l_pt[l_di] += i_veChars[ i_faVe[l_fa][l_ve] ].coords[l_di];
           }
-          l_pt[l_di] /= TL_N_FA_VE;
+          l_pt[l_di] /= TL_N_VES_FA;
+        }
+
+        // determine the local rupture face-id of the left element
+        unsigned short l_faL = std::numeric_limits< unsigned short >::max();
+        for( unsigned short l_fl = 0; l_fl < TL_N_FAS_EL; l_fl++ ) {
+          if( i_elFa[l_elL][l_fl] == l_fa ) l_faL = l_fl;
+        }
+        EDGE_CHECK_NE( l_faL, std::numeric_limits< unsigned short >::max() );
+
+        // left element's local vertex ids, associated with the faces
+        unsigned short const *l_elVeFa = C_REF_ELEMENT.FA_VE_CC.ENT[TL_T_EL];
+        l_elVeFa += l_faL * TL_N_VES_FA;
+
+        // check that the first element-face vertex matches the first face vertex
+        EDGE_CHECK_EQ( i_elVe[l_elL][ l_elVeFa[0] ], i_faVe[l_fa][0] );
+
+        // determine if we have reorder the sub-faces
+        bool l_reorder = false;
+        for( unsigned short l_v0 = 2; l_v0 < TL_N_VES_FA; l_v0++ ) {
+          if( i_elVe[l_elL][l_elVeFa[1]] > i_elVe[l_elL][l_elVeFa[l_v0]] )
+            l_reorder = true;
         }
 
         // iterate over fused runs
@@ -212,7 +253,16 @@ class edge::elastic::setups::RuptureInit {
               o_lsw.sf[l_spId][l_sf].tr[l_di][l_ru] = 0;
             }
 
-            // iterate over domains
+            // data-based input
+            if( i_faultData != nullptr ) {
+              unsigned short l_sfRe = l_reorder ? i_scDgAd[0][l_sf] : l_sf;
+              // assign values
+              o_lsw.sf[l_spId][l_sf].sn0[l_ru] = i_faultData[l_spId].sn0[l_sfRe][l_ru];
+              for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ )
+                o_lsw.sf[l_spId][l_sf].ss0[l_di][l_ru] = i_faultData[l_spId].ss0[l_di][l_sfRe][l_ru];
+            }
+
+            // config-based input iterate over domains
             for( std::size_t l_do = 0; l_do < i_doms[l_ru].size(); l_do++ ) {
               // check if the point is inside
               if( i_doms[l_ru][l_do].inside( l_pt ) ) {

@@ -163,6 +163,16 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
                        {2, 0},
                        {0, 3} };
 
+  int l_elFa[4][3] = { {3, -1, -1},
+                       {0, -1, -1},
+                       {2, -1, -1},
+                       {1, -1, -1} };
+
+  int l_elVe[4][3] = { {6,-1,-1},
+                       {0,-1,-1},
+                       {4,-1,-1},
+                       {2,-1,-1} };
+
   // set up coordinates of vertices
   t_vertexChars l_veChars[8];
   l_veChars[0].coords[0] = -42000;
@@ -203,17 +213,25 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   double l_faultCrds[2][2] = { {0, 1}, {1, 0} };
 
   // output
-  edge::elastic::solvers::t_LinSlipWeakFace<double>          l_lswFace[3];
-  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8> l_lswSf[3][5];
+  edge::elastic::solvers::t_LinSlipWeakFace<double>            l_lswFace[3];
+  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8>   l_lswSf[3][5];
   edge::elastic::solvers::t_LinSlipWeak< double, TRIA3, 3, 8 > l_lsw;
   l_lsw.fa = l_lswFace;
   l_lsw.sf = l_lswSf;
 
+  unsigned short l_scDgAd[3][5];
+  for( unsigned short l_ve = 0; l_ve < 3; l_ve++ )
+    for( unsigned short l_sf = 0; l_sf < 5; l_sf++ )
+      l_scDgAd[l_ve][l_sf] = 0;
+
   // init the rupture physics
   edge::elastic::setups::RuptureInit< TRIA3, 3, 8>::linSlipWeak( l_nFaces,
                                                                  1234,
+                                                                 l_scDgAd,
                                                                  l_faVe,
                                                                  l_faEl,
+                                                                 l_elVe,
+                                                                 l_elFa,
                                                                  l_veChars,
                                                                  l_faChars,
                                                                  l_bgPars,
