@@ -38,9 +38,6 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
   m_maxVpVsRatio  = 0.0;
   m_elmtsPerWave  = 0.0;
 
-  m_hypoc.m_lon   = 0.0;
-  m_hypoc.m_lat   = 0.0;
-
   m_tetRefinement = 0;
 
   std::cout << "Reading Config File: " << i_pathToFile << "... " << std::flush;
@@ -81,39 +78,22 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
       else if( l_varValue.compare( "UCVM_COORD_GEO_ELEV" ) == 0 )
         m_ucvmCmode   = UCVM_COORD_GEO_ELEV;
     }
-    else if( l_varName.compare( "ucvm_type" ) == 0 )
-      m_ucvmType      = atoi( l_varValue.c_str() );
-    else if( l_varName.compare( "min_vp" ) == 0 )
-      m_minVp         = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "min_vs" ) == 0 )
-      m_minVs         = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "min_vs2" ) == 0 )
-      m_minVs2        = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "max_vp_vs_ratio" ) == 0 )
-      m_maxVpVsRatio  = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "elmts_per_wave" ) == 0 )
-      m_elmtsPerWave  = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "center_ic_lon" ) == 0 )
-      m_hypoc.m_lon   = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "center_ic_lat" ) == 0 )
-      m_hypoc.m_lat   = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "fault_input_file" ) == 0 )
-      m_faultInputFns.push_back( l_varValue );
-    else if( l_varName.compare( "tet_refinement" ) == 0 )
-      m_tetRefinement = std::stoi( l_varValue );
-    else if( l_varName.compare( "mesh_file" ) == 0 )
-      m_meshFn        = l_varValue;
-    else if( l_varName.compare( "node_vm_file" ) == 0 )
-      m_vmNodeFn      = l_varValue;
-    else if( l_varName.compare( "elmt_vm_file" ) == 0 )
-      m_vmElmtFn      = l_varValue;
-    else if( l_varName.compare( "h5m_file" ) == 0 )
-      m_h5mFn         = l_varValue;
-    else if( l_varName.compare( "pos_file" ) == 0 )
-      m_posFn         = l_varValue;
-    else
-      std::cout << "\nUnknown setting (" << l_varName << "). Ignored."
-                << std::endl;
+    else if( l_varName.compare( "ucvm_type"        ) == 0 ) m_ucvmType     = atoi( l_varValue.c_str() );
+    else if( l_varName.compare( "min_vp"           ) == 0 ) m_minVp        = atof( l_varValue.c_str() );
+    else if( l_varName.compare( "min_vs"           ) == 0 ) m_minVs        = atof( l_varValue.c_str() );
+    else if( l_varName.compare( "min_vs2"          ) == 0 ) m_minVs2       = atof( l_varValue.c_str() );
+    else if( l_varName.compare( "max_vp_vs_ratio"  ) == 0 ) m_maxVpVsRatio = atof( l_varValue.c_str() );
+    else if( l_varName.compare( "elmts_per_wave"   ) == 0 ) m_elmtsPerWave = atof( l_varValue.c_str() );
+    else if( l_varName.compare( "proj_mesh"        ) == 0 ) m_projMesh     = l_varValue;
+    else if( l_varName.compare( "proj_vel"         ) == 0 ) m_projVel      = l_varValue;
+    else if( l_varName.compare( "mesh_file"        ) == 0 ) m_meshFn       = l_varValue;
+    else if( l_varName.compare( "node_vm_file"     ) == 0 ) m_vmNodeFn     = l_varValue;
+    else if( l_varName.compare( "elmt_vm_file"     ) == 0 ) m_vmElmtFn     = l_varValue;
+    else if( l_varName.compare( "h5m_file"         ) == 0 ) m_h5mFn        = l_varValue;
+    else if( l_varName.compare( "pos_file"         ) == 0 ) m_posFn        = l_varValue;
+    else if( l_varName.compare( "fault_input_file" ) == 0 ) m_faultInputFns.push_back( l_varValue );
+    else if( l_varName.compare( "tet_refinement"   ) == 0 ) m_tetRefinement = std::stoi( l_varValue );
+    else std::cout << "\nUnknown setting (" << l_varName << "). Ignored." << std::endl;
   }
 
   l_mshFs.close();
