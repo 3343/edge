@@ -93,18 +93,14 @@ int main( int argc, char** argv ){
 
   // Construct all of the fault regions
   FR_static l_background( l_xMin, l_xMax, l_yMin, l_yMax );
-  l_background.insert( "S_FRIC", 10000 );
-  l_background.insert( "S_STRESS_STK", 70 );
-  l_background.insert( "S_STRESS_DIP", 0 );
-  l_background.insert( "N_STRESS", 120 );
-  l_background.insert( "STRESS_DROP", 0 );
+  l_background.insert( "S_STRESS_STK",   70.0E6 );
+  l_background.insert( "S_STRESS_DIP",    0.0   );
+  l_background.insert( "N_STRESS",     -120.0E6 );
 
   FR_static l_ruptureArea( -15000, 15000, 0, 15000 );
-  l_ruptureArea.insert( "S_FRIC", 0.677 );
-  l_ruptureArea.insert( "S_STRESS_STK", 70 );
-  l_ruptureArea.insert( "S_STRESS_DIP", 0 );
-  l_ruptureArea.insert( "N_STRESS", 120 );
-  l_ruptureArea.insert( "STRESS_DROP", 7 );
+  l_ruptureArea.insert( "S_STRESS_STK", 70.0E6  );
+  l_ruptureArea.insert( "S_STRESS_DIP",  0.0    );
+  l_ruptureArea.insert( "N_STRESS",    -120.0E6 );
 
   FR_tpv5Nucleate   l_nuclPatch(  -1500,  1500, 6000, 9000 );
   FR_tpv5LowStress  l_lowStress(   6000,  9000, 6000, 9000 );

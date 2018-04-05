@@ -29,8 +29,8 @@
  * for your example, since it is a pure virtual method in FaultRegion.
  **/
 
-#ifndef FAULT_REGION_H
-#define FAULT_REGION_H
+#ifndef EDGE_V_FAULT_REGION_H
+#define EDGE_V_FAULT_REGION_H
 
 #include <iostream>
 #include <sstream>

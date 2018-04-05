@@ -32,16 +32,19 @@ PREFIX ?= .
 UCVMINC=$(UCVMDIR)/include
 UCVMLIB=$(UCVMDIR)/lib
 
-PROJ4INC=$(PROJ4DIR)/include
-PROJ4LIB=$(PROJ4DIR)/lib
+ifndef PROJ4DIR
+  PROJ4INC=$(UCVMDIR)/lib/proj-4/include
+	PROJ4INC=$(UCVMDIR)/lib/proj-4/lib
+else
+  PROJ4INC=$(PROJ4DIR)/include
+	PROJ4LIB=$(PROJ4DIR)/lib
+endif
 
-UCVMCLDFLAGS=-L$(UCVMDIR)/model/cvms426/lib  -lcvmsi       -Wl,-rpath,$(UCVMDIR)/model/cvms426/lib  \
-             -L$(UCVMDIR)/model/cvms/lib     -lcvms        -Wl,-rpath,$(UCVMDIR)/model/cvms/lib     \
-             -L$(UCVMDIR)/model/cvmh1510/lib -lvxapi -lgeo -Wl,-rpath,$(UCVMDIR)/model/cvmh1510/lib \
-             -L$(UCVMDIR)/model/cencal/lib   -lcencalvm    -Wl,-rpath,$(UCVMDIR)/model/cencal/lib   \
-             -L$(UCVMDIR)/lib/euclid3/lib    -letree       -Wl,-rpath,$(UCVMDIR)/lib/euclid3/lib    \
-             -L$(UCVMDIR)/lib/fftw/lib       -lfftw3       -Wl,-rpath,$(UCVMDIR)/lib/fftw/lib
-
+UCVMCLDFLAGS=$(UCVMDIR)/model/cvms5/lib/libcvms5.a \
+						 $(UCVMDIR)/model/cvmh1510/lib/libvxapi.a \
+             $(UCVMDIR)/model/cvmh1510/lib/libgeo.a \
+             $(UCVMDIR)/lib/euclid3/lib/libetree.a \
+             $(UCVMDIR)/lib/fftw/lib/libfftw3.a
 MOABINC=$(MOABDIR)/include
 MOABLIB=$(MOABDIR)/lib
 
@@ -49,7 +52,7 @@ MOABLIB=$(MOABDIR)/lib
 MOAB_LINKS := $(shell echo $(MOAB_LIBS_LINK) | sed 's/-all-static//g')
 
 CXXFLAGS=-I. -I$(PROJ4INC) -I$(UCVMINC) -I$(MOABINC) -fopenmp -std=c++11 -Wall
-LDFLAGS=-L$(PROJ4LIB) -lproj -Wl,-rpath,$(PROJ4LIB)                \
+LDFLAGS= -fopenmp -L$(PROJ4LIB) -lproj -Wl,-rpath,$(PROJ4LIB)                \
         -L$(UCVMLIB)  -lucvm $(UCVMCLDFLAGS) -Wl,-rpath,$(UCVMLIB) \
         $(MOAB_LINKS) -lm -ldl
 
@@ -57,19 +60,23 @@ SRCDIR=./src
 OBJDIR=./build
 RELEASE=$(PREFIX)/bin
 
-_DEPS=vm_utility.h
-_OBJ=vm_utility.o edge_v.o
-_POS=vm_utility.o write_pos.o
+_DEPS=vm_utility.h FaultModel.h Geometry.h Config.h
+_OBJ=FaultModel.o vm_utility.o edge_v.o Config.o
+_POS=FaultModel.o vm_utility.o write_pos.o Config.o
+_RUPBENCH=fModelWriter.o FaultRegion.o
 
 DEPS=$(patsubst %,$(SRCDIR)/%,$(_DEPS))
 OBJ=$(patsubst %,$(OBJDIR)/%,$(_OBJ))
 POS=$(patsubst %,$(OBJDIR)/%,$(_POS))
+RUP_BENCH=$(patsubst %,$(OBJDIR)/%,$(_RUPBENCH))
 
-all: build write_pos
+all: build write_pos rup_bench
 
 build: $(OBJDIR)/edge_v
 
 write_pos: $(OBJDIR)/write_pos
+
+rup_bench: $(OBJDIR)/rup_bench
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(DEPS)
 	if [ ! -d $(OBJDIR)  ]; then mkdir -p $(OBJDIR) ; fi
@@ -85,10 +92,15 @@ $(OBJDIR)/write_pos: $(POS)
 	if [ ! -d $(RELEASE) ]; then mkdir -p $(RELEASE); fi
 	cp $(OBJDIR)/write_pos $(RELEASE)/
 
+$(OBJDIR)/rup_bench: $(RUP_BENCH)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+	if [ ! -d $(RELEASE) ]; then mkdir -p $(RELEASE); fi
+	cp $(OBJDIR)/rup_bench $(RELEASE)/
+
 .PHONY: cleanobj clean
 
 cleanobj:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(OBJDIR)/write_pos
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(OBJDIR)/write_pos $(OBJDIR)/rup_bench
 
 clean:
-	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(OBJDIR)/write_pos $(RELEASE)/edge_v $(RELEASE)/write_pos
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/edge_v $(OBJDIR)/write_pos $(RELEASE)/edge_v $(RELEASE)/write_pos $(RELEASE)/rup_bench
