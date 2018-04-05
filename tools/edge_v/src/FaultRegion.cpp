@@ -81,11 +81,9 @@ FR_tpv5Nucleate::FR_tpv5Nucleate( double i_xMin,
                                   double i_yMax ) :
   FR_static( i_xMin, i_xMax, i_yMin, i_yMax )
 {
-  insert( "S_FRIC", 0.677 );
-  insert( "S_STRESS_STK", 81.6 );
-  insert( "S_STRESS_DIP", 0 );
-  insert( "N_STRESS", 120 );
-  insert( "STRESS_DROP", 18.6 );
+  insert( "S_STRESS_STK",  81.6E6 );
+  insert( "S_STRESS_DIP",   0.0   );
+  insert( "N_STRESS",    -120.0E6 );
 }
 
 FR_tpv5LowStress::FR_tpv5LowStress( double i_xMin,
@@ -94,11 +92,9 @@ FR_tpv5LowStress::FR_tpv5LowStress( double i_xMin,
                                     double i_yMax ) :
   FR_static( i_xMin, i_xMax, i_yMin, i_yMax )
 {
-  insert( "S_FRIC", 0.677 );
-  insert( "S_STRESS_STK", 62 );
-  insert( "S_STRESS_DIP", 0 );
-  insert( "N_STRESS", 120 );
-  insert( "STRESS_DROP", -1 );
+  insert( "S_STRESS_STK",   62.0E6 );
+  insert( "S_STRESS_DIP",    0.0   );
+  insert( "N_STRESS",     -120.0E6 );
 }
 
 FR_tpv5HighStress::FR_tpv5HighStress( double i_xMin,
@@ -107,9 +103,7 @@ FR_tpv5HighStress::FR_tpv5HighStress( double i_xMin,
                                       double i_yMax ) :
   FR_static( i_xMin, i_xMax, i_yMin, i_yMax )
 {
-  insert( "S_FRIC", 0.677 );
-  insert( "S_STRESS_STK", 78 );
-  insert( "S_STRESS_DIP", 0 );
-  insert( "N_STRESS", 120 );
-  insert( "STRESS_DROP", 15 );
+  insert( "S_STRESS_STK",   78.0E6 );
+  insert( "S_STRESS_DIP",    0.0   );
+  insert( "N_STRESS",     -120.0E6 );
 }
