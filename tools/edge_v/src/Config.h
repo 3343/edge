@@ -58,7 +58,6 @@ class edge_v::io::Config {
     real          m_elmtsPerWave;
 
     std::string   m_meshFn;
-    geo_point_t   m_hypoc;
 
     int           m_tetRefinement;
     std::vector< std::string > m_faultInputFns;
