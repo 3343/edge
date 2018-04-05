@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <omp.h>
+#include <sstream>
 
 #include "vm_utility.h"
 
@@ -155,7 +156,7 @@ int meshInit( moab_mesh &i_mesh,
   i_mesh.m_intf           = new moab::Core;
   moab::Interface *l_face = i_mesh.m_intf;
 
-  std::cout << "Reading Mesh File: " << i_cfg.m_meshFn << "... " << std::endl;
+  std::cout << "Reading mesh file: " << i_cfg.m_meshFn << "... " << std::endl;
 
   //! Load the mesh from msh file
   moab::ErrorCode l_rval = l_face->load_mesh( i_cfg.m_meshFn.c_str() );
@@ -266,7 +267,7 @@ int writeVMNodes(       vmodel    &i_vmNodes,
                   const moab_mesh &i_mesh ) {
   clock_t l_t = clock();
 
-  std::cout << "Writing Velocity Model: " << i_cfg.m_vmNodeFn << "... "
+  std::cout << "Writing velocity model: " << i_cfg.m_vmNodeFn << "... "
             << std::flush;
 
   std::ofstream l_vmNodeFs( i_cfg.m_vmNodeFn.c_str(), std::ios::out );
@@ -277,29 +278,45 @@ int writeVMNodes(       vmodel    &i_vmNodes,
     exit( EXIT_FAILURE );
   }
 
+  int_v l_bufferSize = 10000;
+  std::stringstream l_ss;
+
   //! Write down the headers
-  l_vmNodeFs << "$UcvmModel\n";
-  l_vmNodeFs << i_cfg.m_ucvmModelList << std::endl;
-  l_vmNodeFs << "$EndUcvmModel\n";
+  l_ss << "$UcvmModel" << std::endl;
+  l_ss << i_cfg.m_ucvmModelList << std::endl;
+  l_ss << "$EndUcvmModel" << std::endl;
 
   //! Write down the velocity model data
   int_v l_numNodes = i_mesh.m_numNodes;
 
-  l_vmNodeFs << "$NodesVelocityModel\n";
-  l_vmNodeFs << l_numNodes << std::endl;
+  l_ss << "$NodesVelocityModel" << std::endl;
+  l_ss << l_numNodes << std::endl;
 
   real l_data0, l_data1, l_data2;
   for( int_v l_pid = 0; l_pid < l_numNodes; l_pid++ ) {
+    if( l_pid % l_bufferSize == 0 ) {
+      //! Write buffer to file
+      l_vmNodeFs << l_ss.rdbuf();
+      l_vmNodeFs.flush();
+
+      //! Reset buffer
+      l_ss.str( std::string() );
+      l_ss.clear();
+    }
+
     l_data0 = i_vmNodes.m_vmList[l_pid].m_data[0];
     l_data1 = i_vmNodes.m_vmList[l_pid].m_data[1];
     l_data2 = i_vmNodes.m_vmList[l_pid].m_data[2];
 
-    l_vmNodeFs << (l_pid + 1) << " " << l_data0 << " " << l_data1 << " "
-               << l_data2 << std::endl;
-    l_vmNodeFs.flush();
+    l_ss << (l_pid + 1) << " " << l_data0 << " " << l_data1 << " "
+         << l_data2 << std::endl;
   }
 
-  l_vmNodeFs << "$NodesVelocityModel\n";
+  l_ss << "$NodesVelocityModel" << std::endl;
+
+  //! Final buffer write to file
+  l_vmNodeFs << l_ss.rdbuf();
+  l_vmNodeFs.flush();
   l_vmNodeFs.close();
 
   std::cout << "Done! ";
@@ -314,7 +331,7 @@ int writeVMElmts(       vmodel    &i_vmElmts,
                   const moab_mesh &i_mesh ) {
   clock_t l_t = clock();
 
-  std::cout << "Writing Velocity Model: " << i_cfg.m_vmElmtFn << "... "
+  std::cout << "Writing velocity model: " << i_cfg.m_vmElmtFn << "... "
             << std::flush;
 
   std::ofstream l_vmElmtFs( i_cfg.m_vmElmtFn.c_str(), std::ios::out );
@@ -325,29 +342,45 @@ int writeVMElmts(       vmodel    &i_vmElmts,
     exit( EXIT_FAILURE );
   }
 
+  int_v l_bufferSize = 10000;
+  std::stringstream l_ss;
+
   //! Write down the headers
-  l_vmElmtFs << "$UcvmModel\n";
-  l_vmElmtFs << i_cfg.m_ucvmModelList << std::endl;
-  l_vmElmtFs << "$EndUcvmModel\n";
+  l_ss << "$UcvmModel" << std::endl;
+  l_ss << i_cfg.m_ucvmModelList << std::endl;
+  l_ss << "$EndUcvmModel" << std::endl;
 
   //! Write down the velocity model data
   int_v l_numElmts = i_mesh.m_numElmts;
 
-  l_vmElmtFs << "$ElementsVelocityModel\n";
-  l_vmElmtFs << l_numElmts << std::endl;
+  l_ss << "$ElementsVelocityModel" << std::endl;
+  l_ss << l_numElmts << std::endl;
 
   real l_data0, l_data1, l_data2;
   for( int_v l_eid = 0; l_eid < l_numElmts; l_eid++ ) {
+    if( l_eid % l_bufferSize == 0 ) {
+      //! Write buffer to file
+      l_vmElmtFs << l_ss.rdbuf();
+      l_vmElmtFs.flush();
+
+      //! Reset buffer
+      l_ss.str( std::string() );
+      l_ss.clear();
+    }
+
     l_data0 = i_vmElmts.m_vmList[l_eid].m_data[0];
     l_data1 = i_vmElmts.m_vmList[l_eid].m_data[1];
     l_data2 = i_vmElmts.m_vmList[l_eid].m_data[2];
 
-    l_vmElmtFs << (l_eid + 1) << " " << l_data0 << " " << l_data1 << " "
-               << l_data2 << std::endl;
-    l_vmElmtFs.flush();
+    l_ss << (l_eid + 1) << " " << l_data0 << " " << l_data1 << " "
+         << l_data2 << std::endl;
   }
 
-  l_vmElmtFs << "$ElementsVelocityModel\n";
+  l_ss << "$ElementsVelocityModel" << std::endl;
+
+  //! Final buffer write to file
+  l_vmElmtFs << l_ss.rdbuf();
+  l_vmElmtFs.flush();
   l_vmElmtFs.close();
 
   std::cout << "Done! ";
@@ -369,7 +402,7 @@ int writeVMTags(       vmodel    &i_vmElmts,
     exit( EXIT_FAILURE );
   }
 
-  std::cout << "Writing Annotated Mesh File: " << i_cfg.m_h5mFn << "... "
+  std::cout << "Writing annotated mesh file: " << i_cfg.m_h5mFn << "... "
             << std::flush;
 
   moab::Range l_elems;
@@ -455,42 +488,59 @@ int writePos( const posModel  &i_posModel,
     exit( EXIT_FAILURE );
   }
 
-  l_outPos << "/*********************************************************************\n";
-  l_outPos << " *\n *  EDGE generated pos file\n *\n";
-  l_outPos << " *********************************************************************/\n\n";
+  int_v l_bufferSize = 10000;
+  std::stringstream l_ss;
 
-  l_outPos << "View \"Test\" {\n";
-  unsigned int l_vid;
+  l_ss << "/*********************************************************************"
+       << std::endl << " *" << std::endl << " *  EDGE generated pos file"
+       << std::endl << " *" << std::endl
+       << " *********************************************************************/"
+       << std::endl << std::endl;
+
+  l_ss << "View \"Test\" {" << std::endl;
 
   for( int_v l_eid = 0; l_eid < i_msh.m_numElmts; l_eid++ ) {
+    if( l_eid % l_bufferSize == 0 ) {
+      //! Write buffer to file
+      l_outPos << l_ss.rdbuf();
+      l_outPos.flush();
+
+      //! Reset buffer
+      l_ss.str( std::string() );
+      l_ss.clear();
+    }
+
     if( ELMTTYPE == 3 )
-      l_outPos << "ST(";
+      l_ss << "ST(";
     else if( ELMTTYPE == 4 )
-      l_outPos << "SS(";
+      l_ss << "SS(";
 
-    for( l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
-      l_outPos << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_x << ","
-               << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_y << ","
-               << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_z;
-
-      if( l_vid != ELMTTYPE - 1 )
-        l_outPos << ",";
-    }
-
-    l_outPos << "){";
-
-    for( l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
-      l_outPos << i_posModel.m_posList[l_eid].m_vs[l_vid];
+    for( unsigned int l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
+      l_ss << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_x << ","
+           << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_y << ","
+           << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_z;
 
       if( l_vid != ELMTTYPE - 1 )
-        l_outPos << ",";
+        l_ss << ",";
     }
 
-    l_outPos << "};\n";
-    l_outPos.flush();
+    l_ss << "){";
+
+    for( unsigned int l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
+      l_ss << i_posModel.m_posList[l_eid].m_vs[l_vid];
+
+      if( l_vid != ELMTTYPE - 1 )
+        l_ss << ",";
+    }
+
+    l_ss << "};" << std::endl;
   }
 
-  l_outPos << "};";
+  l_ss << "};" << std::endl;
+
+  //! Final buffer write to file
+  l_outPos << l_ss.rdbuf();
+  l_outPos.flush();
   l_outPos.close();
 
   std::cout << "Done! ";
@@ -624,6 +674,7 @@ std::vector< Triangle > Triangle::subdivide( const int &i_refine ) {
 FModel::FModel( const std::vector< std::string >& i_fInputFns ){
   // Open Fault Input File
   m_filenames = i_fInputFns;
+
   std::cout << "Initializing fault model from: " << std::endl;
   for( const auto& l_filename : m_filenames ){
     std::cout << "    > " << l_filename << std::endl;

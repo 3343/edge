@@ -51,7 +51,7 @@ function sendGeo() {
   printf -v l_login '%s@%s' "$remoteUsr" "$remoteClient"
 
   # Copy geo file to remote client
-  printf "\nSending $geoFile from local m/c to remote client ...\n"
+  printf "\nSending $geoFile from local m/c to remote client...\n"
   printf -v l_remoteLoc '%s:%s' "$l_login" "$remoteMshDir"
 
   SECONDS=0
@@ -59,6 +59,7 @@ function sendGeo() {
   duration=$SECONDS
   printf "Time taken: $duration s\n\n"
 }
+
 
 # Function to mesh on remote client
 function mesh() {
@@ -90,7 +91,7 @@ function mesh() {
     # Send pos file from local to remote
     if [ $iter -ne 0 ]
     then
-      printf "\nSending $posFile from local m/c to remote client ...\n"
+      printf "\nSending $posFile from local m/c to remote client...\n"
 
       SECONDS=0
       scp -v $posFile $l_remoteLoc
@@ -104,7 +105,7 @@ function mesh() {
     ssh $l_login nohup $remoteGmshDir $l_geoFile $bgmPos -3 -o $l_mshFile 2>&1 | tee $mshLog
 
     # Copy mesh file back to local machine
-    printf "\nSending $l_mshFile from remote client to local m/c ...\n"
+    printf "\nSending $l_mshFile from remote client to local m/c...\n"
     printf -v l_retMshFile '%s:%s' "$l_login" "$l_mshFile"
 
     SECONDS=0
@@ -139,7 +140,7 @@ sed -i -e '/Mesh.OptimizeNetgen/c\Mesh.OptimizeNetgen = 0;' $geoFile
 sendGeo
 
 # Intial coarse mesh
-printf "Generating initial (coarse) mesh ...\n"
+printf "Generating initial (coarse) mesh...\n"
 printf -v mshLog '%s.log' "$mshFile"
 mesh
 
@@ -164,11 +165,11 @@ do
   # Generate intermediate pos file to be used by gmsh in next step to produce a 
   # more refined mesh than previous iteration (using pos as background mesh)
   printf -v posLog '%s.log' "$posFile"
-  printf "Generating pos ...\n"
+  printf "Generating pos...\n"
   $writePos -f $confFile 2>&1 | tee $posLog
 
   # Generate intermediate meshes
-  printf "\nGenerating intermediate ($iter) mesh ...\n"
+  printf "\nGenerating intermediate ($iter) mesh...\n"
   mesh
 done
 
@@ -191,9 +192,9 @@ printf -v mshLog '%s_refined.log' "$mshFile"
 
 # Final refined pos file
 printf -v posLog '%s_refined.log' "$posFile"
-printf "Generating pos ...\n"
+printf "Generating pos...\n"
 $writePos -f $confFile 2>&1 | tee $posLog
 
 # Final mesh-refinement
-printf '\n\nGenerating final (refined) mesh ...\n'
+printf '\n\nGenerating final (refined) mesh...\n'
 mesh
