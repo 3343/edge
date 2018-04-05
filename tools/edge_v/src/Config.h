@@ -44,31 +44,35 @@ namespace edge_v {
  */
 class edge_v::io::Config {
   public:
-    std::string   m_antnCfgFn;
+    std::string                m_antnCfgFn;
 
-    std::string   m_ucvmCfgFn;
-    std::string   m_ucvmModelList;
-    ucvm_ctype_t  m_ucvmCmode;
-    int           m_ucvmType;
+    std::string                m_ucvmCfgFn;
+    std::string                m_ucvmModelList;
+    ucvm_ctype_t               m_ucvmCmode;
+    int                        m_ucvmType;
 
-    real          m_minVp;
-    real          m_minVs;
-    real          m_minVs2;
-    real          m_maxVpVsRatio;
-    real          m_elmtsPerWave;
+    real                       m_minVp;
+    real                       m_minVs;
+    real                       m_minVs2;
+    real                       m_maxVpVsRatio;
+    real                       m_elmtsPerWave;
 
-    std::string   m_meshFn;
-    geo_point_t   m_hypoc;
+    std::string                m_meshFn;
 
-    int           m_tetRefinement;
+    //! projection used for generation of the mesh
+    std::string                m_projMesh;
+    //! projection of the velocity model
+    std::string                m_projVel;
+
+    int                        m_tetRefinement;
     std::vector< std::string > m_faultInputFns;
-    std::string   m_vmNodeFn;
-    std::string   m_vmElmtFn;
-    std::string   m_h5mFn;
-    std::string   m_posFn;
+    std::string                m_vmNodeFn;
+    std::string                m_vmElmtFn;
+    std::string                m_h5mFn;
+    std::string                m_posFn;
 
-    unsigned int  m_parallelMode;
-    unsigned int  m_numWorker;
+    unsigned int               m_parallelMode;
+    unsigned int               m_numWorker;
 
     /**
      * @brief Initializes the configuration.
