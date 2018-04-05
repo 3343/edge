@@ -901,10 +901,10 @@ int faultAntn( const  antn_cfg  &i_antnCfg,
   }
 
   // Set parameters for constructing and querying fault model
-  const int l_nCfr = i_antnCfg.m_faultInputFns.size();// Number of fused runs
-  const int l_refine = i_antnCfg.m_tetRefinement;      // Subtri. refinement lvl
-  const int l_nSubTri = pow( l_refine+1, 2 );         // Subtris. per tet face
-  const int l_tagSize = l_nSubTri * l_nCfr;
+  const unsigned short l_nCfr    = i_antnCfg.m_faultInputFns.size(); // Number of fused runs
+  const unsigned short l_refine  = i_antnCfg.m_tetRefinement;        // Subtri. refinement lvl
+  const unsigned int   l_nSubTri = pow( l_refine+1, 2 );             // Subtris. per tet face
+  const unsigned int   l_tagSize = l_nSubTri * l_nCfr;
 
   // Set up fault_model
   FModel fault_model( i_antnCfg.m_faultInputFns );
@@ -958,10 +958,10 @@ int faultAntn( const  antn_cfg  &i_antnCfg,
     assert( l_nSubTri == l_subtriangles.size() );
 
     // Loop over each subtriangle and get approximate fault data
-    for( int l_st = 0; l_st < l_nSubTri; l_st++ ){
+    for( unsigned int l_st = 0; l_st < l_nSubTri; l_st++ ){
       l_fd = fault_model.getDatumTri( l_subtriangles[ l_st ] );
 
-      for( int l_cfr = 0; l_cfr < l_nCfr; l_cfr++ ){
+      for( unsigned short l_cfr = 0; l_cfr < l_nCfr; l_cfr++ ){
         for( const auto& l_qtyName : fault_model.m_qtyNames ){
           l_qtyData[ l_qtyName ][ l_st * l_nCfr + l_cfr ] = l_fd[ l_qtyName ][ l_cfr ];
         }
