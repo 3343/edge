@@ -139,9 +139,12 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
 }
 
 void edge::io::Receivers::touchOutput( const std::string &i_outDir ) {
-  // create ouput-directory if not present
-  std::string l_outDir = i_outDir+"/";
-  FileSystem::createDir( l_outDir );
+  // create ouput-directories if not present
+  if( parallel::g_rank == 0 )
+    FileSystem::createDir( i_outDir );
+#ifdef PP_USE_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
   // define a header
   std::string l_header = "time";

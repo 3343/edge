@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,64 +18,22 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Layout of our data.
+ * Setup for the sub-cell limiter.
  **/
 
-#ifndef DATA_LAYOUT_HPP
-#define DATA_LAYOUT_HPP
-#include <vector>
-#include "constants.hpp"
-
-// time regions
-typedef struct {
-  int_el first;
-  int_el size;
-} t_timeRegion;
-
-// time group
-typedef struct {
-  // number of owned entities: inner+send
-  int_el nEntsOwn;
-
-  // number of not-owned entities: receive
-  int_el nEntsNotOwn;
-
-  // inner-entities
-  t_timeRegion inner;
-
-  // send-entities
-  std::vector< t_timeRegion > send;
-
-  // receive-entities
-  std::vector< t_timeRegion > receive;
-
-  // neighboring ranks
-  std::vector< int > neRanks;
-
-  // neighboring time groups
-  std::vector< int_tg > neTgs;
-} t_timeGroup;
-
-// entity layout
-typedef struct {
-  // number of entities
-  int_el nEnts;
-
-  // time groups
-  std::vector< t_timeGroup > timeGroups;
-} t_enLayout;
-
-// maps mesh indices to data indices (MeDa) and data indices to mesh indices (DaMe)
-typedef struct {
-  // vertices
-  std::vector< int_el > veMeDa;
-  std::vector< int_el > veDaMe;
-  // faces
-  std::vector< int_el > faMeDa;
-  std::vector< int_el > faDaMe;
-  // elements
-  std::vector< int_el > elMeDa;
-  std::vector< int_el > elDaMe;
-} t_inMap;
-
-#endif
+edge::sc::Init< T_SDISC.ELEMENT,
+                ORDER,
+                N_QUANTITIES,
+                N_CRUNS >::connect(           l_internal.m_globalShared2[0].connect );
+edge::sc::Init< T_SDISC.ELEMENT,
+                ORDER,
+                N_QUANTITIES,
+                N_CRUNS >::svChars(           l_internal.m_globalShared2[0].svChars );
+edge::sc::Init< T_SDISC.ELEMENT,
+                ORDER,
+                N_QUANTITIES,
+                N_CRUNS >::ops(               l_internal.m_globalShared2[0].ops     );
+edge::sc::ibnd::SuperCellInit< T_SDISC.ELEMENT,
+                               ORDER >::faSt( l_internal.m_globalShared2[0].connect.scDgAd,
+                                              l_internal.m_globalShared2[0].connect.scSfSc,
+                                              l_internal.m_globalShared2[0].iBndSu );

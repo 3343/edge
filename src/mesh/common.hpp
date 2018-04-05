@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,13 +20,13 @@
  * @section DESCRIPTION
  * Common functions for the mesh
  **/
-#ifndef MESH_COMMON_HPP
-#define MESH_COMMON_HPP
+#ifndef EDGE_MESH_COMMON_HPP
+#define EDGE_MESH_COMMON_HPP
 
 #include "io/logging.h"
 #include "monitor/instrument.hpp"
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "linalg/Geom.hpp"
 #include "linalg/Matrix.h"
 #include <cassert>
@@ -43,6 +43,9 @@ namespace edge {
 template < t_entityType TL_T_EL >
 class edge::mesh::common {
   private:
+    //! number of dimensions
+    static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
+
     //! face type
     static const t_entityType TL_T_FA = C_ENT[TL_T_EL].TYPE_FACES;
 
@@ -685,21 +688,29 @@ class edge::mesh::common {
     /**
      * Gets the coordinates of an elements vertices based on connectivity information.
      *
-     * @param i_el id of the elment.
-     * @param i_elVe elements' vertices.
-     * @param i_vertexChars characteristics of the vertices.
-     * @param o_veCoords will be set to coordinates of the vertices.
+     * @param i_el id of the entity.
+     * @param i_elVe entities' vertices.
+     * @param i_veChars characteristics of the vertices.
+     * @param o_veCrds will be set to coordinates of the vertices.
+     *
+     * @paramt TL_T_LID integral type of the local ids.
+     * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_VE_CHARS type of the vertex characteristics, offering member .coords.
      **/
-    static void getElVeCoords(       int_el         i_el,
-                               const int_el       (*i_elVe)[TL_N_EL_VES],
-                               const t_vertexChars *i_vertexChars,
-                                     real_mesh      o_veCoords[3][TL_N_EL_VES] ) {
+    template< typename TL_T_LID,
+              typename TL_T_REAL,
+              typename TL_T_VE_CHARS >
+    static void getElVeCrds(       TL_T_LID        i_el,
+                             const TL_T_LID      (*i_elVe)[TL_N_EL_VES],
+                             const TL_T_VE_CHARS  *i_veChars,
+                                   TL_T_REAL       o_veCrds[TL_N_DIS][TL_N_EL_VES] ) {
       // get elements vertices
-      for( int_md l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
-        int_el l_veId       = i_elVe[i_el][l_ve];
-        o_veCoords[0][l_ve] = i_vertexChars[l_veId].coords[0];
-        o_veCoords[1][l_ve] = i_vertexChars[l_veId].coords[1];
-        o_veCoords[2][l_ve] = i_vertexChars[l_veId].coords[2];
+      for( unsigned short l_ve = 0; l_ve < TL_N_EL_VES; l_ve++ ) {
+        TL_T_LID l_veId       = i_elVe[i_el][l_ve];
+
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+          o_veCrds[l_di][l_ve] = i_veChars[l_veId].coords[l_di];
+        }
       }
     }
 
@@ -802,6 +813,14 @@ class edge::mesh::common {
                                      unsigned short        (*o_vIdElFaEl)[TL_N_EL_FAS],
                                      bool                    i_periodic=false,
                                const t_vertexChars          *i_veChars=NULL ) {
+      // init
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+      for( int_el l_el = 0; l_el < i_elLayout.nEnts; l_el++ )
+        for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ )
+          o_vIdElFaEl[l_el][l_fa] = std::numeric_limits< unsigned short >::max();
+
       for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
         int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
         int_el l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;

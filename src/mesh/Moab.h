@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,14 +21,14 @@
  * Interface to MOAB.
  **/
 
-#ifndef MOAB_H
-#define MOAB_H
+#ifndef EDGE_MESH_MOAB_H
+#define EDGE_MESH_MOAB_H
 
 #ifdef PP_USE_MPI
 #include <moab/ParallelComm.hpp>
 #endif
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include <string>
 #include <cstdlib>
 #include <moab/Core.hpp>
@@ -77,7 +77,7 @@ class edge::mesh::Moab {
     //! faces (including duplicated and ghost faces)
     std::vector< moab::EntityHandle > m_faces;
 
-    //! elements (including duplicated ghost elements)
+    //! elements (including duplicated and ghost elements)
     std::vector< moab::EntityHandle > m_elements;
 
     //! mapping of indices from mesh to data and data to mesh

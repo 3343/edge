@@ -1412,10 +1412,10 @@ void edge::mesh::Moab::getTagData( unsigned short  i_tid,
   moab::EntityHandle l_ha = getEnHandle( i_nDim, i_en );
 
   // query for value
-  l_err = m_core.tag_get_data( m_tagsMesh[i_tid],
+  l_err = m_core.tag_get_data(  m_tagsMesh[i_tid],
                                &l_ha,
-                               1,
-                               o_val ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
+                                1,
+                                o_val ); EDGE_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 
 void edge::mesh::Moab::getMatVal( unsigned short  i_dim,

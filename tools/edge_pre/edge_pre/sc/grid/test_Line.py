@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -130,56 +130,6 @@ class TestGridLine( unittest.TestCase ):
     self.assertEqual( len(l_scSfScRecv), 2 )
     self.assertEqual( l_scSfScRecv[0], [3,-1] )
     self.assertEqual( l_scSfScRecv[1], [4,-1] )
-
-  ##
-  # Tests integration intervals.
-  ##
-  def test_intSc(self):
-    # second order
-    l_intIn, l_intSend, l_intSurf = Line.intSc( 1, ['test'] )
-
-    self.assertEqual( len(l_intIn), 1 )
-    self.assertEqual( len(l_intIn[0]), 1 )
-    self.assertEqual( l_intIn[0][0], ( 'test', fractions.Fraction(1, 3), fractions.Fraction(2, 3) ) )
-
-    self.assertEqual( len(l_intSend), 2 )
-    for l_in in l_intSend:
-      self.assertEqual( len(l_in), 1 )
-    self.assertEqual( l_intSend[0][0], ( 'test', 0, fractions.Fraction(1, 3) ) )
-    self.assertEqual( l_intSend[1][0], ( 'test', fractions.Fraction(2, 3), 1 ) )
-
-
-    self.assertEqual( len(l_intSurf), 2 )
-    self.assertEqual( len(l_intSurf[0]), 1 )
-    self.assertEqual( len(l_intSurf[1]), 1 )
-    self.assertEqual( len(l_intSurf[0][0]), 1 )
-    self.assertEqual( len(l_intSurf[1][0]), 1 )
-    self.assertEqual( l_intSurf[0][0][0], ( 'test', 0, fractions.Fraction(1, 3) ) )
-    self.assertEqual( l_intSurf[1][0][0], ( 'test', fractions.Fraction(2, 3), 1 ) )
-
-    # third order
-    l_intIn, l_intSend, l_intSurf = Line.intSc( 2, ['abc'] )
-
-    self.assertEqual( len(l_intIn), 3 )
-    for l_in in l_intIn:
-      self.assertEqual( len(l_in), 1 )
-    self.assertEqual( l_intIn[0][0], ( 'abc', fractions.Fraction(1, 5), fractions.Fraction(2, 5) ) )
-    self.assertEqual( l_intIn[1][0], ( 'abc', fractions.Fraction(2, 5), fractions.Fraction(3, 5) ) )
-    self.assertEqual( l_intIn[2][0], ( 'abc', fractions.Fraction(3, 5), fractions.Fraction(4, 5) ) )
-
-    self.assertEqual( len(l_intSend), 2 )
-    for l_se in l_intSend:
-      self.assertEqual( len(l_se), 1 )
-    self.assertEqual( l_intSend[0][0], ( 'abc', 0, fractions.Fraction(1, 5) ) )
-    self.assertEqual( l_intSend[1][0], ( 'abc', fractions.Fraction(4, 5), 1 ) )
-
-    self.assertEqual( len(l_intSurf), 2 )
-    self.assertEqual( len(l_intSurf[0]), 1 )
-    self.assertEqual( len(l_intSurf[1]), 1 )
-    self.assertEqual( len(l_intSurf[0][0]), 1 )
-    self.assertEqual( len(l_intSurf[1][0]), 1 )
-    self.assertEqual( l_intSurf[0][0][0], ( 'abc', 0, fractions.Fraction(1, 5) ) )
-    self.assertEqual( l_intSurf[1][0][0], ( 'abc', fractions.Fraction(4, 5), 1 ) )
 
   ##
   # Tests the derivation of sub-face types.

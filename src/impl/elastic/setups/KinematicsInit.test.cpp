@@ -385,7 +385,7 @@ TEST_CASE( "Kinematics: Init NRF.", "[kinematics][initNrf]" ) {
   /*
    * single point source
    */
-  l_ncFile = "cont/elastic/sources/unit_tests/kinematics_init_1.nc";
+  l_ncFile = "cont/unit_tests/elastic/sources/kinematics_init_1.nc";
 
   // only run unit tests if input file exists
   if( std::ifstream(l_ncFile) ) {
@@ -477,7 +477,7 @@ TEST_CASE( "Kinematics: Init NRF.", "[kinematics][initNrf]" ) {
     }
   }
 
-  l_ncFile = "cont/elastic/sources/unit_tests/kinematics_init_3.nc";
+  l_ncFile = "cont/unit_tests/elastic/sources/kinematics_init_3.nc";
   if( std::ifstream(l_ncFile) ) {
     // NRF reader with 2-source buffer
     edge::elastic::io::Nrf< 2 > l_nrf2( 2 );

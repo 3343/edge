@@ -260,6 +260,8 @@ if 'CFLAGS' in env['ENV'].keys():
   env['CFLAGS'] = env['ENV']['CFLAGS']
 if 'CXXFLAGS' in env['ENV'].keys():
   env['CXXFLAGS'] = env['ENV']['CXXFLAGS']
+if 'LIBS' in env['ENV'].keys():
+  env['LIBS'] = env['ENV']['LIBS']
 if 'LINKFLAGS' in env['ENV'].keys():
   env['LINKFLAGS'] = env['ENV']['LINKFLAGS']
 

@@ -4,7 +4,7 @@
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -27,20 +27,10 @@
 #define EDGE_V_OUT (std::cout << "EDGE-V INFO: ")
 #define EDGE_V_ERR (std::cerr << "EDGE-V ERR : ")
 
-#define ELMTTYPE 4  //TODO
+//! 3 for moab::MBTRI, 4 for moab::MBTET
+#define ELMTTYPE 4
 
-#define UCVMCMODE UCVM_COORD_GEO_ELEV
-#define UCVMTYPE  2 //TODO
-
-#define MIN_VP          1500.0
-#define MIN_VS          500.0
-#define MIN_VS2         1200.0
-#define MAX_VP_VS_RATIO 3.0
-
-#define CENTERICLON -117.916
-#define CENTERICLAT 33.933
-
-typedef int     int_v;
-typedef double  real;
+typedef int    int_v;
+typedef double real;
 
 #endif //! VM_CONSTANTS_H

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -163,6 +163,16 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
                        {2, 0},
                        {0, 3} };
 
+  int l_elFa[4][3] = { {3, -1, -1},
+                       {0, -1, -1},
+                       {2, -1, -1},
+                       {1, -1, -1} };
+
+  int l_elVe[4][3] = { {6,-1,-1},
+                       {0,-1,-1},
+                       {4,-1,-1},
+                       {2,-1,-1} };
+
   // set up coordinates of vertices
   t_vertexChars l_veChars[8];
   l_veChars[0].coords[0] = -42000;
@@ -203,15 +213,25 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   double l_faultCrds[2][2] = { {0, 1}, {1, 0} };
 
   // output
-  edge::elastic::solvers::t_LinSlipWeakGlobal<double, 8>           l_lswGlobal;
-  edge::elastic::solvers::t_LinSlipWeakFace<double>                l_lswFace[3];
-  edge::elastic::solvers::t_LinSlipWeakFaceQuadPoint<double, 2, 8> l_lswQp[3][3];
+  edge::elastic::solvers::t_LinSlipWeakFace<double>            l_lswFace[3];
+  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8>   l_lswSf[3][5];
+  edge::elastic::solvers::t_LinSlipWeak< double, TRIA3, 3, 8 > l_lsw;
+  l_lsw.fa = l_lswFace;
+  l_lsw.sf = l_lswSf;
+
+  unsigned short l_scDgAd[3][5];
+  for( unsigned short l_ve = 0; l_ve < 3; l_ve++ )
+    for( unsigned short l_sf = 0; l_sf < 5; l_sf++ )
+      l_scDgAd[l_ve][l_sf] = 0;
 
   // init the rupture physics
   edge::elastic::setups::RuptureInit< TRIA3, 3, 8>::linSlipWeak( l_nFaces,
                                                                  1234,
+                                                                 l_scDgAd,
                                                                  l_faVe,
                                                                  l_faEl,
+                                                                 l_elVe,
+                                                                 l_elFa,
                                                                  l_veChars,
                                                                  l_faChars,
                                                                  l_bgPars,
@@ -219,32 +239,30 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
                                                                  l_lswPars,
                                                                  l_doms,
                                                                  l_stress,
-                                                                 l_lswGlobal,
-                                                                 l_lswFace,
-                                                                 l_lswQp );
+                                                                 l_lsw );
 
   // check the resulting friction parameters
   for( unsigned short l_ru = 0; l_ru < 8; l_ru++ ) {
-    REQUIRE( l_lswGlobal.mus[l_ru]   == Approx( l_ru + 0.1 ) );
-    REQUIRE( l_lswGlobal.mud[l_ru]   == Approx( l_ru * 2 + 0.01 ) );
-    REQUIRE( l_lswGlobal.dcInv[l_ru] == Approx( 1.0 / (l_ru * 3 + 0.3) ) );
+    REQUIRE( l_lsw.gl.mus[l_ru]   == Approx( l_ru + 0.1 ) );
+    REQUIRE( l_lsw.gl.mud[l_ru]   == Approx( l_ru * 2 + 0.01 ) );
+    REQUIRE( l_lsw.gl.dcInv[l_ru] == Approx( 1.0 / (l_ru * 3 + 0.3) ) );
   }
 
   // check the stress setup
   for( unsigned short l_ru = 0; l_ru < 8; l_ru++ ) {
     for( unsigned short l_sp = 0; l_sp < 3; l_sp++ ) {
-      for( unsigned short l_qp = 0; l_qp < 3; l_qp++ ) {
+      for( unsigned short l_sf = 0; l_sf < 5; l_sf++ ) {
         if(    (l_sp == 0 && l_ru > 2)
             || (l_sp == 1 && l_ru > 1)
             || (l_sp == 2 && l_ru > 3) ) {
-          REQUIRE( l_lswQp[l_sp][l_qp].sn0[l_ru]    == Approx(l_ru *  1.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].ss0[0][l_ru] == Approx(l_ru * -2.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
+          REQUIRE( l_lswSf[l_sp][l_sf].sn0[l_ru]    == Approx(l_ru *  1.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].ss0[0][l_ru] == Approx(l_ru * -2.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lsw.gl.mus[l_ru] );
         }
         else {
-          REQUIRE( l_lswQp[l_sp][l_qp].sn0[l_ru]    == Approx(l_ru * -3.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].ss0[0][l_ru] == Approx(l_ru *  4.0E6) );
-          REQUIRE( l_lswQp[l_sp][l_qp].muf[l_ru]    == l_lswGlobal.mus[l_ru] );
+          REQUIRE( l_lswSf[l_sp][l_sf].sn0[l_ru]    == Approx(l_ru * -3.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].ss0[0][l_ru] == Approx(l_ru *  4.0E6) );
+          REQUIRE( l_lswSf[l_sp][l_sf].muf[l_ru]    == l_lsw.gl.mus[l_ru] );
         }
       }
     }

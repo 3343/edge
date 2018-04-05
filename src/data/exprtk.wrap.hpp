@@ -20,5 +20,11 @@
  * @section DESCRIPTION
  * Wraps exprtk and disables warnings (system header).
  **/
+#ifdef __INTEL_COMPILER
+// suppress shadowed variables
+#pragma warning(disable:1599)
+#endif
+
 #pragma GCC system_header
+//#define exprtk_disable_enhanced_features
 #include "submodules/exprtk/exprtk.hpp"

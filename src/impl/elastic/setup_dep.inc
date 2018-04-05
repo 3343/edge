@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,17 +21,27 @@
  * Dependendencies of the setup.
  **/
 
+#include "setups/InitialDofs.hpp"
 #include "impl/elastic/io/Config.h"
 #include "impl/elastic/setups/MmKernels.hpp"
 #if PP_ORDER > 1
 #include "impl/elastic/solvers/AderDg.hpp"
+#include "impl/elastic/setups/MmKernels.hpp"
 #endif
 #include "impl/elastic/solvers/common.hpp"
 #include "impl/elastic/setups/Convergence.hpp"
 #ifdef PP_HAS_NETCDF
 #include "impl/elastic/io/Nrf.h"
 #endif
+
+// rupture boundaries
+#include "impl/elastic/solvers/InternalBoundary.hpp"
+#include "sc/ibnd/Memory.hpp"
+#include "sc/ibnd/Init.hpp"
 #include "impl/elastic/setups/KinematicsInit.hpp"
 #include "impl/elastic/setups/RuptureInit.hpp"
-#include "impl/elastic/solvers/InternalBoundary.hpp"
-#include <cassert>
+#include "io/InternalBoundary.hpp"
+
+// sub-cell solver
+#include "sc/Memory.hpp"
+#include "impl/elastic/sc/Llf.hpp"

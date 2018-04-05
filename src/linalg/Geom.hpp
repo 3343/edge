@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -535,6 +535,78 @@ class edge::linalg::Geom {
         o_outNormal[2] = l_nZ;
       }
       else EDGE_LOG_FATAL;
+    }
+
+    /**
+     * Computes the sub-face normal and sub-face tangents for the two additional
+     * face types, introduced in a tetrahedral sub-grid.
+     * In the reference element, the normals of these face-types are given as:
+     *   0) (sqrt(2), sqrt(2), 0)
+     *   1) (sqrt(2), 0, sqrt(2))
+     *
+     * @param i_et entity type.
+     * @param i_ty additional face type for which the normal and tangets are requested.
+     * @param i_veCrds vertex coordinates [*][] dimension, [][*] vertex.
+     * @param o_n will be set to normal of face type.
+     * @param o_t0 will be set to first tangent of additional face type.
+     * @param o_t1 will be set to second tangent of additional face type.
+     * @param o_a will be set to area of the face.
+     **/
+    template< typename TL_T_REAL >
+    static void sfAdd( t_entityType           i_et,
+                       unsigned short         i_ty,
+                       TL_T_REAL      const * i_veCrds,
+                       TL_T_REAL              o_n[3],
+                       TL_T_REAL              o_t0[3],
+                       TL_T_REAL              o_t1[3],
+                       TL_T_REAL            & o_a ) {
+      EDGE_CHECK_EQ( i_et, TET4 );
+      EDGE_CHECK_LE( i_ty, 1 );
+
+      // by definition "left" is the side of vertex 0
+      TL_T_REAL l_np[3];
+      for( unsigned short l_di = 0; l_di < 3; l_di++ )
+        l_np[l_di] = i_veCrds[ l_di*4 + 0 ];
+
+      // assemble pseudo face
+      TL_T_REAL l_faVes[3][3];
+
+      if( i_ty == 0 ) {
+        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+          l_faVes[l_di][0] = i_veCrds[l_di*4 + 1];
+          l_faVes[l_di][1] = i_veCrds[l_di*4 + 2];
+
+          l_faVes[l_di][2]  = i_veCrds[l_di*4 + 2];
+          l_faVes[l_di][2] += i_veCrds[l_di*4 + 3];
+          l_faVes[l_di][2] -= i_veCrds[l_di*4 + 0];
+        }
+      }
+      else {
+        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+          l_faVes[l_di][0]  = i_veCrds[l_di*4 + 1];
+          l_faVes[l_di][1]  = i_veCrds[l_di*4 + 2];
+          l_faVes[l_di][1] += i_veCrds[l_di*4 + 1];
+          l_faVes[l_di][1] -= i_veCrds[l_di*4 + 0];
+
+          l_faVes[l_di][2]  = i_veCrds[l_di*4 + 2];
+          l_faVes[l_di][2] += i_veCrds[l_di*4 + 3];
+          l_faVes[l_di][2] -= i_veCrds[l_di*4 + 0];
+        }
+      }
+
+      linalg::Geom::computeOutPtNormal( C_ENT[i_et].TYPE_FACES,
+                                        l_faVes[0],
+                                        l_np,
+                                        o_n );
+
+      linalg::Geom::computeTangents( C_ENT[i_et].TYPE_FACES,
+                                     l_faVes[0],
+                                     o_t0,
+                                     o_t1 );
+
+      o_a = linalg::Geom::volume( C_ENT[i_et].TYPE_FACES,
+                                  l_faVes[0],
+                                  3 );
     }
 
     /**

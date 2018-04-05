@@ -24,9 +24,21 @@
 #include "Config.h"
 #include "logging.h"
 #include <string>
+#include <sstream>
 #ifdef PP_USE_MEMKIND
 #include <memkind.h>
 #endif
+
+void edge::io::Config::printMultiLine( std::string i_pre,
+                                       std::string i_str ) {
+  if( i_str.length() > 0 ) {
+    std::stringstream l_ss( i_str.c_str() );
+    std::string l_line;
+    while( std::getline( l_ss, l_line, '\n' ) ) {
+      EDGE_LOG_INFO << i_pre << l_line;
+    }
+  }
+}
 
 void edge::io::Config::printBuild( pugi::xml_node i_build ) {
   // convert build to string
@@ -161,8 +173,10 @@ void edge::io::Config::printConfig() {
   }
 
   EDGE_LOG_INFO << "  more? get ready for the setups:";
-  for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-    EDGE_LOG_INFO << "    setup #" << l_cfr << ": " << m_setups[l_cfr]; 
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    std::string l_pre = "    initial_values #" + std::to_string(l_cr) + ": ";
+    printMultiLine( l_pre,
+                    m_initValsExprStrs[l_cr].c_str() );
   }
   EDGE_LOG_INFO << "  alright, we are sharing parameters again:";
   EDGE_LOG_INFO << "    end_time: " << m_endTime;
@@ -170,8 +184,17 @@ void edge::io::Config::printConfig() {
   if( m_waveFieldType != "" ) {
     EDGE_LOG_INFO << "  wave_field:";
     EDGE_LOG_INFO << "    type: " << m_waveFieldType;
+    if( m_waveFieldSpType != std::numeric_limits< int_spType >::max() )
+      EDGE_LOG_INFO << "    sparse_type: " << m_waveFieldSpType;
     EDGE_LOG_INFO << "    file: " << m_waveFieldFile;
-    EDGE_LOG_INFO << "    int: " << m_waveFieldInt;
+    EDGE_LOG_INFO << "    int: "  << m_waveFieldInt;
+  }
+
+  if( m_iBndType != "" ) {
+    EDGE_LOG_INFO << "  internal_boundary:";
+    EDGE_LOG_INFO << "    type: " << m_iBndType;
+    EDGE_LOG_INFO << "    file: " << m_iBndFile;
+    EDGE_LOG_INFO << "    int: "  << m_iBndInt;
   }
 
   // iterate over receiver types. 0: element-modal, 1: face-quad
@@ -203,6 +226,11 @@ void edge::io::Config::printConfig() {
 
   if( m_errorNormsType != "" ) {
     EDGE_LOG_INFO << "  error_norms:";
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+      std::string l_pre = "    reference_values #" + std::to_string(l_cr) + ": ";
+      printMultiLine( l_pre,
+                      m_refValsExprStrs[l_cr].c_str() );
+    }
     EDGE_LOG_INFO << "    type: " << m_errorNormsType;
     EDGE_LOG_INFO << "    file: " << m_errorNormsFile;
   }
@@ -309,20 +337,36 @@ edge::io::Config::Config( std::string i_xmlPath ):
    */
   pugi::xml_node l_setups = m_doc.child("edge").child("cfr").child("setups");
 
-  // set default setup
-  for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-    m_setups[l_cfr] = l_setups.child("type_default").text().as_string();
+  // read initial DOFs
+  pugi::xml_node l_initVals = l_setups.child("initial_values");
+  unsigned short l_crx = 0;
+  for( pugi::xml_node l_id = l_initVals.first_child(); l_id; l_id = l_id.next_sibling() ) {
+    if( l_crx < N_CRUNS ) m_initValsExprStrs[l_crx] = l_id.text().as_string();
+    l_crx++;
   }
-  // TODO: individual setups
 
   // read parameters shared among setups
   m_endTime = l_setups.child("end_time").text().as_double();
 
-  // read output
+  /*
+   * read output
+   */
   pugi::xml_node l_output = m_doc.child("edge").child("cfr").child("output");
   m_waveFieldType = l_output.child("wave_field").child("type").text().as_string();
-  m_waveFieldFile = l_output.child("wave_field").child("file").text().as_string();
-  m_waveFieldInt = l_output.child("wave_field").child("int").text().as_double();
+  if( m_waveFieldType != "" ) {
+    m_waveFieldFile = l_output.child("wave_field").child("file").text().as_string();
+    m_waveFieldInt  = l_output.child("wave_field").child("int").text().as_double();
+
+    if( l_output.child("wave_field").find_child([]( pugi::xml_node i_node ){ return std::string(i_node.name()) == "sparse_type";}) )
+      m_waveFieldSpType = l_output.child("wave_field").child("sparse_type").text().as_uint();
+  }
+  EDGE_CHECK_GT( m_waveFieldInt, TOL.TIME );
+
+  m_iBndType = l_output.child("internal_boundary").child("type").text().as_string();
+  if( m_iBndType != "" ) {
+    m_iBndFile = l_output.child("internal_boundary").child("file").text().as_string();
+    m_iBndInt  = l_output.child("internal_boundary").child("int").text().as_double();
+  }
 
   // iterate over receiver types. 0: element-modal, 1: face-quad
   for( unsigned short l_rt = 0; l_rt < 2; l_rt++ ) {
@@ -358,6 +402,16 @@ edge::io::Config::Config( std::string i_xmlPath ):
       m_recvCrds[l_rt].clear();
       m_recvNames[l_rt].clear();
     }
+  }
+
+  /*
+   * error computations
+   */
+  pugi::xml_node l_refVals = l_output.child("error_norms").child("reference_values");
+  l_crx = 0;
+  for( pugi::xml_node l_id = l_refVals.first_child(); l_id; l_id = l_id.next_sibling() ) {
+    if( l_crx < N_CRUNS ) m_refValsExprStrs[l_crx] = l_id.text().as_string();
+    l_crx++;
   }
 
   m_errorNormsType = l_output.child("error_norms").child("type").text().as_string();

@@ -29,9 +29,9 @@ edge::data::Dynamic::~Dynamic() {
   }
 }
 
-void* edge::data::Dynamic::allocate( size_t i_size,
-                                     size_t i_alignment,
-                                     bool   i_hbw ) {
+void* edge::data::Dynamic::allocate( std::size_t i_size,
+                                     std::size_t i_alignment,
+                                     bool        i_hbw ) {
   // allocate memory and store pointer
   m_mem.push_back( common::allocate( i_size, i_alignment, i_hbw ) );
   // store mem-type

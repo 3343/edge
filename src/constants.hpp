@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2017, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Definition of compile time constants.
  **/
-#ifndef CONSTANTS_HPP
-#define CONSTANTS_HPP
+#ifndef EDGE_CONSTANTS_HPP
+#define EDGE_CONSTANTS_HPP
 
 // entity types
 typedef enum {
@@ -128,6 +128,19 @@ constexpr unsigned int CE_N_ELEMENT_MODES_CK( t_entityType   i_elType,
                                                                         i_order-i_der) :
                                                     CE_N_ELEMENT_MODES( i_elType,
                                                                         i_order );
+}
+
+/**
+ * Gets the number of quadrature points (volume) for the given element type.
+ *
+ * @param i_elType element type for which the number of quadpoints are queried.
+ * @param i_order spatial order of the DG discretization.
+ **/
+constexpr unsigned int CE_N_QUAD_POINTS( t_entityType   i_elType,
+                                         unsigned short i_order ) {
+  return (C_ENT[i_elType].N_DIM == 1) ? i_order :
+         (C_ENT[i_elType].N_DIM == 2 )? i_order * (unsigned int) i_order :
+                                        i_order * (unsigned int) i_order * i_order;
 }
 
 /**
@@ -329,7 +342,8 @@ typedef unsigned short int_cfr;
 /*
  * integer representation of sparse types.
  *
- * Bits 0-14  are reserved for mesh-input, e.g. boundary conditions.
+ * Bits 0-11  are reserved for mesh-input, e.g. boundary conditions.
+ * Bits 12-14 are reserved for limiting.
  * Bit  15    is reserved for the receiver-flag.
  * Bits 16-31 are for application purposes.
  * Bits 32-63 are reserved for the time stepping
@@ -338,6 +352,9 @@ typedef long long int_spType;
 
 // define shared enums (of all implementations) for types
 typedef enum: int_spType {
+  LIMIT          =  2048, // 0b0000000000000000000000000000000000000000000000000000100000000000
+  LIMIT_PLUS     =  4096, // 0b0000000000000000000000000000000000000000000000000001000000000000
+  EXTREMA        =  8192, // 0b0000000000000000000000000000000000000000000000000010000000000000
   MESH_TYPE_NONE = 16384, // 0b0000000000000000000000000000000000000000000000000100000000000000
   RECEIVER       = 32768, // 0b0000000000000000000000000000000000000000000000001000000000000000
 } t_enTypeShared;
@@ -411,7 +428,10 @@ typedef struct {
   // faces adjacent to the elements
   int_el (*elFa)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 
-  // elements connected to element through faces
+  // elements connected to an element through vertices
+  int_el **elVeEl;
+
+  // elements connected to an element through faces
   int_el (*elFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 
   // local face id (ref element) of the face-neighboring elements
@@ -644,9 +664,13 @@ constexpr struct {
   } BASE;
   int CRUNS;   // concurrent forward runs
   struct {
-    int PRIVATE; // modes on run-private data (wrapping cruns)
-    int SHARED;  // modes on shared data (no cruns)
+    int PRIVATE; // element modes on run-private data (wrapping cruns)
+    int SHARED;  // element modes on shared data (no cruns)
   } ELEMENT_MODES;
+  struct {
+    int PRIVATE; // face modes on run-private data (wrapping cruns)
+    int SHARED;  // face modes on shared data (no cruns)
+  } FACE_MODES;
 }
 ALIGNMENT = {
   {
@@ -657,6 +681,10 @@ ALIGNMENT = {
   {
     CE_MUL_2(N_CRUNS*N_ELEMENT_MODES) * (PP_PRECISION==64 ? 8 : 4),
     CE_MUL_2(        N_ELEMENT_MODES) * (PP_PRECISION==64 ? 8 : 4)
+  },
+  {
+    CE_MUL_2(N_CRUNS*N_FACE_MODES) * (PP_PRECISION==64 ? 8 : 4),
+    CE_MUL_2(        N_FACE_MODES) * (PP_PRECISION==64 ? 8 : 4)
   }
 };
 static_assert( ALIGNMENT.BASE.HEAP  >= ALIGNMENT.BASE.STACK,
@@ -667,6 +695,15 @@ static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.CRUNS,
               "crun alingnment smaller than private alignemnt" );
 static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.ELEMENT_MODES.SHARED,
                "private alignment smaller than shared alignment" );
+static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.CRUNS,
+              "crun alingnment smaller than private alignemnt" );
+static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.FACE_MODES.SHARED,
+               "private alignment smaller than shared alignment" );
+
+/**
+ * Constant expressions of the sub-cell limiter.
+ **/
+#include "sc/cexprs.inc"
 
 /*
  * Setups for the different equations and discretizations.
@@ -681,6 +718,13 @@ static_assert( ALIGNMENT.ELEMENT_MODES.PRIVATE >= ALIGNMENT.ELEMENT_MODES.SHARED
 
 #ifdef PP_T_EQUATIONS_SWE
 #include "impl/swe/const.inc"
+#endif
+
+/*
+ * Sub-cell limiter.
+ */
+#if PP_ORDER > 1
+#include "sc/const.inc"
 #endif
 
 #endif

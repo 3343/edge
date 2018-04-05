@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,6 +20,7 @@
 # @section DESCRIPTION
 # Generic derivation of sub-grid information.
 ##
+import sympy
 
 ##
 # Derives sub-cells adjacent to sub-cells (faces as bridge).
@@ -61,3 +62,94 @@ def scSfSc( i_scSfSvIn,
   return l_scSfSc[0:len(i_scSfSvIn)],\
          l_scSfSc[len(i_scSfSvIn):len(i_scSfSvIn) + len(i_scSfSvSend)],\
          l_scSfSc[len(i_scSfSvIn) + len(i_scSfSvSend) : ]
+
+##
+# Integration intervals for the sub-cells
+#
+# @param i_deg polynomial degree.
+# @param i_ty element type.
+# @param i_syms symbols.
+# @param i_shape shape functions.
+# @param i_svs sub-vertex coords.
+# @param i_scSv sub-vertex ids, adjacent to sub-cells (list of 2: inner, send).
+# @param i_scSfScRecv sub-cells adjacent to sub-cells (face as bridge) for recv-elements.
+# @return 1) mappings, 2) absolute values of Jacobi determinant.
+##
+def intSc( i_deg, i_ty, i_syms, i_shape, i_svs, i_scSv, i_scSfScRecv ):
+  # get sub-cell coords
+  for l_ty in range(2):
+    for l_sc in range(len(i_scSv[l_ty])):
+      for l_sv in range(len(i_scSv[l_ty][l_sc])):
+        i_scSv[l_ty][l_sc][l_sv] = i_svs[ i_scSv[l_ty][l_sc][l_sv] ]
+
+  # derive mappings from reference to sub-cell
+  l_maps = [[],[],[]]
+  for l_ty in range(2):
+    for l_sc in i_scSv[l_ty]:
+      l_maps[l_ty] = l_maps[l_ty] + [ refToPhy( l_sc, i_shape ) ]
+
+  # compute determinants of jacobian
+  l_aDets = [[],[],[]]
+  for l_ty in range(2):
+    for l_ma in range(len(l_maps[l_ty])):
+      l_aDets[l_ty] = l_aDets[l_ty] + [ absJacDet( i_syms, l_maps[l_ty][l_ma] ) ]
+
+  l_mapsFlat   = l_maps[0] + l_maps[1]
+  l_aDetsFlat = l_aDets[0] + l_aDets[1]
+
+  for l_fa in range(i_ty.n_fas):
+    # add empty lists for this face
+    l_maps[2] = l_maps[2] + [[]]
+    l_aDets[2] = l_aDets[2] + [[]]
+
+    for l_sc in range(i_ty.n_sfs):
+      l_scId = i_scSfScRecv[l_fa*i_ty.n_sfs + l_sc][0]
+      l_maps[2][-1]  = l_maps[2][-1]  + [ l_mapsFlat[ l_scId ]  ]
+      l_aDets[2][-1] = l_aDets[2][-1] + [ l_aDetsFlat[ l_scId ] ]
+
+  return l_maps, l_aDets
+
+##
+# Derives the mapping from reference coordinates to physical coordinates.
+#
+# @param i_ves vertices.
+# @param i_shapes shape functions.
+# @return respective mapping.
+##
+def refToPhy( i_ves,
+              i_shapes ):
+  assert( len(i_ves) == len(i_shapes) )
+
+  # create empty mapping
+  l_map = [ 0 for _ in range( len(i_ves[0]) ) ]
+
+  for l_di in range(len(l_map)):
+    for l_ve in range(len(i_shapes)):
+      l_map[l_di] = l_map[l_di] + i_ves[l_ve][l_di] * i_shapes[l_ve]
+
+  return l_map
+
+##
+# Computes the absolute value of the Jacobi determinant for the given mapping.
+#
+# @param i_syms symbols.
+# @param i_map mapping.
+# @return absolute jacobi determinant.
+##
+def absJacDet( i_syms,
+               i_map ):
+  assert( len(i_syms) == len(i_map) )
+
+  # derive jacobian
+  l_jac = []
+
+  for l_ma in i_map:
+    l_jac = l_jac + [[]]
+    for l_sy in i_syms:
+      l_jac[-1] = l_jac[-1] + [ sympy.diff( l_ma, l_sy ) ]
+
+  # compute absolute determinant
+  l_jac = sympy.Matrix( l_jac )
+  l_aDet = sympy.Abs( l_jac.det() )
+
+  return l_aDet

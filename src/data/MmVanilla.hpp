@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -152,9 +152,9 @@ class edge::data::MmVanilla {
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
      * @param i_k number of columns/rows in column-major A/B.
-     * @param i_ldA leading dimension of column-major A, ignored.
-     * @param i_ldB leading dimension of column-major B, ignored.
-     * @param i_ldC leading dimension of column-major C, ignored.
+     * @param i_ldA leading dimension of column-major A.
+     * @param i_ldB leading dimension of column-major B.
+     * @param i_ldC leading dimension of column-major C.
      * @param i_alpha parameter alpha, ignored.
      * @param i_beta parameter beta, needs to be TL_T_REAL(0) or TL_T_REAL(1) for now.
      **/

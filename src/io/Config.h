@@ -145,11 +145,22 @@ class edge::io::ConfigDoms {
 };
 
 class edge::io::Config {
-  //private:
+  private:
+    /**
+     * Prints the given string line by line.
+     *
+     * @param i_pre string which is added to the front of every line.
+     * @param i_str string which is printed line by line.
+     **/
+    void printMultiLine( std::string i_pre,
+                         std::string i_str );
+
     /**
      * Print build.
      * Runtime parameters don't have an influence here.
      * This is double checking to avoid changed build configs without a recompile.
+     *
+     * @param i_build build config which will be printed.
      **/
     void printBuild( pugi::xml_node i_build );
 
@@ -204,20 +215,35 @@ class edge::io::Config {
     /*
      * Simulation parameters
      */
-    //! type of the setups
-    std::string m_setups[N_CRUNS];
+    //! expression strings for the intial DOFs
+    std::string m_initValsExprStrs[N_CRUNS];
+
+    //! expressions strings for the reference DOFs
+    std::string m_refValsExprStrs[N_CRUNS];
 
     //! end time of the simulations
     double m_endTime;
 
-    //! type of the wave field output
+    //! sparse type of the wave field output
+    int_spType m_waveFieldSpType = std::numeric_limits< int_spType >::max();
+
+    //! plot type of the wave field output
     std::string m_waveFieldType;
 
     //! name of the output file for the wave field
-    std::string m_waveFieldFile;
+    std::string m_waveFieldFile = "";
 
-    //! interval of wave field output
-    double m_waveFieldInt;
+    //! interval of wave field output (max/2 to prevent inf when used in comparisons)
+    double m_waveFieldInt =  std::numeric_limits< double >::max()/2;
+
+    //! type of the internal boundary output
+    std::string m_iBndType;
+
+    //! name of the output file for the internal boundary
+    std::string m_iBndFile = "";
+
+    //! interval of internal boundary output  (max/2 to prevent inf when used in comparisons)
+    double m_iBndInt =  std::numeric_limits< double >::max()/2;
 
     //! type of the error norms
     std::string m_errorNormsType;

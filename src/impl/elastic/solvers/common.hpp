@@ -27,7 +27,7 @@
 #include <cassert>
 #include "../common.hpp"
 #include "linalg/Mappings.hpp"
-#include "Viscosity.hpp"
+#include "linalg/Matrix.h"
 
 namespace edge {
   namespace elastic {
@@ -38,7 +38,7 @@ namespace edge {
 }
 
 class edge::elastic::solvers::common {
-  private:
+  public:
     /**
      * Sets up the two-dimensional flux solvers for a single face.
      *
@@ -316,7 +316,6 @@ class edge::elastic::solvers::common {
       assert( std::abs( l_fL[4][4] -  0.75                ) < TOL.SOLVER );
     }
 
-  public:
     /**
      * Sets up the flux solvers.
      *
@@ -352,7 +351,7 @@ class edge::elastic::solvers::common {
 
       // iterate over elements and reset flux solvers (wrong configs should at least blow up our simulation)
 #ifdef PP_USE_OMP
-#pragma omp parallel for num_threads( std::max( parallel::g_nThreads-1, 1 ) )
+#pragma omp parallel for
 #endif
       for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
         for( int_md l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fa++ ) {
@@ -549,46 +548,6 @@ class edge::elastic::solvers::common {
         if( l_exL ) l_scaleL *= 2;
         if( l_exR ) l_scaleR *= 2;
 #endif
-
-        // add viscosity in the fault-parallel quantities to non-rupture faces of rupture elements
-        if( l_exL && l_exR ) {
-          // check for adjacent rupture elements
-          if( (i_elChars[l_elL].spType & RUPTURE) == RUPTURE ||
-              (i_elChars[l_elR].spType & RUPTURE) == RUPTURE ) {
-
-            // compute entropy fix
-            real_base l_entFix[N_QUANTITIES][N_QUANTITIES];
-
-#if PP_N_DIM == 2
-              Viscosity< N_DIM >::entFixHarten( l_lamL, l_lamR,
-                                                l_muL,  l_muR,
-                                                l_rhoL, l_rhoR,
-                                                C_SCALE_ENTROPY_FIX_HARTEN,
-                                                i_faceChars[l_fa].outNormal,
-                                                l_entFix );
-#else
-              Viscosity< N_DIM >::entFixHarten( l_lamL, l_lamR,
-                                                l_muL,  l_muR,
-                                                l_rhoL, l_rhoR,
-                                                C_SCALE_ENTROPY_FIX_HARTEN,
-                                                i_faceChars[l_fa].outNormal,
-                                                i_faceChars[l_fa].tangent0,
-                                                i_faceChars[l_fa].tangent1,
-                                                l_entFix );
-#endif
-
-            // add entropy fix to flux solvers
-            for( int_qt l_q1 = 0; l_q1 < N_QUANTITIES; l_q1++ ) {
-              for( int_qt l_q2 = 0; l_q2  < N_QUANTITIES; l_q2++ ) {
-                o_fluxSolversOwn[l_elL][l_fIdL].solver[l_q1][l_q2]   += l_entFix[l_q1][l_q2];
-                o_fluxSolversNeigh[l_elL][l_fIdL].solver[l_q1][l_q2] -= l_entFix[l_q1][l_q2];
-
-                o_fluxSolversOwn[l_elR][l_fIdR].solver[l_q1][l_q2]   += l_entFix[l_q1][l_q2];
-                o_fluxSolversNeigh[l_elR][l_fIdR].solver[l_q1][l_q2] -= l_entFix[l_q1][l_q2];
-              }
-            }
-          }
-        }
 
         for( unsigned int l_q1 = 0; l_q1 < N_QUANTITIES; l_q1++ ) {
           for( unsigned int l_q2 = 0; l_q2 < N_QUANTITIES; l_q2++ ) {

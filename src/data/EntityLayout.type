@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,31 +18,64 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Data types of the internal boundary.
+ * Layout of our entities.
  **/
 
-#ifndef INTERNAL_BOUNDARY_TYPE
-#define INTERNAL_BOUNDARY_TYPE
+#ifndef EDGE_DATA_ENTITY_LAYOUT_TYPE
+#define EDGE_DATA_ENTITY_LAYOUT_TYPE
+#include <vector>
+#include "constants.hpp"
 
-namespace edge {
-  namespace elastic {
-    namespace solvers {
-      template< typename TL_T_REAL, typename TL_T_INT_SP >
-      struct t_InternalBoundaryFace;
-    }
-  }
-}
+// time regions
+typedef struct {
+  int_el first;
+  int_el size;
+} t_timeRegion;
 
-template< typename TL_T_REAL, typename TL_T_INT_SP >
-struct edge::elastic::solvers::t_InternalBoundaryFace {
-  //! sparse type of the face
-  TL_T_INT_SP spType;
+// time group
+typedef struct {
+  // number of owned entities: inner+send
+  int_el nEntsOwn;
 
-  //! local face ids of the two adjacent elements
-  unsigned short fIdFaEl[2];
+  // number of not-owned entities: receive
+  int_el nEntsNotOwn;
 
-  //! local vertex ids of the right element
-  unsigned short vIdFaElR;
-};
+  // inner-entities
+  t_timeRegion inner;
+
+  // send-entities
+  std::vector< t_timeRegion > send;
+
+  // receive-entities
+  std::vector< t_timeRegion > receive;
+
+  // neighboring ranks
+  std::vector< int > neRanks;
+
+  // neighboring time groups
+  std::vector< int_tg > neTgs;
+} t_timeGroup;
+
+// entity layout
+typedef struct {
+  // number of entities
+  int_el nEnts;
+
+  // time groups
+  std::vector< t_timeGroup > timeGroups;
+} t_enLayout;
+
+// maps mesh indices to data indices (MeDa) and data indices to mesh indices (DaMe)
+typedef struct {
+  // vertices
+  std::vector< int_el > veMeDa;
+  std::vector< int_el > veDaMe;
+  // faces
+  std::vector< int_el > faMeDa;
+  std::vector< int_el > faDaMe;
+  // elements
+  std::vector< int_el > elMeDa;
+  std::vector< int_el > elDaMe;
+} t_inMap;
 
 #endif
