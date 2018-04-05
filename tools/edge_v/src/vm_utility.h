@@ -64,8 +64,10 @@ class edge_v::vm::Utility {
       int_v   m_numPrvt;
     } worker_reg;
 
-    static int workerInit(       worker_reg &,
-                    const int_v      & );
+    static int workerInit(       worker_reg  &,
+                           const int_v       &,
+                           const std::string &i_projMesh,
+                           const std::string &i_projVel  );
 
     // *** Mesh Module ***
     static int meshInit( moab_mesh &,
