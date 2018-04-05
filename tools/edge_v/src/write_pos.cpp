@@ -22,6 +22,7 @@
  **/
 
 #include "vm_utility.h"
+#include "Config.h"
 
 int main( int i_argc, char **i_argv ) {
   //! Check input arguments
@@ -37,14 +38,13 @@ int main( int i_argc, char **i_argv ) {
   clock_t l_tp = clock();
 
   //! pos configuration file
-  antn_cfg l_posCfg;
   std::string l_configFile = std::string( i_argv[2] );
-  antnInit( l_posCfg, l_configFile );
-  ucvmInit( l_posCfg );
+  edge_v::io::Config l_posCfg( l_configFile );
+  edge_v::vm::Utility::ucvmInit( l_posCfg );
 
   //! MOAB mesh object
   moab_mesh l_msh;
-  meshInit( l_msh, l_posCfg );
+  edge_v::vm::Utility::meshInit( l_msh, l_posCfg );
 
   //! UCVM pointers
   ucvm_point_t *l_ucvmPts = new ucvm_point_t[l_msh.m_numNodes];
@@ -108,8 +108,8 @@ int main( int i_argc, char **i_argv ) {
   std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
 
   //! pos model
-  posModel l_posModel;
-  posInit( l_posModel, l_msh );
+  edge_v::vm::Utility::posModel l_posModel;
+  edge_v::vm::Utility::posInit( l_posModel, l_msh );
 
   ucvm_prop_t *l_propPtr;   //! UCVM prop pointer
   real l_vs;
@@ -163,9 +163,9 @@ int main( int i_argc, char **i_argv ) {
   }
 
   //! write pos file
-  writePos( l_posModel, l_posCfg, l_msh );
+  edge_v::vm::Utility::writePos( l_posModel, l_posCfg, l_msh );
 
-  posFinalize( l_posModel );
+  edge_v::vm::Utility::posFinalize( l_posModel );
 
   //! Memory deallocation
   delete[] l_ucvmPts;
