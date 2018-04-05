@@ -38,9 +38,6 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
   m_maxVpVsRatio  = 0.0;
   m_elmtsPerWave  = 0.0;
 
-  m_hypoc.m_lon   = 0.0;
-  m_hypoc.m_lat   = 0.0;
-
   m_tetRefinement = 0;
 
   std::cout << "Reading Config File: " << i_pathToFile << "... " << std::flush;
@@ -93,10 +90,6 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
       m_maxVpVsRatio  = atof( l_varValue.c_str() );
     else if( l_varName.compare( "elmts_per_wave" ) == 0 )
       m_elmtsPerWave  = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "center_ic_lon" ) == 0 )
-      m_hypoc.m_lon   = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "center_ic_lat" ) == 0 )
-      m_hypoc.m_lat   = atof( l_varValue.c_str() );
     else if( l_varName.compare( "fault_input_file" ) == 0 )
       m_faultInputFns.push_back( l_varValue );
     else if( l_varName.compare( "tet_refinement" ) == 0 )
