@@ -145,8 +145,10 @@ int edge_v::vm::Utility::vmElmtFinalize( vmodel &i_vmElmts ) {
   return 0;
 }
 
-int edge_v::vm::Utility::workerInit(       worker_reg &i_wrkRg,
-                                     const int_v      &i_totalNum ) {
+int edge_v::vm::Utility::workerInit(       worker_reg  &i_wrkRg,
+                                     const int_v       &i_totalNum,
+                                     const std::string &i_projMesh,
+                                     const std::string &i_projVel   ) {
   int_v l_tid                 = omp_get_thread_num();
   int_v l_numThrds            = omp_get_num_threads();
   i_wrkRg.m_workerTid         = l_tid;
@@ -157,9 +159,8 @@ int edge_v::vm::Utility::workerInit(       worker_reg &i_wrkRg,
   i_wrkRg.m_workSize          = l_workSize;
   i_wrkRg.m_numPrvt           = l_nPrivate;
 
-  std::string l_pjInitParams  = "+proj=tmerc +units=m +axis=enu +no_defs +datum=WGS84 +k=0.9996 +lon_0=-117.916 +lat_0=33.933";
-  i_wrkRg.m_pjUtm             = pj_init_plus( l_pjInitParams.c_str() );
-  i_wrkRg.m_pjGeo             = pj_init_plus( "+proj=latlong +datum=WGS84" );
+  i_wrkRg.m_pjUtm             = pj_init_plus( i_projMesh.c_str() );
+  i_wrkRg.m_pjGeo             = pj_init_plus( i_projVel.c_str() );
 
   return 0;
 }

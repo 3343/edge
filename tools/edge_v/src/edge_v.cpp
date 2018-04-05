@@ -54,7 +54,10 @@ int main( int i_argc, char **i_argv ) {
   ucvm_data_t *l_ucvmProps    = new ucvm_data_t[ l_msh.m_numNodes];
 
   edge_v::vm::Utility::worker_reg l_wrkRg;
-  edge_v::vm::Utility::workerInit( l_wrkRg, l_msh.m_numNodes );
+  edge_v::vm::Utility::workerInit( l_wrkRg,
+                                   l_msh.m_numNodes,
+                                   l_aCfg.m_projMesh,
+                                   l_aCfg.m_projVel );
 
   moab::EntityID      l_pEntId;
   moab::EntityHandle  l_pHandle;
@@ -137,7 +140,10 @@ int main( int i_argc, char **i_argv ) {
     edge_v::vm::Utility::vmodel l_vModelElmts;
     edge_v::vm::Utility::vmElmtInit( l_vModelElmts, l_msh );
 
-    edge_v::vm::Utility::workerInit( l_wrkRg, l_msh.m_numElmts );
+    edge_v::vm::Utility::workerInit( l_wrkRg,
+                                      l_msh.m_numElmts,
+                                     l_aCfg.m_projMesh,
+                                     l_aCfg.m_projVel );
 
     edge_v::vm::Utility::vmodel * const l_pVModelNodes = &l_vModelNodes;
 
