@@ -34,9 +34,20 @@ int edge_v::vm::Utility::ucvmInit( const io::Config &i_cfg ) {
   clock_t l_t = clock();
   std::cout << "Initializing UCVM... " << std::flush;
 
-  ucvm_init( i_cfg.m_ucvmCfgFn.c_str() );
-  ucvm_add_model_list( i_cfg.m_ucvmModelList.c_str() );
-  ucvm_setparam( UCVM_PARAM_QUERY_MODE, i_cfg.m_ucvmCmode );
+  if( ucvm_init( i_cfg.m_ucvmCfgFn.c_str() ) != UCVM_CODE_SUCCESS ) {
+    std::cerr << "failed initializing UCVM" << std::endl;
+    return 1;
+  };
+
+  if( ucvm_add_model_list( i_cfg.m_ucvmModelList.c_str() ) != UCVM_CODE_SUCCESS ) {
+    std::cerr << "failed setting model: " << i_cfg.m_ucvmModelList << std::endl;
+    return 1;
+  }
+
+  if( ucvm_setparam( UCVM_PARAM_QUERY_MODE, i_cfg.m_ucvmCmode ) != UCVM_CODE_SUCCESS  ) {
+    std::cerr << "failed setting param query mode: " << i_cfg.m_ucvmModelList << std::endl;
+    return 1;
+  }
 
   std::cout << "Done! ";
   l_t = clock() - l_t;
