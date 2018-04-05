@@ -31,6 +31,7 @@
 #include <cassert>
 #include <string>
 #include <cmath>
+#include <map>
 
 extern "C" {
 #include "ucvm.h"
@@ -74,6 +75,7 @@ typedef struct antn_cfg {
   std::string   m_meshFn;
   geo_point_t   m_hypoc;
 
+  int           m_tetRefinement;
   std::vector< std::string > m_faultInputFns;
   std::string   m_vmNodeFn;
   std::string   m_vmElmtFn;
@@ -181,21 +183,14 @@ public:
   Triangle( const xyz_point_t &i_v1,
             const xyz_point_t &i_v2,
             const xyz_point_t &i_v3 ) : m_v1( i_v1 ), m_v2( i_v2 ), m_v3( i_v3 ) {}
-  Triangle( const double * );
+  Triangle( const real * );
 
   xyz_point_t centroid();
   xyz_point_t baryToPhy( const xyz_point_t & );
   std::vector< Triangle > subdivide( const int & );
 };
 
-class FDatum {
-public:
-  //! NOTE it's important that these are type double (not typedef-ed)
-  //! because they are used in conjuction with the moab MB_DOUBLE type
-  std::vector< double > m_sFric;      //! static coefficient of friction
-  std::vector< double > m_nStress;    //! initial normal stress
-  std::vector< double > m_sStress;    //! initial shear stress
-};
+typedef std::map< std::string, std::vector< real > > FDatum;
 
 class FModel {
 public:
@@ -203,13 +198,16 @@ public:
   int m_Nx, m_Ny;
 
   //! Min and Max physical coordinates
-  double m_xMin, m_xMax, m_yMin, m_yMax;
+  real m_xMin, m_xMax, m_yMin, m_yMax;
 
   //! Reciprocal of the cell width in x and y directions
-  double m_xScaleInv, m_yScaleInv;
+  real m_xScaleInv, m_yScaleInv;
 
   //! Angle fault makes with pos x-axis, increasing toward pos z-axis
-  double m_faultAngle;
+  real m_faultAngle;
+
+  // List of quantities being described by the input file
+  std::vector< std::string > m_qtyNames;
 
   //! File names to read from; Number of fused runs is inferred from here
   std::vector< std::string > m_filenames;
@@ -221,7 +219,7 @@ public:
   FModel( const std::vector< std::string > & );
   ~FModel();
 
-  //! No copy or copy assignment constructors
+  //! No copy constructor or copy assignment
   FModel( const FModel & ) = delete;
   FModel & operator=( const FModel & ) = delete;
 
@@ -234,8 +232,8 @@ public:
 };
 
 moab::Range getFaultFaces( moab_mesh & );
-int faultAntn(       moab_mesh &,
-               const antn_cfg  & );
+int faultAntn( const  antn_cfg &,
+                      moab_mesh & );
 // *******************
 
 #endif //! VM_UTILITY_H
