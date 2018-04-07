@@ -52,7 +52,7 @@ template<>
 class edge::data::MmXsmmSingle< float > {
   private:
     //! gemm descriptors of libxsmm
-    std::vector< libxsmm_gemm_descriptor > m_descs;
+    std::vector< const libxsmm_gemm_descriptor* > m_descs;
  
   public:
     //! generated kernels of libxsmm
@@ -89,14 +89,16 @@ class edge::data::MmXsmmSingle< float > {
                    << " alpha=" << i_alpha << " beta=" << i_beta;
  
       // add description
-      libxsmm_gemm_descriptor l_desc;
-      LIBXSMM_GEMM_DESCRIPTOR( l_desc, LIBXSMM_GEMM_PRECISION_F32, 0,
-                               i_m, i_n, i_k, i_ldA, i_ldB, i_ldC,
-                               i_alpha, i_beta, i_prefetch );
+      libxsmm_descriptor_blob l_xgemm_blob;
+      const libxsmm_gemm_descriptor* l_desc = 0;
+      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
+        i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
+
       m_descs.push_back( l_desc );
        
       // generate and store function for this kernels
-      m_kernels.push_back( libxsmm_xmmdispatch( &m_descs.back() ).smm );
+      m_kernels.push_back( libxsmm_xmmdispatch( m_descs.back() ).smm );
  
       // check that we generated a kernel
       EDGE_CHECK( m_kernels.back() != 0 );
@@ -111,7 +113,7 @@ template<>
 class edge::data::MmXsmmSingle< double > {
   private:
     //! gemm descriptors of libxsmm
-    std::vector< libxsmm_gemm_descriptor > m_descs;
+    std::vector< const libxsmm_gemm_descriptor* > m_descs;
   
   public:
     //! generated kernels of libxsmm
@@ -148,14 +150,16 @@ class edge::data::MmXsmmSingle< double > {
                    << " alpha=" << i_alpha << " beta=" << i_beta;
   
       // add description
-      libxsmm_gemm_descriptor l_desc;
-      LIBXSMM_GEMM_DESCRIPTOR( l_desc, LIBXSMM_GEMM_PRECISION_F64, 0,
-                               i_m, i_n, i_k, i_ldA, i_ldB, i_ldC,
-                               i_alpha, i_beta, i_prefetch );
+      libxsmm_descriptor_blob l_xgemm_blob;
+      const libxsmm_gemm_descriptor* l_desc = 0;
+      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
+        i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
+
       m_descs.push_back( l_desc );
         
       // generate and store function for this kernels
-      m_kernels.push_back( libxsmm_xmmdispatch( &m_descs.back() ).dmm );
+      m_kernels.push_back( libxsmm_xmmdispatch( m_descs.back() ).dmm );
   
       // check that we generated a kernel
       EDGE_CHECK( m_kernels.back() != 0 );
