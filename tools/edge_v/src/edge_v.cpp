@@ -88,9 +88,6 @@ int main( int i_argc, char **i_argv ) {
   for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
     l_ucvmPoints[l_pid+l_pOfs].coord[0] *= RAD_TO_DEG;
     l_ucvmPoints[l_pid+l_pOfs].coord[1] *= RAD_TO_DEG;
-
-    //! (Raj): Depth (m) does not need transformation from rad to deg
-    // ucvmPoints[l_pid+l_pOfs].m_coord[2] *= RAD_TO_DEG;
   }
 
   //! UCVM Query
@@ -124,6 +121,19 @@ int main( int i_argc, char **i_argv ) {
           break;
         default:
           l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].cmb);
+      }
+
+      if(    l_propPtr->vp  <= 0
+          || l_propPtr->vs  <= 0
+          || l_propPtr->rho <= 0  ) {
+        std::cerr << "invalid values returned from UCVM, aborting" << std::endl;
+        std::cerr << "vp: " << l_propPtr->vp << std::endl;
+        std::cerr << "vs: " << l_propPtr->vs << std::endl;
+        std::cerr << "rho: " << l_propPtr->rho << std::endl;
+        std::cerr << "x: " << l_ucvmPoints[l_pid+l_pOfs].coord[0] << std::endl;
+        std::cerr << "y: " << l_ucvmPoints[l_pid+l_pOfs].coord[1] << std::endl;
+        std::cerr << "z: " << l_ucvmPoints[l_pid+l_pOfs].coord[2] << std::endl;
+        assert( false );
       }
 
       l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[0] = l_propPtr->vp;
