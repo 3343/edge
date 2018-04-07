@@ -77,6 +77,7 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
         m_ucvmCmode   = UCVM_COORD_GEO_DEPTH;
       else if( l_varValue.compare( "UCVM_COORD_GEO_ELEV" ) == 0 )
         m_ucvmCmode   = UCVM_COORD_GEO_ELEV;
+      else std::cerr << "unknown UCVM_COORD_GEO mode";
     }
     else if( l_varName.compare( "ucvm_type"        ) == 0 ) m_ucvmType     = atoi( l_varValue.c_str() );
     else if( l_varName.compare( "min_vp"           ) == 0 ) m_minVp        = atof( l_varValue.c_str() );
