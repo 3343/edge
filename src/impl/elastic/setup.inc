@@ -441,7 +441,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                             N_QUANTITIES, l_maxNzCol+1, l_nzBl[0][0][1]+1,
                             N_ELEMENT_MODES, 0, l_maxNzCol+1,
                             real_base(1.0), real_base(0.0),
-                            LIBXSMM_PREFETCH_NONE );
+                            LIBXSMM_GEMM_PREFETCH_NONE );
     }
     // generate libxsmm kernel for star matrix
     l_internal.m_mm.add(  true,
@@ -449,7 +449,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                           N_QUANTITIES, l_maxNzCol+1, N_QUANTITIES,
                           0, l_maxNzCol+1, N_ELEMENT_MODES,
                           real_base(1.0), real_base(1.0),
-                          LIBXSMM_PREFETCH_NONE );
+                          LIBXSMM_GEMM_PREFETCH_NONE );
 
 #ifdef PP_T_BASIS_HIERARCHICAL
    // check that size goes down with the number of derivatives
@@ -497,7 +497,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                           N_QUANTITIES, N_ELEMENT_MODES, l_maxNzRow+1,
                           l_maxNzRow+1, 0, N_ELEMENT_MODES,
                           real_base(1.0), real_base(1.0),
-                          LIBXSMM_PREFETCH_NONE ); // Remark: Star matrix is multiplied first
+                          LIBXSMM_GEMM_PREFETCH_NONE ); // Remark: Star matrix is multiplied first
   }
 
   // star matrix
@@ -506,7 +506,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                         N_QUANTITIES, l_maxNzRow+1, N_QUANTITIES,
                         0, N_ELEMENT_MODES, l_maxNzRow+1,
                         real_base(1.0), real_base(0.0),
-                        LIBXSMM_PREFETCH_NONE );
+                        LIBXSMM_GEMM_PREFETCH_NONE );
 
   /*
    * 3) surface kernels
@@ -525,7 +525,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
                           real_base(1.0), real_base(0.0),
-                          LIBXSMM_PREFETCH_NONE );
+                          LIBXSMM_GEMM_PREFETCH_NONE );
   }
 
   // neighboring contribution flux matrices
@@ -542,7 +542,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
                           real_base(1.0), real_base(0.0),
-                          LIBXSMM_PREFETCH_NONE );
+                          LIBXSMM_GEMM_PREFETCH_NONE );
   }
 
   // transposed flux matrices
@@ -558,7 +558,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                           N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
                           N_FACE_MODES, 0, N_ELEMENT_MODES,
                           real_base(1.0), real_base(1.0),
-                          LIBXSMM_PREFETCH_NONE );
+                          LIBXSMM_GEMM_PREFETCH_NONE );
   }
 
   // flux solver
@@ -572,7 +572,7 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                         N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
                         0, N_FACE_MODES, N_FACE_MODES,
                         real_base(1.0), real_base(0.0),
-                        LIBXSMM_PREFETCH_BL2_VIA_C );
+                        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C );
 }
 #endif
 
