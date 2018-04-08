@@ -62,6 +62,7 @@ class edge_v::io::Config {
     ucvm_ctype_t               m_ucvmCmode;
     int                        m_ucvmType;
 
+    std::string                m_velRule;
     real                       m_minVp;
     real                       m_minVs;
     real                       m_minVs2;

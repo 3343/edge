@@ -51,6 +51,21 @@ namespace edge_v {
 
 class edge_v::vm::Utility {
   public:
+    /**
+     * @brief Derives the Lame parameters from the velocities.
+     *
+     * @param i_vp p-wave velocity.
+     * @param i_vs  s-wave velocity.
+     * @param i_rho density rho.
+     * @param o_lam lambda.
+     * @param o_mu shear modulus rho.
+     */
+    static void lamePar( double  i_vp,
+                         double  i_vs,
+                         double  i_rho,
+                         double &o_lam,
+                         double &o_mu );
+
     static int ucvmInit( const io::Config & );
 
     // *** Parallel Module ***
