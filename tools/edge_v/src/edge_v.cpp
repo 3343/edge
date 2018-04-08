@@ -74,6 +74,14 @@ int main( int i_argc, char **i_argv ) {
     l_rval    = l_msh.m_intf->get_coords( &l_pHandle, 1,
                                           l_ucvmPoints[l_pid+l_pOfs].coord );
     assert( l_rval == moab::MB_SUCCESS );
+
+    // apply trafo
+    double l_tmp[3] = {0,0,0};
+    for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
+      for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
+        l_tmp[l_d1] += l_aCfg.m_trafo[l_d1][l_d2] * l_ucvmPoints[l_pid+l_pOfs].coord[l_d2];
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_ucvmPoints[l_pid+l_pOfs].coord[l_di] = l_tmp[l_di];
   }
 
   //! Proj4 Transform: UTM->Long,Lat,Elv
@@ -84,7 +92,7 @@ int main( int i_argc, char **i_argv ) {
   pj_transform( l_wrkRg.m_pjUtm, l_wrkRg.m_pjGeo, l_wrkRg.m_numPrvt, l_pntOfs,
                 l_xPtr, l_yPtr, l_zPtr );
 
-  //! Apply Rad to Degree
+  // apply rad to deg
   for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
     l_ucvmPoints[l_pid+l_pOfs].coord[0] *= RAD_TO_DEG;
     l_ucvmPoints[l_pid+l_pOfs].coord[1] *= RAD_TO_DEG;

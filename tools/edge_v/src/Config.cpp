@@ -26,6 +26,30 @@
 #include "Config.h"
 #include <iostream>
 #include <fstream>
+#include <cassert>
+
+void edge_v::io::Config::vecStringToDouble( char         i_sep,
+                                            std::string &i_string,
+                                            double*      o_val ) {
+  std::string l_right = i_string;
+
+  unsigned short l_pos = 0;
+  while( l_right.size() > 0 ) {
+    std::size_t l_split = l_right.find_first_of(i_sep);
+    if( l_split < l_right.size() ) {
+      std::string l_left =  l_right.substr( 0, l_split );
+                  l_right = l_right.substr( l_split+1  );
+
+      o_val[l_pos] = atof(l_left.c_str());
+
+      l_pos++;
+    }
+    else {
+      o_val[l_pos] = atof(l_right.c_str());
+      break;
+    }
+  }
+}
 
 edge_v::io::Config::Config( const std::string &i_pathToFile ) {
   clock_t l_t = clock();
@@ -37,6 +61,13 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
   m_minVs2        = 0.0;
   m_maxVpVsRatio  = 0.0;
   m_elmtsPerWave  = 0.0;
+
+  for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ ) {
+    for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
+      m_trafo[l_d1][l_d2] = 0;
+
+    m_trafo[l_d1][l_d1] = 1.0;
+  }
 
   m_tetRefinement = 0;
 
@@ -85,6 +116,9 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
     else if( l_varName.compare( "min_vs2"          ) == 0 ) m_minVs2       = atof( l_varValue.c_str() );
     else if( l_varName.compare( "max_vp_vs_ratio"  ) == 0 ) m_maxVpVsRatio = atof( l_varValue.c_str() );
     else if( l_varName.compare( "elmts_per_wave"   ) == 0 ) m_elmtsPerWave = atof( l_varValue.c_str() );
+    else if( l_varName.compare( "trafo_x"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[0] );
+    else if( l_varName.compare( "trafo_y"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[1] );
+    else if( l_varName.compare( "trafo_z"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[2] );
     else if( l_varName.compare( "proj_mesh"        ) == 0 ) m_projMesh     = l_varValue;
     else if( l_varName.compare( "proj_vel"         ) == 0 ) m_projVel      = l_varValue;
     else if( l_varName.compare( "mesh_file"        ) == 0 ) m_meshFn       = l_varValue;
