@@ -186,7 +186,11 @@ class edge::sc::Limiter {
           TL_T_EL,
           TL_O_SP,
           TL_N_QTS,
-          TL_N_CRS >::sfInt( l_fluxes,
+          TL_N_CRS >::sfInt( 
+#if defined(PP_T_KERNELS_XSMM)
+                             i_mm,
+#endif
+                             l_fluxes,
                              i_sfInt,
                              l_sIntSc );
 
@@ -270,7 +274,8 @@ class edge::sc::Limiter {
     template< typename TL_T_LID,
               typename TL_T_REAL,
               typename TL_T_SP,
-              typename TL_T_SOLV_SC >
+              typename TL_T_SOLV_SC,
+              typename TL_T_MM >
     static void limit( TL_T_REAL                      i_dt,
                        TL_T_LID                       i_lp,
                        unsigned short const           i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
@@ -285,7 +290,8 @@ class edge::sc::Limiter {
                        TL_T_REAL              const   i_dofsDgP[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS],
                        TL_T_REAL              const (*i_dofsScAdP[TL_N_FAS])[TL_N_SFS][TL_N_CRS],
                        TL_T_REAL                      io_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                       TL_T_SOLV_SC           const  &i_solvSc ) {
+                       TL_T_SOLV_SC           const  &i_solvSc,
+                       TL_T_MM                const  &i_mm) {
       // sub-grid of owned sub-cell
       TL_T_REAL (*l_sg)[TL_N_SCS][TL_N_CRS] = parallel::g_scratchMem->sg;
 
@@ -294,7 +300,11 @@ class edge::sc::Limiter {
         TL_T_EL,
         TL_O_SP,
         TL_N_QTS,
-        TL_N_CRS >::scatterReplace( i_dofsDgP,
+        TL_N_CRS >::scatterReplace( 
+#if defined(PP_T_KERNELS_XSMM)
+                                    i_mm,
+#endif
+                                    i_dofsDgP,
                                     i_scatter,
                                     io_dofsSc,
                                     i_admP,
@@ -554,7 +564,8 @@ class edge::sc::Limiter {
                    i_tDofsDg[1][l_el],
                    l_dofsScAdP,
                    io_dofsSc[l_li],
-                   i_solvSc );
+                   i_solvSc,
+                   i_mm );
 
             // DG DOFs of the projected sub-cell solution
             TL_T_REAL l_dofsDg[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS];
@@ -562,7 +573,11 @@ class edge::sc::Limiter {
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
                                TL_N_QTS,
-                               TL_N_CRS >::gather( io_dofsSc[l_li],
+                               TL_N_CRS >::gather( 
+#if defined(PP_T_KERNELS_XSMM)
+                                                   i_mm,
+#endif
+                                                   io_dofsSc[l_li],
                                                    i_scOps.gather,
                                                    l_dofsDg );
             // copy only relevant DOFs back
@@ -584,7 +599,11 @@ class edge::sc::Limiter {
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
                                TL_N_QTS,
-                               TL_N_CRS >::dgExtrema(  io_dofsDg[l_el],
+                               TL_N_CRS >::dgExtrema(
+#if defined(PP_T_KERNELS_XSMM)
+                                                       i_mm,
+#endif
+                                                       io_dofsDg[l_el],
                                                        i_scOps.scatter,
                                                        l_scDgL,
                                                        l_exDgL[0],
@@ -614,9 +633,9 @@ class edge::sc::Limiter {
             edge::sc::Kernels< TL_T_EL,
                                TL_O_SP,
                                TL_N_QTS,
-                               TL_N_CRS >::scExtrema(  io_dofsSc[l_li],
-                                                       l_extSc[0],
-                                                       l_extSc[1] );
+                               TL_N_CRS >::scExtrema(io_dofsSc[l_li],
+                                                     l_extSc[0],
+                                                     l_extSc[1] );
 
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               if( i_admC[l_li][l_cr] == false ) {
@@ -647,7 +666,11 @@ class edge::sc::Limiter {
               TL_T_EL,
               TL_O_SP,
               TL_N_QTS,
-              TL_N_CRS >::scatterFa(   io_dofsDg[l_el],
+              TL_N_CRS >::scatterFa(
+#if defined(PP_T_KERNELS_XSMM)
+                                       i_mm,
+#endif
+                                       io_dofsDg[l_el],
                                        i_scOps.scatterSurf[TL_N_FAS+l_fMatId],
                                      *(o_tDofsScL[l_lp][l_fa]) );
           }

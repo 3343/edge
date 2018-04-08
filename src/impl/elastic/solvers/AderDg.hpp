@@ -728,7 +728,11 @@ class edge::elastic::solvers::AderDg {
           edge::sc::Kernels< TL_T_EL,
                              TL_O_SP,
                              TL_N_QTS,
-                             TL_N_CRS >::dgExtrema(  io_dofs[l_el],
+                             TL_N_CRS >::dgExtrema(  
+#if defined(PP_T_KERNELS_XSMM)
+                                                     i_mm,
+#endif
+                                                     io_dofs[l_el],
                                                      i_scatter,
                                                      l_sg,
                                                      o_extC[l_ex][0],

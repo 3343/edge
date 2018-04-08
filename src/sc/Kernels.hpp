@@ -25,6 +25,9 @@
 
 #include "constants.hpp"
 #include "linalg/Matrix.h"
+#if defined(PP_T_KERNELS_XSMM)
+#include "data/MmXsmmFused.hpp"
+#endif
 
 namespace edge {
   namespace sc {
@@ -70,6 +73,7 @@ class edge::sc::Kernels {
      * Applies the scatter matrix.
      * Scatter: Projects DG solution to sub-cell solution.
      *
+     * @param i_mm Fused dense JITed matrix kernels 
      * @param i_dofsDg DOFs of DG solution.
      * @param i_mat scatter matrix.
      * @param o_scDofs will be set to degrees of freedom of the sub-cell solution.
@@ -77,9 +81,16 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatter( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                         TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
-                         TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
+    static void scatter( 
+#if defined(PP_T_KERNELS_XSMM)
+                         data::MmXsmmFused< TL_T_REAL > const &i_mm,
+#endif
+                         TL_T_REAL const                       i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                         TL_T_REAL const                       i_mat[TL_N_MDS][TL_N_SCS],
+                         TL_T_REAL                             o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
+#if defined(PP_T_KERNELS_XSMM)
+      i_mm.m_kernelsSc[0]( i_dofsDg[0][0], i_mat[0], o_scDofs[0][0] );
+#else
       // project element's DG solution to sub-cells
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_SCS, TL_N_MDS, // m, n, k
@@ -88,6 +99,7 @@ class edge::sc::Kernels {
                                      i_dofsDg[0][0],               // A
                                      i_mat[0],                     // B
                                      o_scDofs[0][0] );             // C
+#endif
     }
 
     /**
@@ -101,9 +113,16 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterFa( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                           TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
-                           TL_T_REAL       o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
+    static void scatterFa( 
+#if defined(PP_T_KERNELS_XSMM)
+                           data::MmXsmmFused< TL_T_REAL > const &i_mm,
+#endif
+                           TL_T_REAL const                       i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL const                       i_mat[TL_N_MDS][TL_N_SFS],
+                           TL_T_REAL                             o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
+#if defined(PP_T_KERNELS_XSMM)
+      i_mm.m_kernelsSc[1]( i_dofsDg[0][0], i_mat[0], o_scDofs[0][0] );
+#else
       // project element's DG solution to sub-cells
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_SFS, TL_N_MDS, // m, n, k
@@ -112,6 +131,7 @@ class edge::sc::Kernels {
                                      i_dofsDg[0][0],               // A
                                      i_mat[0],                     // B
                                      o_scDofs[0][0] );             // C
+#endif
     }
 
     /**
@@ -128,23 +148,30 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterReplace( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+    static void scatterReplace(
+#if defined(PP_T_KERNELS_XSMM)
+                                data::MmXsmmFused< TL_T_REAL > const &        i_mm,
+#endif
+                                TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                 TL_T_REAL const i_mat[TL_N_MDS][TL_N_SCS],
                                 TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                                 bool      const i_admP[TL_N_CRS],
                                 TL_T_REAL       o_dofsSc[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
       // project DG to sub-cell solution
-      scatter( i_dofsDg,
+      scatter( 
+#if defined(PP_T_KERNELS_XSMM)
+               i_mm,
+#endif
+               i_dofsDg,
                i_mat,
                o_dofsSc );
 
       // overwrite project sub-cell solution with stored sub-cell solution
-      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-        if( i_admP[l_cr] == false ) {
-          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-            for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
-              o_dofsSc[l_qt][l_sc][l_cr] = i_dofsSc[l_qt][l_sc][l_cr];
-            }
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+        for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
+#pragma omp simd 
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {  
+              o_dofsSc[l_qt][l_sc][l_cr] = ( i_admP[l_cr] == false ) ? i_dofsSc[l_qt][l_sc][l_cr] : o_dofsSc[l_qt][l_sc][l_cr];
           }
         }
       }
@@ -164,24 +191,31 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void scatterReplaceFa( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+    static void scatterReplaceFa( 
+#if defined(PP_T_KERNELS_XSMM)
+                                  data::MmXsmmFused< TL_T_REAL > const &i_mm,
+#endif
+                                  TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                                   TL_T_REAL const i_mat[TL_N_MDS][TL_N_SFS],
                                   TL_T_REAL const i_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                                   bool      const i_admP[TL_N_CRS],
                                   TL_T_REAL       o_dofsSc[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
       // project DG to sub-cell solution
-      scatterFa( i_dofsDg,
+      scatterFa( 
+#if defined(PP_T_KERNELS_XSMM)
+                 i_mm,
+#endif
+                 i_dofsDg,
                  i_mat,
                  o_dofsSc );
 
       // overwrite project sub-cell solution with stored sub-cell solution
       if( i_admP != nullptr ) {
-        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-          if( i_admP[l_cr] == false ) {
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-              for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-                o_dofsSc[l_qt][l_sf][l_cr] = i_dofsSc[l_qt][l_sf][l_cr];
-              }
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+#pragma omp simd
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              o_dofsSc[l_qt][l_sf][l_cr] = ( i_admP[l_cr] == false ) ? i_dofsSc[l_qt][l_sf][l_cr] : o_dofsSc[l_qt][l_sf][l_cr];
             }
           }
         }
@@ -199,10 +233,17 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void gather( TL_T_REAL const i_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+    static void gather( 
+#if defined(PP_T_KERNELS_XSMM)
+                        data::MmXsmmFused< TL_T_REAL > const &i_mm,
+#endif
+                        TL_T_REAL const i_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                         TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                         TL_T_REAL       o_dgDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution to DG solution
+#if defined(PP_T_KERNELS_XSMM)
+      i_mm.m_kernelsSc[2]( i_scDofs[0][0], i_mat[0], o_dgDofs[0][0] );
+#else
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_MDS, TL_N_SCS, // m, n, k
                                      TL_N_SCS, TL_N_MDS, TL_N_MDS, // ldA, ldB, ldC
@@ -210,6 +251,7 @@ class edge::sc::Kernels {
                                      i_scDofs[0][0],               // A
                                      i_mat[0],                     // B
                                      o_dgDofs[0][0] );             // C
+#endif
     }
 
     /**
@@ -231,7 +273,7 @@ class edge::sc::Kernels {
                                 unsigned short const    i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                                 unsigned short const    i_vIdElFaEl[TL_N_FAS],
                                 TL_T_REAL            (* o_scSurfDofs [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                                bool           const    i_adm[TL_N_CRS] = nullptr ) {
+                                bool           const    i_adm[TL_N_CRS] ) {
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         // only continue if the DOFs are required
@@ -250,9 +292,9 @@ class edge::sc::Kernels {
               unsigned short l_sc = i_faSfSc[l_fa][l_sfRe];
 
               // copy over the sub-cell DOFs
+#pragma omp simd
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                if( i_adm == nullptr || i_adm[l_cr] == false )
-                  (*o_scSurfDofs[l_fa])[l_qt][l_sf][l_cr] = i_scDofs[l_qt][l_sc][l_cr];
+                (*o_scSurfDofs[l_fa])[l_qt][l_sf][l_cr] = ( i_adm[l_cr] == false ) ? i_scDofs[l_qt][l_sc][l_cr] : (*o_scSurfDofs[l_fa])[l_qt][l_sf][l_cr];
               }
             }
           }
@@ -272,10 +314,17 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void sfInt( TL_T_REAL const i_scFluxes[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+    static void sfInt( 
+#if defined(PP_T_KERNELS_XSMM)
+                       data::MmXsmmFused< TL_T_REAL > const &i_mm,
+#endif
+                       TL_T_REAL const i_scFluxes[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                        TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                        TL_T_REAL       o_int[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution at faces to DG solution
+#if defined(PP_T_KERNELS_XSMM)
+      i_mm.m_kernelsSc[3]( i_scFluxes[0][0], i_mat[0], o_int[0][0] );
+#else
       linalg::Matrix::matMulFusedAC( TL_N_CRS,
                                      TL_N_QTS, TL_N_MDS, TL_N_SFS, // m, n, k
                                      TL_N_SFS, TL_N_MDS, TL_N_MDS, // ldA, ldB, ldC
@@ -283,6 +332,7 @@ class edge::sc::Kernels {
                                      i_scFluxes[0][0],             // A
                                      i_mat[0],                     // B
                                      o_int[0][0] );                // C
+#endif
     }
 
     /**
@@ -300,6 +350,7 @@ class edge::sc::Kernels {
                            TL_T_REAL       o_max[TL_N_QTS][TL_N_CRS] ) {
       // init extrema
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+#pragma omp simd
         for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
           o_min[l_qt][l_cr] = std::numeric_limits< TL_T_REAL >::max();
           o_max[l_qt][l_cr] = std::numeric_limits< TL_T_REAL >::lowest();
@@ -309,6 +360,7 @@ class edge::sc::Kernels {
       // determine extrema
       for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             o_min[l_qt][l_cr] = std::min( o_min[l_qt][l_cr], i_dofsSc[l_qt][l_sc][l_cr] );
             o_max[l_qt][l_cr] = std::max( o_max[l_qt][l_cr], i_dofsSc[l_qt][l_sc][l_cr] );
@@ -329,13 +381,21 @@ class edge::sc::Kernels {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void dgExtrema( TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+    static void dgExtrema( 
+#if defined(PP_T_KERNELS_XSMM)
+                           data::MmXsmmFused< TL_T_REAL > const &i_mm,
+#endif
+                           TL_T_REAL const i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                            TL_T_REAL const i_matScatter[TL_N_MDS][TL_N_SCS],
                            TL_T_REAL       o_subcell[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                            TL_T_REAL       o_min[TL_N_QTS][TL_N_CRS],
                            TL_T_REAL       o_max[TL_N_QTS][TL_N_CRS] ) {
       // determine sub-cell solution
-      scatter( i_dofsDg,
+      scatter( 
+#if defined(PP_T_KERNELS_XSMM)
+               i_mm,
+#endif
+               i_dofsDg,
                i_matScatter,
                o_subcell );
 
