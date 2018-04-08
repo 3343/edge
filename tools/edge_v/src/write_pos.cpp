@@ -23,6 +23,7 @@
 
 #include "vm_utility.h"
 #include "Config.h"
+#include "Rules.h"
 
 int main( int i_argc, char **i_argv ) {
   //! Check input arguments
@@ -118,7 +119,6 @@ int main( int i_argc, char **i_argv ) {
   edge_v::vm::Utility::posInit( l_posModel, l_msh );
 
   ucvm_prop_t *l_propPtr;   //! UCVM prop pointer
-  real l_vs;
 
   for( l_eid = 0; l_eid < l_msh.m_numElmts; l_eid++ ) {
     //! Element id starts index at 1
@@ -154,11 +154,14 @@ int main( int i_argc, char **i_argv ) {
 
       //! cmb: combination crustal+gtl
       l_propPtr = &(l_ucvmData[l_nid].cmb);
-      l_vs      = l_propPtr->vs;
+      real l_vp  = l_propPtr->vp;
+      real l_vs  = l_propPtr->vs;
+      real l_rho = l_propPtr->rho;
 
-      //! Cutoff velocity (to avoid very low vs to avoid large elmts per wavelength)
-      if( l_vs < l_posCfg.m_minVs )
-        l_vs  = l_posCfg.m_minVs;
+      edge_v::vel::Rules::apply( l_posCfg.m_velRule,
+                                 l_vp,
+                                 l_vs,
+                                 l_rho );
 
       //! Rescale elmt-size according to no. of elmts required per wavelength
       if( l_posCfg.m_elmtsPerWave > 1.0 )
