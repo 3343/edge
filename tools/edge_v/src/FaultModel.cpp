@@ -397,7 +397,7 @@ int faultAntn( const edge_v::io::Config & i_cfg,
                                       l_tagSize,
                                       moab::MB_TYPE_DOUBLE,
                                       l_tags[ l_qtyName ],
-                                      moab::MB_TAG_CREAT|moab::MB_TAG_DENSE );
+                                      moab::MB_TAG_CREAT|moab::MB_TAG_SPARSE );
     assert( l_rval == moab::MB_SUCCESS );
   }
 
