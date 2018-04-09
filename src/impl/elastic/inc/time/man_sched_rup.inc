@@ -284,7 +284,7 @@ if( m_cflow[9] == 2 && m_cflow[10] == 2 ) {
   // perform safety checks
   EDGE_CHECK_EQ( m_cflow[ 0], 2 );
   EDGE_CHECK_EQ( m_cflow[ 1], 2 );
-  EDGE_CHECK_EQ( m_cflow[ 2], 2 );
+
   EDGE_CHECK_EQ( m_cflow[ 3], 2 );
   EDGE_CHECK_EQ( m_cflow[ 4], 2 );
   EDGE_CHECK_EQ( m_cflow[ 5], 2 );

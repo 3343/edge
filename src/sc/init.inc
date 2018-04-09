@@ -20,6 +20,35 @@
  * @section DESCRIPTION
  * Performs the init of sub-cell data, once limited, limited plus and and extrema sparse types are derived.
  **/
+#if defined(PP_T_KERNELS_XSMM)
+// setup gather/scatter kernels
+{
+  unsigned int l_n_qts = N_QUANTITIES;
+  unsigned int l_n_mds = N_ELEMENT_MODES;
+  unsigned int l_n_scs = CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER); 
+  unsigned int l_n_sfs = CE_N_SUB_FACES(T_SDISC.ELEMENT,ORDER);
+
+  // scatter
+  l_internal.m_mm.addSc( l_n_qts, l_n_scs, l_n_mds, // m, n, k
+                         l_n_mds, l_n_scs, l_n_scs, // ldA, ldB, lcC
+                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+
+  // scatter fa
+  l_internal.m_mm.addSc( l_n_qts, l_n_sfs, l_n_mds, // m, n, k
+                         l_n_mds, l_n_sfs, l_n_sfs, // ldA, ldB, lcC
+                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+
+  // gather
+  l_internal.m_mm.addSc( l_n_qts, l_n_mds, l_n_scs, // m, n, k
+                         l_n_scs, l_n_mds, l_n_mds, // ldA, ldB, lcC
+                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+
+      // sfInt (gather fa)
+  l_internal.m_mm.addSc( l_n_qts, l_n_mds, l_n_sfs, // m, n, k
+                         l_n_sfs, l_n_mds, l_n_mds, // ldA, ldB, lcC
+                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+}
+#endif
 unsigned short l_limLayout;
 unsigned short l_limPlusLayout;
 unsigned short l_extLayout ;
