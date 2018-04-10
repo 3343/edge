@@ -64,6 +64,9 @@ int main( int i_argc, char **i_argv ) {
   moab::EntityHandle  l_pHandle;
   moab::ErrorCode     l_rval;
 
+  // annotate with fault values
+  faultAntn( l_aCfg, l_msh );
+
   int_v l_pid;
   const int_v l_pOfs = l_wrkRg.m_workerTid * l_wrkRg.m_workSize;
 
@@ -226,8 +229,8 @@ int main( int i_argc, char **i_argv ) {
     edge_v::vm::Utility::vmElmtFinalize( l_vModelElmts );
   }
 
-  faultAntn( l_aCfg, l_msh );
   if( l_ucvmStatus != 0 ) {
+    std::cout << "writing mesh " <<  l_aCfg.m_h5mFn << std::endl;
     l_msh.m_intf->write_mesh( l_aCfg.m_h5mFn.c_str() );
   }
 
