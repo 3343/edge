@@ -24,6 +24,7 @@
  * This is the main file of EDGE-V.
  **/
 
+#include "Rules.h"
 #include "vm_utility.h"
 #include "FaultModel.h"
 
@@ -63,6 +64,9 @@ int main( int i_argc, char **i_argv ) {
   moab::EntityHandle  l_pHandle;
   moab::ErrorCode     l_rval;
 
+  // annotate with fault values
+  faultAntn( l_aCfg, l_msh );
+
   int_v l_pid;
   const int_v l_pOfs = l_wrkRg.m_workerTid * l_wrkRg.m_workSize;
 
@@ -74,6 +78,14 @@ int main( int i_argc, char **i_argv ) {
     l_rval    = l_msh.m_intf->get_coords( &l_pHandle, 1,
                                           l_ucvmPoints[l_pid+l_pOfs].coord );
     assert( l_rval == moab::MB_SUCCESS );
+
+    // apply trafo
+    double l_tmp[3] = {0,0,0};
+    for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
+      for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
+        l_tmp[l_d1] += l_aCfg.m_trafo[l_d1][l_d2] * l_ucvmPoints[l_pid+l_pOfs].coord[l_d2];
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_ucvmPoints[l_pid+l_pOfs].coord[l_di] = l_tmp[l_di];
   }
 
   //! Proj4 Transform: UTM->Long,Lat,Elv
@@ -84,7 +96,7 @@ int main( int i_argc, char **i_argv ) {
   pj_transform( l_wrkRg.m_pjUtm, l_wrkRg.m_pjGeo, l_wrkRg.m_numPrvt, l_pntOfs,
                 l_xPtr, l_yPtr, l_zPtr );
 
-  //! Apply Rad to Degree
+  // apply rad to deg
   for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
     l_ucvmPoints[l_pid+l_pOfs].coord[0] *= RAD_TO_DEG;
     l_ucvmPoints[l_pid+l_pOfs].coord[1] *= RAD_TO_DEG;
@@ -157,8 +169,6 @@ int main( int i_argc, char **i_argv ) {
 
     edge_v::vm::Utility::vmodel * const l_pVModelNodes = &l_vModelNodes;
 
-    //! Averaging and Clipping
-    real l_vp, l_vs, l_rho, l_vpVsRatio, l_lam, l_mu;
     moab::EntityID                    l_eEntId;
     moab::EntityHandle                l_eHandle;
     std::vector< moab::EntityHandle > l_eVertices;
@@ -176,9 +186,9 @@ int main( int i_argc, char **i_argv ) {
       assert( l_rval == moab::MB_SUCCESS );
       assert( l_eVertices.size() == ELMTTYPE );
 
-      l_vp  = 0.0;
-      l_vs  = 0.0;
-      l_rho = 0.0;
+      real l_vp  = 0.0;
+      real l_vs  = 0.0;
+      real l_rho = 0.0;
 
       for( int_v l_vId = 0; l_vId < 4; l_vId++ ) {
         moab::EntityID l_pEntId = l_msh.m_intf->id_from_handle( l_eVertices[l_vId] );
@@ -193,33 +203,17 @@ int main( int i_argc, char **i_argv ) {
       l_vs  /= 4.0;
       l_rho /= 4.0;
 
-      //! Second Stop
-      if( l_vs < l_aCfg.m_minVs ) {
-        l_vpVsRatio = l_vp / l_vs;
-        l_vs        = l_aCfg.m_minVs;
-        l_vp        = l_aCfg.m_minVs * l_vpVsRatio;
-      }
+      edge_v::vel::Rules::apply( l_aCfg.m_velRule,
+                                 l_vp,
+                                 l_vs,
+                                 l_rho );
 
-      //! Third Stop
-      l_mu = l_rho * l_vs * l_vs;
-      if( l_vp > (l_vs * l_aCfg.m_maxVpVsRatio) ) {
-        l_lam = l_rho * l_vs * l_vs * l_aCfg.m_maxVpVsRatio * l_aCfg.m_maxVpVsRatio
-                - 2.0 * l_mu;
-      } else {
-        l_lam = l_rho * l_vp * l_vp - 2.0 * l_mu;
-      }
-
-      if( l_lam < 0 ) {
-        if( l_vs < l_aCfg.m_minVs ) {
-          l_vp = 2.45 * l_vs;
-        } else if( l_vs < l_aCfg.m_minVs2 ) {
-          l_vp = 2 * l_vs;
-        } else {
-          l_vp = 1.87 * l_vs;
-        }
-
-        l_lam = l_rho * l_vp * l_vp;
-      }
+      real l_lam, l_mu;
+      edge_v::vm::Utility::lamePar( l_vp,
+                                    l_vs,
+                                    l_rho,
+                                    l_lam,
+                                    l_mu );
 
       l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[0] = l_lam;
       l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[1] = l_mu;
@@ -235,8 +229,8 @@ int main( int i_argc, char **i_argv ) {
     edge_v::vm::Utility::vmElmtFinalize( l_vModelElmts );
   }
 
-  faultAntn( l_aCfg, l_msh );
   if( l_ucvmStatus != 0 ) {
+    std::cout << "writing mesh " <<  l_aCfg.m_h5mFn << std::endl;
     l_msh.m_intf->write_mesh( l_aCfg.m_h5mFn.c_str() );
   }
 

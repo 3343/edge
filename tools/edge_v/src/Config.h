@@ -43,6 +43,17 @@ namespace edge_v {
  * @brief Runtime configuration.
  */
 class edge_v::io::Config {
+  /**
+   * @brief Converts the given string vector to a double array.
+   *
+   * @param i_sep seperator of the string vector.
+   * @param i_string string, which is converted.
+   * @param o_val will be set to converted vector.
+   */
+  void vecStringToDouble( char         i_sep,
+                          std::string &i_string,
+                          double*      o_val );
+
   public:
     std::string                m_antnCfgFn;
 
@@ -51,6 +62,7 @@ class edge_v::io::Config {
     ucvm_ctype_t               m_ucvmCmode;
     int                        m_ucvmType;
 
+    std::string                m_velRule;
     real                       m_minVp;
     real                       m_minVs;
     real                       m_minVs2;
@@ -58,6 +70,9 @@ class edge_v::io::Config {
     real                       m_elmtsPerWave;
 
     std::string                m_meshFn;
+
+    //! trafo, applied to the nodes before querying the UCVM
+    real                       m_trafo[3][3];
 
     //! projection used for generation of the mesh
     std::string                m_projMesh;

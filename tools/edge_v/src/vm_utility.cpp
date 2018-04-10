@@ -30,6 +30,16 @@
 
 #include "vm_utility.h"
 
+void edge_v::vm::Utility::lamePar( double  i_vp,
+                                   double  i_vs,
+                                   double  i_rho,
+                                   double &o_lam,
+                                   double &o_mu ) {
+  o_mu   = i_vs * i_vs * i_rho;
+  o_lam  = i_vp * i_vp * i_rho;
+  o_lam -= 2*o_mu;
+}
+
 int edge_v::vm::Utility::ucvmInit( const io::Config &i_cfg ) {
   clock_t l_t = clock();
   std::cout << "Initializing UCVM... " << std::flush;
@@ -411,7 +421,7 @@ int edge_v::vm::Utility::writePos( const posModel  &i_posModel,
        << " *********************************************************************/"
        << std::endl << std::endl;
 
-  l_ss << "View \"Test\" {" << std::endl;
+  l_ss << "View \"EDGEpos\" {" << std::endl;
 
   for( int_v l_eid = 0; l_eid < i_msh.m_numElmts; l_eid++ ) {
     if( l_eid % l_bufferSize == 0 ) {
