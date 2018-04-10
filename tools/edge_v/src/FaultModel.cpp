@@ -410,7 +410,7 @@ int faultAntn( const edge_v::io::Config & i_cfg,
 
   moab::Range l_faultFaces = getFaultFaces( i_mesh );
 
-  std::cout << "Annotating mesh with fault stresses... " << std::flush;
+  std::cout << "Annotating " << l_faultFaces.size() << " faces with stresses... " << std::flush;
   for( const auto& l_faceHandle : l_faultFaces ){
     l_faceVerts.clear();
     l_rval = l_iface->get_adjacencies( &l_faceHandle, 1, 0, false, l_faceVerts );
