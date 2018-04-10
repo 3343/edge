@@ -60,9 +60,9 @@ SRCDIR=./src
 OBJDIR=./build
 RELEASE=$(PREFIX)/bin
 
-_DEPS=vm_utility.h FaultModel.h Geometry.h Config.h
-_OBJ=FaultModel.o vm_utility.o edge_v.o Config.o
-_POS=FaultModel.o vm_utility.o write_pos.o Config.o
+_DEPS=vm_utility.h FaultModel.h Geometry.h Config.h Rules.h
+_OBJ=FaultModel.o vm_utility.o edge_v.o Config.o Rules.o
+_POS=FaultModel.o vm_utility.o write_pos.o Config.o Rules.o
 _RUPBENCH=fModelWriter.o FaultRegion.o
 
 DEPS=$(patsubst %,$(SRCDIR)/%,$(_DEPS))

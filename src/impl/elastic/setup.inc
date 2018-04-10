@@ -673,16 +673,18 @@ if( l_elasticConf.m_frictionLaw != "" ) {
   EDGE_LOG_INFO << "    querying mesh for fault data";
 
   struct t_FaultData{ double sn0[CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS];
+                      double co0[CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS];
                       double ss0[N_DIM-1][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS];
                     } *l_faultData;
 
   l_faultData = new t_FaultData[ l_enLayouts[l_rupLayoutFa].nEnts ];
-  std::string l_faultPars[3] = { "N_STRESS",
+  std::string l_faultPars[4] = { "N_STRESS",
+                                 "COHESION",
                                  "S_STRESS_STK",
                                  "S_STRESS_DIP" };
 
   l_faultMesh = l_mesh.getParsDe(                                   N_DIM-1,
-                                                                    3,
+                                                                    4,
                                                                     l_faultPars,
     ( double (*)[CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] ) l_faultData,
                                                                     RUPTURE,
@@ -906,7 +908,7 @@ edge::io::InternalBoundary< int_el,
                                                  l_config.m_iBndType=="vtk_binary" );
 
 l_rupWriter.alloc( l_enLayouts[l_rupLayoutFa].nEnts,
-                   4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                   5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
                    l_dynMem );
 
 l_rupWriter.init( l_enLayouts[l_rupLayoutFa].nEnts,

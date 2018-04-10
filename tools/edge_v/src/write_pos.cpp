@@ -23,6 +23,7 @@
 
 #include "vm_utility.h"
 #include "Config.h"
+#include "Rules.h"
 
 int main( int i_argc, char **i_argv ) {
   //! Check input arguments
@@ -69,13 +70,19 @@ int main( int i_argc, char **i_argv ) {
     //! Get coordinates of node and populate in ucvm pts
     l_rval    = l_msh.m_intf->get_coords( &l_nodeHndl, 1, l_ucvmPts[l_nid].coord );
     assert( l_rval == moab::MB_SUCCESS );
+
+    // apply trafo
+    double l_tmp[3] = {0,0,0};
+    for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
+      for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
+        l_tmp[l_d1] += l_posCfg.m_trafo[l_d1][l_d2] * l_ucvmPts[l_nid].coord[l_d2];
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_ucvmPts[l_nid].coord[l_di] = l_tmp[l_di];
   }
 
-  //! Proj4 variables
-  std::string l_pjInitParams = "+proj=tmerc +units=m +axis=enu +no_defs \
-                                +datum=WGS84 +k=0.9996 +lon_0=-117.916 +lat_0=33.933";
-  projPJ l_pjSrc  = pj_init_plus( l_pjInitParams.c_str() );
-  projPJ l_pjDest = pj_init_plus( "+proj=latlong +datum=WGS84" );
+  //! proj.4 projections
+  projPJ l_pjSrc  = pj_init_plus( l_posCfg.m_projMesh.c_str() );
+  projPJ l_pjDest = pj_init_plus( l_posCfg.m_projVel.c_str()  );
 
   //! Proj4 Transform: UTM -> long,lat,elev
   double *l_xPtr  = &(l_ucvmPts[0].coord[0]);
@@ -112,7 +119,6 @@ int main( int i_argc, char **i_argv ) {
   edge_v::vm::Utility::posInit( l_posModel, l_msh );
 
   ucvm_prop_t *l_propPtr;   //! UCVM prop pointer
-  real l_vs;
 
   for( l_eid = 0; l_eid < l_msh.m_numElmts; l_eid++ ) {
     //! Element id starts index at 1
@@ -138,7 +144,7 @@ int main( int i_argc, char **i_argv ) {
 
       //! Get coordinates of node and repopulate ucvm pts
       l_rval    = l_msh.m_intf->get_coords( &l_vertices[l_vid], 1,
-                                          l_ucvmPts[l_nid].coord );
+                                             l_ucvmPts[l_nid].coord );
       assert( l_rval == moab::MB_SUCCESS );
 
       //! Store x,y,z coordinates
@@ -148,11 +154,14 @@ int main( int i_argc, char **i_argv ) {
 
       //! cmb: combination crustal+gtl
       l_propPtr = &(l_ucvmData[l_nid].cmb);
-      l_vs      = l_propPtr->vs;
+      real l_vp  = l_propPtr->vp;
+      real l_vs  = l_propPtr->vs;
+      real l_rho = l_propPtr->rho;
 
-      //! Cutoff velocity (to avoid very low vs to avoid large elmts per wavelength)
-      if( l_vs < l_posCfg.m_minVs )
-        l_vs  = l_posCfg.m_minVs;
+      edge_v::vel::Rules::apply( l_posCfg.m_velRule,
+                                 l_vp,
+                                 l_vs,
+                                 l_rho );
 
       //! Rescale elmt-size according to no. of elmts required per wavelength
       if( l_posCfg.m_elmtsPerWave > 1.0 )

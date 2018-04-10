@@ -256,8 +256,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
     EDGE_LOG_INFO << "  writing internal boundary #0";
     l_rupWriter.write( 0,
                        l_enLayouts[l_rupLayoutFa].nEnts,
-                       4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                       4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                       5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                       5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
                        l_internal.m_globalShared5[0].sfQtNaPtr,
                        (real_base*) l_internal.m_globalShared5[0].sf );
   }
@@ -309,8 +309,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
       l_rupWriter.write( 0,
                          l_enLayouts[l_rupLayoutFa].nEnts,
                          2*N_CRUNS + 3 * (N_DIM-1) * N_CRUNS,
-                         4*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                         l_internal.m_globalShared5[0].sfQtNaPtr + (N_DIM+1)*N_CRUNS,
+                         5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
+                         l_internal.m_globalShared5[0].sfQtNaPtr + (N_DIM+2)*N_CRUNS,
                          (real_base*) l_internal.m_globalShared5[0].sf[0][0].muf );
       l_stepBnd++;
     }

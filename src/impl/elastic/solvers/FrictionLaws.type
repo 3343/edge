@@ -93,6 +93,8 @@ template< typename       TL_T_REAL,
 struct edge::elastic::solvers::t_LinSlipWeakSubFace {
   //! initial normal stress
   TL_T_REAL sn0[TL_N_CRS];
+  //! cohesion
+  TL_T_REAL co0[TL_N_CRS];
   //! initial shear stress
   TL_T_REAL ss0[TL_N_DIS-1][TL_N_CRS];
   //! initial, absolute shear stress
@@ -141,8 +143,8 @@ struct edge::elastic::solvers::t_LinSlipWeak {
                         TL_N_CRS > (*sf)[TL_N_SFS];
 
   //! sub-face quantity names (256 chars maximum length)
-  char         sfQtNa[4*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS][256];
-  char const * sfQtNaPtr[4*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS];
+  char         sfQtNa[5*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS][256];
+  char const * sfQtNaPtr[5*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS];
 };
 
 #endif
