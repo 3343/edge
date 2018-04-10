@@ -197,6 +197,7 @@ class edge::elastic::solvers::InternalBoundary {
       TL_T_REAL l_msTmp[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
         for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             l_msTmp[0][l_qt][l_sf][l_cr] = 0;
             l_msTmp[1][l_qt][l_sf][l_cr] = 0;
@@ -228,6 +229,7 @@ class edge::elastic::solvers::InternalBoundary {
         // copy left and right elements' DOFs at sub-face (SoA -> AoS), compute jump
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           // compute the jump in quantities
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             l_qVal[0][l_qt][l_cr] = l_dofs[0][l_qt][l_sf][l_cr];
             l_qVal[1][l_qt][l_cr] = l_dofs[1][l_qt][l_sf][l_cr];
@@ -257,6 +259,7 @@ class edge::elastic::solvers::InternalBoundary {
 
         // scale and save middle states (AoS -> SoA)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+#pragma omp simd 
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // left-going fluxes are subtracted
             l_msTmp[0][l_qt][l_sf][l_cr] = -l_ms[0][l_qt][l_cr] * i_dt;
