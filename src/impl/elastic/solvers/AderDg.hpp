@@ -466,6 +466,7 @@ class edge::elastic::solvers::AderDg {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               l_dofsSc[0][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sfRe][l_cr];
               l_dofsSc[1][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf  ][l_cr];
@@ -498,13 +499,14 @@ class edge::elastic::solvers::AderDg {
                l_rup,
                i_dt,
               &l_faData );
-
+ 
         // store net-updates
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             // sub-cells are ordered based on the left element; reorder for right element
             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
 
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
                (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
@@ -514,6 +516,7 @@ class edge::elastic::solvers::AderDg {
 
         // update admissibility
         for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // enforce sub-cell solver for DR
             io_admC[ l_li[0] ][l_cr] = false;
@@ -533,6 +536,7 @@ class edge::elastic::solvers::AderDg {
             else {
               // copy over admissibility and lock
               for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+#pragma omp simd
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   io_admC[ l_liDu ][l_cr] = false;
                   io_lock[ l_liDu ][l_cr] = true;
@@ -547,6 +551,7 @@ class edge::elastic::solvers::AderDg {
                   // sub-cells are ordered based on the left element; reorder for right element
                   unsigned short l_sfRe = (l_sd == 0) ? l_sf : i_scDgAd[l_vIdFaEl][l_sf];
 
+#pragma omp simd
                   for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                     (*io_tDofs[ l_lpDu ][ l_fIdBfEl[l_sd] ])[l_qt][l_sf][l_cr] = l_netUps[l_sd][l_qt][l_sfRe][l_cr];
                 }
@@ -565,6 +570,7 @@ class edge::elastic::solvers::AderDg {
 
             for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
               for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
+#pragma omp simd
                 for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
                   l_buff[             0+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].tr[l_di][l_ru];
                   l_buff[  (TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].sr[l_di][l_ru];
@@ -753,6 +759,7 @@ class edge::elastic::solvers::AderDg {
                                                         l_adm );
 
                 // update admissibility
+#pragma omp simd
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
                   if( l_adm[l_cr] == false )
