@@ -82,6 +82,7 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
      * @param i_mud dynamic friction coefficients.
      * @param i_dcInv inverse critical slip distance (1/Dc).
      * @param i_sn0 initial normal stress.
+     * @param i_co0 cohesion.
      * @param i_ss0 initial shear stress.
      * @param i_ms middle state.
      * @param io_dd slip, will be updated with slip contribution of this step.
@@ -103,6 +104,7 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                                     TL_T_REAL const i_mud[TL_N_CRUNS],
                                     TL_T_REAL const i_dcInv[TL_N_CRUNS],
                                     TL_T_REAL const i_sn0[TL_N_CRUNS],
+                                    TL_T_REAL const i_co0[TL_N_CRUNS],
                                     TL_T_REAL const i_ss0[TL_N_CRUNS],
                                     TL_T_REAL const i_ms[5][TL_N_CRUNS],
                                     TL_T_REAL       io_dd[TL_N_CRUNS],
@@ -124,7 +126,8 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
       // determine if the fault fails
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
-        o_st[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru]  = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru] += i_co0[l_ru];
 
         // strength is only relevant for negative normal stress (compression) + switch sign
         o_st[l_ru] = (o_st[l_ru] < 0) ? -o_st[l_ru] : 0;
@@ -205,6 +208,7 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                    i_lswGlobal.mud,
                    i_lswGlobal.dcInv,
                    io_lswSf.sn0,
+                   io_lswSf.co0,
                    io_lswSf.ss0[0],
                    i_ms,
                    io_lswSf.dd[0],
@@ -289,6 +293,7 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
      * @param i_mud dynamic friction coefficients.
      * @param i_dcInv inverse critical slip distance (1/Dc).
      * @param i_sn0 initial normal stress.
+     * @param i_co0 cohesion.
      * @param i_ss0 initial shear stresses. [0]: along-strike, [1]: along-dip.
      * @param i_ss0A absolute initial shear stress (sqrt( i_ss0[0]*i_ss0[0] + i_ss0[1]*i_ss0[1]).
      * @param i_ms middle state.
@@ -309,6 +314,7 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                                     TL_T_REAL const i_mud[TL_N_CRUNS],
                                     TL_T_REAL const i_dcInv[TL_N_CRUNS],
                                     TL_T_REAL const i_sn0[TL_N_CRUNS],
+                                    TL_T_REAL const i_co0[TL_N_CRUNS],
                                     TL_T_REAL const i_ss0[2][TL_N_CRUNS],
                                     TL_T_REAL const i_ss0A[TL_N_CRUNS],
                                     TL_T_REAL const i_ms[9][TL_N_CRUNS],
@@ -334,7 +340,8 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
       // determine if the fault fails
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
-        o_st[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru]  = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru] += i_co0[l_ru];
 
         // strength is only relevant for negative normal stress (compression) + switch sign
         o_st[l_ru] = (o_st[l_ru] < 0) ? -o_st[l_ru] : 0;
@@ -434,6 +441,7 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                    i_lswGlobal.mud,
                    i_lswGlobal.dcInv,
                    io_lswSf.sn0,
+                   io_lswSf.co0,
                    io_lswSf.ss0,
                    io_lswSf.ss0A,
                    i_ms,
