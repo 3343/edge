@@ -117,7 +117,6 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                                     bool            o_per[TL_N_CRUNS] ) {
       // init minus and plus "perturbed" middle states
       for( unsigned short l_qt = 0; l_qt < 5; l_qt++ ) {
-#pragma omp simd
         for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
           o_msM[l_qt][l_ru] = i_ms[l_qt][l_ru];
           o_msP[l_qt][l_ru] = i_ms[l_qt][l_ru];
@@ -125,7 +124,6 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
       }
 
       // determine if the fault fails
-#pragma omp simd
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
         o_st[l_ru]  = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
@@ -142,7 +140,6 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
       }
 
       // perturb middle states and update friction coefficient
-#pragma omp simd
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // compute traction
         o_tr[l_ru] = o_st[l_ru] - std::abs(i_ss0[l_ru]);
@@ -331,7 +328,6 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                                     bool            o_per[TL_N_CRUNS] ) {
       // init minus and plus "perturbed" middle states
       for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
-#pragma omp simd
         for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
           o_msM[l_qt][l_ru] = i_ms[l_qt][l_ru];
           o_msP[l_qt][l_ru] = i_ms[l_qt][l_ru];
@@ -342,7 +338,6 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
       TL_T_REAL l_shear[TL_N_CRUNS];
 
       // determine if the fault fails
-#pragma omp simd
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
         o_st[l_ru]  = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
@@ -362,7 +357,6 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
       }
 
       // perturb middle states and update friction coefficient
-#pragma omp simd
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // compute traction
         TL_T_REAL l_scale = o_st[l_ru] / l_shear[l_ru];
