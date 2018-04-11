@@ -120,9 +120,8 @@ class edge::data::MmXsmmFused< float > {
     }
 
     /**
-     * Adds either a regular dense GEMM (crs=1) or a SoA GEMM to the kernel pool for transporting information between DG and FV.
+     * Adds a SoA GEMM to the limiter kernel pool. Matrices A and C are SoA matrices, B is a dense matrix
      *
-     * @param i_crs number of concurrently running simulations
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
      * @param i_k number of columns/rows in column-major A/B.
@@ -133,22 +132,22 @@ class edge::data::MmXsmmFused< float > {
      * @param i_beta beta parameter (need to be 0.0/1.0 for now).
      * @param i_prefetch prefetch strategy.
      **/
-    void addSc( unsigned int                      i_m,
-                unsigned int                      i_n,
-                unsigned int                      i_k,
-                unsigned int                      i_ldA,
-                unsigned int                      i_ldB,
-                unsigned int                      i_ldC,
-                float                             i_alpha,
-                float                             i_beta /*,
-                libxsmm_gemm_prefetch_type        i_prefetch*/ ) {
+    void addScAC( unsigned int                      i_m,
+                  unsigned int                      i_n,
+                  unsigned int                      i_k,
+                  unsigned int                      i_ldA,
+                  unsigned int                      i_ldB,
+                  unsigned int                      i_ldC,
+                  float                             i_alpha,
+                  float                             i_beta /*,
+                  libxsmm_gemm_prefetch_type        i_prefetch*/ ) {
 #if defined(__AVX512F__)
       EDGE_CHECK( PP_N_CRUNS == 16 );
 #elif defined(__AVX2__)
       EDGE_CHECK( PP_N_CRUNS == 8 );
 #endif
 
-      EDGE_VLOG(1) << "  adding single precision fused XSMM-kernel #" << m_kernels.size() << " SC Limiter"
+      EDGE_VLOG(1) << "  adding single precision XSMM-kernel #" << m_kernels.size() << " dense fusedAC"
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                    << " alpha=" << i_alpha << " beta=" << i_beta;
@@ -169,6 +168,69 @@ class edge::data::MmXsmmFused< float > {
       // check that we generated a kernel
       EDGE_CHECK( m_kernelsSc.back() != 0 );
     }
+
+    /**
+     * Adds a SoA GEMM to the limiter kernel pool. Matrices B and C are SoA matrices, A is a dense matrix
+     *
+     * @param i_m number of rows in column-major A and C.
+     * @param i_n number of columns in column-major B and C.
+     * @param i_k number of columns/rows in column-major A/B.
+     * @param i_ldA leading dimension of column-major A.
+     * @param i_ldB leading dimension of column-major B.
+     * @param i_ldC leading dimension of column-major C.
+     * @param i_alpha alpha parameter (needs to be 1.0 for now).
+     * @param i_beta beta parameter (need to be 0.0/1.0 for now).
+     * @param i_prefetch prefetch strategy.
+     **/
+    void addScBC( unsigned int                      i_m,
+                  unsigned int                      i_n,
+                  unsigned int                      i_k,
+                  unsigned int                      i_ldA,
+                  unsigned int                      i_ldB,
+                  unsigned int                      i_ldC,
+                  float                             i_alpha,
+                  float                             i_beta /*,
+                  libxsmm_gemm_prefetch_type        i_prefetch*/ ) {
+#if defined(__AVX512F__)
+      EDGE_CHECK( PP_N_CRUNS == 16 );
+#elif defined(__AVX2__)
+      EDGE_CHECK( PP_N_CRUNS == 8 );
+#endif
+
+      EDGE_VLOG(1) << "  adding single precision XSMM-kernel #" << m_kernels.size() << " dense fusedBC"
+                   << " M=" << i_m << " N=" << i_n << " K=" << i_k
+                   << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
+                   << " alpha=" << i_alpha << " beta=" << i_beta;
+
+      // setting up fake dense CSR structure
+      float l_vals[i_k*i_k];
+      unsigned int l_rows[i_k+1];
+      unsigned int l_cols[i_k*i_k];
+      for ( unsigned int l_n = 0; l_n < i_k*i_k; ++l_n ) {
+        l_vals[l_n] = static_cast<float>( l_n );
+        l_cols[l_n] = l_n%i_k;
+      }
+      for ( unsigned int l_n = 0; l_n < i_k+1; ++l_n ) {
+        l_rows[l_n] = l_n*i_k;
+      }
+ 
+      // add description
+      libxsmm_descriptor_blob l_xgemm_blob;
+      const libxsmm_gemm_descriptor* l_desc = 0;
+      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+      const libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
+        i_m, i_n, i_k, 0, i_ldB, i_ldC, i_alpha, i_beta, l_flags, l_prefetch);
+ 
+      m_descsSc.push_back( l_desc );
+ 
+      // generate and store function for this kernels
+      m_kernelsSc.push_back( libxsmm_create_xcsr_soa( m_descsSc.back(), l_rows, l_cols, l_vals ).smm );
+
+      // check that we generated a kernel
+      EDGE_CHECK( m_kernelsSc.back() != 0 );
+    }
+
 };
 
 /**
@@ -248,7 +310,7 @@ class edge::data::MmXsmmFused< double > {
     }
 
     /**
-     * Adds either a regular dense GEMM (crs=1) or a SoA GEMM to the kernel pool for transporting information between DG and FV.
+     * Adds a SoA GEMM to the limiter kernel pool. Matrices A and C are SoA matrices, B is a dense matrix
      *
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
@@ -260,22 +322,22 @@ class edge::data::MmXsmmFused< double > {
      * @param i_beta beta parameter (need to be 0.0/1.0 for now).
      * @param i_prefetch prefetch strategy.
      **/
-    void addSc( unsigned int                      i_m,
-                unsigned int                      i_n,
-                unsigned int                      i_k,
-                unsigned int                      i_ldA,
-                unsigned int                      i_ldB,
-                unsigned int                      i_ldC,
-                double                            i_alpha,
-                double                            i_beta /*,
-                libxsmm_gemm_prefetch_type        i_prefetch*/ ) {
+    void addScBc( unsigned int                      i_m,
+                  unsigned int                      i_n,
+                  unsigned int                      i_k,
+                  unsigned int                      i_ldA,
+                  unsigned int                      i_ldB,
+                  unsigned int                      i_ldC,
+                  double                            i_alpha,
+                  double                            i_beta /*,
+                  libxsmm_gemm_prefetch_type        i_prefetch*/ ) {
 #if defined(__AVX512F__)
       EDGE_CHECK( PP_N_CRUNS == 8 );
 #elif defined(__AVX2__)
       EDGE_CHECK( PP_N_CRUNS == 4 );
 #endif
 
-      EDGE_VLOG(1) << "  adding double precision fused XSMM-kernel #" << m_kernels.size() << " SC Limiter"
+      EDGE_VLOG(1) << "  adding double precision XSMM-kernel #" << m_kernels.size() << " dense fusedAC"
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                    << " alpha=" << i_alpha << " beta=" << i_beta;
@@ -296,6 +358,70 @@ class edge::data::MmXsmmFused< double > {
       // check that we generated a kernel
       EDGE_CHECK( m_kernelsSc.back() != 0 );
     }
+
+    /**
+     * Adds a SoA GEMM to the limiter kernel pool. Matrices B and C are SoA matrices, A is a dense matrix
+     *
+     * @param i_m number of rows in column-major A and C.
+     * @param i_n number of columns in column-major B and C.
+     * @param i_k number of columns/rows in column-major A/B.
+     * @param i_ldA leading dimension of column-major A.
+     * @param i_ldB leading dimension of column-major B.
+     * @param i_ldC leading dimension of column-major C.
+     * @param i_alpha alpha parameter (needs to be 1.0 for now).
+     * @param i_beta beta parameter (need to be 0.0/1.0 for now).
+     * @param i_prefetch prefetch strategy.
+     **/
+    void addScBC( unsigned int                      i_m,
+                  unsigned int                      i_n,
+                  unsigned int                      i_k,
+                  unsigned int                      i_ldA,
+                  unsigned int                      i_ldB,
+                  unsigned int                      i_ldC,
+                  double                            i_alpha,
+                  double                            i_beta /*,
+                  libxsmm_gemm_prefetch_type        i_prefetch*/ ) {
+#if defined(__AVX512F__)
+      EDGE_CHECK( PP_N_CRUNS == 8 );
+#elif defined(__AVX2__)
+      EDGE_CHECK( PP_N_CRUNS == 4 );
+#endif
+
+      EDGE_VLOG(1) << "  adding double precision XSMM-kernel #" << m_kernels.size() << " dense fusedBC"
+                   << " M=" << i_m << " N=" << i_n << " K=" << i_k
+                   << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
+                   << " alpha=" << i_alpha << " beta=" << i_beta;
+
+      // setting up fake dense CSR structure
+      double l_vals[i_k*i_k];
+      unsigned int l_rows[i_k+1];
+      unsigned int l_cols[i_k*i_k];
+      for ( unsigned int l_n = 0; l_n < i_k*i_k; ++l_n ) {
+        l_vals[l_n] = static_cast<double>( l_n );
+        l_cols[l_n] = l_n%i_k;
+      }
+      for ( unsigned int l_n = 0; l_n < i_k+1; ++l_n ) {
+        l_rows[l_n] = l_n*i_k;
+      }
+ 
+      // add description
+      libxsmm_descriptor_blob l_xgemm_blob;
+      const libxsmm_gemm_descriptor* l_desc = 0;
+      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+      const libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
+        i_m, i_n, i_k, 0, i_ldB, i_ldC, i_alpha, i_beta, l_flags, l_prefetch);
+ 
+      m_descsSc.push_back( l_desc );
+ 
+      // generate and store function for this kernels
+      m_kernelsSc.push_back( libxsmm_create_xcsr_soa( m_descsSc.back(), l_rows, l_cols, l_vals ).dmm );
+
+      // check that we generated a kernel
+      EDGE_CHECK( m_kernelsSc.back() != 0 );
+    }
+
+
 };
 #endif
  

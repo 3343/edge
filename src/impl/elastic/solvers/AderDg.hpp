@@ -397,6 +397,7 @@ class edge::elastic::solvers::AderDg {
      * @param io_admC admissiblity of the candidate solution, will be set to false if any of the DG-faces are rupture faces and the fault failed.
      * @param io_lock lock for the sub-cell solution. Will be set to true for all active rupture elements.
      * @param io_recvsSf receivers at sub-faces.
+     * @param i_mm libxsmm kernels
      *
      * @paramt TL_T_LID integral type of local entity ids.
      * @paramt TL_T_REAL type used for floating point arithmetic.
@@ -434,7 +435,11 @@ class edge::elastic::solvers::AderDg {
                          TL_T_REAL                                  (* (*io_tDofs) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                          bool                                         (* io_admC)[TL_N_CRS],
                          bool                                         (* io_lock)[TL_N_CRS],
-                         TL_T_RECV_SF                                  & io_recvsSf ) {
+                         TL_T_RECV_SF                                  & io_recvsSf
+#if defined(PP_T_KERNELS_XSMM)
+                         , data::MmXsmmFused< TL_T_REAL > const & i_mm
+#endif                   
+                         ) {
       // store sparse receiver id
       TL_T_LID l_faRe = i_firstSpRe;
 
@@ -497,6 +502,9 @@ class edge::elastic::solvers::AderDg {
                l_netUps[0],
                l_netUps[1],
                l_rup,
+#if defined(PP_T_KERNELS_XSMM)
+               i_mm,
+#endif
                i_dt,
               &l_faData );
  
