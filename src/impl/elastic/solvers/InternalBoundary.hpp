@@ -191,8 +191,12 @@ class edge::elastic::solvers::InternalBoundary {
                             TL_T_REAL             o_netUpsL[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                             TL_T_REAL             o_netUpsR[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                             bool                  o_per[TL_N_SFS][TL_N_CRS],
+#if defined(PP_T_KERNELS_XSMM)
+                            data::MmXsmmFused< TL_T_REAL > const & i_mm,
+#endif                          
                             TL_T_REAL             i_dt = 0,
-                            TL_T_FA_DATA         *io_faData = nullptr ) {
+                            TL_T_FA_DATA         *io_faData = nullptr
+) {
       // temporary storage for the middle states
       TL_T_REAL l_msTmp[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
@@ -208,6 +212,10 @@ class edge::elastic::solvers::InternalBoundary {
       // rotate the DOFs from physical coordinates to face-aligned coords
       // remark: the back-rotation to physical coordinates is part of the the flux solver
       TL_T_REAL l_dofs[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+#if defined(PP_T_KERNELS_XSMM)
+      i_mm.m_kernelsSc[4]( i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
+      i_mm.m_kernelsSc[4]( i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
+#else
       linalg::Matrix::matMulFusedBC( TL_N_CRS,
                                      TL_N_QTS, TL_N_SFS, TL_N_QTS,
                                      TL_N_QTS, TL_N_SFS, TL_N_SFS,
@@ -218,6 +226,7 @@ class edge::elastic::solvers::InternalBoundary {
                                      TL_N_QTS, TL_N_SFS, TL_N_SFS,
                                      static_cast<TL_T_REAL>(0.0),
                                      i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
+#endif
 
       // iterate over sub-faces
       for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
@@ -270,6 +279,10 @@ class edge::elastic::solvers::InternalBoundary {
       }
 
       // compute fluxes and rotate DOFs back to physical coordinate system
+#if defined(PP_T_KERNELS_XSMM)
+      i_mm.m_kernelsSc[4]( i_solMsFluxL[0], l_msTmp[0][0][0], o_netUpsL[0][0] );
+      i_mm.m_kernelsSc[4]( i_solMsFluxR[0], l_msTmp[1][0][0], o_netUpsR[0][0] );
+#else
       linalg::Matrix::matMulFusedBC( TL_N_CRS,
                                      TL_N_QTS, TL_N_SFS, TL_N_QTS,
                                      TL_N_QTS, TL_N_SFS, TL_N_SFS,
@@ -285,6 +298,7 @@ class edge::elastic::solvers::InternalBoundary {
                                      i_solMsFluxR[0],
                                      l_msTmp[1][0][0],
                                      o_netUpsR[0][0] );
+#endif
     }
 };
 
