@@ -210,8 +210,13 @@ class edge::elastic::solvers::InternalBoundary {
       // rotate the DOFs from physical coordinates to face-aligned coords
       // remark: the back-rotation to physical coordinates is part of the the flux solver
       TL_T_REAL l_dofs[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
+#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
+      i_mm.m_kernelsSc[4]( i_dofsL[0][0], i_tm1[0], l_dofs[0][0][0] );
+      i_mm.m_kernelsSc[4]( i_dofsR[0][0], i_tm1[0], l_dofs[1][0][0] );
+#else
       i_mm.m_kernelsSc[4]( i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
       i_mm.m_kernelsSc[4]( i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
+#endif
 
       // iterate over sub-faces
       for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
@@ -262,8 +267,13 @@ class edge::elastic::solvers::InternalBoundary {
       }
 
       // compute fluxes and rotate DOFs back to physical coordinate system
+#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
+      i_mm.m_kernelsSc[4]( l_msTmp[0][0][0], i_solMsFluxL[0], o_netUpsL[0][0] );
+      i_mm.m_kernelsSc[4]( l_msTmp[1][0][0], i_solMsFluxR[0], o_netUpsR[0][0] );
+#else
       i_mm.m_kernelsSc[4]( i_solMsFluxL[0], l_msTmp[0][0][0], o_netUpsL[0][0] );
       i_mm.m_kernelsSc[4]( i_solMsFluxR[0], l_msTmp[1][0][0], o_netUpsR[0][0] );
+#endif
     }
 };
 

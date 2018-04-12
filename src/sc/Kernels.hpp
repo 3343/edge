@@ -89,7 +89,11 @@ class edge::sc::Kernels {
                          TL_T_REAL const                       i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                          TL_T_REAL const                       i_mat[TL_N_MDS][TL_N_SCS],
                          TL_T_REAL                             o_scDofs[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
+#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
+      i_mm.m_kernelsSc[0]( i_mat[0], i_dofsDg[0][0], o_scDofs[0][0] );
+#else
       i_mm.m_kernelsSc[0]( i_dofsDg[0][0], i_mat[0], o_scDofs[0][0] );
+#endif
     }
 
     /**
@@ -107,7 +111,11 @@ class edge::sc::Kernels {
                            TL_T_REAL const                       i_dofsDg[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                            TL_T_REAL const                       i_mat[TL_N_MDS][TL_N_SFS],
                            TL_T_REAL                             o_scDofs[TL_N_QTS][TL_N_SFS][TL_N_CRS] ) {
+#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
+      i_mm.m_kernelsSc[1]( i_mat[0], i_dofsDg[0][0], o_scDofs[0][0] );
+#else
       i_mm.m_kernelsSc[1]( i_dofsDg[0][0], i_mat[0], o_scDofs[0][0] );
+#endif
     }
 
     /**
@@ -202,7 +210,11 @@ class edge::sc::Kernels {
                         TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                         TL_T_REAL       o_dgDofs[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution to DG solution
+#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
+      i_mm.m_kernelsSc[2]( i_mat[0], i_scDofs[0][0], o_dgDofs[0][0] );
+#else
       i_mm.m_kernelsSc[2]( i_scDofs[0][0], i_mat[0], o_dgDofs[0][0] );
+#endif
     }
 
     /**
@@ -270,7 +282,11 @@ class edge::sc::Kernels {
                        TL_T_REAL const i_mat[TL_N_SCS][TL_N_MDS],
                        TL_T_REAL       o_int[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // project element's sub-cell solution at faces to DG solution
+#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
+      i_mm.m_kernelsSc[3]( i_mat[0], i_scFluxes[0][0], o_int[0][0] );
+#else
       i_mm.m_kernelsSc[3]( i_scFluxes[0][0], i_mat[0], o_int[0][0] );
+#endif
     }
 
     /**
