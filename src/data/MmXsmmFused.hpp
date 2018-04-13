@@ -322,7 +322,7 @@ class edge::data::MmXsmmFused< double > {
      * @param i_beta beta parameter (need to be 0.0/1.0 for now).
      * @param i_prefetch prefetch strategy.
      **/
-    void addScBc( unsigned int                      i_m,
+    void addScAC( unsigned int                      i_m,
                   unsigned int                      i_n,
                   unsigned int                      i_k,
                   unsigned int                      i_ldA,

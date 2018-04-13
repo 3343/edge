@@ -231,15 +231,15 @@ class edge::data::MmXsmmSingle< double > {
      * @param i_prefetch prefetching strategy.
      *
      **/
-    void add( unsigned int               i_m,
-              unsigned int               i_n,
-              unsigned int               i_k,
-              unsigned int               i_ldA,
-              unsigned int               i_ldB,
-              unsigned int               i_ldC,
-              double                     i_alpha,
-              double                     i_beta/*,
-              libxsmm_gemm_prefetch_type i_prefetch*/ ) {
+    void addSc( unsigned int               i_m,
+                unsigned int               i_n,
+                unsigned int               i_k,
+                unsigned int               i_ldA,
+                unsigned int               i_ldB,
+                unsigned int               i_ldC,
+                double                     i_alpha,
+                double                     i_beta/*,
+                libxsmm_gemm_prefetch_type i_prefetch*/ ) {
       EDGE_VLOG(1) << "  adding, double precision XSMM-kernel gemm #" << m_kernels.size()
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
