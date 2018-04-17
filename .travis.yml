@@ -307,9 +307,9 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER} && export OMPI_CC=${CC_COMPILER}; fi;
 
   # install cppcheck
-  - if [ "$SYSTEM_SETUP" = "1" ]; then wget https://github.com/danmar/cppcheck/archive/master.zip; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then unzip master.zip > /dev/null; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck-master; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget -O cppcheck.tar.gz https://github.com/danmar/cppcheck/archive/1.83.tar.gz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir cppcheck; tar -xzf cppcheck.tar.gz -C cppcheck --strip-components=1 > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
@@ -708,3 +708,4 @@ script:
 after_success:
   - ${GCOV} -v
   - bash <(curl -s https://codecov.io/bash) -x ${GCOV} -a "-a -l -p" -g */submodules/*
+  
