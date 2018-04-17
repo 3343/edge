@@ -2,9 +2,11 @@
  * @file This file is part of EDGE.
  *
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
  * Copyright (c) 2017-2018, Regents of the University of California
+ * Copyright (c) 2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -145,6 +147,7 @@ class edge::data::MmVanilla {
   public:
     //! vanilla matrix kernels
     std::vector< Vanilla > m_kernels;
+    std::vector< Vanilla > m_kernelsSc;
 
     /**
      * Adds a vanilla kernels (either fused or non-fused).
@@ -186,5 +189,44 @@ class edge::data::MmVanilla {
                                     i_nCfr ) );
     }
 
+    /**
+     * Adds a vanilla kernels (either fused or non-fused), Sc
+     *
+     * @param i_m number of rows in column-major A and C.
+     * @param i_n number of columns in column-major B and C.
+     * @param i_k number of columns/rows in column-major A/B.
+     * @param i_ldA leading dimension of column-major A.
+     * @param i_ldB leading dimension of column-major B.
+     * @param i_ldC leading dimension of column-major C.
+     * @param i_alpha parameter alpha, ignored.
+     * @param i_beta parameter beta, needs to be TL_T_REAL(0) or TL_T_REAL(1) for now.
+     **/
+    void add( unsigned int   i_m,
+              unsigned int   i_n,
+              unsigned int   i_k,
+              unsigned int   i_ldA,
+              unsigned int   i_ldB,
+              unsigned int   i_ldC,
+              TL_T_REAL      i_alpha,
+              TL_T_REAL      i_beta,
+              bool           i_fusedAC,
+              bool           i_fusedBC,
+              unsigned short i_nCfr ) {
+      // verbose output
+      EDGE_VLOG(1) << "  adding vanilla-kernel #" << m_kernels.size() << " (dense), Sc"
+                   << " M=" << i_m << " N=" << i_n << " K=" << i_k
+                   << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
+                   << " alpha=" << i_alpha << " beta=" << i_beta
+                   << " fusedAC=" << i_fusedAC << " fusedBC=" << i_fusedBC
+                   << " cfr=" << i_nCfr;
+
+      // add kernel
+      m_kernelsSc.push_back( Vanilla( i_m, i_n, i_k,
+                                    i_ldA, i_ldB, i_ldC,
+                                    i_beta,
+                                    i_fusedAC,
+                                    i_fusedBC,
+                                    i_nCfr ) );
+    }
 };
 #endif

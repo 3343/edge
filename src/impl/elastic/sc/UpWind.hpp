@@ -581,6 +581,9 @@ class edge::elastic::sc::UpWind {
       for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
         // init solution in the local array
         TL_T_REAL l_dofsScOut[TL_N_QTS][TL_N_CRS];
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ )
 #pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
@@ -588,6 +591,9 @@ class edge::elastic::sc::UpWind {
 
         // scale DOFs of the local sub-cell
         TL_T_REAL l_dofsScL[TL_N_QTS][TL_N_CRS];
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
 #pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -608,12 +614,12 @@ class edge::elastic::sc::UpWind {
             // choose solver id
             unsigned short l_upId = upId( l_ty );
 
-#ifdef __INTEL_COMPILER
-#pragma unroll(TL_N_QTS)
-#endif
             // iterate over coupled quantities
             for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
               // iterate over target quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
               for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
                 // iterate over fused runs
 #pragma omp simd
@@ -625,9 +631,6 @@ class edge::elastic::sc::UpWind {
               }
             }
 
-#ifdef __INTEL_COMPILER
-#pragma unroll(TL_N_QTS)
-#endif
             // iterate over coupled quantities
             for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
               // scale DOFs of the adjacent sub-cell
@@ -637,6 +640,9 @@ class edge::elastic::sc::UpWind {
                 l_dofsScAd[l_cr] = i_dofsSc[l_q2][l_scAd][l_cr] * i_dt;
               }
               // iterate over target quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
               for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
                 // iterate over fused runs
 #pragma omp simd
@@ -650,6 +656,9 @@ class edge::elastic::sc::UpWind {
           }
           // net-updates are provided for the DG sub-face
           else {
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
             for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ )
 #pragma omp simd
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
@@ -658,6 +667,9 @@ class edge::elastic::sc::UpWind {
         }
 
         // write solution to the output array
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
 #pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -696,6 +708,9 @@ class edge::elastic::sc::UpWind {
         // init net-updates in the local array
         TL_T_REAL l_netUpsOut[TL_N_QTS][TL_N_CRS];
         // iterate over target quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
 #pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -707,6 +722,9 @@ class edge::elastic::sc::UpWind {
         // scale DOFs of the limited plus (left) adjacent sub-cell
         TL_T_REAL l_dofsSc0[TL_N_QTS][TL_N_CRS];
         // iterate over coupled quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
           // iterate over fused runs
 #pragma omp simd
@@ -715,11 +733,11 @@ class edge::elastic::sc::UpWind {
           }
         }
         // iterate over coupled quantities
-#ifdef __INTEL_COMPILER
-        #pragma unroll( TL_N_QTS )
-#endif
         for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
           // iterate over target quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
           for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
             // iterate over fused runs
 #pragma omp simd
@@ -734,6 +752,9 @@ class edge::elastic::sc::UpWind {
         // scale DOFs of the right adjacent sub-cell
         TL_T_REAL l_dofsSc1[TL_N_QTS][TL_N_CRS];
         // iterate over coupled quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q2 = 0; l_q2 < TL_N_QTS; l_q2++ ) {
           // iterate over fused runs
 #pragma omp simd
@@ -742,11 +763,11 @@ class edge::elastic::sc::UpWind {
           }
         }
         // iterate over coupled quantities
+        for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
+          // iterate over target quantities
 #ifdef __INTEL_COMPILER
 #pragma unroll( TL_N_QTS )
 #endif
-        for( unsigned short l_q2  = 0; l_q2 < TL_N_QTS; l_q2++ ) {
-          // iterate over target quantities
           for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
             // iterate over fused runs
 #pragma omp simd
@@ -760,6 +781,9 @@ class edge::elastic::sc::UpWind {
 
         // write net-updates to the output array
         // iterate over target quantities
+#ifdef __INTEL_COMPILER
+#pragma unroll( TL_N_QTS )
+#endif
         for( unsigned short l_q1 = 0; l_q1 < TL_N_QTS; l_q1++ ) {
           // iterate over fused runs
 #pragma omp simd
