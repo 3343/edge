@@ -179,7 +179,9 @@ else if ( i_step == 2 ) {
               m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[0] ],
               m_internal.m_globalShared2[0].adm[ l_admId[1] ],
               m_internal.m_globalShared2[0].lock,
-              io_recvsSf );
+              io_recvsSf,
+              m_internal.m_mm
+);
 #endif
 
 #endif

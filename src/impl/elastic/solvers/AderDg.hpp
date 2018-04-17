@@ -397,6 +397,7 @@ class edge::elastic::solvers::AderDg {
      * @param io_admC admissiblity of the candidate solution, will be set to false if any of the DG-faces are rupture faces and the fault failed.
      * @param io_lock lock for the sub-cell solution. Will be set to true for all active rupture elements.
      * @param io_recvsSf receivers at sub-faces.
+     * @param i_mm libxsmm kernels
      *
      * @paramt TL_T_LID integral type of local entity ids.
      * @paramt TL_T_REAL type used for floating point arithmetic.
@@ -412,7 +413,8 @@ class edge::elastic::solvers::AderDg {
               typename TL_T_FRI_FA,
               typename TL_T_FRI_SF,
               typename TL_T_SP,
-              typename TL_T_RECV_SF >
+              typename TL_T_RECV_SF,
+              typename TL_T_MM >
     static void rupture( TL_T_LID                                       i_first,
                          TL_T_LID                                       i_nBf,
                          TL_T_LID                                       i_firstSpRe,
@@ -434,7 +436,9 @@ class edge::elastic::solvers::AderDg {
                          TL_T_REAL                                  (* (*io_tDofs) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
                          bool                                         (* io_admC)[TL_N_CRS],
                          bool                                         (* io_lock)[TL_N_CRS],
-                         TL_T_RECV_SF                                  & io_recvsSf ) {
+                         TL_T_RECV_SF                                  & io_recvsSf,
+                         TL_T_MM                              const    & i_mm
+                         ) {
       // store sparse receiver id
       TL_T_LID l_faRe = i_firstSpRe;
 
@@ -466,6 +470,7 @@ class edge::elastic::solvers::AderDg {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               l_dofsSc[0][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sfRe][l_cr];
               l_dofsSc[1][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf  ][l_cr];
@@ -485,7 +490,7 @@ class edge::elastic::solvers::AderDg {
           TL_N_QTS,
           TL_O_SP,
           TL_N_CRS >::template netUpdates<
-            TL_T_REAL,
+            TL_T_REAL, TL_T_MM, 
             edge::elastic::solvers::FrictionLaws< TL_N_DIS, TL_N_CRS >
           > (  i_iBnd.mss[l_bf][0],
                i_iBnd.mss[l_bf][1],
@@ -496,15 +501,17 @@ class edge::elastic::solvers::AderDg {
                l_netUps[0],
                l_netUps[1],
                l_rup,
+               i_mm,
                i_dt,
               &l_faData );
-
+ 
         // store net-updates
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
           for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
             // sub-cells are ordered based on the left element; reorder for right element
             unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
 
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
                (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
@@ -514,6 +521,7 @@ class edge::elastic::solvers::AderDg {
 
         // update admissibility
         for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+#pragma omp simd
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
             // enforce sub-cell solver for DR
             io_admC[ l_li[0] ][l_cr] = false;
@@ -533,6 +541,7 @@ class edge::elastic::solvers::AderDg {
             else {
               // copy over admissibility and lock
               for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
+#pragma omp simd
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   io_admC[ l_liDu ][l_cr] = false;
                   io_lock[ l_liDu ][l_cr] = true;
@@ -547,6 +556,7 @@ class edge::elastic::solvers::AderDg {
                   // sub-cells are ordered based on the left element; reorder for right element
                   unsigned short l_sfRe = (l_sd == 0) ? l_sf : i_scDgAd[l_vIdFaEl][l_sf];
 
+#pragma omp simd
                   for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                     (*io_tDofs[ l_lpDu ][ l_fIdBfEl[l_sd] ])[l_qt][l_sf][l_cr] = l_netUps[l_sd][l_qt][l_sfRe][l_cr];
                 }
@@ -565,6 +575,7 @@ class edge::elastic::solvers::AderDg {
 
             for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
               for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
+#pragma omp simd
                 for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
                   l_buff[             0+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].tr[l_di][l_ru];
                   l_buff[  (TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].sr[l_di][l_ru];
@@ -726,12 +737,10 @@ class edge::elastic::solvers::AderDg {
 
           // compute DG extrema
           edge::sc::Kernels< TL_T_EL,
+                             TL_T_MM,
                              TL_O_SP,
                              TL_N_QTS,
-                             TL_N_CRS >::dgExtrema(  
-#if defined(PP_T_KERNELS_XSMM)
-                                                     i_mm,
-#endif
+                             TL_N_CRS >::dgExtrema(  i_mm,
                                                      io_dofs[l_el],
                                                      i_scatter,
                                                      l_sg,
@@ -753,6 +762,7 @@ class edge::elastic::solvers::AderDg {
                                                         l_adm );
 
                 // update admissibility
+#pragma omp simd
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                   // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
                   if( l_adm[l_cr] == false )
