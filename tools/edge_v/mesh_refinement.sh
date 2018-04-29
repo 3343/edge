@@ -1,3 +1,4 @@
+#!/bin/bash
 ##
 # @file This file is part of EDGE.
 #
@@ -19,73 +20,52 @@
 #
 # @section DESCRIPTION
 # Script to generate a velocity-based mesh refinement given its geo file
-# Tested on: Ubuntu 17.10
+# Tested on: Ubuntu 18.04 LTS
 ##
 
-
-# Global variables
-declare -g iter=0
-declare -g iterations=10
-declare -g model='PLACEHOLDER'
-declare -g geoFile
-declare -g mshFile
-declare -g mshLog
-declare -g posFile
-
-# Affected files and directories
-confDir='PLACEHOLDER'
-mshDir='PLACEHOLDER'
-writePos='PLACEHOLDER'
-
-# ssh variables (use remoteMsh=1 to mesh on a remote client; by default 0)
-# IMPORTANT: use only if you have a working SSH public key with the remote client!!
-declare -g remoteMsh=0
-declare -g remoteUsr='PLACEHOLDER'
-declare -g remoteClient='PLACEHOLDER'
-declare -g remoteGmshDir='PLACEHOLDER'
-declare -g remoteMshDir='PLACEHOLDER'
-
-
-# Function to send geo file from local m/c to remote client
-function sendGeo() {
-  printf -v l_login '%s@%s' "$remoteUsr" "$remoteClient"
-
-  # Copy geo file to remote client
-  printf "\nSending $geoFile from local m/c to remote client...\n"
-  printf -v l_remoteLoc '%s:%s' "$l_login" "$remoteMshDir"
-
-  SECONDS=0
-  scp -v $geoFile $l_remoteLoc
-  duration=$SECONDS
-  printf "Time taken: $duration s\n\n"
+# Usage info
+function show_help() {
+cat << EOF
+Usage: ${0##*/} [-h] [-m MODEL -c CONFDIR -o MSHDIR] [-p MSHFILES] [-n ITERATIONS] [-r REMOTEMSH -u USR -d DOMAIN -g REMOTEGMSH -t REMOTEMSHDIR]
+Generates velocity-model (UCVM) based refined mesh iteratively.
+    -h This help message.
+    -m MODEL model name (name of geo file).
+    -c CONFDIR config directory.
+    -o MSHDIR mesh directory.
+    -p MSHFILES handling intermediate mesh files, i.e. msh, pos & logs (optional)
+      1: Generate and zip intermediate files (by default).
+      2: Generate but don't zip intermediate files.
+      3: Do not generate intermediate files (i.e. only generate refined mesh).
+    -n ITERATIONS number of iterations (optional, by default 10).
+    -r REMOTEMSH remote meshing option (optional, by default 0).
+    -u USR remote username (optional).
+    -d DOMAIN remote domain (optional).
+    -g REMOTEGMSH remote location of Gmsh executable (optional).
+    -t REMOTEMSHDIR remote mesh directory (optional).
+EOF
 }
-
 
 # Function to mesh on remote client
 function mesh() {
   declare bgmPos=''
 
-  if [ $remoteMsh -eq 1 ]
+  if [ $REMOTEMSH -eq 1 ]
   then
-    # Create remote msh dir (if doesn't exist)
-    printf -v l_login '%s@%s' "$remoteUsr" "$remoteClient"
-    ssh $l_login mkdir -p $remoteMshDir
-
     # Remote location of geo file
-    printf -v l_geoFile '%s%s.geo'           "$remoteMshDir" "$model"
+    printf -v l_geoFile '%s%s.geo'           "$REMOTEMSHDIR" "$MODEL"
 
     # Remote location of mesh file
     if [ $iter -eq 0 ]
     then
-      printf -v l_mshFile '%s%s.msh'         "$remoteMshDir" "$model"
-      printf -v l_posFile '%s%s.pos'         "$remoteMshDir" "$model"
-    elif [ $iter -eq $iterations ]
+      printf -v l_mshFile '%s%s.msh'         "$REMOTEMSHDIR" "$MODEL"
+      printf -v l_posFile '%s%s.pos'         "$REMOTEMSHDIR" "$MODEL"
+    elif [ $iter -eq $ITERATIONS ]
     then
-      printf -v l_mshFile '%s%s_refined.msh' "$remoteMshDir" "$model"
-      printf -v l_posFile '%s%s_refined.pos' "$remoteMshDir" "$model"
+      printf -v l_mshFile '%s%s_refined.msh' "$REMOTEMSHDIR" "$MODEL"
+      printf -v l_posFile '%s%s_refined.pos' "$REMOTEMSHDIR" "$MODEL"
     else
-      printf -v l_mshFile '%s%s_%d.msh'      "$remoteMshDir" "$model" "$iter"
-      printf -v l_posFile '%s%s_%d.pos'      "$remoteMshDir" "$model" "$iter"
+      printf -v l_mshFile '%s%s_%d.msh'      "$REMOTEMSHDIR" "$MODEL" "$iter"
+      printf -v l_posFile '%s%s_%d.pos'      "$REMOTEMSHDIR" "$MODEL" "$iter"
     fi
 
     # Send pos file from local to remote
@@ -102,23 +82,24 @@ function mesh() {
     fi
 
     # Remote machine mesh
-    ssh $l_login nohup $remoteGmshDir $l_geoFile $bgmPos -3 -o $l_mshFile 2>&1 | tee $mshLog
+    printf -v l_login '%s@%s' "$USR" "$DOMAIN"
+    ssh $l_login nohup $REMOTEGMSH $l_geoFile $bgmPos -3 -o $l_mshFile -optimize_threshold $1 2>&1 | tee $mshLog
 
     # Copy mesh file back to local machine
     printf "\nSending $l_mshFile from remote client to local m/c...\n"
     printf -v l_retMshFile '%s:%s' "$l_login" "$l_mshFile"
 
     SECONDS=0
-    scp -v $l_retMshFile $mshDir
+    scp -v $l_retMshFile $MSHDIR
     duration=$SECONDS
     printf "Time taken: $duration s\n\n"
   else
     # Mesh on local machine
-    if [ $iter eq 0 ]
+    if [ $iter -eq 0 ]
     then
-      gmsh $geoFile -3 -o $mshFile 2>&1 | tee $mshLog
+      gmsh $geoFile -3 -o $mshFile -optimize_threshold $1 2>&1 | tee $mshLog
     else
-      gmsh $geoFile -bgm $posFile -3 -o $mshFile 2>&1 | tee $mshLog
+      gmsh $geoFile -bgm $posFile -3 -o $mshFile -optimize_threshold $1 2>&1 | tee $mshLog
     fi
   fi
 }
@@ -128,73 +109,225 @@ function mesh() {
 ##### Entry Point #####
 #######################
 
+# Global variables
+declare -g iter=0           # Iteration counter
+declare -g ITERATIONS=10    # Number of iterations
+declare -g geoFile          # geo file
+declare -g mshFile          # msh file
+declare -g mshLog           # msh log file
+declare -g posFile          # pos file
+declare -g MSHFILES=1       # Handling intermediate files, see show_help() above for more info
+declare -g shPath=$(pwd)    # Current directory (from where this script was run)
+
+# ssh variable (use REMOTEMSH=1 to mesh on a remote client; by default 0)
+# IMPORTANT: use only if you have a working SSH public key with the remote client!!
+declare -g REMOTEMSH=0
+
+# Parse command line arguments
+OPTIND=1
+
+while getopts "hm:c:o:p:n:r:u:d:g:t:" opt; do
+  case "$opt" in
+    h)
+      show_help                         # Show help
+      exit 0
+      ;;
+    m)
+      declare -g MODEL=$OPTARG          # Model name
+      ;;
+    c)
+      CONFDIR=$OPTARG                   # Config directory (local)
+      ;;
+    o)
+      MSHDIR=$OPTARG                    # msh directory (local)
+      ;;
+    p)
+      MSHFILES=$OPTARG                  # Handling intermediate files
+      ;;
+    n)
+      ITERATIONS=$OPTARG                # Number on iterations
+      ;;
+    r)
+      REMOTEMSH=$OPTARG                 # Remote mesh functionality
+      ;;
+    u)
+      declare -g USR=$OPTARG            # ssh login user name
+      ;;
+    d)
+      declare -g DOMAIN=$OPTARG         # Remote client domain name
+      ;;
+    g)
+      declare -g REMOTEGMSH=$OPTARG     # gmsh path on remote client
+      ;;
+    t)
+      declare -g REMOTEMSHDIR=$OPTARG   # msh directory on remote client
+      ;;
+    \?)
+      show_help >&2
+      exit 1
+      ;;
+    esac
+done
+shift "$((OPTIND-1))" # Shift off the options and optional --.
+
+# -m, -c, -o are minimum options required to run script
+# If -r 1 is used, we need rest of 4 parameters i.e. -u, -d, -g, -t
+if [[ ( $OPTIND -lt 7 ) || ( $REMOTEMSH -ne 0  && ( -z "$USR"         || \
+                                                    -z "$DOMAIN"      || \
+                                                    -z "$REMOTEGMSH"  || \
+                                                    -z "$REMOTEMSHDIR" ) ) ]]
+then
+  show_help >&2
+  exit 1
+fi
+
+# Export write_pos directory (./bin) to PATH if not set
+if ! command -v "write_pos" > /dev/null
+then
+  printf "Trying to export write_pos to PATH automatically... "
+  if [ -d "bin" ] && [ -f "bin/write_pos" ]
+  then
+    printf -v posPath "export PATH=$shPath/bin:$PATH"
+    $posPath
+    printf "Done!\n"
+  else
+    printf "unable to locate!\nPlease export write_pos directory (typically ./bin) to PATH and retry.\n"
+    exit 1
+  fi
+fi
+
+# print info on the run
+echo "$(date) Running mesh refinement..."
+
 # Affected files
-printf -v confFile '%s%s.conf' "$confDir" "$model"
-printf -v geoFile  '%s%s.geo'  "$mshDir"  "$model"
-printf -v mshFile  '%s%s.msh'  "$mshDir"  "$model"
+printf -v confFile '%s%s.conf' "$CONFDIR" "$MODEL"
+printf -v geoFile  '%s%s.geo'  "$MSHDIR"  "$MODEL"
+printf -v mshFile  '%s%s.msh'  "$MSHDIR"  "$MODEL"
 
-# Turn off optimization for initial (coarse) and intermediate meshes
-sed -i -e '/Mesh.Optimize  /c\Mesh.Optimize       = 0;'     $geoFile
-sed -i -e '/Mesh.OptimizeNetgen/c\Mesh.OptimizeNetgen = 0;' $geoFile
+# Send the geo file to remote server
+if [ $REMOTEMSH -eq 1 ]
+then
+  # Create remote msh dir (if doesn't exist)
+  printf -v l_login '%s@%s' "$USR" "$DOMAIN"
+  ssh $l_login mkdir -p $REMOTEMSHDIR
 
-sendGeo
+  # Copy geo file to remote client
+  printf "\nSending $geoFile from local m/c to remote client...\n"
+  printf -v l_remoteLoc '%s:%s' "$l_login" "$REMOTEMSHDIR"
+
+  SECONDS=0
+  scp -v $geoFile $l_remoteLoc
+  duration=$SECONDS
+  printf "Time taken: $duration s\n\n"
+fi
 
 # Intial coarse mesh
 printf "Generating initial (coarse) mesh...\n"
 printf -v mshLog '%s.log' "$mshFile"
-mesh
 
-for ((iter=1; iter < $iterations; iter++))
+# Optimize tetrahedral elements that have a quality less than a threshold (0.3)
+mesh 0.3
+
+for ((iter=1; iter<$ITERATIONS; iter++))
 do
-  printf "###########\nIteration $iter\n###########\n\n"
+  # Create a config file for each iteration
+  printf -v confFileIt '%s%s_%d.conf' "$CONFDIR" "$MODEL" "$iter"
+  cp $confFile $confFileIt
+
+  printf "\n###########\nIteration $iter\n###########\n\n"
 
   # Pos file name for current iteration
-  printf -v posFile '%s%s_%d.pos' "$mshDir"  "$model" "$iter"
+  printf -v posFile '%s%s_%d.pos' "$MSHDIR"  "$MODEL" "$iter"
 
   # Replace input mesh_file and output pos_file in config file
   printf -v msh '/mesh_file=/c\mesh_file=%s' "$mshFile"
-  sed -i -e "$msh" $confFile
+  sed -i -e "$msh" $confFileIt
   
   printf -v pos '/pos_file=/c\pos_file=%s'   "$posFile"
-  sed -i -e "$pos" $confFile
+  sed -i -e "$pos" $confFileIt
 
   # Mesh file (to be generated) which will be used in next iteration
-  printf -v mshFile '%s%s_%d.msh' "$mshDir"  "$model" "$iter"
+  printf -v mshFile '%s%s_%d.msh' "$MSHDIR"  "$MODEL" "$iter"
   printf -v mshLog  '%s.log'      "$mshFile"
 
   # Generate intermediate pos file to be used by gmsh in next step to produce a 
   # more refined mesh than previous iteration (using pos as background mesh)
   printf -v posLog '%s.log' "$posFile"
   printf "Generating pos...\n"
-  $writePos -f $confFile 2>&1 | tee $posLog
+  write_pos -f $confFileIt 2>&1 | tee $posLog
 
   # Generate intermediate meshes
   printf "\nGenerating intermediate ($iter) mesh...\n"
-  mesh
+  mesh 0.3
+
+  # Handling intermediate files
+  if [ $MSHFILES -eq 1 ]
+  then
+    printf -v mshFileZ '%s_%d.msh'    "$MODEL" "$iter"
+    printf -v mshLogZ  '%s.log'       "$mshFileZ"
+    printf -v posFileZ '%s_%d.pos'    "$MODEL" "$iter"
+    printf -v posLogZ  '%s.log'       "$posFileZ"
+    printf -v zipFile  '%s_%d.tar.gz' "$MODEL" "$iter"
+    printf "\nCompressing intermediate files to %s...\n" "$zipFile"
+    cd $MSHDIR
+    tar -zcvf $zipFile $mshFileZ $mshLogZ $posFileZ $posLogZ
+    cd $shPath
+  fi
+
+  if [ $MSHFILES -eq 1 ] || [ $MSHFILES -eq 3 ]
+  then
+    # Remove previous iteration intermediate files
+    if [ $iter -ne 1 ]
+    then
+      printf "\nRemoving iteration %d intermediate files..." $(($iter-1))
+      printf -v mshFileRm '%s%s_%d.msh' "$MSHDIR"  "$MODEL"  $(($iter-1))
+      printf -v mshLogRm  '%s.log'      "$mshFileRm"
+      printf -v posFileRm '%s%s_%d.pos' "$MSHDIR"  "$MODEL"  $(($iter-1))
+      printf -v posLogRm  '%s.log'      "$posFileRm"
+      rm -f $mshFileRm $mshLogRm $posFileRm $posLogRm
+      printf " Done!\n"
+    fi
+  fi
 done
 
-# Turn on optimization for final (refined) mesh
-sed -i -e '/Mesh.Optimize  /c\Mesh.Optimize       = 1;'     $geoFile
-sed -i -e '/Mesh.OptimizeNetgen/c\Mesh.OptimizeNetgen = 1;' $geoFile
+# Create a config file for the final refined mesh
+printf -v confFileRe '%s%s_refined.conf' "$CONFDIR" "$MODEL"
+cp $confFile $confFileRe
 
-sendGeo
-
-printf -v posFile '%s%s_refined.pos' "$mshDir" "$model"
-
+# Modifying file paths in config file
 printf -v msh '/mesh_file=/c\mesh_file=%s' "$mshFile"
-sed -i -e "$msh" $confFile
+sed -i -e "$msh" $confFileRe
 
-printf -v pos '/pos_file=/c\pos_file=%s'   "$posFile"
-sed -i -e "$pos" $confFile
+printf -v posFile '%s%s_refined.pos' "$MSHDIR" "$MODEL"
+printf -v pos '/pos_file=/c\pos_file=%s' "$posFile"
+sed -i -e "$pos" $confFileRe
 
-printf -v mshFile '%s%s_refined.msh' "$mshDir" "$model"
+printf -v mshFile '%s%s_refined.msh' "$MSHDIR" "$MODEL"
 printf -v mshLog '%s_refined.log' "$mshFile"
 
 # Final refined pos file
 printf -v posLog '%s_refined.log' "$posFile"
-printf "Generating pos...\n"
-$writePos -f $confFile 2>&1 | tee $posLog
+printf "\nGenerating pos...\n"
+write_pos -f $confFileRe 2>&1 | tee $posLog
 
 # Final mesh-refinement
-printf '\n\nGenerating final (refined) mesh...\n'
-mesh
+printf '\nGenerating final (refined) mesh...\n'
+mesh 0.3
+
+# Remove last iteration's intermediate files
+if [ $ITERATIONS -gt 1 ]
+then
+  if [ $MSHFILES -eq 1 ] || [ $MSHFILES -eq 3 ]
+  then
+    printf "Removing iteration %d intermediate files..."  $(($ITERATIONS-1))
+    printf -v mshFileRm '%s%s_%d.msh' "$MSHDIR"  "$MODEL" $(($ITERATIONS-1))
+    printf -v mshLogRm  '%s.log'      "$mshFileRm"
+    printf -v posFileRm '%s%s_%d.pos' "$MSHDIR"  "$MODEL" $(($ITERATIONS-1))
+    printf -v posLogRm  '%s.log'      "$posFileRm"
+    rm -f $mshFileRm $mshLogRm $posFileRm $posLogRm
+    printf " Done!\n"
+  fi
+fi
+
+# Print info on the run
+echo "$(date) Finished mesh refinement."
