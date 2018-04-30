@@ -172,10 +172,11 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 
 # -m, -c, -o are minimum options required to run script
 # If -r 1 is used, we need rest of 4 parameters i.e. -u, -d, -g, -t
-if [[ ( $OPTIND -lt 7 ) || ( $REMOTEMSH -ne 0  && ( -z "$USR"         || \
-                                                    -z "$DOMAIN"      || \
-                                                    -z "$REMOTEGMSH"  || \
-                                                    -z "$REMOTEMSHDIR" ) ) ]]
+if [[ ( -z "$MODEL" || -z "$CONFDIR" || -z "$MSHDIR" ) || ( $REMOTEMSH -ne 0  && \
+                                                          ( -z "$USR"         || \
+                                                            -z "$DOMAIN"      || \
+                                                            -z "$REMOTEGMSH"  || \
+                                                            -z "$REMOTEMSHDIR" ) ) ]]
 then
   show_help >&2
   exit 1
