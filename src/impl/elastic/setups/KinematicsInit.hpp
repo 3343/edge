@@ -486,7 +486,7 @@ class edge::elastic::setups::KinematicsInit {
                                             i_srcId[l_so] );
 
         // overwrite mu by value of background velocity model if not provided
-        if( l_mu < TOL.SOLVER ) {
+        if( l_mu < -TOL.SOLVER ) {
           l_mu = i_bgPars[ i_srcEl[l_so] ].mu;
         }
 
@@ -496,11 +496,6 @@ class edge::elastic::setups::KinematicsInit {
         // area
         TL_T_REAL_COMP l_A = i_srcs.getA( i_kId,
                                           i_srcId[l_so] );
-
-        // scalar product of the normal
-        TL_T_REAL_COMP l_spN = 0;
-        for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ )
-          l_spN += l_sds[0][l_di]*l_sds[0][l_di];
 
         /* Slip coefficients:
          *   delta u * [ lambda * l_k * n_k * delta_{ij} + mu * ( l_i * n_j + l_j * n_i )
@@ -525,12 +520,15 @@ class edge::elastic::setups::KinematicsInit {
               io_solvers.sSca[l_sd][ i_permI[l_so] ][l_di][0] = 0;
             }
 
+            // scalar product with normal
+            TL_T_REAL_COMP l_spN = 0;
+            for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ )
+              l_spN += l_sds[l_sd][l_di]*l_sds[0][l_di];
+
             // contribution if slip is in normal direction
-            if( l_sd == 0 ) {
-              for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
-                io_solvers.sSca[l_sd][ i_permI[l_so] ][l_di][0]
-                += l_A * l_lam * l_spN;
-              }
+            for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
+              io_solvers.sSca[l_sd][ i_permI[l_so] ][l_di][0]
+              += l_A * l_lam * l_spN;
             }
 
             // normal stresses
