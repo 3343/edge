@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Common functionality of the solvers for the elastic wave equations.
  **/
 
-#ifndef ELASOLS_COMMON_HPP
-#define ELASOLS_COMMON_HPP
+#ifndef EDGE_ELASTIC_COMMON_HPP
+#define EDGE_ELASTIC_COMMON_HPP
 
 #include <cassert>
 #include "../common.hpp"
@@ -40,29 +40,83 @@ namespace edge {
 class edge::elastic::solvers::common {
   private:
     /**
-     * Sets up the two-dimensional flux solvers for a single face.
+     * Computes the left side's contribution to the Riemann solution in face-aligned coordinates.
      *
-     * @param i_rhoL density of the left element.
-     * @param i_rhoL density of the right element.
-     * @param i_lamL Lame parameter lambda of the left element.
-     * @param i_lamR Lame parameter lambda of the right element.
-     * @param i_muL Lame parameter mu of the left element.
-     * @param i_muR Lame parameter mu of the right element.
-     * @param i_nx x-component of the face-normal.
-     * @param i_ny y-component of the face-normal.
-     * @param i_nz z-component of the face-normal.
-     * @param o_fL set to flux solver applied to the left element's DOFs.
-     * @param o_fR set to flux solver applied to the right element's DOFs.
-     * @param i_freeSurface true if surface boundary conditions are added to o_fR.
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param i_muL left element's Lame parameter mu.
+     * @param i_muR right element's Lame parameter mu.
+     * @param o_flMid will be set to matrix for the left element's contribution.
+     *
+     * @paramt TL_T_REAL floating point type.
      **/
-    static void setupSolver2d( real_base i_rhoL, real_base i_rhoR,
-                               real_base i_lamL, real_base i_lamR,
-                               real_base i_muL,  real_base i_muR,
-                               real_mesh i_nx, real_mesh i_ny, real_mesh i_nz,
-                               real_base o_fL[5][5],
-                               real_base o_fR[5][5],
-                               bool      i_freeSurface = false ) {
-#include "impl/elastic/generated/SolverElastic2D.inc"
+    template< typename TL_T_REAL >
+    static void setupFlMidElastic2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
+                                     TL_T_REAL i_lamL, TL_T_REAL i_lamR,
+                                     TL_T_REAL i_muL,  TL_T_REAL i_muR,
+                                     TL_T_REAL o_flMid[5][5] ) {
+#include "impl/elastic/generated/FlMidElastic2D.inc"
+    }
+
+    /**
+     * Computes the right side's contribution to the Riemann solution in face-aligned coordinates.
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param i_muL left element's Lame parameter mu.
+     * @param i_muR right element's Lame parameter mu.
+     * @param o_flMid will be set to matrix for the left element's contribution.
+     *
+     * @paramt TL_T_REAL floating point type.
+     **/
+    template< typename TL_T_REAL >
+    static void setupFrMidElastic2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
+                                     TL_T_REAL i_lamL, TL_T_REAL i_lamR,
+                                     TL_T_REAL i_muL,  TL_T_REAL i_muR,
+                                     TL_T_REAL o_frMid[5][5] ) {
+#include "impl/elastic/generated/FrMidElastic2D.inc"
+    }
+
+    /**
+     * Computes the left side's contribution to the Riemann solution in face-aligned coordinates.
+     * This routine assume elastic quantities as input, but ignores the shear waves (solves acoustic wave equations).
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param o_flMid will be set to matrix for the left element's contribution.
+     *
+     * @paramt TL_T_REAL floating point type.
+     **/
+    template< typename TL_T_REAL >
+    static void setupFlMidAcoustic2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
+                                      TL_T_REAL i_lamL, TL_T_REAL i_lamR,
+                                      TL_T_REAL o_flMid[5][5] ) {
+#include "impl/elastic/generated/FlMidAcoustic2D.inc"
+    }
+
+    /**
+     * Computes the left side's contribution to the Riemann solution in face-aligned coordinates.
+     * This routine assume elastic quantities as input, but ignores the shear waves (solves acoustic wave equations).
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param o_flMid will be set to matrix for the left element's contribution.
+     *
+     * @paramt TL_T_REAL floating point type.
+     **/
+    template< typename TL_T_REAL >
+    static void setupFrMidAcoustic2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
+                                      TL_T_REAL i_lamL, TL_T_REAL i_lamR,
+                                      TL_T_REAL o_frMid[5][5] ) {
+#include "impl/elastic/generated/FrMidAcoustic2D.inc"
     }
 
     /**
@@ -74,12 +128,12 @@ class edge::elastic::solvers::common {
      * @param i_lamR right element's Lame parameter lambda.
      * @param i_muL left element's Lame parameter mu.
      * @param i_muR right element's Lame parameter mu.
-     * @parma o_flMid will be set to matrix for the left element's contrinution.
+     * @param o_flMid will be set to matrix for the left element's contribution.
      **/
-    static void setupFlMid3d( real_base i_rhoL, real_base i_rhoR,
-                              real_base i_lamL, real_base i_lamR,
-                              real_base i_muL,  real_base i_muR,
-                              real_base o_flMid[9][9] ) {
+    static void setupFlMidElastic3d( real_base i_rhoL, real_base i_rhoR,
+                                     real_base i_lamL, real_base i_lamR,
+                                     real_base i_muL,  real_base i_muR,
+                                     real_base o_flMid[9][9] ) {
 #include "impl/elastic/generated/FlMid3D.inc"
     }
 
@@ -92,13 +146,103 @@ class edge::elastic::solvers::common {
      * @param i_lamR right element's Lame parameter lambda.
      * @param i_muL left element's Lame parameter mu.
      * @param i_muR right element's Lame parameter mu.
-     * @parma o_frMid will be set to matrix for the right element's contrinution.
+     * @parma o_frMid will be set to matrix for the right element's contribution.
      **/
-    static void setupFrMid3d( real_base i_rhoL, real_base i_rhoR,
-                              real_base i_lamL, real_base i_lamR,
-                              real_base i_muL,  real_base i_muR,
-                              real_base o_frMid[9][9] ) {
+    static void setupFrMidElastic3d( real_base i_rhoL, real_base i_rhoR,
+                                     real_base i_lamL, real_base i_lamR,
+                                     real_base i_muL,  real_base i_muR,
+                                     real_base o_frMid[9][9] ) {
 #include "impl/elastic/generated/FrMid3D.inc"
+    }
+
+    /**
+     * Sets up the two-dimensional flux solvers for a single face.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoL density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param i_nx x-component of the face-normal.
+     * @param i_ny y-component of the face-normal.
+     * @param o_fL set to flux solver applied to the left element's DOFs.
+     * @param o_fR set to flux solver applied to the right element's DOFs.
+     * @param i_freeSurface true if free surface boundary conditions are added to o_fR.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     **/
+    template< typename TL_T_REAL >
+    static void setupSolver2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
+                               TL_T_REAL i_lamL, TL_T_REAL i_lamR,
+                               TL_T_REAL i_muL,  TL_T_REAL i_muR,
+                               double i_nx, double i_ny,
+                               TL_T_REAL o_fL[5][5],
+                               TL_T_REAL o_fR[5][5],
+                               bool i_freeSurface = false ) {
+      // intermediate matrices
+      TL_T_REAL l_t[5][5];
+      TL_T_REAL l_tm1[5][5];
+      TL_T_REAL l_flMid[5][5];
+      TL_T_REAL l_frMid[5][5];
+
+      TL_T_REAL l_tmpL[5][5];
+      TL_T_REAL l_tmpR[5][5];
+
+      // setup the intermediate matrices
+      elastic::common::setupTrafo2d( i_nx, i_ny, l_t );
+
+      elastic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
+
+      if( i_muL > TOL.SOLVER && i_muR > TOL.SOLVER ) {
+        setupFlMidElastic2d( i_rhoL, i_rhoR,
+                             i_lamL, i_lamR,
+                             i_muL,  i_muR,
+                             l_flMid );
+
+        setupFrMidElastic2d( i_rhoL, i_rhoR,
+                             i_lamL, i_lamR,
+                             i_muL,  i_muR,
+                             l_frMid );
+      }
+      else {
+        setupFlMidAcoustic2d( i_rhoL, i_rhoR,
+                              i_lamL, i_lamR,
+                              l_flMid );
+
+        setupFrMidAcoustic2d( i_rhoL, i_rhoR,
+                              i_lamL, i_lamR,
+                              l_frMid );
+      }
+
+      // compute the flux solvers
+      linalg::Matrix::matMulB0( 5, 5, 5,
+                                l_t[0], l_flMid[0], l_tmpL[0] );
+      linalg::Matrix::matMulB0( 5, 5, 5,
+                                l_t[0], l_frMid[0], l_tmpR[0] );
+
+      linalg::Matrix::matMulB0( 5, 5, 5,
+                                l_tmpL[0], l_tm1[0], o_fL[0] );
+
+      /**
+       * Free surface boundary conditions mirror (rotated) x-components of the stress tensor.
+       * Reference: Eq. (51) in
+       *            Martin Kaeser and Michael Dumbser
+       *            An arbitrary high-order discontinuous Galerkin method for elastic
+       *            waves on unstructured meshes – I. The two-dimensional isotropic
+       *            case with external source terms
+       **/
+      if( i_freeSurface == true ) {
+        // multiply tmpR with diag( -1, 1, -1, 1, 1 ) from the right.
+        //                           0      2
+        for( unsigned short l_ro = 0; l_ro < 5; l_ro++ ) {
+          l_tmpR[l_ro][0] *= -1;
+          l_tmpR[l_ro][2] *= -1;
+        }
+      }
+
+      linalg::Matrix::matMulB0( 5, 5, 5,
+                                l_tmpR[0], l_tm1[0], o_fR[0] );
     }
 
     /**
@@ -152,15 +296,15 @@ class edge::elastic::solvers::common {
                                         i_tx, i_ty, i_tz,
                                         l_tm1 );
 
-      setupFlMid3d( i_rhoL, i_rhoR,
-                    i_lamL, i_lamR,
-                    i_muL,  i_muR,
-                    l_flMid );
+      setupFlMidElastic3d( i_rhoL, i_rhoR,
+                           i_lamL, i_lamR,
+                           i_muL,  i_muR,
+                           l_flMid );
 
-      setupFrMid3d( i_rhoL, i_rhoR,
-                    i_lamL, i_lamR,
-                    i_muL,  i_muR,
-                    l_frMid );
+      setupFrMidElastic3d( i_rhoL, i_rhoR,
+                           i_lamL, i_lamR,
+                           i_muL,  i_muR,
+                           l_frMid );
 
       // compute the flux solvers
       linalg::Matrix::matMulB0( 9, 9, 9,
@@ -193,129 +337,6 @@ class edge::elastic::solvers::common {
                                 l_tmpR[0], l_tm1[0], o_fR[0] );
     }
 
-    // checks the setup of the flux solvers against a few predefined values
-    static void checkSolverSetup2d() {
-
-    assert( N_QUANTITIES == 5 );
-
-      real_base l_fL[5][5];
-      real_base l_fR[5][5];
-
-      setupSolver2d( 1, 1,
-                     2, 2,
-                     1, 1,
-                    -0.2, std::sqrt(1-0.04), 0,
-                     l_fL,
-                     l_fR );
-
-      // check some values
-      assert( std::abs( l_fL[0][0] -  0.0592              ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][0] -  0.0008              ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][0] - -0.094060406122874   ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][0] -  0.1                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][0] -  0.0                 ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][1] -  0.4608              ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][1] -  0.9792              ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][1] - -0.00391918358845308 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][1] -  0.0                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][1] - -0.489897948556636   ) < TOL.SOLVER );
-
-      assert( std::abs( l_fR[0][2] -  0.384079991668402   ) < TOL.SOLVER );
-      assert( std::abs( l_fR[1][2] -  0.20379754659956    ) < TOL.SOLVER );
-      assert( std::abs( l_fR[2][2] - -0.4616              ) < TOL.SOLVER );
-      assert( std::abs( l_fR[3][2] - -0.489897948556636   ) < TOL.SOLVER );
-      assert( std::abs( l_fR[4][2] -  0.1                 ) < TOL.SOLVER );
-
-      assert( std::abs( l_fR[0][3] -  0.4                 ) < TOL.SOLVER );
-      assert( std::abs( l_fR[1][3] -  0.2                 ) < TOL.SOLVER );
-      assert( std::abs( l_fR[2][3] - -0.489897948556636   ) < TOL.SOLVER );
-      assert( std::abs( l_fR[3][3] - -0.52                ) < TOL.SOLVER );
-      assert( std::abs( l_fR[4][3] -  0.0979795897113271  ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][4] - -0.979795897113271   ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][4] - -1.95959179422654    ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][4] -  0.1                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][4] - -0.0979795897113271  ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][4] -  0.98                ) < TOL.SOLVER );
-
-      setupSolver2d( 1, 1,
-                     2, 2,
-                     1, 1,
-                     0.5, -std::sqrt(0.75), 0,
-                     l_fL,
-                     l_fR );
-
-      // check some values
-      assert( std::abs( l_fL[0][0] -  0.34375             ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][0] -  0.03125             ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][0] - -0.162379763209582   ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][0] - -0.25                ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][0] -  0.0                 ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][1] -  0.28125             ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][1] -  0.84375             ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][1] - -0.0541265877365274  ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][1] -  0.0                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][1] -  0.433012701892219   ) < TOL.SOLVER );
-
-      assert( std::abs( l_fR[0][2] -  0.757772228311384   ) < TOL.SOLVER );
-      assert( std::abs( l_fR[1][2] -  0.541265877365274   ) < TOL.SOLVER );
-      assert( std::abs( l_fR[2][2] - -0.3125              ) < TOL.SOLVER );
-      assert( std::abs( l_fR[3][2] - 0.433012701892219    ) < TOL.SOLVER );
-      assert( std::abs( l_fR[4][2] -  -0.25               ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][3] - -1.0                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][3] - -0.5                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][3] -  0.433012701892219   ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][3] -  0.625               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][3] - -0.21650635094611    ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][4] -  0.866025403784439   ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][4] -  1.73205080756888    ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][4] - -0.25                ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][4] - -0.21650635094611    ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][4] -  0.875               ) < TOL.SOLVER );
-
-      setupSolver2d( 1, 1,
-                     2, 2,
-                     1, 1,
-                     1/std::sqrt(2), 1/std::sqrt(2), 0,
-                     l_fL,
-                     l_fR );
-
-      // check some values
-      assert( std::abs( l_fL[0][0] -  0.625               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][0] -  0.125               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][0] -  0.125               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][0] - -0.25 * std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][0] -  0                   ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][1] -  0.125               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][1] -  0.625               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][1] -  0.125               ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][1] -  0.0                 ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][1] - -0.25 * std::sqrt(2) ) < TOL.SOLVER );
-
-      assert( std::abs( l_fR[0][2] - -0.75                ) < TOL.SOLVER );
-      assert( std::abs( l_fR[1][2] - -0.75                ) < TOL.SOLVER );
-      assert( std::abs( l_fR[2][2] - -0.25                ) < TOL.SOLVER );
-      assert( std::abs( l_fR[3][2] - -0.25 * std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fR[4][2] - -0.25 * std::sqrt(2) ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][3] -        -std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][3] - -0.5  * std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][3] - -0.25 * std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][3] -  0.75                ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][3] -  0.25                ) < TOL.SOLVER );
-
-      assert( std::abs( l_fL[0][4] - -0.5 *  std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[1][4] -        -std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[2][4] - -0.25 * std::sqrt(2) ) < TOL.SOLVER );
-      assert( std::abs( l_fL[3][4] -  0.25                ) < TOL.SOLVER );
-      assert( std::abs( l_fL[4][4] -  0.75                ) < TOL.SOLVER );
-    }
-
   public:
     /**
      * Sets up the flux solvers.
@@ -346,9 +367,6 @@ class edge::elastic::solvers::common {
                                     t_fluxSolver         (*o_fluxSolversOwn)[  C_ENT[T_SDISC.ELEMENT].N_FACES],
                                     t_fluxSolver         (*o_fluxSolversNeigh)[C_ENT[T_SDISC.ELEMENT].N_FACES] ) {
       PP_INSTR_FUN("flux_solvers")
-
-      // check the include of the solvers
-      if( N_DIM == 2 ) checkSolverSetup2d();
 
       // iterate over elements and reset flux solvers (wrong configs should at least blow up our simulation)
 #ifdef PP_USE_OMP
@@ -425,7 +443,6 @@ class edge::elastic::solvers::common {
                          l_muL,  l_muR,
                          i_faceChars[l_fa].outNormal[0],
                          i_faceChars[l_fa].outNormal[1],
-                         i_faceChars[l_fa].outNormal[2],
                          o_fluxSolversOwn[l_elL][l_fIdL].solver,
                          o_fluxSolversNeigh[l_elL][l_fIdL].solver,
                         (i_faceChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
@@ -438,7 +455,6 @@ class edge::elastic::solvers::common {
                          l_muR,  l_muL,
                         -i_faceChars[l_fa].outNormal[0],
                         -i_faceChars[l_fa].outNormal[1],
-                        -i_faceChars[l_fa].outNormal[2],
                          o_fluxSolversOwn[l_elR][l_fIdR].solver,
                          o_fluxSolversNeigh[l_elR][l_fIdR].solver,
                          false );

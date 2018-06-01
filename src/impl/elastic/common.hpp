@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -187,7 +187,7 @@ class edge::elastic::common {
     template <typename TL_T_MESH, typename TL_T_TRAFO>
     static void setupTrafo2d( TL_T_MESH i_nx, TL_T_MESH i_ny,
                               TL_T_TRAFO o_t[5][5] ) {
-#include "impl/elastic/generated/Trafo2D.inc"
+#include "impl/elastic/generated/TrafoElastic2D.inc"
     }
 
     /**
@@ -201,7 +201,7 @@ class edge::elastic::common {
     template <typename TL_T_MESH, typename TL_T_TRAFO>
     static void setupTrafoInv2d( TL_T_MESH i_nx, TL_T_MESH i_ny,
                                  TL_T_TRAFO o_tm1[5][5] ) {
-#include "impl/elastic/generated/TrafoInv2D.inc"
+#include "impl/elastic/generated/TrafoInvElastic2D.inc"
     }
 };
 

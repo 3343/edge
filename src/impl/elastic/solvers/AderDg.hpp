@@ -517,18 +517,18 @@ class edge::elastic::solvers::AderDg {
         if( !( (i_elChars[l_el].spType & RECEIVER) == RECEIVER) ) {} // no receivers in the current element
         else { // we have receivers in the current element
           while( true ) { // iterate of possible multiple receiver-ouput per time step
-            TL_T_REAL l_rePt[1];
-            l_rePt[0] = io_recvs.getRecvTimeRel( l_enRe, i_time, i_dT );
-            if( !(l_rePt[0] >= 0) ) break;
+            double l_rePt = io_recvs.getRecvTimeRel( l_enRe, i_time, i_dT );
+            if( !(l_rePt >= 0) ) break;
             else {
+              TL_T_REAL l_rePts = l_rePt;
               // eval time prediction at the given point
               TimePred< T_SDISC.ELEMENT,
                         N_QUANTITIES,
                         ORDER,
                         ORDER,
-                        N_CRUNS >::evalTimePrediction( 1,
-                                                       l_rePt,
-                                                       l_derBuffer,
+                        N_CRUNS >::evalTimePrediction(  1,
+                                                       &l_rePts,
+                                                        l_derBuffer,
                           (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmpEl );
 
               // write this time prediction
