@@ -24,12 +24,13 @@
 Import('env')
 
 l_sources = [ 'surf/Topo.cpp',
-              'surf/Oracle.cpp' ]
+              'implicit_functions.cpp',
+              'surf/meshUtils.cpp'      ]
 
 for l_source in l_sources:
   env.sources.append( env.Object( l_source ) )
 
 # prepend main file to edge
-env.sources = env.Object( 'main.cpp' ) + env.sources
+env.sources = env.Object( 'multImplDomains.cpp' ) + env.sources
 
 Export('env')

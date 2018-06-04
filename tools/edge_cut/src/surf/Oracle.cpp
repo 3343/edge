@@ -42,13 +42,13 @@ CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT edge_cut::surf::Orac
   // bottom
   l_inside = l_inside && ( i_pt.z() > m_box[4] );
 
-  // return if already outside 
+  // return if already outside
   if( !l_inside ) {
     return CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT( 0 );
   }
   else {
     // check for intersection
-    CGAL::Point_3< CGAL::Cartesian<double> > l_pt( CGAL::to_double( i_pt.x() ),
+    CGAL::Point_3< K > l_pt( CGAL::to_double( i_pt.x() ),
                                                    CGAL::to_double( i_pt.y() ),
                                                    CGAL::to_double( i_pt.z() ) );
     if( !m_topo.interRay( l_pt ) ) l_inside = false;

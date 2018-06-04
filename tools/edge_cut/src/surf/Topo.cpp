@@ -21,16 +21,14 @@
  * Meshing of topographic data.
  **/
 
-#include "Topo.h"
+#include "Topo.h" 
 #include "io/logging.hpp"
 
 #include <fstream>
 
 void edge_cut::surf::Topo::computeDelaunay( std::string const & i_topoFile ) {
   // parse the points
-  CGAL::Projection_traits_xy_3<
-    CGAL::Cartesian<double>
-  >::Point l_pt;
+  TopoPoint l_pt;
 
   std::ifstream l_ptFile( i_topoFile, std::ios::in );
 
@@ -39,23 +37,66 @@ void edge_cut::surf::Topo::computeDelaunay( std::string const & i_topoFile ) {
   }
 
   EDGE_LOG_INFO << "  computed delaunay triangulation:";
-  EDGE_LOG_INFO << "    #vertices: " << m_delTria.number_of_faces();
-  EDGE_LOG_INFO << "    #faces:    " << m_delTria.number_of_vertices();
+  EDGE_LOG_INFO << "    #vertices: " << m_delTria.number_of_vertices();
+  EDGE_LOG_INFO << "    #faces:    " << m_delTria.number_of_faces();
 }
 
 edge_cut::surf::Topo::Topo( std::string const & i_topoFile ) {
   computeDelaunay( i_topoFile );
 }
 
-bool edge_cut::surf::Topo::interRay( CGAL::Point_3< CGAL::Cartesian<double> > const & i_pt,
-                                     bool                                             i_positive ) const {
-  CGAL::Delaunay_triangulation_2 <
-    CGAL::Projection_traits_xy_3 <
-      CGAL::Cartesian<double>
-    >
-  >::Face_handle l_faceHa;
+double edge_cut::surf::Topo::topoDisp( TopoPoint const & i_pt ) const {
+  double l_zTopoDisp = 1;
 
-  // get the possible 2D face 
+  Triangulation::Face_handle l_faceHa = m_delTria.locate( i_pt );
+
+  // return if no face qualifies
+  if( l_faceHa == NULL ) {
+    std::cout << "Error: Got NULL value when locating point on topography"
+              << std::endl;
+    return 0;
+  }
+  // do the 3D intersection otherwise and check the side w.r.t. to the face
+  else {
+    // set up the face
+    CGAL::Triangle_3< K > l_face(
+      l_faceHa->vertex(0)->point(),
+      l_faceHa->vertex(1)->point(),
+      l_faceHa->vertex(2)->point()
+    );
+
+    // set up the vertical ray
+    CGAL::Direction_3< K > l_dirPos(0,0,1);
+    CGAL::Direction_3< K > l_dirNeg(0,0,-1);
+    CGAL::Ray_3< K > l_rayPos( i_pt, l_dirPos );
+    CGAL::Ray_3< K > l_rayNeg( i_pt, l_dirNeg );
+
+    // compute the intersection (if available)
+    auto l_interPos = CGAL::intersection( l_face, l_rayPos );
+    auto l_interNeg = CGAL::intersection( l_face, l_rayNeg );
+    if ( l_interPos )
+      l_zTopoDisp = i_pt.z() - boost::get<CGAL::Point_3< K > >(&*l_interPos)->z();
+    else if ( l_interNeg )
+      l_zTopoDisp = i_pt.z() - boost::get<CGAL::Point_3< K > >(&*l_interNeg)->z();
+  }
+
+  return l_zTopoDisp;
+}
+
+
+edge_cut::surf::TopoPoint edge_cut::surf::Topo::interpolatePt( double i_x, double i_y ) const {
+  TopoPoint l_basePt( i_x, i_y, 0 );
+  double l_zDist = topoDisp( l_basePt );
+
+  return TopoPoint( i_x, i_y, -1*l_zDist );
+}
+
+
+bool edge_cut::surf::Topo::interRay( TopoPoint const & i_pt,
+                                     bool  i_positive ) const {
+  Triangulation::Face_handle l_faceHa;
+
+  // get the possible 2D face
   l_faceHa = m_delTria.locate( i_pt );
 
   // return if no face qualifies
@@ -63,16 +104,16 @@ bool edge_cut::surf::Topo::interRay( CGAL::Point_3< CGAL::Cartesian<double> > co
   // do the 3D intersection otherwise and check the side w.r.t. to the face
   else {
       // set up the face
-      CGAL::Triangle_3< CGAL::Cartesian<double> > l_face(
+      CGAL::Triangle_3< K > l_face(
         l_faceHa->vertex(0)->point(),
         l_faceHa->vertex(1)->point(),
         l_faceHa->vertex(2)->point()
       );
 
     // set up the vertical ray
-    CGAL::Direction_3< CGAL::Cartesian<double> > l_dir(0,0,1);
+    CGAL::Direction_3< K > l_dir(0,0,1);
     if( i_positive == false ) l_dir = -l_dir;
-    CGAL::Ray_3< CGAL::Cartesian<double> > l_ray( i_pt, l_dir );
+    CGAL::Ray_3< K > l_ray( i_pt, l_dir );
 
     // compute the intersection (if available)
     auto l_inter = CGAL::intersection( l_face, l_ray );
@@ -82,25 +123,21 @@ bool edge_cut::surf::Topo::interRay( CGAL::Point_3< CGAL::Cartesian<double> > co
   return false;
 }
 
-unsigned short edge_cut::surf::Topo::interSeg( CGAL::Point_3< CGAL::Cartesian<double> > const & i_segPt1,
-                                               CGAL::Point_3< CGAL::Cartesian<double> > const & i_segPt2,
-                                               CGAL::Point_3< CGAL::Cartesian<double> >         o_inters [C_MAX_SURF_INTER] ) const {
+unsigned short edge_cut::surf::Topo::interSeg( TopoPoint const & i_segPt1,
+                                               TopoPoint const & i_segPt2,
+                                               TopoPoint         o_inters [C_MAX_SURF_INTER] ) const {
   // set up segment
-  CGAL::Segment_3< CGAL::Cartesian<double> > l_seg( i_segPt1, i_segPt2 );
+  CGAL::Segment_3< K > l_seg( i_segPt1, i_segPt2 );
 
   // get intersections in 2D
-  CGAL::Delaunay_triangulation_2 <
-    CGAL::Projection_traits_xy_3 <
-      CGAL::Cartesian<double>
-    >
-  >::Line_face_circulator l_lineWalk = m_delTria.line_walk( i_segPt1, i_segPt2 ), l_lineWalkDone(l_lineWalk);
+  Triangulation::Line_face_circulator l_lineWalk = m_delTria.line_walk( i_segPt1, i_segPt2 ), l_lineWalkDone(l_lineWalk);
 
   unsigned int l_interCount = 0;
 
   if( l_lineWalk != 0) {
     do {
       // set up the face
-      CGAL::Triangle_3< CGAL::Cartesian<double> > l_face(
+      CGAL::Triangle_3< K > l_face(
         (*l_lineWalk).vertex(0)->point(),
         (*l_lineWalk).vertex(1)->point(),
         (*l_lineWalk).vertex(2)->point()
@@ -112,7 +149,7 @@ unsigned short edge_cut::surf::Topo::interSeg( CGAL::Point_3< CGAL::Cartesian<do
       // only continue for non-empty intersections
       if( l_inter ) {
         // save intersection (dependent on return type of the intersection)
-        if( auto l_pt = boost::get< CGAL::Point_3< CGAL::Cartesian<double> > >( &*l_inter ) ) {
+        if( auto l_pt = boost::get< CGAL::Point_3< K > >( &*l_inter ) ) {
           o_inters[l_interCount] = *l_pt;
         }
         else EDGE_LOG_FATAL << "intersection return type not supported";
@@ -126,4 +163,45 @@ unsigned short edge_cut::surf::Topo::interSeg( CGAL::Point_3< CGAL::Cartesian<do
 
   // return number of intersections
   return l_interCount;
+}
+
+std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
+  typedef typename Triangulation::Vertex_handle                Vertex_handle;
+  typedef typename Triangulation::Finite_vertices_iterator     Vertex_iterator;
+  typedef typename Triangulation::Finite_faces_iterator        Face_iterator;
+
+  os << "OFF" << std::endl;
+
+  // outputs the number of vertices and faces
+  std::size_t num_verts = m_delTria.number_of_vertices();
+  std::size_t num_faces = m_delTria.number_of_faces();
+  std::size_t num_edges = 0;                          //Assumption
+
+  os << num_verts << " " << num_faces << " " << num_edges << std::endl;
+
+  // write the vertices
+  std::map<Vertex_handle, std::size_t> index_of_vertex;
+
+  std::size_t v_idx = 0;
+  for( Vertex_iterator it = m_delTria.finite_vertices_begin(); it != m_delTria.finite_vertices_end(); ++it, ++v_idx )
+  {
+      os << *it << std::endl;
+      index_of_vertex[it] = v_idx;
+  }
+  CGAL_assertion( v_idx == num_verts );
+
+  // write the vertex indices of each full_cell
+  std::size_t f_idx = 0;
+  for( Face_iterator it = m_delTria.finite_faces_begin(); it != m_delTria.finite_faces_end(); ++it, ++f_idx )
+  {
+      os << 3;
+      for( int j = 0; j < 3; ++j )
+      {
+        os << ' ' << index_of_vertex[ it->vertex(j) ];
+      }
+      os << std::endl;
+  }
+  CGAL_assertion( f_idx == num_faces );
+
+  return os;
 }
