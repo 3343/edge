@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -26,6 +26,8 @@ import edge_pre.sc.grid.Line
 import edge_pre.dg.basis.Line
 import edge_pre.sc.grid.Tria
 import edge_pre.dg.basis.Tria
+import edge_pre.sc.grid.Tet
+import edge_pre.dg.basis.Tet
 from fractions import Fraction as Fra
 import sympy
 
@@ -38,29 +40,46 @@ class TestProject( unittest.TestCase ):
     # 2nd order
     #
     l_syms, l_basis = edge_pre.dg.basis.Line.gen( 1 )
-    l_intIn, l_intSend, l_intSurf = edge_pre.sc.grid.Line.intSc( 1, l_syms )
+    l_int = [ (l_syms[0], 0, 1) ]
+    l_mapsSc, l_detsSc = edge_pre.sc.grid.Line.intSc( 1, l_syms )
 
     # inner sub-cells
-    l_scatter = Project.scatter( l_basis, l_intIn )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[0],
+                                 l_detsSc[0] )
     l_scatterUt = sympy.Matrix([[1], [0]])
     self.assertEqual( l_scatter, l_scatterUt )
 
     # send sub-cells
-    l_scatter = Project.scatter( l_basis, l_intSend )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[1],
+                                 l_detsSc[1] )
     l_scatterUt = sympy.Matrix( [ [1,          1        ],
                                   [-Fra(2, 3), Fra(2, 3)]
                                 ])
     self.assertEqual( l_scatter, l_scatterUt )
 
     # surf sub-cells, face 1
-    l_scatter = Project.scatter( l_basis, l_intSurf[0] )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[2][0],
+                                 l_detsSc[2][0] )
     l_scatterUt = sympy.Matrix( [ [1,         ],
                                   [-Fra(2, 3) ]
                                 ])
     self.assertEqual( l_scatter, l_scatterUt )
 
     # surf sub-cells, face2
-    l_scatter = Project.scatter( l_basis, l_intSurf[1] )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[2][1],
+                                 l_detsSc[2][1] )
     l_scatterUt = sympy.Matrix( [ [1,                        ],
                                   [Fra(2, 3) ]
                                 ])
@@ -70,10 +89,15 @@ class TestProject( unittest.TestCase ):
     # 3rd order
     #
     l_syms, l_basis = edge_pre.dg.basis.Line.gen( 2 )
-    l_intIn, l_intSend, l_intSurf = edge_pre.sc.grid.Line.intSc( 2, l_syms )
+    l_int = [ (l_syms[0], 0, 1) ]
+    l_mapsSc, l_detsSc = edge_pre.sc.grid.Line.intSc( 2, l_syms )
 
     # inner sub-cells
-    l_scatter = Project.scatter( l_basis, l_intIn )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[0],
+                                 l_detsSc[0] )
     l_scatterUt = sympy.Matrix( [ [  1,           1,           1         ],
                                   [ -Fra(2, 5),   0,           Fra(2, 5) ],
                                   [ -Fra(6, 25), -Fra(12,25), -Fra(6,25) ]
@@ -81,7 +105,11 @@ class TestProject( unittest.TestCase ):
     self.assertEqual( l_scatter, l_scatterUt )
 
     # send sub-cells
-    l_scatter = Project.scatter( l_basis, l_intSend )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[1],
+                                 l_detsSc[1] )
     l_scatterUt = sympy.Matrix( [ [  1,           1          ],
                                   [ -Fra(4, 5),   Fra(4, 5)  ],
                                   [  Fra(12, 25), Fra(12,25) ]
@@ -89,7 +117,11 @@ class TestProject( unittest.TestCase ):
     self.assertEqual( l_scatter, l_scatterUt )
 
     # surf sub-cells, face 1
-    l_scatter = Project.scatter( l_basis, l_intSurf[0] )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[2][0],
+                                 l_detsSc[2][0] )
     l_scatterUt = sympy.Matrix( [ [  1           ],
                                   [ -Fra(4, 5)   ],
                                   [  Fra(12, 25) ]
@@ -97,9 +129,13 @@ class TestProject( unittest.TestCase ):
     self.assertEqual( l_scatter, l_scatterUt )
 
     # surf sub-cells, face 2
-    l_scatter = Project.scatter( l_basis, l_intSurf[0] )
+    l_scatter = Project.scatter( l_syms,
+                                 l_basis,
+                                 l_int,
+                                 l_mapsSc[2][1],
+                                 l_detsSc[2][1] )
     l_scatterUt = sympy.Matrix( [ [  1           ],
-                                  [ -Fra(4, 5)   ],
+                                  [  Fra(4, 5)   ],
                                   [  Fra(12, 25) ]
                                 ])
     self.assertEqual( l_scatter, l_scatterUt )
@@ -112,9 +148,14 @@ class TestProject( unittest.TestCase ):
     # 2nd order
     #
     l_syms, l_basis = edge_pre.dg.basis.Line.gen( 1 )
-    l_intIn, l_intSend, l_intSurf = edge_pre.sc.grid.Line.intSc( 1, l_syms )
+    l_int = [ (l_syms[0], 0, 1) ]
+    l_mapsSc, l_detsSc = edge_pre.sc.grid.Line.intSc( 1, l_syms )
 
-    l_gather = Project.gather( l_basis, l_intIn+l_intSend )
+    l_gather = Project.gather( l_syms,
+                               l_basis,
+                               l_int,
+                               l_mapsSc[0]+l_mapsSc[1],
+                               l_detsSc[0]+l_detsSc[1] )
 
     l_gatherUt = sympy.Matrix( [ [  Fra(1, 3),          0 ],
                                  [  Fra(1, 3), -Fra(3, 4) ],
@@ -126,9 +167,14 @@ class TestProject( unittest.TestCase ):
     # 3rd order
     #
     l_syms, l_basis = edge_pre.dg.basis.Line.gen( 2 )
-    l_intIn, l_intSend, l_intSurf = edge_pre.sc.grid.Line.intSc( 2, l_syms )
+    l_int = [ (l_syms[0], 0, 1) ]
+    l_mapsSc, l_detsSc = edge_pre.sc.grid.Line.intSc( 2, l_syms )
 
-    l_gather = Project.gather( l_basis, l_intIn+l_intSend )
+    l_gather = Project.gather( l_syms,
+                               l_basis,
+                               l_int,
+                               l_mapsSc[0]+l_mapsSc[1],
+                               l_detsSc[0]+l_detsSc[1] )
 
     l_gatherUt = sympy.Matrix( [ [  Fra(1, 5), -Fra(1, 4), -Fra(25, 84) ],
                                  [  Fra(1, 5),  0,         -Fra(25, 42) ],
@@ -144,10 +190,20 @@ class TestProject( unittest.TestCase ):
   def test_gatherScatterInvLine(self):
     for l_de in range(1,5):
       l_syms, l_basis = edge_pre.dg.basis.Line.gen( l_de )
-      l_intIn, l_intSend, l_intSurf = edge_pre.sc.grid.Line.intSc( l_de, l_syms )
+      l_int = [ (l_syms[0], 0, 1) ]
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Line.intSc( l_de, l_syms )
 
-      l_scatter = Project.scatter( l_basis, l_intIn+l_intSend )
-      l_gather  = Project.gather(  l_basis, l_intIn+l_intSend )
+      l_scatter = Project.scatter( l_syms,
+                                   l_basis,
+                                   l_int,
+                                   l_mapsSc[0]+l_mapsSc[1],
+                                   l_detsSc[0]+l_detsSc[1] )
+
+      l_gather  = Project.gather(  l_syms,
+                                   l_basis,
+                                   l_int,
+                                   l_mapsSc[0]+l_mapsSc[1],
+                                   l_detsSc[0]+l_detsSc[1] )
 
       self.assertEqual( l_scatter*l_gather, sympy.eye(len(l_basis)) )
 
@@ -157,9 +213,42 @@ class TestProject( unittest.TestCase ):
   def test_gatherScatterInvTria(self):
     for l_de in range(1,3):
       l_syms, l_basis = edge_pre.dg.basis.Tria.gen( l_de )
-      l_intIn, l_intSend, l_intSurf = edge_pre.sc.grid.Tria.intSc( l_de, l_syms )
+      l_int = [ (l_syms[0], 0, 1-l_syms[1]), (l_syms[1], 0, 1) ]
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Tria.intSc( l_de, l_syms )
 
-      l_scatter = Project.scatter( l_basis, l_intIn+l_intSend )
-      l_gather  = Project.gather(  l_basis, l_intIn+l_intSend )
+      l_scatter = Project.scatter( l_syms,
+                                   l_basis,
+                                   l_int,
+                                   l_mapsSc[0]+l_mapsSc[1],
+                                   l_detsSc[0]+l_detsSc[1] )
+      l_gather  = Project.gather(  l_syms,
+                                   l_basis,
+                                   l_int,
+                                   l_mapsSc[0]+l_mapsSc[1],
+                                   l_detsSc[0]+l_detsSc[1] )
+
+      self.assertEqual( l_scatter*l_gather, sympy.eye(len(l_basis)) )
+
+
+  ##
+  # Tests that the gather operator inverts the scatter operator for tets.
+  ##
+  def test_gatherScatterInvTet(self):
+    for l_de in range(0,1):
+      l_syms, l_basis = edge_pre.dg.basis.Tet.gen( l_de )
+      l_int = [ (l_syms[0], 0, 1-l_syms[1]-l_syms[2]), (l_syms[1], 0, 1-l_syms[2]), (l_syms[2], 0, 1) ]
+      l_mapsSc, l_detsSc = edge_pre.sc.grid.Tet.intSc( l_de, l_syms )
+
+      l_scatter = Project.scatter( l_syms,
+                                   l_basis,
+                                   l_int,
+                                   l_mapsSc[0]+l_mapsSc[1],
+                                   l_detsSc[0]+l_detsSc[1] )
+
+      l_gather  = Project.gather(  l_syms,
+                                   l_basis,
+                                   l_int,
+                                   l_mapsSc[0]+l_mapsSc[1],
+                                   l_detsSc[0]+l_detsSc[1] )
 
       self.assertEqual( l_scatter*l_gather, sympy.eye(len(l_basis)) )

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,10 +21,10 @@
  * Data layout of entities.
  **/
 
-#ifndef ENTITY_LAYOUT_H
-#define ENTITY_LAYOUT_H
+#ifndef EDGE_DATA_ENTITY_LAYOUT_H
+#define EDGE_DATA_ENTITY_LAYOUT_H
 
-#include "layout.hpp"
+#include "EntityLayout.type"
 
 namespace edge {
   namespace data {

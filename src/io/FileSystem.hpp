@@ -27,6 +27,7 @@
 #include "parallel/Mpi.h"
 #include <sys/stat.h>
 #include "io/logging.h"
+#include <unistd.h>
 
 namespace edge {
   namespace io {
@@ -37,15 +38,30 @@ namespace edge {
 class edge::io::FileSystem {
   public:
     /**
-     * Splits the given path into the file name and directory.
+     * Splits the given path into the string before the first '/' and that after.
      *
      * @param i_path path which gets split.
      * @param o_dir will be set to directory.
      * @param o_file will be set to file.
      **/
-    static void splitPath( const std::string &i_path,
-                                 std::string &o_dir,
-                                 std::string &o_file ) {
+    static void splitPathFirst( const std::string &i_path,
+                                      std::string &o_dir,
+                                      std::string &o_file ) {
+      std::size_t l_split = i_path.find_first_of("/\\");
+      o_dir  = i_path.substr( 0, l_split );
+      o_file = i_path.substr( l_split+1  );
+    }
+
+    /**
+     * Splits the given path into the string before the last '/' and that after.
+     *
+     * @param i_path path which gets split.
+     * @param o_dir will be set to directory.
+     * @param o_file will be set to file.
+     **/
+    static void splitPathLast( const std::string &i_path,
+                                     std::string &o_dir,
+                                     std::string &o_file ) {
       std::size_t l_split = i_path.find_last_of("/\\");
       o_dir  = i_path.substr( 0, l_split );
       o_file = i_path.substr( l_split+1  );
@@ -57,31 +73,36 @@ class edge::io::FileSystem {
      * @param i_dir directory which is created.
      **/
     static void createDir( const std::string &i_dir ) {
-      std::string l_dir, l_file;
+      std::string l_dirCreate;
+      std::string l_dir0;
+      std::string l_dir1;
+      splitPathFirst( i_dir+"/", l_dir0, l_dir1 );
 
-      // get base directory
-      splitPath( i_dir, l_dir, l_file );
+      // add slash, if this is system root
+      if( l_dir0 == "" ) l_dir0 = "/";
 
       struct stat l_stat;
-      //  check if directory exists
-      if( stat( l_dir.c_str(), &l_stat ) != 0 ) {
-        EDGE_LOG_INFO << "  can't access your base dir: " << l_dir;
 
-        // try to continue by creating the directory
-        if( parallel::g_rank == 0 ) {
-          int l_error = mkdir( l_dir.c_str(), S_IRWXU | S_IRWXG );
-          if( l_error == 0 ) {
-            EDGE_LOG_INFO << "  we are still in the game, sucessfully created: " << l_dir;
+      // create until all sub-directories are there
+      while( l_dir0 != "" ) {
+        if( l_dir0 != "/" ) l_dir0 += "/";
+        l_dirCreate += l_dir0;
+
+        //  check if directory exists
+        if( stat( l_dirCreate.c_str(), &l_stat ) != 0 ) {
+          // try to continue by creating the directory
+          int l_error = mkdir( l_dirCreate.c_str(), S_IRWXU | S_IRWXG );
+          if( l_error != 0 ) {
+            EDGE_LOG_FATAL << "  creating " << l_dirCreate << " failed: " << std::strerror( l_error );
           }
-          else {
-            EDGE_LOG_FATAL << "  creating " << l_dir << " failed: " << std::strerror( l_error );
-          }
+
+          // wait for the file system
+          fsync( l_error );
         }
+
+        std::string l_dirTmp = l_dir1;
+        splitPathFirst( l_dirTmp, l_dir0, l_dir1 );
       }
-#ifdef PP_USE_MPI
-      // wait for all MPI-ranks
-      MPI_Barrier( MPI_COMM_WORLD );
-#endif
     }
 };
 #endif

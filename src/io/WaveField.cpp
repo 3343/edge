@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,10 +24,10 @@
 #include "WaveField.h"
 
 #include <cassert>
-#include <io/logging.h>
 #include <sys/types.h>
 #include <cstring>
-#include "io/FileSystem.hpp"
+#include "logging.h"
+#include "FileSystem.hpp"
 #include "monitor/instrument.hpp"
 
 edge::io::WaveField::WaveField(       std::string      i_type,
@@ -35,26 +35,14 @@ edge::io::WaveField::WaveField(       std::string      i_type,
                                 const t_enLayout      &i_elLayout,
                                 const t_inMap         *i_inMap,
                                 const t_vertexChars   *i_veChars,
+                                const t_elementChars  *i_elChars,
                                 const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-                                const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] ):
-
-  m_veChars(i_veChars), m_elVe(i_elVe), m_dofs(i_dofs) {
-//  if(      i_type == "netcdf"     ) m_type = netcdf;
-  if( i_type == "vtk_ascii"  )      m_type = vtkAscii;
-  else if( i_type == "vtk_binary" ) m_type = vtkBinary;
-  else                              m_type = none;
-
-  // create new directory only for non-empty paths
-  if( m_type != none ) {
-    EDGE_LOG_INFO << "setting up wave field output";
-    FileSystem::createDir( i_outFile );
-  }
-
-  m_nVe = i_inMap->veDaMe.size();
-
-  m_writeStep  = 0;
-  m_outFile    = i_outFile;
-
+                                const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+                                      int_spType       i_spType ):
+ m_veChars(i_veChars),
+ m_elChars(i_elChars),
+ m_elVe(i_elVe),
+ m_dofs(i_dofs) {
   // derive the print elements
   for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
     int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
@@ -65,15 +53,83 @@ edge::io::WaveField::WaveField(       std::string      i_type,
       int_el l_elUn = i_inMap->elDaMe[ l_el   ];
              l_elUn = i_inMap->elMeDa[ l_elUn ];
 
-      m_elPrint.push_back( l_elUn );
+      // only add if element has the desired sparse type
+      if(     i_spType == std::numeric_limits< int_spType >::max()
+          || (i_elChars[l_el].spType & i_spType) == i_spType )
+        m_elPrint.push_back( l_elUn );
     }
   }
   // remove duplicates
   std::sort( m_elPrint.begin(), m_elPrint.end() );
   m_elPrint.erase( unique( m_elPrint.begin(), m_elPrint.end() ), m_elPrint.end() );
+
+  /*
+   * derive sparse ids of limited elements.
+   */
+  m_liPrint.resize( m_elPrint.size() );
+
+  // last print element
+  int_el l_lastPrint = (m_elPrint.size() == 0) ? 0 : m_elPrint.back()+1;
+
+  // current print element
+  std::size_t l_ep = 0;
+
+  //! counter for limited elements
+  int_el l_li = 0;
+
+  // iterate over dense elements
+  for( int_el l_el = 0; l_el < l_lastPrint; l_el++ ) {
+    // ignore if not print
+    if( l_el != m_elPrint[l_ep] ) continue;
+
+    // check if element is limited
+    bool l_lim = false;
+    if( ( m_elChars[l_el].spType & LIMIT ) == LIMIT ) l_lim = true;
+
+    if( l_lim ) {
+      m_liPrint[l_ep] = l_li;
+      l_li++;
+    }
+    else
+      m_liPrint[l_ep] = std::numeric_limits< int_el >::max();
+
+    // increase counter for print elements
+    l_ep++;
+
+    if( l_ep >= m_elPrint.size() ) break;
+  }
+
+  if(      i_type == "vtk_ascii"  ) m_type = vtkAscii;
+  else if( i_type == "vtk_binary" ) m_type = vtkBinary;
+  else                              m_type = none;
+
+  // create new directory
+  if( m_type != none ) {
+    EDGE_LOG_INFO << "setting up wave field output";
+    std::string l_dir, l_file;
+    FileSystem::splitPathLast( i_outFile, l_dir, l_file );
+
+    if( parallel::g_rank == 0 ) {
+      for( int l_ra = 0; l_ra < parallel::g_nRanks; l_ra++ ) {
+        std::string l_dirCreate = l_dir + "/" + std::to_string(l_ra);
+        FileSystem::createDir( l_dirCreate );
+      }
+    }
+#ifdef PP_USE_MPI
+    MPI_Barrier( MPI_COMM_WORLD );
+#endif
+
+    l_dir = l_dir + "/" + std::to_string(parallel::g_rank) + '/';
+    m_outFile = l_dir + l_file;
+  }
+
+  m_nVe = i_inMap->veDaMe.size();
+
+  m_writeStep = 0;
 }
 
-void edge::io::WaveField::write( double i_time ) {
+void edge::io::WaveField::write( double         i_time,
+                                 unsigned int (*i_limSync)[N_CRUNS] ) {
   PP_INSTR_FUN("write_wf")
 
 //  if( m_type == netcdf ) writeNetcdf( i_time, i_dofs );
@@ -83,13 +139,16 @@ void edge::io::WaveField::write( double i_time ) {
     l_outFile += "_" + parallel::g_rankStr + "_" + std::to_string((unsigned long long) m_writeStep) + ".vtk";
 
     // write output
-    m_vtk.write( l_outFile,
-                 m_type==vtkBinary,
-                 m_nVe,
-                 m_elPrint,
-                 m_veChars,
-                 m_elVe,
-                 m_dofs );
+    if( m_elPrint.size() > 0 )
+      m_vtk.write( l_outFile,
+                   m_type==vtkBinary,
+                   m_nVe,
+                   m_elPrint,
+                   m_liPrint,
+                   m_veChars,
+                   m_elVe,
+                   m_dofs,
+                   i_limSync );
   }
 
   m_writeStep++;

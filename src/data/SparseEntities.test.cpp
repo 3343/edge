@@ -24,6 +24,24 @@
 #include <catch.hpp>
 #include "SparseEntities.hpp"
 
+TEST_CASE( "SparseEnts: Number of sparse entities.", "[nSp][SparseEnts]" ) {
+  typedef struct { unsigned short spType; } t_enChars;
+
+  t_enChars l_chars1[10];
+  l_chars1[0].spType = 0;
+  l_chars1[1].spType = 3; // 1
+  l_chars1[2].spType = 2;
+  l_chars1[3].spType = 4;
+  l_chars1[4].spType = 3; // 2
+  l_chars1[5].spType = 0;
+  l_chars1[6].spType = 8;
+  l_chars1[7].spType = 2;
+  l_chars1[8].spType = 2;
+  l_chars1[9].spType = 3; // 3
+
+  REQUIRE( edge::data::SparseEntities::nSp( 10, 3, l_chars1 ) == 3 );
+}
+
 TEST_CASE( "SparseEnts: Extract a sparse from a dense entity layout.", "[denseToSparse][SparseEnts]" ) {
   // sparse type
   int_spType l_spType;
@@ -581,6 +599,77 @@ TEST_CASE( "SparseEnts: First sparse ids and sizes of subregions based on their 
   REQUIRE( l_sizes2[2] == 1 );
 }
 
+TEST_CASE( "SparseEnts: Links sparse entities to dense entities.", "[linkSpDe][SparseEnts]" ) {
+  /*
+   * Setup:
+   *
+   *    SpId | DeId         SpId | DeId
+   *         | 0               0 | 2
+   *         | 1               1 | 4
+   *       0 | 2               2 | 5
+   *         | 3               3 | 7
+   *       1 | 4
+   *       2 | 5
+   *         | 6
+   *       3 | 7
+   *         | 8
+   */
+  typedef struct{ unsigned short spType; } Chars;
+
+  Chars l_chars1[9] = { {8}, {4}, {33}, {0}, {33}, {33}, {17}, {33}, {18} };
+  int l_link1[4];
+
+  edge::data::SparseEntities::linkSpDe( 9,
+                                        33,
+                                        l_chars1,
+                                        l_link1 );
+
+  // check the results
+  REQUIRE( l_link1[0] == 2 );
+  REQUIRE( l_link1[1] == 4 );
+  REQUIRE( l_link1[2] == 5 );
+  REQUIRE( l_link1[3] == 7 );
+}
+
+TEST_CASE( "SparseEnts: Links sparse entities to sparse entities.", "[linkSpSp][SparseEnts]" ) {
+  /*
+   * Setup:
+     *
+     *   Input (implicit):    Output
+     *
+     *    SpId0 | SpId1 | DeId         SpId0 | SpId1
+     *          | 0     | 0                0 | 1
+     *          |       | 1                1 | -
+     *        0 | 1     | 2                2 | -
+     *          |       | 3                3 | 2
+     *        1 |       | 4
+     *        2 |       | 5
+     *          |       | 6
+     *        3 | 2     | 7
+     *          |       | 8
+   */
+  typedef struct{ unsigned short spType; } Chars;
+
+  unsigned short const l_spType0 = 16;
+  unsigned short const l_spType1 = 32;
+  unsigned short const l_spTypeB = 16 + 32;
+
+  Chars l_chars1[9] = { {8+l_spType1}, {4}, {4+l_spTypeB}, {0}, {l_spType0}, {l_spType0}, {12}, {l_spTypeB}, {13} };
+  int l_link1[4];
+
+  edge::data::SparseEntities::linkSpSp( 9,
+                                        l_spType0,
+                                        l_spType1,
+                                        l_chars1,
+                                        l_link1 );
+
+  // check the results
+  REQUIRE( l_link1[0] == 1 );
+  REQUIRE( l_link1[1] == std::numeric_limits< int >::max() );
+  REQUIRE( l_link1[2] == std::numeric_limits< int >::max() );
+  REQUIRE( l_link1[3] == 2 );
+}
+
 TEST_CASE( "SparseEnts: Links sparse entities based on adjacency information (single sparse type).", "[linkSpAdjSst][SparseEnts]" ) {
   /**
    * Setup:
@@ -630,12 +719,12 @@ TEST_CASE( "SparseEnts: Links sparse entities based on adjacency information (si
   int l_spLink[6][2];
 
   // link the sparse entities
-  edge::data::SparseEntities::linkSpAdj( l_nEn,
-                                         l_nAdjPerEn,
-                                         l_enToEn[0],
-                                         l_spType,
-                                         l_charsAdj,
-                                         l_spLink[0] );
+  edge::data::SparseEntities::linkSpAdjSst( l_nEn,
+                                            l_nAdjPerEn,
+                                            l_enToEn[0],
+                                            l_spType,
+                                            l_charsAdj,
+                                            l_spLink[0] );
   // check the result
   REQUIRE( l_spLink[0][0] == 2 );
   REQUIRE( l_spLink[0][1] == 1 );
@@ -658,6 +747,7 @@ TEST_CASE( "SparseEnts: Links sparse entities based on adjacency information (si
 
 TEST_CASE( "SparseEnts: Links sparse entities based on adjacency information (double sparse type).", "[linkSpAdjDst][SparseEnts]" ) {
   /*
+   * Test case for the flat version:
    *
    *   fa | el  | spId           el | spId         fa | spId           faSpId | elSpId
    *   0  | 1-4 |                0  | -            0  | x-x            0      | 2-1
@@ -673,76 +763,262 @@ TEST_CASE( "SparseEnts: Links sparse entities based on adjacency information (do
    *   10 | 4-9 | ***                              10 | x-x
    */
 
-  // set input info info
-  int l_nEn = 11;
-  int l_nAdjPerEn = 2;
+  // set input info
+  int l_nEn1 = 11;
+  int l_nAdjPerEn1 = 2;
 
-  int l_enEn[11][2] = { {1,4}, {5,3}, {9,7}, {8,3}, {2,1},
-                        {2,6}, {3,8}, {0,4}, {9,2}, {4,1},
-                        {4,9} };
+  int l_enEn1[11][2] = { {1,4}, {5,3}, {9,7}, {8,3}, {2,1},
+                         {2,6}, {3,8}, {0,4}, {9,2}, {4,1},
+                         {4,9} };
 
-  unsigned short l_spType = 87;
+  unsigned short l_spTypeFrom1 = 87;
+  unsigned short l_spTypeTo1   = 43;
 
   typedef struct{ unsigned short spType; } CharsAdj;
-  CharsAdj l_charsFrom[11];
-  l_charsFrom[0].spType  = 5;
-  l_charsFrom[1].spType  = 87;
-  l_charsFrom[2].spType  = 87;
-  l_charsFrom[3].spType  = 87;
-  l_charsFrom[4].spType  = 87;
-  l_charsFrom[5].spType  = 9;
-  l_charsFrom[6].spType  = 87;
-  l_charsFrom[7].spType  = 5;
-  l_charsFrom[8].spType  = 87;
-  l_charsFrom[9].spType  = 4;
-  l_charsFrom[10].spType = 3;
+  CharsAdj l_charsFrom1[11];
+  l_charsFrom1[0].spType  = 5;
+  l_charsFrom1[1].spType  = l_spTypeFrom1;
+  l_charsFrom1[2].spType   = l_spTypeFrom1;
+  l_charsFrom1[3].spType  = l_spTypeFrom1;
+  l_charsFrom1[4].spType  = l_spTypeFrom1;
+  l_charsFrom1[5].spType  = 9;
+  l_charsFrom1[6].spType  = l_spTypeFrom1;
+  l_charsFrom1[7].spType  = 5;
+  l_charsFrom1[8].spType  = l_spTypeFrom1;
+  l_charsFrom1[9].spType  = 4;
+  l_charsFrom1[10].spType = 3;
 
-  CharsAdj l_charsTo[10];
-  l_charsTo[0].spType = 5;
-  l_charsTo[1].spType = 8;
-  l_charsTo[2].spType = 87;
-  l_charsTo[3].spType = 87;
-  l_charsTo[4].spType = 5;
-  l_charsTo[5].spType = 87;
-  l_charsTo[6].spType = 0;
-  l_charsTo[7].spType = 5;
-  l_charsTo[8].spType = 3;
-  l_charsTo[9].spType = 87;
+  CharsAdj l_charsTo1[10];
+  l_charsTo1[0].spType = 5;
+  l_charsTo1[1].spType = 8;
+  l_charsTo1[2].spType = l_spTypeTo1;
+  l_charsTo1[3].spType = l_spTypeTo1;
+  l_charsTo1[4].spType = 5;
+  l_charsTo1[5].spType = l_spTypeTo1;
+  l_charsTo1[6].spType = 0;
+  l_charsTo1[7].spType = 5;
+  l_charsTo1[8].spType = 3;
+  l_charsTo1[9].spType = l_spTypeTo1;
 
-  int l_spLink[6][2];
+  int l_spLink1[6][2];
 
   // link the sparse entities
-  edge::data::SparseEntities::linkSpAdj( l_nEn,
-                                         l_nAdjPerEn,
-                                         l_enEn[0],
-                                         l_spType,
-                                         l_charsFrom,
-                                         l_charsTo,
-                                         l_spLink[0] );
+  edge::data::SparseEntities::linkSpAdjDst( l_nEn1,
+                                            l_nAdjPerEn1,
+                                            l_enEn1[0],
+                                            l_spTypeFrom1,
+                                            l_spTypeTo1,
+                                            l_charsFrom1,
+                                            l_charsTo1,
+                                            l_spLink1[0] );
 
   // check the result
-  REQUIRE( l_spLink[0][0] == 2 );
-  REQUIRE( l_spLink[0][1] == 1 );
+  REQUIRE( l_spLink1[0][0] == 2 );
+  REQUIRE( l_spLink1[0][1] == 1 );
 
-  REQUIRE( l_spLink[1][0] == 3 );
-  REQUIRE( l_spLink[1][1] == std::numeric_limits< int >::max() );
+  REQUIRE( l_spLink1[1][0] == 3 );
+  REQUIRE( l_spLink1[1][1] == std::numeric_limits< int >::max() );
 
-  REQUIRE( l_spLink[2][0] == std::numeric_limits< int >::max() );
-  REQUIRE( l_spLink[2][1] == 1 );
+  REQUIRE( l_spLink1[2][0] == std::numeric_limits< int >::max() );
+  REQUIRE( l_spLink1[2][1] == 1 );
 
-  REQUIRE( l_spLink[3][0] == 0 );
-  REQUIRE( l_spLink[3][1] == std::numeric_limits< int >::max() );
+  REQUIRE( l_spLink1[3][0] == 0 );
+  REQUIRE( l_spLink1[3][1] == std::numeric_limits< int >::max() );
 
-  REQUIRE( l_spLink[4][0] == 1 );
-  REQUIRE( l_spLink[4][1] == std::numeric_limits< int >::max() );
+  REQUIRE( l_spLink1[4][0] == 1 );
+  REQUIRE( l_spLink1[4][1] == std::numeric_limits< int >::max() );
 
-  REQUIRE( l_spLink[5][0] == 3 );
-  REQUIRE( l_spLink[5][1] == 0 );
+  REQUIRE( l_spLink1[5][0] == 3 );
+  REQUIRE( l_spLink1[5][1] == 0 );
+
+  /*
+   * Test case for the dynamic version.
+   * In comparison to the flat version, the number of adjacent entities is dynamic and no undefined links are returned.
+   *
+   *   ve | el        | spId           el | spId         ve | spId           veSpId | elSpId
+   *   0  | 1-4       |  -             0  | -            0  | x-x            0      | 2-1
+   *   1  | 8-5-0-3   |  0             1  | -            1  | x-2-x-1        1      | -
+   *   2  | 8-7-4     |  1             2  | 0            2  | x-x-x          2      | 1
+   *   3  | 8-3-6-7-8 |  2             3  | 1            3  | x-1-x-x-x      3      | 0
+   *   4  | 2-1       |  3             4  | -            4  | 0-x            4      | 1
+   *   5  | 2-6-5-3   |  -             5  | 2            5  | x-x-x-x        5      | 3-0-2-1
+   *   6  | 3-8       |  4             6  | -            6  | 1-x
+   *   7  | 0-4       |  -             7  | -            7  | x-x
+   *   8  | 9-2-5-3-7 |  5             8  | -            8  | 3-0-2-1-x
+   *   9  | 4-1-9-8   |  -             9  | 3            9  | x-x-x-x
+   *   10 | 4-9       |  -                               10 | x-x
+   */
+
+  // set input info
+  int l_nEn2 = 11;
+
+  int l_enEnRaw2[35] = { 1, 4,          //  0
+                         8, 5, 0, 3,    //  2
+                         8, 7, 4,       //  6
+                         8, 3, 6, 7, 8, //  9
+                         2, 1,          // 14
+                         2, 6, 5, 3,    // 16
+                         3, 8,          // 20
+                         0, 4,          // 22
+                         9, 2, 5, 3, 7, // 24
+                         4, 1, 9, 8,    // 29
+                         4, 9 };        // 33
+
+  int *l_enEnPtr2[12] = { l_enEnRaw2+ 0,
+                          l_enEnRaw2+ 2,
+                          l_enEnRaw2+ 6,
+                          l_enEnRaw2+ 9,
+                          l_enEnRaw2+14,
+                          l_enEnRaw2+16,
+                          l_enEnRaw2+20,
+                          l_enEnRaw2+22,
+                          l_enEnRaw2+24,
+                          l_enEnRaw2+29,
+                          l_enEnRaw2+33,
+                          l_enEnRaw2+35 }; // ghost
+
+  unsigned short l_spTypeFrom2 = 129;
+  unsigned short l_spTypeTo2   =  97;
+
+  CharsAdj l_charsFrom2[11];
+  l_charsFrom2[0].spType  = 5;
+  l_charsFrom2[1].spType  = l_spTypeFrom2;
+  l_charsFrom2[2].spType  = l_spTypeFrom2;
+  l_charsFrom2[3].spType  = l_spTypeFrom2;
+  l_charsFrom2[4].spType  = l_spTypeFrom2;
+  l_charsFrom2[5].spType  = 9;
+  l_charsFrom2[6].spType  = l_spTypeFrom2;
+  l_charsFrom2[7].spType  = 5;
+  l_charsFrom2[8].spType  = l_spTypeFrom2;
+  l_charsFrom2[9].spType  = 4;
+  l_charsFrom2[10].spType = 3;
+
+  CharsAdj l_charsTo2[10];
+  l_charsTo2[0].spType = 5;
+  l_charsTo2[1].spType = 8;
+  l_charsTo2[2].spType = l_spTypeTo2;
+  l_charsTo2[3].spType = l_spTypeTo2;
+  l_charsTo2[4].spType = 5;
+  l_charsTo2[5].spType = l_spTypeTo2;
+  l_charsTo2[6].spType = 0;
+  l_charsTo2[7].spType = 5;
+  l_charsTo2[8].spType = 3;
+  l_charsTo2[9].spType = l_spTypeTo2;
+
+  // derive sizes of link
+  int l_nRaw2 = -1;
+  int l_nPtr2 = -1;
+
+  // test derivation of number of entries
+  edge::data::SparseEntities::nLinkSpAdjDst( l_nEn2,
+                                             l_enEnPtr2,
+                                             l_spTypeFrom2,
+                                             l_spTypeTo2,
+                                             l_charsFrom2,
+                                             l_charsTo2,
+                                             l_nRaw2,
+                                             l_nPtr2 );
+
+  // check the result
+  REQUIRE( l_nRaw2 == 9 );
+  REQUIRE( l_nPtr2 == 6 );
+
+  // derive the link itself
+  int l_raw2[9];
+  int *l_ptr2[6+1];
+
+  // test derivation of sparse link
+  edge::data::SparseEntities::linkSpAdjDst( l_nEn2,
+                                            l_enEnPtr2,
+                                            l_spTypeFrom2,
+                                            l_spTypeTo2,
+                                            l_charsFrom2,
+                                            l_charsTo2,
+                                            l_raw2,
+                                            l_ptr2 );
+
+
+  /*
+   * Test case for the dynamic version.
+   * In comparison to the flat version, the number of adjacent entities is dynamic and no undefined links are returned.
+   *
+   *   ve | el        | spId           el | spId         ve | spId           veSpId | elSpId
+   *   0  | 1-4       |  -             0  | -            0  | x-x            0      | 2-1
+   *   1  | 8-5-0-3   |  0             1  | -            1  | x-2-x-1        1      | -
+   *   2  | 8-7-4     |  1             2  | 0            2  | x-x-x          2      | 1
+   *   3  | 8-3-6-7-8 |  2             3  | 1            3  | x-1-x-x-x      3      | 0
+   *   4  | 2-1       |  3             4  | -            4  | 0-x            4      | 1
+   *   5  | 2-6-5-3   |  -             5  | 2            5  | x-x-x-x        5      | 3-0-2-1
+   *   6  | 3-8       |  4             6  | -            6  | 1-x
+   *   7  | 0-4       |  -             7  | -            7  | x-x
+   *   8  | 9-2-5-3-7 |  5             8  | -            8  | 3-0-2-1-x
+   *   9  | 4-1-9-8   |  -             9  | 3            9  | x-x-x-x
+   *   10 | 4-9       |  -                               10 | x-x
+   */
+
+  // check the results
+  REQUIRE( l_raw2[0] == 2 );
+  REQUIRE( l_raw2[1] == 1 );
+
+  REQUIRE( l_raw2[2] == 1 );
+
+  REQUIRE( l_raw2[3] == 0 );
+
+  REQUIRE( l_raw2[4] == 1 );
+
+  REQUIRE( l_raw2[5] == 3 );
+  REQUIRE( l_raw2[6] == 0 );
+  REQUIRE( l_raw2[7] == 2 );
+  REQUIRE( l_raw2[8] == 1 );
+
+  REQUIRE( l_ptr2[0] == l_raw2+0 );
+  REQUIRE( l_ptr2[1] == l_raw2+2 );
+  REQUIRE( l_ptr2[2] == l_raw2+2 );
+  REQUIRE( l_ptr2[3] == l_raw2+3 );
+  REQUIRE( l_ptr2[4] == l_raw2+4 );
+  REQUIRE( l_ptr2[5] == l_raw2+5 );
+  REQUIRE( l_ptr2[6] == l_raw2+9 );
+}
+
+TEST_CASE( "SparseEnts: Inherit sparse information within entities.", "[inherit][SparseEnts]" ) {
+  /*
+   * Out setup:
+   *   "parent" sparse type: 01
+   *   "child"  sparse type: 10
+   *
+   *   Input:      Output: 
+   *   en | bits   en | bits
+   *   0  | 01     0  | 11
+   *   1  | 11     1  | 11
+   *   2  | 01     2  | 11
+   *   3  | 10     3  | 10
+   *   4  | 01     4  | 11
+   *   5  | 00     5  | 00
+   */
+
+  // setup chars
+  typedef struct { unsigned short spType; } t_enChars;
+
+  t_enChars l_enChars1[6] = { {1}, {3}, {1}, {2}, {1}, {0} };
+
+  // call inheritance
+  edge::data::SparseEntities::inherit( 6,
+                                       1,
+                                       2,
+                                       l_enChars1 );
+
+  // check the result
+  REQUIRE( l_enChars1[0].spType == 3 );
+  REQUIRE( l_enChars1[1].spType == 3 );
+  REQUIRE( l_enChars1[2].spType == 3 );
+  REQUIRE( l_enChars1[3].spType == 2 );
+  REQUIRE( l_enChars1[4].spType == 3 );
+  REQUIRE( l_enChars1[5].spType == 0 );
 }
 
 TEST_CASE( "SparseEnts: Propagate sparse information to adjacent entities.", "[propAdj][SparseEnts]" ) {
   /*
-   * Our setup
+   * Our setup for the flat array version
    *
    *   Input bits  Input bits  Adjacency of    Result (critical bit is
    *   of en0:     of en1:     entity 0 to 1:  the second (x): xy:
@@ -759,37 +1035,90 @@ TEST_CASE( "SparseEnts: Propagate sparse information to adjacent entities.", "[p
   typedef struct { unsigned short spType; } t_enChars;
 
   // set up en0-chars
-  t_enChars l_en0Chars[6];
-  l_en0Chars[0].spType = 0;
-  l_en0Chars[1].spType = 3;
-  l_en0Chars[2].spType = 0;
-  l_en0Chars[3].spType = 2;
-  l_en0Chars[4].spType = 3;
-  l_en0Chars[5].spType = 0;
+  t_enChars l_en0Chars1[6];
+  l_en0Chars1[0].spType = 0;
+  l_en0Chars1[1].spType = 3;
+  l_en0Chars1[2].spType = 0;
+  l_en0Chars1[3].spType = 2;
+  l_en0Chars1[4].spType = 3;
+  l_en0Chars1[5].spType = 0;
 
   // set up en1-chars
-  t_enChars l_en1Chars[5];
-  l_en1Chars[0].spType = 0;
-  l_en1Chars[1].spType = 1;
-  l_en1Chars[2].spType = 0;
-  l_en1Chars[3].spType = 1;
-  l_en1Chars[4].spType = 1;
+  t_enChars l_en1Chars1[5];
+  l_en1Chars1[0].spType = 0;
+  l_en1Chars1[1].spType = 1;
+  l_en1Chars1[2].spType = 0;
+  l_en1Chars1[3].spType = 1;
+  l_en1Chars1[4].spType = 1;
 
   // set up adjacency info
-  int l_en0ToEn1[6][2] = { {0,2}, {1,2}, {3,1}, {4,2}, {1,4}, {2,3} };
+  int l_en0ToEn11[6][2] = { {0,2}, {1,2}, {3,1}, {4,2}, {1,4}, {2,3} };
 
   // call the propagation
-  edge::data::SparseEntities::propAdj( 5,
+  edge::data::SparseEntities::propAdj( 6,
                                        2,
-                                       l_en0ToEn1[0],
+                                       l_en0ToEn11[0],
                                        2,
-                                       l_en0Chars,
-                                       l_en1Chars );
+                                       2,
+                                       l_en0Chars1,
+                                       l_en1Chars1 );
 
   // check the result
-  REQUIRE( l_en1Chars[0].spType == 0 );
-  REQUIRE( l_en1Chars[1].spType == 3 );
-  REQUIRE( l_en1Chars[2].spType == 2 );
-  REQUIRE( l_en1Chars[3].spType == 1 );
-  REQUIRE( l_en1Chars[4].spType == 3 );
+  REQUIRE( l_en1Chars1[0].spType == 0 );
+  REQUIRE( l_en1Chars1[1].spType == 3 );
+  REQUIRE( l_en1Chars1[2].spType == 2 );
+  REQUIRE( l_en1Chars1[3].spType == 1 );
+  REQUIRE( l_en1Chars1[4].spType == 3 );
+
+
+  /*
+   * Our setup for the array of pointer version
+   *
+   *   Input bits  Input bits  Adjacency of    Result (critical bit is
+   *   of en0:     of en1:     entity 0 to 1:  the second (x): xy:
+   *
+   *   en0 | bits  en0 | bits  en0 | en1       en1
+   *   0   | 00    0   | 00    0   | 0         0 | 10
+   *   1   | 11    1   | 01    1   | 1-2       1 | 11
+   *   2   | 00    2   | 00    2   | 3-1-2     2 | 10
+   *   3   | 10    3   | 01    3   | 4-2       3 | 01
+   *   4   | 11    4   | 01    4   | 1-4-0     4 | 11
+   *   5   | 00                5   | 2-3-0-1
+   */
+
+  // set up en0-chars
+  t_enChars l_en0Chars2[6];
+  l_en0Chars2[0].spType = 0;
+  l_en0Chars2[1].spType = 3;
+  l_en0Chars2[2].spType = 0;
+  l_en0Chars2[3].spType = 2;
+  l_en0Chars2[4].spType = 3;
+  l_en0Chars2[5].spType = 0;
+
+  // set up en1-chars
+  t_enChars l_en1Chars2[5];
+  l_en1Chars2[0].spType = 0;
+  l_en1Chars2[1].spType = 1;
+  l_en1Chars2[2].spType = 0;
+  l_en1Chars2[3].spType = 1;
+  l_en1Chars2[4].spType = 1;
+
+  // set up adjacency info   0   1     3       6     8       11      15
+  int l_en0ToEn12[15] =    { 0,  1,2,  3,1,2,  4,2,  1,4,0,  2,3,0,1 };
+  int *l_ptrs[7] = { l_en0ToEn12+0, l_en0ToEn12+1, l_en0ToEn12+3, l_en0ToEn12+6, l_en0ToEn12+8, l_en0ToEn12+11, l_en0ToEn12+15 };
+
+  // call the propagation
+  edge::data::SparseEntities::propAdj( 6,
+                                       l_ptrs,
+                                       2,
+                                       2,
+                                       l_en0Chars2,
+                                       l_en1Chars2 );
+
+  // check the result
+  REQUIRE( l_en1Chars2[0].spType == 2 );
+  REQUIRE( l_en1Chars2[1].spType == 3 );
+  REQUIRE( l_en1Chars2[2].spType == 2 );
+  REQUIRE( l_en1Chars2[3].spType == 1 );
+  REQUIRE( l_en1Chars2[4].spType == 3 );
 }

@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2015-2016, Regents of the University of California
+# Copyright (c) 2015-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -31,9 +31,9 @@ if  env['compilers'] == 'clang':
 
 l_kernels = [ 'time/TimeGroupStatic.cpp' ]
 
-l_sources = [ 'data/Dynamic.cpp',
+l_sources = [ 'data/Expression.cpp',
+              'data/Dynamic.cpp',
               'data/EntityLayout.cpp',
-#              'data/Expression.cpp',
               'mesh/Regular.cpp',
               'dg/Basis.cpp',
               'io/OptionParser.cpp',
@@ -66,15 +66,19 @@ for l_kernel in l_kernels:
 if env['tests']:
   l_tests = ['tests.cpp',
              'data/EntityLayout.test.cpp',
+             'data/DataLayout.test.cpp',
              'data/SparseEntities.test.cpp',
-#             'data/Dynamic.test.cpp',
-#            'data/Expression.test.cpp',
+             'data/Dynamic.test.cpp',
+             'data/Expression.test.cpp',
+             'data/MmVanilla.test.cpp',
              'dg/Basis.test.cpp',
              'dg/QuadratureEval.test.cpp',
-#             'sc/Init.test.cpp',
-#             'sc/SubGrid.test.cpp',
-#             'sc/Kernels.test.cpp',
-#             'sc/Detections.test.cpp',
+             'sc/Init.test.cpp',
+             'sc/SubGrid.test.cpp',
+             'sc/Kernels.test.cpp',
+             'sc/Detections.test.cpp',
+             'sc/ibnd/SuperCell.test.cpp',
+             'sc/ibnd/Init.test.cpp',
              'mesh/regular/Base.test.cpp',
              'mesh/common.test.cpp',
              'parallel/Mpi.test.cpp',
@@ -87,7 +91,8 @@ if env['tests']:
 #             'setups/InitialDofs.test.cpp',
              'io/Config.test.cpp',
              'io/Receivers.test.cpp',
-             'io/ReceiversQuad.test.cpp' ]
+             'io/InternalBoundary.test.cpp',
+              ]
   if env['moab'] != False:
     l_tests = l_tests + [ 'mesh/Moab.test.cpp' ]
 
@@ -96,6 +101,7 @@ if env['tests']:
 
   if 'elastic' in env['equations']:
     l_tests = l_tests+['impl/elastic/common.test.cpp',
+                       'impl/elastic/sc/Llf.test.cpp',
                        'impl/elastic/setups/RuptureInit.test.cpp',
 #                       'impl/elastic/solvers/InternalBoundary.test.cpp',
                        'impl/elastic/solvers/FrictionLaws.test.cpp',

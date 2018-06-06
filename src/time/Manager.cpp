@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,6 +23,7 @@
 
 #include "Manager.h"
 #include "monitor/instrument.hpp"
+#include "sc/Steering.hpp"
 
 void edge::time::Manager::schedule() {
 #if defined PP_T_EQUATIONS_ADVECTION
@@ -79,7 +80,7 @@ void edge::time::Manager::compute() {
       PP_INSTR_PAR_UINT64("cflow_id", (uint64_t) l_id )
 #pragma warning pop
 
-      m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs, m_recvsQuad );
+      m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs, m_recvsSf );
 
       PP_INSTR_REG_END(step)
 
@@ -126,4 +127,8 @@ void edge::time::Manager::simulate( double i_time ) {
 }
 #endif
 
+  // prepare limiter for sync
+  for( int_tg l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+    m_timeGroups[l_tg]->limSync();
+  }
 }

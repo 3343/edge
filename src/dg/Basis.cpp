@@ -183,7 +183,6 @@ void edge::dg::Basis::qpts2modal( const real_base    *i_evalF,
 
 real_base edge::dg::Basis::modal2ptval( const real_mesh  i_pt[3],
                                         const real_base *i_modes ) const {
-
   real_base l_val = 0;
 
   for( int_md l_md = 0; l_md < m_nBaseFuncs; l_md++ ) {
@@ -195,7 +194,8 @@ real_base edge::dg::Basis::modal2ptval( const real_mesh  i_pt[3],
                l_bVal,
                i_pt[0],
                i_pt[1],
-               i_pt[2] );
+               i_pt[2],
+               -1, m_order );
 
     // add contribution
     l_val += l_bVal * i_modes[l_md];

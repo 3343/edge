@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,13 +21,13 @@
  * Management of the time stepping.
  **/
 
-#ifndef MANAGER_H
-#define MANAGER_H
+#ifndef EDGE_MANAGER_H
+#define EDGE_MANAGER_H
 
 #include <constants.hpp>
 #include "parallel/Shared.h"
 #include "io/Receivers.h"
-#include "io/ReceiversQuad.hpp"
+#include "io/ReceiversSf.hpp"
 #include "TimeGroupStatic.h"
 #include <vector>
 
@@ -51,8 +51,8 @@ class edge::time::Manager {
     //! receiver output
     io::Receivers &m_recvs;
 
-    //! receiver output at quad points
-    io::ReceiversQuad<real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS> &m_recvsQuad;
+    //! receiver output at sub-faces
+    io::ReceiversSf<real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS> &m_recvsSf;
 
     //! clusters under control of the time manager
     std::vector< TimeGroupStatic* > m_timeGroups;
@@ -80,17 +80,17 @@ class edge::time::Manager {
      * @param i_shared shared memory parallelization.
      * @param i_mpi mpi parallelization.
      * @param i_recvs modal receivers.
-     * @param i_recvsQuad receivers at quad points.
+     * @param i_recvsSf receivers at sub-faces.
      **/
     Manager(       double                              i_dT,
                    parallel::Shared                    &i_shared,
                    parallel::Mpi                       &i_mpi,
                    io::Receivers                       &i_recvs,
-                   io::ReceiversQuad< real_base,
-                                      T_SDISC.ELEMENT,
-                                      ORDER,
-                                      N_CRUNS >        &i_recvsQuad ):
-     m_dTfun(i_dT), m_shared(i_shared), m_mpi(i_mpi), m_recvs(i_recvs), m_recvsQuad(i_recvsQuad){};
+                   io::ReceiversSf< real_base,
+                                    T_SDISC.ELEMENT,
+                                    ORDER,
+                                    N_CRUNS >        &i_recvsSf ):
+     m_dTfun(i_dT), m_shared(i_shared), m_mpi(i_mpi), m_recvs(i_recvs), m_recvsSf(i_recvsSf){};
 
     /**
      * Adds a time group to the time manager.

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2017, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,12 +21,14 @@
  * Logging interface.
  **/
 
-#ifndef LOGGING_H_
-#define LOGGING_H_
+#ifndef EDGE_IO_LOGGING_H_
+#define EDGE_IO_LOGGING_H_
 
 #include <iostream>
 #include "parallel/global.h"
-#include "parallel/Mpi.h"
+#ifdef PP_USE_MPI
+#include "parallel/mpi_wrapper.inc"
+#endif
 
 #ifdef __COVERITY__
 // includes for Coverity Scan

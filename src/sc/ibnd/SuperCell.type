@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,29 +18,61 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * This file contains definition of compile time constants for Edge-V.
+ * Data types of the supercells.
  **/
+#ifndef EDGE_SC_SUPERCELL_TYPE
+#define EDGE_SC_SUPERCELL_TYPE
 
-#ifndef VM_CONSTANTS_H
-#define VM_CONSTANTS_H
+namespace edge {
+  namespace sc {
+    namespace ibnd {
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP >
+      struct t_stCol;
 
-#define EDGE_V_OUT (std::cout << "EDGE-V INFO: ")
-#define EDGE_V_ERR (std::cerr << "EDGE-V ERR : ")
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_O_SP >
+      struct t_SuperCell;
+    }
+  }
+}
 
-#define ELMTTYPE 4  //TODO
+/**
+ * Stencil collection.
+ *
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP spatial order.
+ ***/
+template< t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+struct edge::sc::ibnd::t_stCol {
+  //! number of sub-edges
+  static unsigned short const TL_N_SES = CE_N_SUB_EDGES( TL_T_EL, TL_O_SP );
+  //! number of sub-faces
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
-#define UCVMCMODE UCVM_COORD_GEO_ELEV
-#define UCVMTYPE  2 //TODO
+  //! number of stencils
+  static unsigned short const TL_N_ST = (TL_T_EL == TET4) ? (TL_N_SFS - TL_N_SES)/2 : 0;
 
-#define MIN_VP          1500.0
-#define MIN_VS          500.0
-#define MIN_VS2         1200.0
-#define MAX_VP_VS_RATIO 3.0
+  //! sub-cells of the stencils
+  unsigned short sc[ CE_MAX( TL_N_ST, (unsigned short) 1 ) ][2];
+};
 
-#define CENTERICLON -117.916
-#define CENTERICLAT 33.933
+/**
+ * Super-cells.
+ *
+ * @paramt TL_T_EL element type.
+ * @paramt TL_O_SP spatial  order.
+ **/
+template< t_entityType   TL_T_EL,
+          unsigned short TL_O_SP >
+struct edge::sc::ibnd::t_SuperCell {
+  //! number of faces
+  static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
-typedef int     int_v;
-typedef double  real;
+  //! stencil collections
+  t_stCol< TL_T_EL,
+           TL_O_SP > col[TL_N_FAS];
+};
 
-#endif //! VM_CONSTANTS_H
+#endif

@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -193,59 +193,27 @@ def scSfSc( i_deg ):
 # Integration intervals for the sub-cells
 #
 # @param i_deg polynomial degree.
-# @param i_syms symbols
-# @return integration intervals for inner sub-cells, send sub-cells, and per DG-face of surface sub-cells.
+# @param i_syms symbols.
+# @return 1) mappings, 2) absolute values of Jacobi determinant.
 ##
 def intSc( i_deg, i_syms ):
   assert( len(i_syms) == 2 )
 
-  # get vertex coordinates
+  # tria shape functions
+  l_shape = [ 1 - i_syms[0] - i_syms[1],
+              i_syms[0],
+              i_syms[1] ]
+
+  # get sub-cell coords
   l_svs = svs( i_deg )
+  l_scSv = scSv( i_deg )[0:2]
 
-  # get vertices adjacent to sub-cells
-  l_scSv = scSv( i_deg )
+  # assemble mappings and dets for surface sub-cells
+  l_scSfSc = scSfSc( i_deg )
 
-  l_intSc = [[],[]]
-
-  # iterate over inner and send
-  for l_ty in range(2):
-    # iterate over sub-cells
-    for l_sc in l_scSv[l_ty]:
-      # determine if the triangle points upwards
-      l_up = l_svs[ l_sc[0] ][0] < l_svs[ l_sc[1] ][0]
-
-      # set intervals
-      l_intSc[l_ty] = l_intSc[l_ty] + [[]]
-      if( l_up ):
-        l_intSc[l_ty][-1] = l_intSc[l_ty][-1] + [ ( i_syms[0],
-                                                    l_svs[ l_sc[0] ][0],
-                                                    l_svs[ l_sc[1] ][0] - ( i_syms[1] - l_svs[ l_sc[0] ][1] ) ) ]
-        l_intSc[l_ty][-1] = l_intSc[l_ty][-1] + [ ( i_syms[1],
-                                                    l_svs[ l_sc[0] ][1],
-                                                    l_svs[ l_sc[2] ][1], ) ]
-      else:
-        l_intSc[l_ty][-1] = l_intSc[l_ty][-1] + [ ( i_syms[0],
-                                                    l_svs[ l_sc[1] ][0] - ( i_syms[1] -  l_svs[ l_sc[0] ][1] ),
-                                                    l_svs[ l_sc[1] ][0], ) ]
-        l_intSc[l_ty][-1] = l_intSc[l_ty][-1] + [ ( i_syms[1],
-                                                    l_svs[ l_sc[0] ][1],
-                                                    l_svs[ l_sc[2] ][1], ) ]
-
-  # derive surf sub-cells
   l_ty = edge_pre.types.Tria.Tria( i_deg )
 
-  l_intSurf = [[], [], []]
-
-  l_scSfScRecv = scSfSc( i_deg )[2]
-  for l_si in range(len(l_scSfScRecv)):
-    l_sc = l_scSfScRecv[l_si]
-    l_scSurf = l_sc[0]
-    l_fa = l_si // l_ty.n_sfs
-
-    # set interval
-    l_intSurf[l_fa] = l_intSurf[l_fa] + [ (l_intSc[0]+l_intSc[1])[l_scSurf] ]
-
-  return l_intSc[0], l_intSc[1], l_intSurf
+  return Generic.intSc( i_deg, l_ty, i_syms, l_shape, l_svs, l_scSv[0:2], l_scSfSc[2] )
 
 ##
 # Derives the integration intervals for the sub-faces at the DG-faces.
@@ -364,6 +332,23 @@ def scTySf( i_deg ):
     l_scTySfSend = l_scTySfSend + [[6, 7, 2]]
 
   return l_scTySfIn, l_scTySfSend
+
+##
+# Define sub-cell reordering based on vertex-combinations, given two DG-faces with adjacent sub-cells.
+#   For two-dimensional elements, there is only one possible combination.
+#   The order is simply reversed.
+#
+# @param i_deg degree.
+# @return required reordering, as seen from the adjacent DG-element.
+##
+def scDgAd( i_deg ):
+  # get type
+  l_ty = edge_pre.types.Tria.Tria( i_deg )
+
+  l_scDgAd = list( range(l_ty.n_sfs) )
+  l_scDgAd.reverse()
+
+  return [ l_scDgAd ]
 
 ##
 # Plots the sub-grid.

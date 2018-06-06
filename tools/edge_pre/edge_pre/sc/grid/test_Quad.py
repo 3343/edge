@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -278,76 +278,6 @@ class TestGridQuad( unittest.TestCase ):
                                       [ 1,-1,-1,-1 ] ])
 
   ##
-  # Tests integration intervals for sub-cells.
-  ##
-  def test_intSc(self):
-    # second order
-    l_intIn, l_intSend, l_intSurf = Quad.intSc( 1, ['xi0', 'xi1'] )
-
-    self.assertEqual( l_intIn, [ [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                   ( 'xi1', Fra(1,3), Fra(2,3) ) ] ] )
-
-    self.assertEqual( l_intSend, [ [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ) ],
-
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ) ],
-
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ) ],
-
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ) ],
-
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ) ],
-
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ) ],
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ) ],
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ) ] ] )
-
-    self.assertEqual( l_intSurf[0], [ [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                        ( 'xi1', Fra(0,3), Fra(1,3) ) ],
-
-                                      [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                        ( 'xi1', Fra(0,3), Fra(1,3) ) ],
-
-                                      [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                        ( 'xi1', Fra(0,3), Fra(1,3) ) ] ] )
-
-    self.assertEqual( l_intSurf[1], [ [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                        ( 'xi1', Fra(0,3), Fra(1,3) ) ],
-
-                                      [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                        ( 'xi1', Fra(1,3), Fra(2,3) ) ],
-
-                                      [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                        ( 'xi1', Fra(2,3), Fra(3,3) ) ] ] )
-
-    self.assertEqual( l_intSurf[2], [ [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                        ( 'xi1', Fra(2,3), Fra(3,3) ) ],
-
-                                      [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                        ( 'xi1', Fra(2,3), Fra(3,3) ) ],
-
-                                      [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                        ( 'xi1', Fra(2,3), Fra(3,3) ) ] ] )
-
-    self.assertEqual( l_intSurf[3], [ [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                        ( 'xi1', Fra(2,3), Fra(3,3) ) ],
-
-                                      [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                        ( 'xi1', Fra(1,3), Fra(2,3) ) ],
-
-                                      [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                        ( 'xi1', Fra(0,3), Fra(1,3) ) ] ] )
-
-  ##
   # Tests integration intervals for DG sub-faces.
   ##
   def test_intSfDg(self):
@@ -441,3 +371,15 @@ class TestGridQuad( unittest.TestCase ):
                                       [8, 9, 10,  3],
                                       [8, 9, 10,  3],
                                       [8, 9, 10,  3] ] )
+
+  ##
+  # Tests the reordering.
+  ##
+  def test_scDgAd(self):
+    # first order
+    l_scDgAd = Quad.scDgAd( 0 )
+    self.assertEqual( l_scDgAd, [ [0] ] )
+
+    # second order
+    l_scDgAd = Quad.scDgAd( 1 )
+    self.assertEqual( l_scDgAd, [ [2,1,0] ] )

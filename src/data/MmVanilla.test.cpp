@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -29,12 +29,16 @@ TEST_CASE( "Vanilla: GEMM.", "[mmVanilla][gemm]" ) {
 
   // add GEMM kernel
   l_van1.add( 3, 3, 3,
-              1, 1, 1,
-              0, 0, 1 );
+              3, 3, 3,
+              float(1), float(0),
+              true, false,
+              1 );
 
   l_van1.add( 3, 3, 3,
-              1, 1, 1,
-              0, 1, 1 );
+              3, 3, 3,
+              float(1), float(1),
+              true, false,
+              1 );
 
   float l_mat1[3][3] = { { 1, 2, 3 },
                          { 4, 5, 6 },

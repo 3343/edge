@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,11 +21,11 @@
  * Regular meshes in EDGE.
  **/
 
-#ifndef REGULAR_H_
-#define REGULAR_H_
+#ifndef EDGE_MESH_REGULAR_H_
+#define EDGE_MESH_REGULAR_H_
 
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 
 namespace edge {
   namespace mesh {
@@ -110,6 +110,16 @@ class edge::mesh::Regular {
     void getElementFaceNeighbors( int_el  i_elementId,
                                   int_el *o_neighboringIds ) const;
 
+
+    /**
+     * Gets the ids of vertex neighboring elements.
+     * The first entry of the array of pointers is expected to hold the raw data for all info.
+     * Given nEl elements, an additional pointer (nEl+1) will be set for consistent size computations.
+     *
+     * @param o_elVeEl will be set to pointers pointing to the data of the respective element.
+     **/
+    void getElVeEl( int_el** o_elVeEl ) const;
+
     /**
      * Initializes the given array with the face neighbor ids for all elements.
      *
@@ -146,6 +156,19 @@ class edge::mesh::Regular {
      * @param o_neighboringIds will be set to neighboring element ids for all faces.
      **/
     void getFacesAdjacentElements( int_el (*o_neighboringIds)[2] ) const;
+
+    /**
+     * Gets the vertices adjacent to a single element.
+     *
+     * @param o_elementAdjacentVertices will be set to vertices adjacent to the element.
+     * @param i_px element's position in x-direction.
+     * @param i_py element's position in y-direction.
+     * @param i_pz element's position in z-direction.
+     **/
+    void getElementAdjacentVertices( int_el o_elementAdjacentVertices[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
+                                     int_el i_px,
+                                     int_el i_py = 0,
+                                     int_el i_pz = 0 ) const;
 
     /**
      * Gets the vertices adjacent to the elements.
@@ -293,6 +316,13 @@ class edge::mesh::Regular {
      * @return number of vertices.
      **/
     int_el getNVertices() const;
+
+    /**
+     * Gets the total number of entries for elements adjacent through vertices.
+     *
+     * @return total number of entries.
+     **/
+    int_el getNelVeEl() const;
 
     /**
      * Gets the connectivity information.

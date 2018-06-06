@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,11 +20,11 @@
  * @section DESCRIPTION
  * Shared memory parallelization.
  **/
-#ifndef SHARED_H_
-#define SHARED_H_
+#ifndef EDGE_PARALLEL_SHARED_H_
+#define EDGE_PARALLEL_SHARED_H_
 
 #include <vector>
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "data/SparseEntities.hpp"
 #include "parallel/global.h"
 #include "io/logging.h"

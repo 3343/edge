@@ -43,6 +43,9 @@ class edge::mesh::Unstructured {
     Moab m_moab;
 #endif
 
+    // dummy entity characteristics
+    typedef struct {int spType;} t_enCharsDummy;
+
     /**
      * Prints the mesh statistics.
      **/
@@ -85,6 +88,16 @@ class edge::mesh::Unstructured {
      * @param o_neighVeIds will be set to the ids of all faces' adjacent vertices.
      **/
     void getFacesAdjacentVertices( int_el (*o_neighVeIds)[C_ENT[T_SDISC.FACE].N_VERTICES] );
+
+
+    /**
+     * Determines the element-to-element adjacency through vertices as bridge.
+     * Remark: It is expected that o_elVeEl is an array of pointers of size #nel+1 (incl. ghost element) for consistent size computations.
+     *         Futher, o_elVeEl[0] is expected to point to raw memory, large enough to hold all adjacent elemenets of all elements.
+     *
+     * @param o_elVeEl will be set to elements adjacent to elements (vertices as bridge). [*][]: ptr to elements, [][*]: adjacent elements.
+     **/
+    void getElVeEl( int_el **o_elVeEl );
 
     /**
      * Initializes the given array with the face neighbors' ids of all elements.
@@ -210,6 +223,13 @@ class edge::mesh::Unstructured {
     int_el getNElements() const;
 
     /**
+     * Gets the number of elements adjacent to all elements (vertices as bridge).
+     *
+     * @return number of adjacent elements.
+     **/
+    int_el getNelVeEl();
+
+    /**
      * Gets the connectivity information.
      *  elVe:   element -> vertices
      *    triangles are guaranteed to have a counter-clockwise ordering of the vertices.
@@ -258,15 +278,21 @@ class edge::mesh::Unstructured {
      * @param i_nPars number of parameters, which are queried.
      * @param i_names names of the paramters.
      * @param o_pars output to which the parameters are written as array of struct. Fastest dimension are parameters.
-     * @return error code. 0 if succecessful, 1 if parameter is missing, 2 if size of template parameter does not match mesh specifications (size in byte).
+     * @return error code. 0 if succecessful, 1 if parameter is missing, 2 if size of a template parameter does not match mesh specifications (size in byte).
      *
      * @paramt TL_T_PAR type of the parameter.
+     * @paramt TL_T_SP sparse type.
+     * @paramt TL_T_CHARS entity characteristics.
      **/
-    template< typename TL_T_PAR >
-    bool getParsDe( unsigned short   i_nDim,
-                    unsigned short   i_nPars,
-                    std::string    * i_names,
-                    TL_T_PAR       * o_pars ) {
+    template< typename TL_T_PAR,
+              typename TL_T_SP    = int,
+              typename TL_T_CHARS = t_enCharsDummy >
+    unsigned short getParsDe( unsigned short         i_nDim,
+                              unsigned short         i_nPars,
+                              std::string          * i_names,
+                              TL_T_PAR             * o_pars,
+                              TL_T_SP                i_spType = 0,
+                              TL_T_CHARS     const * i_enChars = nullptr ) {
       // get the names of available tags
       std::vector< std::string > l_tagsNames;
 #ifdef PP_USE_MOAB
@@ -297,12 +323,7 @@ class edge::mesh::Unstructured {
 #ifdef PP_USE_MOAB
       for( unsigned short l_pa = 0; l_pa < i_nPars; l_pa++ ) {
         int l_nParBytes = m_moab.getTagBytes( l_idsPar[l_pa] );
-
-        EDGE_CHECK_EQ(l_nParBytes, sizeof( TL_T_PAR ) )
-          << "size of mesh parameter " << l_tagsNames[ l_idsPar[l_pa] ]
-          << " and template don't match; "
-          << "mesh: " << l_nParBytes
-          << ", template: " << sizeof( TL_T_PAR );
+        if( l_nParBytes != sizeof( TL_T_PAR ) ) return 2;
       }
 #else
       EDGE_LOG_FATAL;
@@ -319,24 +340,31 @@ class edge::mesh::Unstructured {
       int_el l_nEn = ( i_nDim == 0       ) ? getNVertices() :
                      ( i_nDim == N_DIM-1 ) ? getNFaces() :
                                              getNElements();
+
+      // sparse id
+      int_el l_sp = 0;
+
       // iterate over entities
       for( int_el l_en = 0; l_en < l_nEn; l_en++ ) {
-        // iterate over parameters
-        for( unsigned short l_pa = 0; l_pa < i_nPars; l_pa++ ) {
+        if(     i_enChars == nullptr
+            || (i_enChars[l_en].spType & i_spType) == i_spType ) {
+          // iterate over parameters
+          for( unsigned short l_pa = 0; l_pa < i_nPars; l_pa++ ) {
 #ifdef PP_USE_MOAB
-          // get data from MOAB
-          m_moab.getTagData( l_idsPar[l_pa],
-                             i_nDim,
-                             l_en,
-                             o_pars+(i_nPars*l_en)+l_pa );
+            // get data from MOAB
+            m_moab.getTagData( l_idsPar[l_pa],
+                               i_nDim,
+                               l_en,
+                               o_pars+(i_nPars*l_sp)+l_pa );
 #else
-          EDGE_LOG_FATAL;
+            EDGE_LOG_FATAL;
 #endif
+          }
+          l_sp++;
         }
       }
 
       return 0;
-
     }
 };
 

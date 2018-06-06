@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,14 +21,15 @@
  * Wave field writer.
  **/
 
-#ifndef WAVE_FIELD_H_
-#define WAVE_FIELD_H_
+#ifndef EDGE_IO_WAVE_FIELD_H
+#define EDGE_IO_WAVE_FIELD_H
 
 #include "Vtk.h"
 
 #include <string>
+#include <limits>
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 
 namespace edge {
   namespace io {
@@ -57,6 +58,9 @@ class edge::io::WaveField {
     //! vertex chars
     const t_vertexChars *m_veChars;
 
+    //! element chars
+    const t_elementChars *m_elChars;
+
     //! vertices adjacent to the elements
     const int_el (*m_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES];
 
@@ -69,6 +73,9 @@ class edge::io::WaveField {
     //! print elements (unqiue owned elements)
     std::vector< int_el > m_elPrint;
 
+    //! sparse ids of limited print element (std::limit<int_el>::max() if not a limited element)
+    std::vector< int_el > m_liPrint;
+
   public:
     /**
      * Constructor of the DoF writer.
@@ -78,23 +85,29 @@ class edge::io::WaveField {
      * @param i_elLayout entity layout of the elements.
      * @param i_inMap index mapping
      * @param i_veChars characteristics of the vertices.
+     * @param i_elChars characteristics of the elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_dofs location of degrees of freedom, which will get written in corresponding calls.
+     * @param i_spType sparse type for elements, which are printed. If numeric_limits<>::max(), all elements are printed.
      **/
     WaveField(       std::string      i_type,
                      std::string      i_outFile,
                const t_enLayout      &i_elLayout,
                const t_inMap         *i_inMap,
                const t_vertexChars   *i_veChars,
+               const t_elementChars  *i_elChars,
                const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-               const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] );
+               const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+                     int_spType       i_spType = std::numeric_limits< int_spType >::max() );
 
     /**
      * Writes the given dofs.
      *
-     * @param i_time time of this snapshot.
+     * @param i_time time of this snapshot
+     * @param i_limSync optional number of times the elements were limited since the last sync.
      **/
-    void write( double i_time );
+    void write( double         i_time,
+                unsigned int (*i_limSync)[N_CRUNS] = nullptr );
 };
 
 #endif

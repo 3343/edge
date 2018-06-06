@@ -79,7 +79,7 @@ class edge::elastic::setups::MmKernels {
                    l_nMdsEl,                                         // ldC
                    static_cast<real_base>(1.0),                      // alpha
                    static_cast<real_base>(0.0),                      // beta
-                   LIBXSMM_PREFETCH_NONE );
+                   LIBXSMM_GEMM_PREFETCH_NONE );
       
         // multiplication with star matrix
         io_mm.add( CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ), // m
@@ -90,7 +90,7 @@ class edge::elastic::setups::MmKernels {
                    l_nMdsEl,                                      // ldC
                    static_cast<real_base>(1.0),                   // alpha
                    static_cast<real_base>(1.0),                   // beta
-                   LIBXSMM_PREFETCH_NONE );
+                   LIBXSMM_GEMM_PREFETCH_NONE );
       }
 
       // add two volume integration kernels
@@ -103,7 +103,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsEl,                                   // ldC
                  static_cast<real_base>(1.0),                // alpha
                  static_cast<real_base>(0.0),                // beta
-                 LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2
+                 LIBXSMM_GEMM_PREFETCH_NONE );               // (ORDER-1)*2
 
       io_mm.add( l_nMdsEl,                    // m
                  i_nQts,                      // n
@@ -113,7 +113,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
-                 LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+1
+                 LIBXSMM_GEMM_PREFETCH_NONE ); // (ORDER-1)*2+1
 
       // add first flux matrix
       io_mm.add( l_nMdsFa,                    // m
@@ -124,7 +124,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsFa,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(0.0), // beta
-                 LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+2
+                 LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+2
 
       // add flux solver
       io_mm.add( l_nMdsFa,                    // m
@@ -135,7 +135,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsFa,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(0.0), // beta
-                 LIBXSMM_PREFETCH_NONE ); // (ORDER-1)*2+3
+                 LIBXSMM_GEMM_PREFETCH_NONE ); // (ORDER-1)*2+3
 
       // add second flux matrix
       io_mm.add( l_nMdsEl,                    // m
@@ -146,7 +146,7 @@ class edge::elastic::setups::MmKernels {
                  l_nMdsEl,                    // ldC
                  static_cast<real_base>(1.0), // alpha
                  static_cast<real_base>(1.0), // beta
-                 LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+4
+                 LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+4
     }
 #endif
 

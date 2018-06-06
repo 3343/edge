@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,20 +21,29 @@
  * Data types of the friction laws.
  **/
 
-#ifndef FRICTION_LAWS_TYPE
-#define FRICTION_LAWS_TYPE
+#ifndef EDGE_SEISMIC_FRICTION_LAWS_TYPE
+#define EDGE_SEISMIC_FRICTION_LAWS_TYPE
 
 namespace edge {
   namespace elastic {
     namespace solvers {
-      template< typename TL_T_REAL, unsigned short TL_N_CRUNS >
+      template< typename       TL_T_REAL,
+                unsigned short TL_N_CRS >
       struct t_LinSlipWeakGlobal;
 
       template< typename TL_T_REAL >
       struct t_LinSlipWeakFace;
 
-      template< typename TL_T_REAL, unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
-      struct t_LinSlipWeakFaceQuadPoint;
+      template< typename       TL_T_REAL,
+                unsigned short TL_N_DIS,
+                unsigned short TL_N_CRS >
+      struct t_LinSlipWeakSubFace;
+
+      template< typename       TL_T_REAL,
+                t_entityType   TL_T_EL,
+                unsigned short TL_O_SP,
+                unsigned short TL_N_CRS >
+      struct t_LinSlipWeak;
     }
   }
 }
@@ -44,16 +53,16 @@ namespace edge {
  * Parameters in the linear slip weakening friction law.
  *
  * @paramt TL_T_REAL floating point type.
- * @paramt TL_N_CRUNS number of fused simulations.
+ * @paramt TL_N_CRS number of fused simulations.
  **/
-template< typename TL_T_REAL, unsigned short TL_N_CRUNS >
+template< typename TL_T_REAL, unsigned short TL_N_CRS >
 struct edge::elastic::solvers::t_LinSlipWeakGlobal {
   //! friction coefficients
-  TL_T_REAL mus[TL_N_CRUNS];
+  TL_T_REAL mus[TL_N_CRS];
   //! dynamic friction coefficients
-  TL_T_REAL mud[TL_N_CRUNS];
+  TL_T_REAL mud[TL_N_CRS];
   //!  inverse critical slip distance (1/Dc)
-  TL_T_REAL dcInv[TL_N_CRUNS];
+  TL_T_REAL dcInv[TL_N_CRS];
 };
 
 /**
@@ -72,28 +81,70 @@ struct edge::elastic::solvers::t_LinSlipWeakFace {
 };
 
 /**
- * Linear slip weakening: Per quad point data
+ * Linear slip weakening: Per sub-face data.
  *
  * @paramt TL_T_REAL floating point type.
- * @paramt TL_N_DIM number of dimension.
- * @paramt TL_N_CRUNS number of fused simulations.
+ * @paramt TL_N_DIS number of dimensions.
+ * @paramt TL_N_CRS number of fused simulations.
  **/
-template< typename TL_T_REAL, unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
-struct edge::elastic::solvers::t_LinSlipWeakFaceQuadPoint {
+template< typename       TL_T_REAL,
+          unsigned short TL_N_DIS,
+          unsigned short TL_N_CRS >
+struct edge::elastic::solvers::t_LinSlipWeakSubFace {
   //! initial normal stress
-  TL_T_REAL sn0[TL_N_CRUNS];
+  TL_T_REAL sn0[TL_N_CRS];
+  //! cohesion
+  TL_T_REAL co0[TL_N_CRS];
   //! initial shear stress
-  TL_T_REAL ss0[TL_N_DIM-1][TL_N_CRUNS];
+  TL_T_REAL ss0[TL_N_DIS-1][TL_N_CRS];
   //! initial, absolute shear stress
-  TL_T_REAL ss0A[TL_N_CRUNS];
+  TL_T_REAL ss0A[TL_N_CRS];
   //! friction cofficients
-  TL_T_REAL muf[TL_N_CRUNS];
+  TL_T_REAL muf[TL_N_CRS];
+  //! strength
+  TL_T_REAL st[TL_N_CRS];
   //! traction
-  TL_T_REAL tr[TL_N_DIM-1][TL_N_CRUNS];
+  TL_T_REAL tr[TL_N_DIS-1][TL_N_CRS];
   //! slip rate
-  TL_T_REAL sr[TL_N_DIM-1][TL_N_CRUNS];
+  TL_T_REAL sr[TL_N_DIS-1][TL_N_CRS];
   //! slip
-  TL_T_REAL dd[TL_N_DIM-1][TL_N_CRUNS];
+  TL_T_REAL dd[TL_N_DIS-1][TL_N_CRS];
+};
+
+/**
+ * Data of linear slip weakening.
+ *
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_N_EL element type.
+ * @paramt TL_O_SP spatial order of convergence.
+ * @paramt TL_N_CRS number of fused simulations.
+ **/
+template< typename       TL_T_REAL,
+          t_entityType   TL_T_EL,
+          unsigned short TL_O_SP,
+          unsigned short TL_N_CRS >
+struct edge::elastic::solvers::t_LinSlipWeak {
+  //! number of dimensions
+  static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
+
+  //! number of sub-faces per element face
+  static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
+
+  //! global
+  t_LinSlipWeakGlobal< TL_T_REAL,
+                       TL_N_CRS >  gl;
+
+  //! face
+  t_LinSlipWeakFace< TL_T_REAL >   *fa;
+
+  //! subface
+  t_LinSlipWeakSubFace< TL_T_REAL,
+                        TL_N_DIS,
+                        TL_N_CRS > (*sf)[TL_N_SFS];
+
+  //! sub-face quantity names (256 chars maximum length)
+  char         sfQtNa[5*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS][256];
+  char const * sfQtNaPtr[5*TL_N_CRS + 4 * (TL_N_DIS-1) * TL_N_CRS];
 };
 
 #endif

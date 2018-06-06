@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,13 +21,13 @@
  * Initialization of kinematic sources.
  **/
 
-#ifndef KINEMATICS_SETUP_HPP
-#define KINEMATICS_SETUP_HPP
+#ifndef EDGE_SEISMIC_SETUP_KINEMATICS_INIT_HPP
+#define EDGE_SEISMIC_SETUP_KINEMATICS_INIT_HPP
 
 #include "data/Dynamic.h"
 #include "../solvers/Kinematics.type"
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include "mesh/common.hpp"
 #include "dg/Basis.h"
 #include "linalg/Mappings.hpp"
@@ -257,7 +257,13 @@ class edge::elastic::setups::KinematicsInit {
 
       // iterate over dense elements and determine size
       for( TL_T_INT_LID l_el = 0; l_el < i_nEl; l_el++ ) {
-        if( (i_elChars[l_el].spType & i_spTypeSrcs) == i_spTypeSrcs ) l_nElSrc++;
+        if( (i_elChars[l_el].spType & i_spTypeSrcs) == i_spTypeSrcs ) {
+          // check that the solver is unlimited, since we don't have sources for sub-cells
+          EDGE_CHECK( (i_elChars[l_el].spType & LIMIT) != LIMIT )
+            << "Sources in sub-cell limited elements are not supported.";
+          // increase size
+          l_nElSrc++;
+        }
       }
 
       // allocate memory for the mapping
@@ -558,8 +564,8 @@ class edge::elastic::setups::KinematicsInit {
          * Evalute basis at the position of the point source and scale with inverse Jacobian.
          **/
         // get elements' ve-coords
-        TL_T_REAL_MESH l_veCrds[3][TL_N_VE];
-        mesh::common< TL_T_EL >::getElVeCoords( i_srcEl[l_so], i_elVe, i_veChars, l_veCrds );
+        TL_T_REAL_MESH l_veCrds[TL_N_DIM][TL_N_VE];
+        mesh::common< TL_T_EL >::getElVeCrds( i_srcEl[l_so], i_elVe, i_veChars, l_veCrds );
 
         // get source coordinates
         TL_T_REAL_MESH l_srcCrds[TL_N_DIM];

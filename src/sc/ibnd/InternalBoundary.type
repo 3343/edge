@@ -1,0 +1,115 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ *
+ * @section LICENSE
+ * Copyright (c) 2017, Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Data types of the sub-cell limited internal boundary.
+ **/
+
+#ifndef EDGE_SC_IBND_TYPE
+#define EDGE_SC_IBND_TYPE
+
+namespace edge {
+  namespace sc {
+    namespace ibnd {
+      template< typename     TL_T_LID,
+                t_entityType TL_T_EL >
+      struct t_connect;
+
+      template< typename TL_T_SP >
+      struct t_bfChars;
+
+     template< typename       TL_T_LID,
+               typename       TL_T_REAL,
+               typename       TL_T_SP,
+               t_entityType   TL_T_EL,
+               unsigned short TL_N_QTS >
+      struct t_InternalBoundary;
+    }
+  }
+}
+
+/**
+ * Connectivity info of the internal boundary.
+ *
+ * @paramt TL_T_LID integral type for local ids.
+ * @paramt TL_T_EL element type.
+ **/
+template< typename     TL_T_LID,
+          t_entityType TL_T_EL >
+struct edge::sc::ibnd::t_connect {
+  //! number of faces per element
+  static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+  //! limited elements adjacent to internal boundary faces
+  TL_T_LID (*bfLe)[2];
+
+  //! internal boundary elements (face-adjacency to ibnd faces) adjacent to internal boundary faces
+  TL_T_LID (*bfBe)[2];
+
+  //! internal boundary elements (face-adjacency to ibnd faces) adjacent to internal boundary faces
+  TL_T_LID (*beBf)[TL_N_FAS];
+
+  //! link between internal boundary elements and dense elements
+  TL_T_LID *beEl;
+};
+
+/**
+ * Boundary-face characteristics.
+ *
+ * @paramt TL_T_SP sparse type.
+ **/
+template< typename TL_T_SP >
+struct edge::sc::ibnd::t_bfChars {
+  //! sparse type of the face
+  TL_T_SP spType;
+
+  //! local face ids of the two adjacent elements
+  unsigned short fIdBfEl[2];
+
+  //! local vertex id of the right element
+  unsigned short vIdFaElR;
+};
+
+/**
+ * Data of the internal boundary.
+ *
+ * @paramt TL_T_LID integral type for local ids.
+ * @paramt TL_T_REAL floating point type.
+ * @paramt TL_T_SP sparse integral type.
+ * @paramt TL_T_EL element type.
+ * @paramt TL_N_QTS number of quantities.
+ **/
+template< typename       TL_T_LID,
+          typename       TL_T_REAL,
+          typename       TL_T_SP,
+          t_entityType   TL_T_EL,
+          unsigned short TL_N_QTS >
+struct edge::sc::ibnd::t_InternalBoundary {
+  //! connectivity info
+  t_connect< TL_T_LID,
+             TL_T_EL > connect;
+
+  //! internal boundary face chars
+  t_bfChars< TL_T_SP > *bfChars;
+
+  //! middle state solvers: [0]: trafo to face-aligned coords, [1]: middle state, [2]: flux left, [3]: flux right.
+  TL_T_REAL (*mss)[4][TL_N_QTS][TL_N_QTS];
+};
+
+#endif

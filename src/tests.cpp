@@ -20,10 +20,7 @@
  * @section DESCRIPTION
  * Unit tests of EDGE.
  **/
-#ifdef PP_USE_MPI
-#include <mpi.h>
-#endif
-
+#include "parallel/Mpi.h"
 #include <string>
 #include "io/logging.h"
 INITIALIZE_EASYLOGGINGPP
@@ -39,10 +36,9 @@ namespace edge {
 }
 
 int main( int i_argc, char* i_argv[] ) {
-#ifdef PP_USE_MPI
-  // init MPI for unit tests calling MPI-functions
-  MPI_Init( &i_argc, &i_argv );
-#endif
+  // init MPI for unit tests calling MPI-functions or relying on rank data
+  edge::parallel::Mpi l_mpi;
+  l_mpi.start( i_argc, i_argv );
 
   // disable logging file-IO
   edge::io::logging::config();
@@ -54,10 +50,6 @@ int main( int i_argc, char* i_argv[] ) {
 
   // run unit tests
   int l_result = Catch::Session().run( i_argc, i_argv );
-
-#ifdef PP_USE_MPI
-  MPI_Finalize();
-#endif
 
   // return result
   return ( l_result < 0xff ? l_result : 0xff );

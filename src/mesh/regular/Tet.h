@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,11 +21,11 @@
  * Global time stepping setup of regular tetrahedral meshes.
  **/
 
-#ifndef TET_H_
-#define TET_H_
+#ifndef EDGE_MESH_REGULAR_TET_H_
+#define EDGE_MESH_REGULAR_TET_H_
 
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include <vector>
 #include <limits>
 #include "io/logging.h"

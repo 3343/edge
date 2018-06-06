@@ -155,7 +155,6 @@ typedef struct {
 #else
 #error undefined kernels, aborting!
 #endif
-
 } t_dgMat;
 
 typedef struct {

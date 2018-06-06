@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -22,6 +22,7 @@
 ##
 import fractions
 import edge_pre.types.Line
+from . import Generic
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot
@@ -150,39 +151,26 @@ def scTySf( i_deg ):
 # Integration intervals for the sub-cells
 #
 # @param i_deg polynomial degree.
-# @param i_syms symbols
-# @return integration intervals for inner sub-cells, send sub-cells, and per DG-face of surface sub-cells.
+# @param i_syms symbols.
+# @return 1) mappings, 2) absolute values of Jacobi determinant.
 ##
 def intSc( i_deg, i_syms ):
   assert( len(i_syms) == 1 )
 
+  # line shape functions
+  l_shape = [ 1 - i_syms[0],
+              i_syms[0] ]
+
+  # get sub-cell coords
+  l_svs = svs( i_deg )
+  l_scSv = scSv( i_deg )[0:2]
+
+  # assemble mappings and dets for surface sub-cells
+  l_scSfSc = scSfSc( i_deg )
+
   l_ty = edge_pre.types.Line.Line( i_deg )
 
-  # inc from one vertex to the next
-  l_inc = l_ty.ves[1][0] - l_ty.ves[0][0]
-  l_inc = fractions.Fraction( l_inc, l_ty.n_scs )
-
-  # special handling for degree 0
-  if( i_deg == 0 ):
-    return [], [ [(i_syms[0], 0, l_inc)] ],  [ [[ (i_syms[0], 0, l_inc) ]], [[ (i_syms[0], 0, l_inc) ]] ]
-
-  # integration intervals
-  l_intIn = []
-
-  # inner sub-cells
-  for l_sc in range(1, l_ty.n_scs-1):
-    l_intIn = l_intIn + [[ (i_syms[0], l_sc*l_inc, (l_sc+1)*l_inc ) ]]
-
-  # send-sub-cells
-  l_intSend = [[ (i_syms[0], 0, l_inc) ]]
-  l_intSend = l_intSend + [[ (i_syms[0], (l_ty.n_scs-1)*l_inc,  (l_ty.n_scs)*l_inc) ]]
-
-  # surface-sub-cells
-  l_intSurf = []
-  l_intSurf = l_intSurf + [[ l_intSend[-2] ]] #1st face
-  l_intSurf = l_intSurf + [[ l_intSend[-1] ]] #2nd face
-
-  return l_intIn, l_intSend, l_intSurf
+  return Generic.intSc( i_deg, l_ty, i_syms, l_shape, l_svs, l_scSv[0:2], l_scSfSc[2] )
 
 ##
 # Plots the sub-grid.

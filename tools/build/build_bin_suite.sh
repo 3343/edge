@@ -106,7 +106,7 @@ do
   rm -rf .sconsign.dblite
 
   # finally let's build the code
-  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=./libs zlib=./libs hdf5=./libs netcdf=./libs moab=./libs -j ${EDGE_PAR_COMPILE}
+  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=./deps zlib=./deps hdf5=./deps netcdf=./deps moab=./deps -j ${EDGE_PAR_COMPILE}
 
   # copy binary
   cp ./build/edge ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}

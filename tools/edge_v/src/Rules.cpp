@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,31 +18,33 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Data types of the internal boundary.
+ * Velocity rules, typically applied in the upper layers.
  **/
+#include "Rules.h"
+#include <cassert>
 
-#ifndef INTERNAL_BOUNDARY_TYPE
-#define INTERNAL_BOUNDARY_TYPE
+void edge_v::vel::Rules::tpv34( double &io_vp,
+                                double &io_vs,
+                                double &io_rho ) {
+  // check for valid input
+  assert( io_vp  > 0 );
+  assert( io_vs  > 0 );
+  assert( io_rho > 0 );
 
-namespace edge {
-  namespace elastic {
-    namespace solvers {
-      template< typename TL_T_REAL, typename TL_T_INT_SP >
-      struct t_InternalBoundaryFace;
-    }
+  if( io_vp <= 2984.0 || io_vs <= 1400.0 ) {
+    io_vp =  2984;
+    io_vs =  1400;
+    io_rho = 2220.34;
   }
 }
 
-template< typename TL_T_REAL, typename TL_T_INT_SP >
-struct edge::elastic::solvers::t_InternalBoundaryFace {
-  //! sparse type of the face
-  TL_T_INT_SP spType;
-
-  //! local face ids of the two adjacent elements
-  unsigned short fIdFaEl[2];
-
-  //! local vertex ids of the right element
-  unsigned short vIdFaElR;
-};
-
-#endif
+void edge_v::vel::Rules::apply( std::string &i_rule,
+                                double      &io_vp,
+                                double      &io_vs,
+                                double      &io_rho ) {
+  if( i_rule == "tpv34" ) {
+    tpv34( io_vp,
+           io_vs,
+           io_rho );
+  }
+}

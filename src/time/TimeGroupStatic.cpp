@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,9 +32,9 @@
 #include "impl/swe/ts_dep.inc"
 #endif
 
-edge::time::TimeGroupStatic::TimeGroupStatic(       int_ts          i_rate,
-                                                    int_ts          i_funMult,
-                                              const data::Internal &i_internal ):
+edge::time::TimeGroupStatic::TimeGroupStatic( int_ts          i_rate,
+                                              int_ts          i_funMult,
+                                              data::Internal &i_internal ):
 // m_rate(     i_rate     ),
  m_funMult(  i_funMult  ),
  m_internal( i_internal )
@@ -48,6 +48,9 @@ void edge::time::TimeGroupStatic::setUp( double i_dTfun,
                                          double i_time ) {
   // set general time step
   m_dTgen = i_dTfun * m_funMult;
+
+  // reset number of updates since sync
+  m_updatesSync = 0;
 
   // derive number of required updates
   m_updatesReq  = i_time / m_dTgen;
@@ -67,8 +70,9 @@ void edge::time::TimeGroupStatic::setDt() {
 
 void edge::time::TimeGroupStatic::updateTsInfo() {
   // update counters
-  m_updatesPer += 1;
-  m_updatesReq -= 1;
+  m_updatesSync++;
+  m_updatesPer++;
+  m_updatesReq--;
 
   m_covSimTime += m_dT;
 
@@ -80,10 +84,10 @@ void edge::time::TimeGroupStatic::computeStep( unsigned short                   
                                                int_el                                      i_size,
                                                t_timeRegion                        const * i_enSp,
                                                io::Receivers                             & io_recvs,
-                                               io::ReceiversQuad< real_base,
-                                                                  T_SDISC.ELEMENT,
-                                                                  ORDER,
-                                                                  N_CRUNS >              & io_recvsQuad  ) {
+                                               io::ReceiversSf< real_base,
+                                                                T_SDISC.ELEMENT,
+                                                                ORDER,
+                                                                N_CRUNS >                & io_recvsSf  ) {
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/inc/time/tgs_steps.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
@@ -93,4 +97,15 @@ void edge::time::TimeGroupStatic::computeStep( unsigned short                   
 #else
 #error "steps not defined"
 #endif
+}
+
+void edge::time::TimeGroupStatic::limSync() {
+  sc::Steering::resetAdm( m_updatesSync,
+                          m_internal.m_globalShared2[0].adm );
+
+  sc::Steering::resetDofs( m_updatesSync,
+                           m_internal.m_globalShared2[0].tDofs );
+
+  sc::Steering::resetExt( m_updatesSync,
+                          m_internal.m_globalShared2[0].ext );
 }

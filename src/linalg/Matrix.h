@@ -5,7 +5,7 @@
  * @author Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2017 Intel Corporation
  * All rights reserved.
  *
@@ -23,8 +23,8 @@
  * Matrices.
  **/
 
-#ifndef MATRIX_HPP
-#define MATRIX_HPP
+#ifndef EDGE_LINALG_MATRIX_HPP
+#define EDGE_LINALG_MATRIX_HPP
 
 #include <vector>
 #include <iomanip>
@@ -32,6 +32,10 @@
 #include <io/logging.h>
 #include <cmath>
 #include "constants.hpp"
+
+#ifdef PP_T_KERNELS_XSMM_DENSE_SINGLE
+#include <libxsmm.h>
+#endif
 
 /*
  * Sparse matrix format: Coordinate.

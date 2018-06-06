@@ -185,7 +185,7 @@ void write_unstructured_mesh(const char *filename, int useBinary, int npts,
  * EDGE version of write_unstructured removing overhead by fixed input.
  **/
 void edge_write_unstructured_mesh( const char *filename, int useBinary, int npts,
-                                   float *pts, int ncells, int celltype, int *conn,
+                                   float *pts, int nvars, int ncells, int celltype, int *conn,
                                    const char * const *varnames, float **vars );
  
  

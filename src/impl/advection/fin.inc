@@ -20,42 +20,52 @@
  * @section DESCRIPTION
  * Finalize for the advection equation.
  **/
-
-double l_norms[N_CRUNS][3][1];
-
 edge::io::ErrorNorms l_errorWriter( l_config.m_errorNormsType,
                                     l_config.m_errorNormsFile );
 
-for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-  real_mesh l_sizeX, l_sizeY, l_sizeZ;
-#if defined PP_T_MESH_REGULAR
-  l_sizeX = l_config.m_sizeX;
-  l_sizeY = l_config.m_sizeY;
-  l_sizeZ = l_config.m_sizeZ;
-#else
-  l_sizeX = l_sizeY = l_sizeZ = 9.424777960769379715387930149838508652591508198125317462924;
+if( l_errorWriter.outEnabled() ) {
+  // admissibility id based on #time steps
+  // TODO: add function
+  unsigned short l_admId;
+  if(      l_cluster.getUpdatesPer()%3 == 0 )
+    l_admId = 0;
+  else if( l_cluster.getUpdatesPer()%3 == 1 )
+    l_admId = 2;
+  else
+    l_admId = 1;
+
+  double l_normsTmp[3][1][N_CRUNS];
+  edge::setups::InitialDofs<
+    T_SDISC.ELEMENT,
+    ORDER,
+    N_QUANTITIES,
+    N_CRUNS >::err( 0,
+                    l_internal.m_nElements,
+                    0,
+                    t_enTypeShared::LIMIT,
+                    l_config.m_refValsExprStrs,
+                    l_basis,
+                    l_internal.m_connect.elVe,
+                    l_internal.m_globalShared3[0].connect.scSv,
+                    l_internal.m_vertexChars,
+                    l_internal.m_globalShared3[0].svChars,
+                    l_internal.m_elementChars,
+                    l_internal.m_globalShared3[0].adm[l_admId],
+                    l_internal.m_elementModePrivate1,
+                    l_internal.m_globalShared3[0].dofs,
+                    l_normsTmp[0], l_normsTmp[1], l_normsTmp[2] );
+
+  // copy over error norms and compute sqrt of l2
+  double l_norms[N_CRUNS][3][1];
+#ifdef PP_USE_MPI
+  EDGE_LOG_FATAL << "missing allreduce";
 #endif
 
-  if( l_errorWriter.outEnabled() )
-    edge::advection::setups::Convergence::getSineErrorNorms( l_basis,
-                                                             l_cfr,
-                                                             l_mesh.getInMap(),
-                                                             l_mesh.getElLayout(),
-                                                             l_internal.m_connect,
-                                                             l_internal.m_vertexChars,
-                                                             l_internal.m_elementModePrivate1,
-                                                             l_norms[l_cfr],
-                                                             0,
-                                                             l_sizeX,
-                                                             0,
-                                                             l_sizeY,
-                                                             0,
-                                                             l_sizeZ,
-                                                             l_cfr * 2.0,
-                                                             0,
-                                                             0,
-                                                             4 / N_DIM );
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    l_norms[l_cr][0][0] = l_normsTmp[0][0][l_cr];
+    l_norms[l_cr][1][0] = l_normsTmp[1][0][l_cr];
+    l_norms[l_cr][2][0] = std::sqrt( l_normsTmp[2][0][l_cr] );
+  }
+
+  l_errorWriter.write( l_norms );
 }
-
-
-l_errorWriter.write( l_norms );

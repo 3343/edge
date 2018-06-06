@@ -3,9 +3,10 @@
  *
  * @author Junyi Qiu (juq005 AT ucsd.edu)
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
+ * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,338 +25,451 @@
 
 #include <fstream>
 #include <omp.h>
+#include <sstream>
+#include <moab/Core.hpp>
 
 #include "vm_utility.h"
 
-int antnInit( antn_cfg & a_cfg, const std::string &cfg_f ) {
-  a_cfg.antn_cfg_fn = cfg_f;
+void edge_v::vm::Utility::lamePar( double  i_vp,
+                                   double  i_vs,
+                                   double  i_rho,
+                                   double &o_lam,
+                                   double &o_mu ) {
+  o_mu   = i_vs * i_vs * i_rho;
+  o_lam  = i_vp * i_vp * i_rho;
+  o_lam -= 2*o_mu;
+}
 
-  a_cfg.min_vp          = 0;
-  a_cfg.min_vs          = 0;
-  a_cfg.min_vs2         = 0;
-  a_cfg.max_vp_vs_ratio = 0;
+int edge_v::vm::Utility::ucvmInit( const io::Config &i_cfg ) {
+  clock_t l_t = clock();
+  std::cout << "Initializing UCVM... " << std::flush;
 
-  a_cfg.hypoc.lon = 0;
-  a_cfg.hypoc.lat = 0;
+  if( ucvm_init( i_cfg.m_ucvmCfgFn.c_str() ) != UCVM_CODE_SUCCESS ) {
+    std::cerr << "failed initializing UCVM" << std::endl;
+    return 1;
+  };
 
-  std::cout << "Reading Annotation Config File: " << cfg_f << " ... ";
-  std::cout.flush();
-
-  std::ifstream iMshFs( cfg_f.c_str(), std::ios::in );
-  if( !iMshFs.is_open() ) {
-    std::cout << "Failed." << std::endl;
-    std::cerr << "Error: cannot open the config file." << std::endl;
-    exit( -1 );
+  if( ucvm_add_model_list( i_cfg.m_ucvmModelList.c_str() ) != UCVM_CODE_SUCCESS ) {
+    std::cerr << "failed setting model: " << i_cfg.m_ucvmModelList << std::endl;
+    return 1;
   }
 
-  std::string lineBuf;
-  while( getline( iMshFs, lineBuf ) ) {
-    int i = -1, j;
-
-    while( (++i < lineBuf.length()) && (lineBuf[i] == ' ') );
-
-    if( (i >= lineBuf.length()) || (lineBuf[i] == '#') )
-      continue;
-
-    j = i - 1;
-
-    while( (++j < lineBuf.length()) && (lineBuf[j] != '=') );
-
-    if( j >= lineBuf.length() )
-      continue;
-
-    std::string varName   = lineBuf.substr( i, j - i );
-    std::string varValue  = lineBuf.substr( j + 1 );
-
-    if( varName.compare( "ucvm_config" ) == 0 )
-      a_cfg.ucvm_cfg_fn     = varValue;
-    else if( varName.compare( "ucvm_model_list" ) == 0 )
-      a_cfg.ucvm_model_list = varValue;
-    else if( varName.compare( "mesh_file" ) == 0 )
-      a_cfg.mesh_fn         = varValue;
-    else if( varName.compare( "node_vm_file" ) == 0 )
-      a_cfg.vm_node_fn      = varValue;
-    else if( varName.compare( "elmt_vm_file" ) == 0 )
-      a_cfg.vm_elmt_fn      = varValue;
-    else if( varName.compare( "h5m_file" ) == 0 )
-      a_cfg.h5m_fn          = varValue;
-    else
-      std::cout << "\nUnknown setting (" << varName << "). Ignored." << std::endl;
+  if( ucvm_setparam( UCVM_PARAM_QUERY_MODE, i_cfg.m_ucvmCmode ) != UCVM_CODE_SUCCESS  ) {
+    std::cerr << "failed setting param query mode: " << i_cfg.m_ucvmModelList << std::endl;
+    return 1;
   }
 
-  a_cfg.ucvm_cmode  = UCVMCMODE;
-  a_cfg.ucvm_type   = UCVMTYPE;
-
-  a_cfg.min_vp = (a_cfg.min_vp == 0) ? MIN_VP : a_cfg.min_vp;
-  a_cfg.min_vs = (a_cfg.min_vs == 0) ? MIN_VS : a_cfg.min_vs;
-  a_cfg.min_vs2 = (a_cfg.min_vs2 == 0) ? MIN_VS2 : a_cfg.min_vs2;
-  a_cfg.max_vp_vs_ratio = (a_cfg.max_vp_vs_ratio == 0) ? \
-                          MAX_VP_VS_RATIO : a_cfg.max_vp_vs_ratio;
-
-  a_cfg.hypoc.lon = CENTERICLON;
-  a_cfg.hypoc.lat = CENTERICLAT;
-
-  a_cfg.elmt_type = ELMTTYPE;
-
-  std::cout << "Done!" << std::endl;
+  std::cout << "Done! ";
+  l_t = clock() - l_t;
+  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
 
   return 0;
 }
 
-int ucvmInit( const antn_cfg &a_cfg ) {
-  ucvm_init( a_cfg.ucvm_cfg_fn.c_str() );
-  ucvm_add_model_list( a_cfg.ucvm_model_list.c_str() );
-  ucvm_setparam( UCVM_PARAM_QUERY_MODE, a_cfg.ucvm_cmode );
+int edge_v::vm::Utility::meshInit( moab_mesh &i_mesh,
+              io::Config  &i_cfg ) {
+  clock_t l_t = clock();
 
-  return 0;
-}
-
-int meshInit( moab_mesh &m_mesh, antn_cfg &a_cfg ) {
-  if( m_mesh.intf != nullptr ) {
+  if( i_mesh.m_intf != nullptr ) {
     std::cout << "Failed." << std::endl;
     std::cerr << "Error: The mesh has been initialized." << std::endl;
-    exit( -1 );
+    exit( EXIT_FAILURE );
   }
 
-  m_mesh.intf = new moab::Core;
-  moab::Interface *iface = m_mesh.intf;
+  i_mesh.m_intf           = new moab::Core;
+  moab::Interface *l_face = i_mesh.m_intf;
 
-  std::cout << "Reading Mesh File: " << a_cfg.mesh_fn << " ... " << std::endl;
+  std::cout << "Reading mesh file: " << i_cfg.m_meshFn << "... " << std::endl;
 
   //! Load the mesh from msh file
-  moab::ErrorCode rval = iface->load_mesh( a_cfg.mesh_fn.c_str() );
-  if( rval != moab::MB_SUCCESS ) {
+  moab::ErrorCode l_rval = l_face->load_mesh( i_cfg.m_meshFn.c_str() );
+  if( l_rval != moab::MB_SUCCESS ) {
     std::cout << "Failed." << std::endl;
     std::cerr << "Error: cannot open the mesh file." << std::endl;
-    exit( -1 );
+    exit( EXIT_FAILURE );
   }
-  assert( rval == moab::MB_SUCCESS );
+  assert( l_rval == moab::MB_SUCCESS );
 
   //! Get Nodes && Tets Statistics
-  int numNodes, numElmts;
-  moab::Range verts, elems;
+  int         l_numNodes, l_numElmts;
+  moab::Range l_verts,    l_elems;
 
-  rval = iface->get_number_entities_by_type( 0, moab::MBVERTEX, numNodes );
-  assert( rval == moab::MB_SUCCESS );
+  l_rval = l_face->get_number_entities_by_type( 0, moab::MBVERTEX, l_numNodes );
+  assert( l_rval == moab::MB_SUCCESS );
 
-  rval = iface->get_number_entities_by_type( 0, moab::MBTET, numElmts );
-  assert( rval == moab::MB_SUCCESS );
+  if( ELMTTYPE == 3 )
+    l_rval = l_face->get_number_entities_by_type( 0, moab::MBTRI, l_numElmts );
+  else if( ELMTTYPE == 4 )
+    l_rval = l_face->get_number_entities_by_type( 0, moab::MBTET, l_numElmts );
+  assert( l_rval == moab::MB_SUCCESS );
 
-  rval = iface->get_entities_by_type( 0, moab::MBVERTEX, verts );
-  assert( rval == moab::MB_SUCCESS );
-  assert( verts.size() == numNodes );
+  l_rval = l_face->get_entities_by_type( 0, moab::MBVERTEX, l_verts );
+  assert( l_rval == moab::MB_SUCCESS );
+  assert( l_verts.size() == (size_t) l_numNodes );
 
-  rval = iface->get_entities_by_type( 0, moab::MBTET, elems );
-  assert( rval == moab::MB_SUCCESS );
-  assert( elems.size() == numElmts );
+  if( ELMTTYPE == 3 )
+    l_rval = l_face->get_entities_by_type( 0, moab::MBTRI, l_elems );
+  else if( ELMTTYPE == 4 )
+    l_rval = l_face->get_entities_by_type( 0, moab::MBTET, l_elems );
+  assert( l_rval == moab::MB_SUCCESS );
+  assert( l_elems.size() == (size_t) l_numElmts );
 
-  m_mesh.num_nodes = numNodes;
-  m_mesh.num_elmts = numElmts;
-  std::cout << " | Number of vertices is " << m_mesh.num_nodes << std::endl;
-  std::cout << " | Number of elements is " << m_mesh.num_elmts << std::endl;
+  i_mesh.m_numNodes = l_numNodes;
+  i_mesh.m_numElmts = l_numElmts;
+  std::cout << " | Number of vertices is " << i_mesh.m_numNodes << std::endl;
+  std::cout << " | Number of elements is " << i_mesh.m_numElmts << std::endl;
 
-  std::cout << "Done!" << std::endl;
+  std::cout << "Done! ";
+  l_t = clock() - l_t;
+  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
 
   return 0;
 }
 
-int meshFinalize( moab_mesh &m_mesh ) {
-  if( m_mesh.intf != nullptr ) {
-    delete m_mesh.intf;
+int edge_v::vm::Utility::meshFinalize( moab_mesh &i_mesh ) {
+  if( i_mesh.m_intf != nullptr ) {
+    delete i_mesh.m_intf;
   } else {
     std::cout << "Failed." << std::endl;
     std::cerr << "Error: mesh object corrupted.";
-    exit( -1 );
+    exit( EXIT_FAILURE );
   }
 
   return 0;
 }
 
-int vmNodeInit( vmodel &vm_nodes, const moab_mesh &m_mesh ) {
-  vm_nodes.vm_list = new vm_datum[m_mesh.num_nodes];
+int edge_v::vm::Utility::vmNodeInit(       vmodel    &i_vmNodes,
+                                     const moab_mesh &i_mesh ) {
+  i_vmNodes.m_vmList = new vm_datum[i_mesh.m_numNodes];
 
   return 0;
 }
 
-int vmNodeFinalize( vmodel &vm_nodes ) {
-  if( vm_nodes.vm_list != nullptr )
-    delete[] vm_nodes.vm_list;
+int edge_v::vm::Utility::vmNodeFinalize( vmodel &i_vmNodes ) {
+  if( i_vmNodes.m_vmList != nullptr )
+    delete[] i_vmNodes.m_vmList;
 
   return 0;
 }
 
-int vmElmtInit( vmodel &vm_elmts, const moab_mesh &m_mesh ) {
-  vm_elmts.vm_list = new vm_datum[m_mesh.num_elmts];
+int edge_v::vm::Utility::vmElmtInit(       vmodel    &i_vmElmts,
+                const moab_mesh &i_mesh ) {
+  i_vmElmts.m_vmList = new vm_datum[i_mesh.m_numElmts];
 
   return 0;
 }
 
-int vmElmtFinalize( vmodel &vm_elmts ) {
-  if( vm_elmts.vm_list != nullptr )
-    delete[] vm_elmts.vm_list;
+int edge_v::vm::Utility::vmElmtFinalize( vmodel &i_vmElmts ) {
+  if( i_vmElmts.m_vmList != nullptr )
+    delete[] i_vmElmts.m_vmList;
 
   return 0;
 }
 
-int workerInit( worker_reg &wrk_rg, int_v totalNum ) {
-  int_v tid         = omp_get_thread_num();
-  int_v numThrds    = omp_get_num_threads();
-  wrk_rg.worker_tid = tid;
+int edge_v::vm::Utility::workerInit(       worker_reg  &i_wrkRg,
+                                     const int_v       &i_totalNum,
+                                     const std::string &i_projMesh,
+                                     const std::string &i_projVel   ) {
+  int_v l_tid                 = omp_get_thread_num();
+  int_v l_numThrds            = omp_get_num_threads();
+  i_wrkRg.m_workerTid         = l_tid;
 
-  int_v workSize    = (totalNum + numThrds - 1) / numThrds;
-  int_v nPrivate    = std::min( workSize * (tid + 1), totalNum ) - workSize * tid;
-  wrk_rg.work_size  = workSize;
-  wrk_rg.num_prvt   = nPrivate;
+  int_v l_workSize            = (i_totalNum + l_numThrds - 1) / l_numThrds;
+  int_v l_nPrivate            = std::min( l_workSize * (l_tid + 1), i_totalNum )
+                                - l_workSize * l_tid;
+  i_wrkRg.m_workSize          = l_workSize;
+  i_wrkRg.m_numPrvt           = l_nPrivate;
 
-  std::string pjInitParams = "+proj=tmerc +units=m +axis=enu +no_defs \
-                          +datum=WGS84 +k=0.9996 +lon_0=-117.916 +lat_0=33.933";
-  wrk_rg.pj_utm = pj_init_plus( pjInitParams.c_str() );
-  wrk_rg.pj_geo = pj_init_plus( "+proj=latlong +datum=WGS84" );
+  i_wrkRg.m_pjUtm             = pj_init_plus( i_projMesh.c_str() );
+  i_wrkRg.m_pjGeo             = pj_init_plus( i_projVel.c_str() );
 
   return 0;
 }
 
-int writeVMNodes( vmodel &vm_nodes, const antn_cfg &a_cfg,
-                  const moab_mesh &m_mesh ) {
-  std::cout << "Write Velocity Model: " << a_cfg.vm_node_fn << " ... ";
-  std::cout.flush();
+int edge_v::vm::Utility::writeVMNodes(       vmodel    &i_vmNodes,
+                                       const io::Config  &i_cfg,
+                                       const moab_mesh &i_mesh ) {
+  clock_t l_t = clock();
 
-  std::ofstream oVmNodeFs( a_cfg.vm_node_fn.c_str(), std::ios::out );
-  if( !oVmNodeFs.is_open() ) {
+  std::cout << "Writing velocity model: " << i_cfg.m_vmNodeFn << "... "
+            << std::flush;
+
+  std::ofstream l_vmNodeFs( i_cfg.m_vmNodeFn.c_str(), std::ios::out );
+  if( !l_vmNodeFs.is_open() ) {
     std::cout << "Failed" << std::endl;
     std::cerr << "Error: cannot generate the velocity model for nodes."
               << std::endl;
-    exit( -1 );
+    exit( EXIT_FAILURE );
   }
-  
+
+  int_v l_bufferSize = 10000;
+  std::stringstream l_ss;
+
   //! Write down the headers
-  oVmNodeFs << "$UcvmModel\n";
-  oVmNodeFs << a_cfg.ucvm_model_list << std::endl;
-  oVmNodeFs << "$EndUcvmModel\n";
+  l_ss << "$UcvmModel" << std::endl;
+  l_ss << i_cfg.m_ucvmModelList << std::endl;
+  l_ss << "$EndUcvmModel" << std::endl;
 
   //! Write down the velocity model data
-  int_v numNodes = m_mesh.num_nodes;
+  int_v l_numNodes = i_mesh.m_numNodes;
 
-  oVmNodeFs << "$NodesVelocityModel\n";
-  oVmNodeFs << numNodes << std::endl;
-  for( int_v pid = 0; pid < numNodes; pid++ ) {
-    real data0 = vm_nodes.vm_list[pid].data[0];
-    real data1 = vm_nodes.vm_list[pid].data[1];
-    real data2 = vm_nodes.vm_list[pid].data[2];
+  l_ss << "$NodesVelocityModel" << std::endl;
+  l_ss << l_numNodes << std::endl;
 
-    oVmNodeFs << (pid + 1) << " " << data0 << " " << data1 << " " << data2
-              << std::endl;
-    oVmNodeFs.flush();
+  real l_data0, l_data1, l_data2;
+  for( int_v l_pid = 0; l_pid < l_numNodes; l_pid++ ) {
+    if( l_pid % l_bufferSize == 0 ) {
+      //! Write buffer to file
+      l_vmNodeFs << l_ss.rdbuf();
+      l_vmNodeFs.flush();
+
+      //! Reset buffer
+      l_ss.str( std::string() );
+      l_ss.clear();
+    }
+
+    l_data0 = i_vmNodes.m_vmList[l_pid].m_data[0];
+    l_data1 = i_vmNodes.m_vmList[l_pid].m_data[1];
+    l_data2 = i_vmNodes.m_vmList[l_pid].m_data[2];
+
+    l_ss << (l_pid + 1) << " " << l_data0 << " " << l_data1 << " "
+         << l_data2 << std::endl;
   }
-  oVmNodeFs << "$NodesVelocityModel\n";
 
-  oVmNodeFs.close();
-  std::cout << "Done!" << std::endl;
+  l_ss << "$NodesVelocityModel" << std::endl;
+
+  //! Final buffer write to file
+  l_vmNodeFs << l_ss.rdbuf();
+  l_vmNodeFs.flush();
+  l_vmNodeFs.close();
+
+  std::cout << "Done! ";
+  l_t = clock() - l_t;
+  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
 
   return 0;
 }
 
-int writeVMElmts( vmodel &vm_elmts, const antn_cfg &a_cfg,
-                  const moab_mesh &m_mesh ) {
-  std::cout << "Writing Velocity Model: " << a_cfg.vm_elmt_fn << " ... ";
-  std::cout.flush();
+int edge_v::vm::Utility::writeVMElmts(       vmodel    &i_vmElmts,
+                                       const io::Config  &i_cfg,
+                                       const moab_mesh &i_mesh ) {
+  clock_t l_t = clock();
 
-  std::ofstream oVmElmtFs( a_cfg.vm_elmt_fn.c_str(), std::ios::out );
-  if( !oVmElmtFs.is_open() ) {
+  std::cout << "Writing velocity model: " << i_cfg.m_vmElmtFn << "... "
+            << std::flush;
+
+  std::ofstream l_vmElmtFs( i_cfg.m_vmElmtFn.c_str(), std::ios::out );
+  if( !l_vmElmtFs.is_open() ) {
     std::cout << "Failed" << std::endl;
     std::cerr << "Error: cannot generate the velocity model for elements."
               << std::endl;
-    exit( -1 );
+    exit( EXIT_FAILURE );
   }
+
+  int_v l_bufferSize = 10000;
+  std::stringstream l_ss;
 
   //! Write down the headers
-  oVmElmtFs << "$UcvmModel\n";
-  oVmElmtFs << a_cfg.ucvm_model_list << std::endl;
-  oVmElmtFs << "$EndUcvmModel\n";
+  l_ss << "$UcvmModel" << std::endl;
+  l_ss << i_cfg.m_ucvmModelList << std::endl;
+  l_ss << "$EndUcvmModel" << std::endl;
 
   //! Write down the velocity model data
-  int_v numElmts = m_mesh.num_elmts;
+  int_v l_numElmts = i_mesh.m_numElmts;
 
-  oVmElmtFs << "$ElementsVelocityModel\n";
-  oVmElmtFs << numElmts << std::endl;
-  for( int_v eid = 0; eid < numElmts; eid++ ) {
-    real data0 = vm_elmts.vm_list[eid].data[0];
-    real data1 = vm_elmts.vm_list[eid].data[1];
-    real data2 = vm_elmts.vm_list[eid].data[2];
+  l_ss << "$ElementsVelocityModel" << std::endl;
+  l_ss << l_numElmts << std::endl;
 
-    oVmElmtFs << (eid + 1) << " " << data0 << " " << data1 << " " << data2
-              << std::endl;
-    oVmElmtFs.flush();
+  real l_data0, l_data1, l_data2;
+  for( int_v l_eid = 0; l_eid < l_numElmts; l_eid++ ) {
+    if( l_eid % l_bufferSize == 0 ) {
+      //! Write buffer to file
+      l_vmElmtFs << l_ss.rdbuf();
+      l_vmElmtFs.flush();
+
+      //! Reset buffer
+      l_ss.str( std::string() );
+      l_ss.clear();
+    }
+
+    l_data0 = i_vmElmts.m_vmList[l_eid].m_data[0];
+    l_data1 = i_vmElmts.m_vmList[l_eid].m_data[1];
+    l_data2 = i_vmElmts.m_vmList[l_eid].m_data[2];
+
+    l_ss << (l_eid + 1) << " " << l_data0 << " " << l_data1 << " "
+         << l_data2 << std::endl;
   }
-  oVmElmtFs << "$ElementsVelocityModel\n";
 
-  oVmElmtFs.close();
-  std::cout << "Done!" << std::endl;
+  l_ss << "$ElementsVelocityModel" << std::endl;
+
+  //! Final buffer write to file
+  l_vmElmtFs << l_ss.rdbuf();
+  l_vmElmtFs.flush();
+  l_vmElmtFs.close();
+
+  std::cout << "Done! ";
+  l_t = clock() - l_t;
+  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
 
   return 0;
 }
 
-int writeVMTags( vmodel &vm_elmts, const antn_cfg &a_cfg,
-                 const moab_mesh &m_mesh ) {
-  moab::Interface *iface = m_mesh.intf;
-  if( iface == nullptr ) {
+int edge_v::vm::Utility::writeVMTags(       vmodel    &i_vmElmts,
+                                      const io::Config  &i_cfg,
+                                      const moab_mesh &i_mesh ) {
+  clock_t l_t = clock();
+
+  moab::Interface *l_face = i_mesh.m_intf;
+  if( l_face == nullptr ) {
     std::cout << "Failed." << std::endl;
     std::cerr << "Error: cannot operate the mesh." << std::endl;
-    exit( -1 );
+    exit( EXIT_FAILURE );
   }
 
-  std::cout << "Writing Annotated Mesh File: " << a_cfg.h5m_fn << " ... ";
-  std::cout.flush();
+  std::cout << "Writing annotated mesh file: " << i_cfg.m_h5mFn << "... "
+            << std::flush;
 
-  moab::Range elems;
-  moab::ErrorCode rval = iface->get_entities_by_type( 0, moab::MBTET, elems );
-  assert( rval == moab::MB_SUCCESS );
+  moab::Range l_elems;
+  moab::ErrorCode l_rval = l_face->get_entities_by_type( 0, moab::MBTET, l_elems );
+  assert( l_rval == moab::MB_SUCCESS );
 
   //! Create Tags
-  moab::Tag tag_lambda, tag_mu, tag_rho;
-  rval = iface->tag_get_handle( "LAMBDA", 4, moab::MB_TYPE_OPAQUE, tag_lambda,
-                    moab::MB_TAG_CREAT|moab::MB_TAG_DENSE|moab::MB_TAG_BYTES );
-  assert( rval == moab::MB_SUCCESS );
+  moab::Tag l_tagLambda, l_tagMu, l_tagRho;
+  l_rval = l_face->tag_get_handle( "LAMBDA", 1, moab::MB_TYPE_DOUBLE, l_tagLambda,
+                                   moab::MB_TAG_CREAT | moab::MB_TAG_DENSE );
+  assert( l_rval == moab::MB_SUCCESS );
 
-  rval = iface->tag_get_handle( "MU", 4, moab::MB_TYPE_OPAQUE, tag_mu,
-                    moab::MB_TAG_CREAT|moab::MB_TAG_DENSE|moab::MB_TAG_BYTES );
-  assert( rval == moab::MB_SUCCESS );
+  l_rval = l_face->tag_get_handle( "MU", 1, moab::MB_TYPE_DOUBLE, l_tagMu,
+                                   moab::MB_TAG_CREAT | moab::MB_TAG_DENSE );
+  assert( l_rval == moab::MB_SUCCESS );
 
-  rval = iface->tag_get_handle( "RHO", 4, moab::MB_TYPE_OPAQUE, tag_rho,
-                    moab::MB_TAG_CREAT|moab::MB_TAG_DENSE|moab::MB_TAG_BYTES );
-  assert( rval == moab::MB_SUCCESS );
+  l_rval = l_face->tag_get_handle( "RHO", 1, moab::MB_TYPE_DOUBLE, l_tagRho,
+                                   moab::MB_TAG_CREAT | moab::MB_TAG_DENSE );
+  assert( l_rval == moab::MB_SUCCESS );
 
   //! Set Tags
-  int_v eid;
-  int_v numElmts = m_mesh.num_elmts;
-  real l_lambda, l_mu, l_rho;
+  int_v l_eid;
+  int_v l_numElmts = i_mesh.m_numElmts;
+  real  l_lambda, l_mu, l_rho;
 
-  for( moab::Range::iterator rit = elems.begin(); rit != elems.end(); ++rit ) {
-    moab::EntityID entId = iface->id_from_handle( *rit );
+  for( moab::Range::iterator l_rit = l_elems.begin(); l_rit != l_elems.end(); ++l_rit ) {
+    moab::EntityID l_entId = l_face->id_from_handle( *l_rit );
 
-    eid = entId - 1;
-    assert( eid < numElmts );
+    l_eid = l_entId - 1;
+    assert( l_eid < l_numElmts );
 
-    l_lambda  = vm_elmts.vm_list[eid].data[0];
-    l_mu      = vm_elmts.vm_list[eid].data[1];
-    l_rho     = vm_elmts.vm_list[eid].data[2];
+    l_lambda  = i_vmElmts.m_vmList[l_eid].m_data[0];
+    l_mu      = i_vmElmts.m_vmList[l_eid].m_data[1];
+    l_rho     = i_vmElmts.m_vmList[l_eid].m_data[2];
 
 
-    iface->tag_set_data( tag_lambda, &(*rit), 1, &l_lambda );
-    assert( rval == moab::MB_SUCCESS );
+    l_face->tag_set_data( l_tagLambda, &(*l_rit), 1, &l_lambda );
+    assert( l_rval == moab::MB_SUCCESS );
 
-    rval = iface->tag_set_data( tag_mu, &(*rit), 1, &l_mu );
-    assert( rval == moab::MB_SUCCESS );
+    l_rval = l_face->tag_set_data( l_tagMu, &(*l_rit), 1, &l_mu );
+    assert( l_rval == moab::MB_SUCCESS );
 
-    rval = iface->tag_set_data( tag_rho, &(*rit), 1, &l_rho );
-    assert( rval == moab::MB_SUCCESS );
+    l_rval = l_face->tag_set_data( l_tagRho, &(*l_rit), 1, &l_rho );
+    assert( l_rval == moab::MB_SUCCESS );
   }
 
   //! Write to H5M File
-  rval = iface->write_file( a_cfg.h5m_fn.c_str(), "H5M" );
-  assert( rval == moab::MB_SUCCESS );
+  l_rval = l_face->write_file( i_cfg.m_h5mFn.c_str(), "H5M" );
+  assert( l_rval == moab::MB_SUCCESS );
 
-  std::cout << "Done!" << std::endl;
+  std::cout << "Done! ";
+  l_t = clock() - l_t;
+  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
+
+  return 0;
+}
+
+int edge_v::vm::Utility::posInit(       posModel  &i_posModel,
+                                  const moab_mesh &i_msh ) {
+  i_posModel.m_posList = new pos_datum[i_msh.m_numElmts];
+
+  return 0;
+}
+
+int edge_v::vm::Utility::posFinalize( posModel &i_posModel ) {
+  if( i_posModel.m_posList != nullptr )
+    delete[] i_posModel.m_posList;
+
+  return 0;
+}
+
+int edge_v::vm::Utility::writePos( const posModel  &i_posModel,
+                                   const io::Config  &i_cfg,
+                                   const moab_mesh &i_msh ) {
+  clock_t l_t = clock();
+
+  std::cout << "Writing pos file: " << i_cfg.m_posFn << "... " << std::flush;
+
+  std::ofstream l_outPos( i_cfg.m_posFn.c_str(), std::ios::out );
+  if( !l_outPos.is_open() ) {
+    std::cout << "Failed" << std::endl;
+    std::cerr << "Error: cannot generate the pos file." << std::endl;
+    exit( EXIT_FAILURE );
+  }
+
+  int_v l_bufferSize = 10000;
+  std::stringstream l_ss;
+
+  l_ss << "/*********************************************************************"
+       << std::endl << " *" << std::endl << " *  EDGE generated pos file"
+       << std::endl << " *" << std::endl
+       << " *********************************************************************/"
+       << std::endl << std::endl;
+
+  l_ss << "View \"EDGEpos\" {" << std::endl;
+
+  for( int_v l_eid = 0; l_eid < i_msh.m_numElmts; l_eid++ ) {
+    if( l_eid % l_bufferSize == 0 ) {
+      //! Write buffer to file
+      l_outPos << l_ss.rdbuf();
+      l_outPos.flush();
+
+      //! Reset buffer
+      l_ss.str( std::string() );
+      l_ss.clear();
+    }
+
+    if( ELMTTYPE == 3 )
+      l_ss << "ST(";
+    else if( ELMTTYPE == 4 )
+      l_ss << "SS(";
+
+    for( unsigned int l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
+      l_ss << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_x << ","
+           << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_y << ","
+           << i_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_z;
+
+      if( l_vid != ELMTTYPE - 1 )
+        l_ss << ",";
+    }
+
+    l_ss << "){";
+
+    for( unsigned int l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
+      l_ss << i_posModel.m_posList[l_eid].m_vs[l_vid];
+
+      if( l_vid != ELMTTYPE - 1 )
+        l_ss << ",";
+    }
+
+    l_ss << "};" << std::endl;
+  }
+
+  l_ss << "};" << std::endl;
+
+  //! Final buffer write to file
+  l_outPos << l_ss.rdbuf();
+  l_outPos.flush();
+  l_outPos.close();
+
+  std::cout << "Done! ";
+  l_t = clock() - l_t;
+  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
 
   return 0;
 }

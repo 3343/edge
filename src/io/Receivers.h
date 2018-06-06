@@ -21,11 +21,11 @@
  * Output of receivers.
  **/
 
-#ifndef RECEIVERS_H
-#define RECEIVERS_H
+#ifndef EDGE_IO_RECEIVERS_H
+#define EDGE_IO_RECEIVERS_H
 
 #include "constants.hpp"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
 #include <string>
 
 namespace edge {
@@ -74,7 +74,7 @@ class edge::io::Receivers {
     /**
      * Touches the output for the first time and writes the headers.
      *
-     * i_outDir output directory which gets created if it does not exist.
+     * @param i_outDir output directory which gets created if it does not exist.
      **/
     void touchOutput( const std::string &i_outDir );
 

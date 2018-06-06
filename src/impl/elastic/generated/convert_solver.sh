@@ -23,8 +23,7 @@
 ##
 
 for l_file in SolverElastic2D.inc
-#for l_file in Trafo2D.inc TrafoInv2D.inc EntFixHarten2D.inc
-#for l_file in EntFixHarten3D.inc
+#for l_file in Trafo2D.inc TrafoInv2D.inc
 #for l_file in Trafo3D.inc TrafoInv3D.inc FlMid3D.inc FrMid3D.inc
 #for l_file in MiddleStateJumpL2D.inc MiddleStateJumpR2D.inc MiddleStateFlux2D.inc
 #for l_file in MiddleStateJumpL3D.inc MiddleStateJumpR3D.inc MiddleStateFlux3D.inc

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -459,6 +459,131 @@ void edge::mesh::Regular::getElementsAdjacentFaces( int_el (*o_elementAdjacentFa
 #endif
 }
 
+int_el edge::mesh::Regular::getNelVeEl() const {
+  if(      m_elementType == Line          ) return m_nRequestedElements  * 2;
+  else if( m_elementType == Quadrilateral ) return m_nRequestedElements  * 8;
+  else if( m_elementType == Hexahedral    ) return m_nRequestedElements * 26;
+
+  EDGE_LOG_FATAL << "unsupported element type";
+  return std::numeric_limits< int_el >::max();
+}
+
+void edge::mesh::Regular::getElVeEl( int_el** o_elVeEl ) const {
+  // pointer to raw data
+  int_el* l_raw = o_elVeEl[0];
+
+  if( m_elementType == Line ) {
+    for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+      l_raw[0] = l_el-1;
+      l_raw[1] = l_el+1;
+      o_elVeEl[l_el] = l_raw;
+      l_raw += 2;
+    }
+    // adjust periodic boundaries
+    o_elVeEl[0][0] = m_nRequestedElements-1;
+    o_elVeEl[m_nRequestedElements-1][1] = 0;
+  }
+  else if( m_elementType == Quadrilateral ) {
+    for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+      int_el l_px = l_el % m_nX;
+      int_el l_py = l_el / m_nX;
+
+      // compute offsets for perodic boundaries
+      int l_offx[2] = {0,0};
+      int l_offy[2] = {0,0};
+      if(      l_px == 0      ) l_offx[0] =  (m_nX-1);
+      else if( l_px == m_nX-1 ) l_offx[1] = -(m_nX-1);
+
+      if(      l_py == 0      ) l_offy[0] =  m_nX*(m_nY-1);
+      else if( l_py == m_nY-1 ) l_offy[1] = -m_nX*(m_nY-1);
+
+      // set vertex-neighbors, starting bottom-left, counter-clockwise
+      l_raw[0] = ( (l_py-1) * m_nX ) + l_px - 1 + l_offx[0] + l_offy[0];
+      l_raw[1] = ( (l_py-1) * m_nX ) + l_px + 0 + 0         + l_offy[0];
+      l_raw[2] = ( (l_py-1) * m_nX ) + l_px + 1 + l_offx[1] + l_offy[0];
+
+      l_raw[3] = ( (l_py+0) * m_nX ) + l_px + 1 + l_offx[1] + 0;
+      l_raw[4] = ( (l_py+1) * m_nX ) + l_px + 1 + l_offx[1] + l_offy[1];
+      l_raw[5] = ( (l_py+1) * m_nX ) + l_px + 0 + 0         + l_offy[1];
+      l_raw[6] = ( (l_py+1) * m_nX ) + l_px - 1 + l_offx[0] + l_offy[1];
+
+      l_raw[7] = ( (l_py+0) * m_nX ) + l_px - 1 + l_offx[0] + 0;
+
+      o_elVeEl[l_el] = l_raw;
+      l_raw += 8;
+    }
+
+  }
+  else if( m_elementType == Hexahedral ) {
+    for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+      // derive element's position
+      int_el l_px = l_el % m_nX;
+      int_el l_py = l_el % (m_nX*m_nY);
+             l_py = l_py / m_nX;
+      int_el l_pz = l_el / (m_nX*m_nY);
+
+      // compute offsets for perodic boundaries
+      int l_offx[2] = {0,0};
+      int l_offy[2] = {0,0};
+      int l_offz[2] = {0,0};
+      if(      l_px == 0      ) l_offx[0] =  (m_nX-1);
+      else if( l_px == m_nX-1 ) l_offx[1] = -(m_nX-1);
+
+      if(      l_py == 0      ) l_offy[0] =  m_nX*(m_nY-1);
+      else if( l_py == m_nY-1 ) l_offy[1] = -m_nX*(m_nY-1);
+
+      if(      l_pz == 0      ) l_offz[0] =  m_nX*m_nY*(m_nZ-1);
+      else if( l_pz == m_nZ-1 ) l_offz[1] = -m_nX*m_nY*(m_nZ-1);
+
+      // set vertex neighbors, starting lower-bottom-left
+      l_raw[ 0] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px-1) + l_offx[0] + l_offy[0] + l_offz[0];
+      l_raw[ 1] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px  ) + 0         + l_offy[0] + l_offz[0];
+      l_raw[ 2] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px+1) + l_offx[1] + l_offy[0] + l_offz[0];
+
+      l_raw[ 3] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px-1) + l_offx[0] + 0         + l_offz[0];
+      l_raw[ 4] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px  ) + 0         + 0         + l_offz[0];
+      l_raw[ 5] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px+1) + l_offx[1] + 0         + l_offz[0];
+
+      l_raw[ 6] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px-1) + l_offx[0] + l_offy[1] + l_offz[0];
+      l_raw[ 7] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px  ) + 0         + l_offy[1] + l_offz[0];
+      l_raw[ 8] =  ( (l_pz-1) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px+1) + l_offx[1] + l_offy[1] + l_offz[0];
+
+
+      l_raw[ 9] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px-1) + l_offx[0] + l_offy[0] + 0;
+      l_raw[10] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px  ) + 0         + l_offy[0] + 0;
+      l_raw[11] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px+1) + l_offx[1] + l_offy[0] + 0;
+
+      l_raw[12] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px-1) + l_offx[0] + 0         + 0;
+
+      l_raw[13] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px+1) + l_offx[1] + 0         + 0;
+
+      l_raw[14] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px-1) + l_offx[0] + l_offy[1] + 0;
+      l_raw[15] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px  ) + 0         + l_offy[1] + 0;
+      l_raw[16] =  ( (l_pz  ) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px+1) + l_offx[1] + l_offy[1] + 0;
+
+
+      l_raw[17] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px-1) + l_offx[0] + l_offy[0] + l_offz[1];
+      l_raw[18] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px  ) + 0         + l_offy[0] + l_offz[1];
+      l_raw[19] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py-1) * m_nX ) + (l_px+1) + l_offx[1] + l_offy[0] + l_offz[1];
+
+      l_raw[20] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px-1) + l_offx[0] + 0         + l_offz[1];
+      l_raw[21] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px  ) + 0         + 0         + l_offz[1];
+      l_raw[22] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py  ) * m_nX ) + (l_px+1) + l_offx[1] + 0         + l_offz[1];
+
+      l_raw[23] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px-1) + l_offx[0] + l_offy[1] + l_offz[1];
+      l_raw[24] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px  ) + 0         + l_offy[1] + l_offz[1];
+      l_raw[25] =  ( (l_pz+1) * m_nX * m_nY ) + ( (l_py+1) * m_nX ) + (l_px+1) + l_offx[1] + l_offy[1] + l_offz[1];
+
+      o_elVeEl[l_el] = l_raw;
+      l_raw += 26;
+    }
+  }
+  else EDGE_LOG_FATAL;
+
+  // set ghost entry
+  o_elVeEl[m_nRequestedElements] = l_raw;
+}
+
 void edge::mesh::Regular::getElementsFaceNeighbors( int_el (*o_neighboringIds)[C_ENT[T_SDISC.ELEMENT].N_FACES] ) const {
   for( int_el l_element = 0; l_element < m_nRequestedElements; l_element++ ) {
     getElementFaceNeighbors( l_element, o_neighboringIds[l_element] );
@@ -515,11 +640,42 @@ void edge::mesh::Regular::getFaceAdjacentElements( int_el i_faceId,
   assert(false);
 #endif
   // left should'nt be equal to right..
-  assert( o_neighboringIds[0] != o_neighboringIds[1] );
+  EDGE_CHECK( o_neighboringIds[0] != o_neighboringIds[1] );
+
+  // store smaller element first
+  if( o_neighboringIds[0] > o_neighboringIds[1] ) {
+    int_el l_tmpId = o_neighboringIds[0];
+    o_neighboringIds[0] = o_neighboringIds[1];
+    o_neighboringIds[1] = l_tmpId;
+  }
 }
 
 void edge::mesh::Regular::getFaceAdjacentVertices( int_el i_fa, int_el o_faVe[C_ENT[T_SDISC.ELEMENT].N_FACE_VERTICES] ) const {
-#if defined PP_T_ELEMENTS_HEX8R
+#if defined PP_T_ELEMENTS_LINE
+  o_faVe[0] = i_fa;
+#elif defined PP_T_ELEMENTS_QUAD4R
+  // determine adjacent elements
+  int_el l_elAd[2];
+  getFaceAdjacentElements( i_fa, l_elAd );
+
+  // get vertices of right element
+  int_el l_elVe[4];
+
+  getElementAdjacentVertices( l_elVe,
+                              l_elAd[1]%m_nX,
+                              l_elAd[1]/m_nX );
+
+  // assign vertices for vertical faces
+  if( i_fa%2 == 0 ) {
+    o_faVe[0] = l_elVe[0];
+    o_faVe[1] = l_elVe[3];
+  }
+  // assign vertices for horizontal faces
+  else {
+    o_faVe[0] = l_elVe[0];
+    o_faVe[1] = l_elVe[1];
+  }
+#elif defined PP_T_ELEMENTS_HEX8R
   // derive face type. 0: z, 1: y, 2: x
   unsigned short l_type = i_fa % 3;
 
@@ -559,9 +715,9 @@ void edge::mesh::Regular::getFaceAdjacentVertices( int_el i_fa, int_el o_faVe[C_
   }
   else if( l_type == 2 ) { // right face of the element
     o_faVe[0] = l_veId1;
-    o_faVe[1] = l_veId2;
-    o_faVe[2] = l_veId5;
-    o_faVe[3] = l_veId6;
+    o_faVe[1] = l_veId5;
+    o_faVe[2] = l_veId6;
+    o_faVe[3] = l_veId2;
   }
 #else
   EDGE_LOG_FATAL;
@@ -580,17 +736,17 @@ void edge::mesh::Regular::getFacesAdjacentElements( int_el (*o_neighboringIds)[2
   }
 }
 
-void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacentVertices)[C_ENT[T_SDISC.ELEMENT].N_VERTICES] ) const {
+void edge::mesh::Regular::getElementAdjacentVertices( int_el o_elementAdjacentVertices[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
+                                                      int_el i_px,
+                                                      int_el i_py,
+                                                      int_el i_pz ) const {
 #if defined PP_T_ELEMENTS_LINE
   /*
    * Sorting of vertices:
    *  |0____|1____|2____|3
    */
-
-  for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
-    o_elementAdjacentVertices[l_el][0] = l_el;
-    o_elementAdjacentVertices[l_el][1] = l_el+1;
-  }
+  o_elementAdjacentVertices[0] = i_px;
+  o_elementAdjacentVertices[1] = i_px+1;
 #elif defined PP_T_ELEMENTS_QUAD4R
 
   /*
@@ -603,24 +759,80 @@ void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacen
    *  |     |     |     |
    *  |0____|1____|2____|3
    */
+  // derive vertex ids
+  int_el l_veId0 =  i_py      * (m_nX+1) + i_px;
+  int_el l_veId1 =  i_py      * (m_nX+1) + i_px + 1;
+  int_el l_veId2 = (i_py + 1) * (m_nX+1) + i_px;
+  int_el l_veId3 = (i_py + 1) * (m_nX+1) + i_px + 1;
+
+  // set result, using counter-clockwise orientation
+  // side effect: keep this ordering for visulization purposes (no diagonals) and high-order configs
+  o_elementAdjacentVertices[0] = l_veId0;
+  o_elementAdjacentVertices[1] = l_veId1;
+  o_elementAdjacentVertices[2] = l_veId3;
+  o_elementAdjacentVertices[3] = l_veId2;
+#elif defined PP_T_ELEMENTS_HEX8R
+  /*
+   * Sorting of vertices:
+   *
+   *      32______33____34____35
+   *       /.    /.    /.    /|
+   *    28/___29/___30/___31/ |
+   *     /  .  /  .  /  .  /| |
+   * 24 /___25/___26/___27/ | |23
+   *   |    .|    .|    .| _|/|
+   *   |    .|_ _ _|_ _ _| /|_|11
+   * 12|___13|___14|___15|/ | /
+   *   |  ._ |_ _ _|_ _._| _|/
+   *   | .   | .   | .   | . 7
+   *   |.____|.____|.____|/
+   *  0      1     2      3
+   */
+  // derive vertex ids
+  int_el l_veId0 =   i_pz * (m_nX+1) * (m_nY+1)
+                   + i_py * (m_nX+1)
+                   + i_px;
+  int_el l_veId1 = l_veId0 +            1;
+  int_el l_veId2 = l_veId0 + (m_nX+1) + 1;
+  int_el l_veId3 = l_veId0 + (m_nX+1) + 0;
+
+  int_el l_veId4 = l_veId0 + (m_nX+1) * (m_nY+1);
+  int_el l_veId5 = l_veId1 + (m_nX+1) * (m_nY+1);
+  int_el l_veId6 = l_veId2 + (m_nX+1) * (m_nY+1);
+  int_el l_veId7 = l_veId3 + (m_nX+1) * (m_nY+1);
+
+  // set result
+  o_elementAdjacentVertices[0] = l_veId0;
+  o_elementAdjacentVertices[1] = l_veId1;
+  o_elementAdjacentVertices[2] = l_veId2;
+  o_elementAdjacentVertices[3] = l_veId3;
+  o_elementAdjacentVertices[4] = l_veId4;
+  o_elementAdjacentVertices[5] = l_veId5;
+  o_elementAdjacentVertices[6] = l_veId6;
+  o_elementAdjacentVertices[7] = l_veId7;
+#else
+  assert( false );
+#endif
+}
+
+void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacentVertices)[C_ENT[T_SDISC.ELEMENT].N_VERTICES] ) const {
+#if defined PP_T_ELEMENTS_LINE
+  for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
+    getElementAdjacentVertices(  o_elementAdjacentVertices[l_el],
+                                 l_el );
+                                 int_el i_px,
+                                 int_el i_py,
+                                 int_el i_pz );
+  }
+#elif defined PP_T_ELEMENTS_QUAD4R
   // iterate over elements dimension-wise
   for( int_el l_y = 0; l_y < m_nY; l_y++ ) {
     for( int_el l_x = 0; l_x < m_nX; l_x++ ) {
       // derive element id
       int_el l_elId = l_y * m_nX + l_x;
 
-      // derive vertex ids
-      int_el l_veId0 =  l_y      * (m_nX+1) + l_x;
-      int_el l_veId1 =  l_y      * (m_nX+1) + l_x + 1;
-      int_el l_veId2 = (l_y + 1) * (m_nX+1) + l_x;
-      int_el l_veId3 = (l_y + 1) * (m_nX+1) + l_x + 1;
-
-      // set result, using counter-clockwise orientation
-      // side effect: keep this ordering for visulization purposes (no diagonals) and high-order configs
-      o_elementAdjacentVertices[l_elId][0] = l_veId0;
-      o_elementAdjacentVertices[l_elId][1] = l_veId1;
-      o_elementAdjacentVertices[l_elId][2] = l_veId3;
-      o_elementAdjacentVertices[l_elId][3] = l_veId2;
+      getElementAdjacentVertices( o_elementAdjacentVertices[l_elId],
+                                  l_x, l_y );
     }
   }
 #elif defined PP_T_ELEMENTS_HEX8R
@@ -649,28 +861,8 @@ void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacen
                         l_y * m_nX +
                         l_x;
 
-        // derive vertex ids
-        int_el l_veId0 =   l_z * (m_nX+1) * (m_nY+1)
-                         + l_y * (m_nX+1)
-                         + l_x;
-        int_el l_veId1 = l_veId0 +            1;
-        int_el l_veId2 = l_veId0 + (m_nX+1) + 1;
-        int_el l_veId3 = l_veId0 + (m_nX+1) + 0;
-
-        int_el l_veId4 = l_veId0 + (m_nX+1) * (m_nY+1);
-        int_el l_veId5 = l_veId1 + (m_nX+1) * (m_nY+1);
-        int_el l_veId6 = l_veId2 + (m_nX+1) * (m_nY+1);
-        int_el l_veId7 = l_veId3 + (m_nX+1) * (m_nY+1);
-
-        // set result
-        o_elementAdjacentVertices[l_elId][0] = l_veId0;
-        o_elementAdjacentVertices[l_elId][1] = l_veId1;
-        o_elementAdjacentVertices[l_elId][2] = l_veId2;
-        o_elementAdjacentVertices[l_elId][3] = l_veId3;
-        o_elementAdjacentVertices[l_elId][4] = l_veId4;
-        o_elementAdjacentVertices[l_elId][5] = l_veId5;
-        o_elementAdjacentVertices[l_elId][6] = l_veId6;
-        o_elementAdjacentVertices[l_elId][7] = l_veId7;
+        getElementAdjacentVertices( o_elementAdjacentVertices[l_elId],
+                                    l_x, l_y, l_z );
       }
     }
   }
@@ -685,10 +877,9 @@ void edge::mesh::Regular::getConnect( const t_vertexChars *i_veChars,
   // get the connectivity info
   getElementsAdjacentVertices( o_connect.elVe   );
   getElementsAdjacentFaces(    o_connect.elFa   );
-#if defined PP_T_ELEMENTS_HEX8R
   getFacesAdjacentVertices(    o_connect.faVe   );
-#endif
   getFacesAdjacentElements(    o_connect.faEl   );
+  //getElVeEl(                   o_connect.elVeEl );
   getElementsFaceNeighbors(    o_connect.elFaEl );
 
   t_enLayout l_veLayout, l_faLayout, l_elLayout;
@@ -796,15 +987,15 @@ void edge::mesh::Regular::computeOutPointNormal( int_el     i_face,
   else if( m_elementType == Hexahedral ) {
     unsigned short l_faType = i_face % (int_el) 3;
 
-    // all outer-pointing normals point into the associated element of the face
+    // all outer-pointing normals point in the direction of the canonical basis
     if( l_faType  == 0 ) { // bottom
       o_x = 0; o_y = 0; o_z = 1;
     }
     else if( l_faType == 1 ) {  // front
       o_x = 0; o_y = 1; o_z = 0;
     }
-    else if( l_faType == 2 ) { //right
-      o_x = -1; o_y = 0; o_z = 0;
+    else if( l_faType == 2 ) { // right
+      o_x = 1; o_y = 0; o_z = 0;
     }
     else assert( false );
   }
@@ -860,6 +1051,45 @@ void edge::mesh::Regular::getFaChars( t_faceChars* o_faceChars ) const {
                            o_faceChars[l_fa].outNormal[0],
                            o_faceChars[l_fa].outNormal[1],
                            o_faceChars[l_fa].outNormal[2] );
+
+    // derive associated element
+    if( m_elementType == Quadrilateral ) {
+      int_el l_el = l_fa / 2;
+
+      // derive position
+      int_el l_posX = l_el % m_nX;
+      int_el l_posY = l_el / m_nX;
+
+      int_el l_ty = l_fa % 2;
+
+      // invert if at periodic boundary to ensure normals, pointing from the smaller to the larger element-id
+      if(    (l_posX == 0 && l_ty == 0)
+          || (l_posY == 0 && l_ty == 1) ) {
+        for( unsigned short l_di = 0; l_di < 2; l_di++ )
+          o_faceChars[l_fa].outNormal[l_di] *= -1;
+      }
+    }
+    else if( m_elementType == Hexahedral ) {
+      int_el l_el = l_fa / 3;
+
+      // derive position
+      int_el l_posX = l_el % m_nX;
+      int_el l_posY = l_el % (m_nX*m_nY);
+            l_posY = l_posY / m_nX;
+      int_el l_posZ = l_el / (m_nX*m_nY);
+
+      int_el l_ty = l_fa % 3;
+
+      // invert if at periodic boundary to ensure normals, pointing from the smaller to the larger element-id
+      if(    (l_posX == m_nX-1 && l_ty == 2)
+          || (l_posY == 0      && l_ty == 1)
+          || (l_posZ == 0      && l_ty == 0) ) {
+        for( unsigned short l_di = 0; l_di < 3; l_di++ )
+          o_faceChars[l_fa].outNormal[l_di] *= -1;
+      }
+    }
+    else EDGE_LOG_FATAL;
+
     computeTangents( l_fa,
                      o_faceChars[l_fa].tangent0,
                      o_faceChars[l_fa].tangent1 );

@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -58,6 +58,34 @@ def svs( i_deg ):
 ##
 # Derives sub-vertices adjacent to the sub-cells.
 #
+#   The order of the ghost sub-cells follows our convention for DG-faces:
+#   Note: The illustration's node-ordering is different from the sub-vertex ordering,
+#         strictly following the dimensions.
+#   face 0: 0-3-2-1
+#   face 1: 0-1-5-4
+#   face 2: 1-2-6-5
+#   face 3: 3-7-6-2
+#   face 4: 0-4-7-3
+#   face 5: 4-5-6-7
+#
+#
+#           7 x*******************x 6
+#            **                  **
+#           * *                 * *
+#          *  *                *  *
+#         *   *               *   *
+#        *    *              *    *
+#     4 x*******************x 5   *
+#       *     *             *     *
+#       *   3 x************ * ****x 2
+#       *    *              *    *
+#       *   *               *   *
+#       |  /                *  *
+#  zeta | / eta             * *
+#       |/                  **
+#       x---****************x
+#     0   xi                 1
+#
 # @param i_deg polynomial degree.
 # @return three lists (inner, send, recv sub-cells) containing the vertex ids of the sub-cells.
 ##
@@ -70,6 +98,7 @@ def scSv( i_deg ):
   #
   # @param i_f1 id in first dim.
   # @param i_f2 id in second dim.
+  # @param i_f3 id in third dim.
   ##
   def svIds( i_f1, i_f2, i_f3 ):
     l_svIds = []
@@ -101,7 +130,16 @@ def scSv( i_deg ):
     if( i_f3 == l_ty.n_ses ):
       l_svIds[4] = l_svIds[5] = l_svIds[6] = l_svIds[7] = -1
 
-    return l_svIds
+    # move the ghost entries to the end
+    l_svEl    = []
+    l_svGhost = []
+    for l_id in l_svIds:
+      if l_id != -1:
+        l_svEl =    l_svEl + [l_id]
+      else:
+        l_svGhost = l_svGhost + [l_id]
+
+    return l_svEl+l_svGhost
 
   # inner sub-cells
   l_scSvIn = []
@@ -147,8 +185,8 @@ def scSv( i_deg ):
   l_scSvRecv = []
 
   # bottom DG face
-  for l_e2 in range(0, l_ty.n_ses):
-    for l_e1 in range(0, l_ty.n_ses):
+  for l_e1 in range(0, l_ty.n_ses):
+    for l_e2 in range(0, l_ty.n_ses):
       l_scSvRecv = l_scSvRecv + [ svIds( l_e1, l_e2, -1 ) ]
 
   # front DG face
@@ -162,13 +200,13 @@ def scSv( i_deg ):
       l_scSvRecv = l_scSvRecv + [ svIds( l_ty.n_ses, l_e2, l_e3 ) ]
 
   # back DG face
-  for l_e3 in range(0, l_ty.n_ses):
-    for l_e1 in range(0, l_ty.n_ses):
+  for l_e1 in range(0, l_ty.n_ses):
+    for l_e3 in range(0, l_ty.n_ses):
       l_scSvRecv = l_scSvRecv + [ svIds( l_e1, l_ty.n_ses, l_e3 ) ]
 
   # left DG face
-  for l_e3 in range(0, l_ty.n_ses):
-    for l_e2 in range(0, l_ty.n_ses):
+  for l_e2 in range(0, l_ty.n_ses):
+    for l_e3 in range(0, l_ty.n_ses):
       l_scSvRecv = l_scSvRecv + [ svIds( -1, l_e2, l_e3 ) ]
 
   # top DG face
@@ -200,13 +238,15 @@ def scSfSv( i_deg ):
                                            [l_sc[4], l_sc[5], l_sc[7], l_sc[6]]
                                         ]]
 
-  # reset vertices of ghost faces
+  # reset and sort vertices of ghost faces
   for l_sc in range( len(l_scSfSv[2]) ):
     for l_fa in range(6):
       for l_ve1 in range(4):
-        if(  l_scSfSv[2][l_sc][l_fa][l_ve1] == -1 ):
+        if l_scSfSv[2][l_sc][l_fa][l_ve1] == -1:
           for l_ve2 in range(4):
             l_scSfSv[2][l_sc][l_fa][l_ve2] = -1
+      # sort
+      l_scSfSv[2][l_sc][l_fa].sort()
 
   return l_scSfSv[0], l_scSfSv[1], l_scSfSv[2]
 
@@ -232,58 +272,31 @@ def scSfSc( i_deg ):
 #
 # @param i_deg polynomial degree.
 # @param i_syms symbols.
-# @return integration intervals for inner sub-cells, send sub-cells, and per DG-face of surface sub-cells.
+# @return 1) mappings, 2) absolute values of Jacobi determinant.
 ##
 def intSc( i_deg, i_syms ):
   assert( len(i_syms) == 3 )
 
-  # get vertex coordinates
+  # hex shape functions
+  l_shape = [ (1 - i_syms[0]) * (1 - i_syms[1]) * (1 - i_syms[2]),
+               i_syms[0]      * (1 - i_syms[1]) * (1 - i_syms[2]),
+               i_syms[0]      *  i_syms[1]      * (1 - i_syms[2]),
+              (1 - i_syms[0]) *  i_syms[1]      * (1 - i_syms[2]),
+              (1 - i_syms[0]) * (1 - i_syms[1]) *  i_syms[2],
+               i_syms[0]      * (1 - i_syms[1]) *  i_syms[2],
+               i_syms[0]      *  i_syms[1]      *  i_syms[2],
+              (1 - i_syms[0]) *  i_syms[1]      *  i_syms[2] ]
+
+  # get sub-cell coords
   l_svs = svs( i_deg )
+  l_scSv = scSv( i_deg )[0:2]
 
-  # get vertex connectivity
-  l_scSv = scSv( i_deg )
-
-  l_intSc = [ [], [], [] ]
-
-  # iterate over inner and send sub-cells
-  for l_ty in range(2):
-    for l_sc in l_scSv[l_ty]:
-      # determine min/max in each dimension
-      l_minMax = [ [float('inf'), -float('inf')],
-                   [float('inf'), -float('inf')],
-                   [float('inf'), -float('inf')] ]
-
-      for l_ve in l_sc:
-        for l_di in range(3):
-          l_minMax[l_di][0] = min( l_minMax[l_di][0], l_svs[l_ve][l_di] )
-          l_minMax[l_di][1] = max( l_minMax[l_di][1], l_svs[l_ve][l_di] )
-     
-      # add integration intervals for sub-cell
-      l_intSc[l_ty] = l_intSc[l_ty] + [ [ (i_syms[0], l_minMax[0][0], l_minMax[0][1]),
-                                          (i_syms[1], l_minMax[1][0], l_minMax[1][1]),
-                                          (i_syms[2], l_minMax[2][0], l_minMax[2][1]) ] ]
-
-  # get sub-cell connectivity
+  # assemble mappings and dets for surface sub-cells
   l_scSfSc = scSfSc( i_deg )
 
-  # combined inner, send intervals
-  l_comb = l_intSc[0] + l_intSc[1]
-
-  # get type
   l_ty = edge_pre.types.Hex.Hex( i_deg )
 
-  # determine integration intervals for sub-cells at DG-faces through conn. of recv scs
-  for l_fa in range(6):
-    # add empty list for the DG-face
-    l_intSc[2] = l_intSc[2] + [[]]
-
-    # iterate over sub-cells at DG-face
-    for l_re in l_scSfSc[2][ l_fa*l_ty.n_sfs:(l_fa+1)*l_ty.n_sfs ]:
-      for l_sc in l_re:
-        if( l_sc != -1 ):
-          l_intSc[2][-1] = l_intSc[2][-1] + [ l_comb[l_sc] ]
-
-  return l_intSc[0], l_intSc[1], l_intSc[2]
+  return Generic.intSc( i_deg, l_ty, i_syms, l_shape, l_svs, l_scSv[0:2], l_scSfSc[2] )
 
 ##
 # Derives the integration intervals for the sub-faces at the DG-faces.
@@ -302,8 +315,8 @@ def intSfDg( i_deg, i_symsS, i_symsV ):
 
   # substitutes for the volume coordinates
   l_subs = ( # bottom
-             ( ( i_symsV[0], i_symsS[0]     ),
-               ( i_symsV[1], i_symsS[1]     ),
+             ( ( i_symsV[0], i_symsS[1]     ),
+               ( i_symsV[1], i_symsS[0]     ),
                ( i_symsV[2], l_ty.ves[0][2] ) ),
              # front
              ( ( i_symsV[0], i_symsS[0]     ),
@@ -314,13 +327,13 @@ def intSfDg( i_deg, i_symsS, i_symsV ):
                ( i_symsV[1], i_symsS[0]     ),
                ( i_symsV[2], i_symsS[1]     ) ),
              # back
-             ( ( i_symsV[0], i_symsS[0]     ),
+             ( ( i_symsV[0], i_symsS[1]     ),
                ( i_symsV[1], l_ty.ves[2][1] ),
-               ( i_symsV[2], i_symsS[1]     ) ),
+               ( i_symsV[2], i_symsS[0]     ) ),
              # left
              ( ( i_symsV[0], l_ty.ves[0][0] ),
-               ( i_symsV[1], i_symsS[0]     ),
-               ( i_symsV[2], i_symsS[1]     ) ),
+               ( i_symsV[1], i_symsS[1]     ),
+               ( i_symsV[2], i_symsS[0]     ) ),
              # top
              ( ( i_symsV[0], i_symsS[0]     ),
                ( i_symsV[1], i_symsS[1]     ),
@@ -407,6 +420,121 @@ def scTySf( i_deg ):
         l_scTySfSend[-1][l_sc2] = l_scTySfSend[-1][l_sc2] + 12
 
   return l_scTySfIn, l_scTySfSend
+
+##
+# Define sub-cell reordering based on vertex-combinations, given two DG-faces with adjacent sub-cells.
+#
+# The reference tetrahedron with counter-clockwise face vertices (w.r.t. opposite face) is given by:
+#
+#   face 0: 0-3-2-1
+#   face 1: 0-1-5-4
+#   face 2: 1-2-6-5
+#   face 3: 3-7-6-2
+#   face 4: 0-4-7-3
+#   face 5: 4-5-6-7
+#
+#
+#           7 x*******************x 6
+#            **                  **
+#           * *                 * *
+#          *  *                *  *
+#         *   *               *   *
+#        *    *              *    *
+#     4 x*******************x 5   *
+#       *     *             *     *
+#       *   3 x************ * ****x 2
+#       *    *              *    *
+#       *   *               *   *
+#       |  /                *  *
+#  zeta | / eta             * *
+#       |/                  **
+#       x---****************x
+#     0   xi                 1
+#
+# The reference storage for a face, in terms of sub-cells, is given by (deg=1):
+#
+#       .                       .
+#      .                       .
+#     .                       .
+#    #-----------------------*
+#    |       |       |       |
+#    |   6   |   7   |   8   |
+#    |       |       |       |
+#    |-------|-------|-------|
+#    |       |       |       |
+#    |   3   |   4   |   5   |
+#    |       |       |       |
+#    |-----------------------|
+#    |       |       |       |  .
+#    |   0   |   1   |   2   | .
+#    |       |       |       |.
+#    x-----------------------o
+#
+# Thus, for the first DG-face (0-3-2-1), the vertices are given as:
+#   x = 0, o = 3, * = 2, # = 1
+#
+# Now, if two hexes are adjacent to each other, the returned reordering reflects
+#   1) The position of the first vertex (x)
+#   2) The change in orientation.
+#
+# For example, if x is equivalent to o of the second DG-face, the deg=1-reordering reads as:
+#
+#       .                       .
+#      .                       .
+#     .                       .
+#    *-----------------------#
+#    |       |       |       |
+#    |   8   |   7   |   6   |
+#    |       |       |       |
+#    |-------|-------|-------|
+#    |       |       |       |
+#    |   5   |   4   |   3   |
+#    |       |       |       |
+#    |-----------------------|
+#    |       |       |       |  .
+#    |   2   |   1   |   0   | .
+#    |       |       |       |.
+#    o-----------------------x
+#
+#    2-1-0-5-4-3-8-7-6
+#
+# @param i_deg degree.
+# @return required reordering, as seen from the adjacent DG-element.
+##
+def scDgAd( i_deg ):
+  # get type
+  l_ty = edge_pre.types.Hex.Hex( i_deg )
+
+  # assemble initial sub-cells at the DG-face
+  l_scFa = []
+  for l_d1 in range( l_ty.n_ses ):
+    l_scFa = l_scFa + [[]]
+    for l_d0 in range( l_ty.n_ses ):
+      l_scFa[-1] = l_scFa[-1] + [ l_d1*l_ty.n_ses + l_d0 ]
+
+  # derive solutions
+  l_scDgAd = []
+
+  # transpose based on vertex positions
+  for l_ve in range(4):
+    if l_ve % 2 == 1:
+      l_scDgAd = l_scDgAd + [ l_scFa ]
+    else:
+      l_scDgAd = l_scDgAd + [ list(map(list, zip(*l_scFa))) ]
+
+  # perform reverse in inner dimension
+  for l_ve in [1, 2]:
+    l_scDgAd[l_ve] = [ l_in[::-1] for l_in in l_scDgAd[l_ve] ]
+
+  # perfrom reverse in outer dimension
+  for l_ve in [2, 3]:
+    l_scDgAd[l_ve] = l_scDgAd[l_ve][::-1]
+
+  # zip inner dimension
+  for l_ve in range(4):
+    l_scDgAd[l_ve] = [ l_en for l_in in l_scDgAd[l_ve] for l_en in l_in ]
+
+  return l_scDgAd
 
 ##
 # Plots the sub-grid.

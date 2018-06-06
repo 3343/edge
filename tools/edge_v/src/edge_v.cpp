@@ -2,9 +2,12 @@
  * @file This file is part of EDGE.
  *
  * @author Junyi Qiu (juq005 AT ucsd.edu)
+ * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
+ * @author David Lenz (dlenz AT ucsd.edu)
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017-2019, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,208 +21,224 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * This is the main file of Edge-V.
+ * This is the main file of EDGE-V.
  **/
 
+#include "Rules.h"
 #include "vm_utility.h"
+#include "FaultModel.h"
 
-int main( int argc, char **argv ) {
-  if( argc != 3 ) {
-    std::cerr << "Usage : " << argv[0] << " -f config_file.log" << std::endl;
-    exit( -1 );
-  } else if( (argv == NULL) || (argv[1][0] != '-') || (argv[1][1] != 'f') ) {
-    std::cerr << "Usage : " << argv[0] << " -f config_file.log" << std::endl;
-    exit( -1 );
+int main( int i_argc, char **i_argv ) {
+  if( i_argc != 3 ) {
+    std::cerr << "Usage: " << i_argv[0] << " -f config_file.log" << std::endl;
+    exit( EXIT_FAILURE );
+  } else if( (i_argv == nullptr) || (i_argv[1][0] != '-') || (i_argv[1][1] != 'f') ) {
+    std::cerr << "Usage: " << i_argv[0] << " -f config_file.log" << std::endl;
+    exit( EXIT_FAILURE );
   }
 
-  antn_cfg aCfg;
-  std::string configFile = std::string( argv[2] );
-  antnInit( aCfg, configFile );
-  ucvmInit( aCfg );
+  //! Start time
+  clock_t l_te = clock();
 
-  moab_mesh mMsh;
-  meshInit( mMsh, aCfg );
+  std::string l_configFile = std::string( i_argv[2] );
+  edge_v::io::Config l_aCfg( l_configFile );
+  edge_v::vm::Utility::ucvmInit( l_aCfg );
 
+  moab_mesh l_msh;
+  edge_v::vm::Utility::meshInit( l_msh, l_aCfg );
 
   //! Phase-1: Nodes
+  edge_v::vm::Utility::vmodel l_vModelNodes;
+  edge_v::vm::Utility::vmNodeInit( l_vModelNodes, l_msh );
 
-  vmodel vModelNodes;
-  vmNodeInit( vModelNodes, mMsh );
+  ucvm_point_t *l_ucvmPoints  = new ucvm_point_t[l_msh.m_numNodes];
+  ucvm_data_t *l_ucvmProps    = new ucvm_data_t[ l_msh.m_numNodes];
 
-  ucvm_point_t *ucvmPoints  = new ucvm_point_t[mMsh.num_nodes];
-  ucvm_data_t *ucvmProps    = new ucvm_data_t[mMsh.num_nodes];
+  edge_v::vm::Utility::worker_reg l_wrkRg;
+  edge_v::vm::Utility::workerInit( l_wrkRg,
+                                   l_msh.m_numNodes,
+                                   l_aCfg.m_projMesh,
+                                   l_aCfg.m_projVel );
 
-  #pragma omp parallel
-  {
-    worker_reg wrkRg;
-    workerInit( wrkRg, mMsh.num_nodes );
+  moab::EntityID      l_pEntId;
+  moab::EntityHandle  l_pHandle;
+  moab::ErrorCode     l_rval;
 
-    moab::EntityID      pEntId;
-    moab::EntityHandle  pHandle;
-    moab::ErrorCode     rval;
+  // annotate with fault values
+  faultAntn( l_aCfg, l_msh );
 
-    const int_v p_ofs = wrkRg.worker_tid * wrkRg.work_size;
-    for( int_v pid = 0; pid < wrkRg.num_prvt; pid++ ) {
-      pEntId = pid + p_ofs + 1;
-      rval = mMsh.intf->handle_from_id( moab::MBVERTEX, pEntId, pHandle );
-      assert( rval == moab::MB_SUCCESS );
+  int_v l_pid;
+  const int_v l_pOfs = l_wrkRg.m_workerTid * l_wrkRg.m_workSize;
 
-      rval = mMsh.intf->get_coords( &pHandle, 1, ucvmPoints[pid+p_ofs].coord );
-      assert( rval == moab::MB_SUCCESS );
-    }
+  for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
+    l_pEntId  = l_pid + l_pOfs + 1;
+    l_rval    = l_msh.m_intf->handle_from_id( moab::MBVERTEX, l_pEntId, l_pHandle );
+    assert( l_rval == moab::MB_SUCCESS );
 
-    //! Proj4 Transform: UTM->Long,Lat,Elv
-    double *xPtr  = &(ucvmPoints[p_ofs].coord[0]);
-    double *yPtr  = &(ucvmPoints[p_ofs].coord[1]);
-    double *zPtr  = &(ucvmPoints[p_ofs].coord[2]);
-    int pntOfs    = sizeof( ucvm_point_t ) / sizeof( double );
-    int pjstatus  = pj_transform( wrkRg.pj_utm, wrkRg.pj_geo, wrkRg.num_prvt,
-                                  pntOfs, xPtr, yPtr, zPtr );
+    l_rval    = l_msh.m_intf->get_coords( &l_pHandle, 1,
+                                          l_ucvmPoints[l_pid+l_pOfs].coord );
+    assert( l_rval == moab::MB_SUCCESS );
 
-    //! Apply Rad to Degree
-    for( int_v pid = 0; pid < wrkRg.num_prvt; pid++ ) {
-      ucvmPoints[pid+p_ofs].coord[0] *= RAD_TO_DEG;
-      ucvmPoints[pid+p_ofs].coord[1] *= RAD_TO_DEG;
-      //! (Raj): Depth (m) does not need transformation from rad to deg
-      // ucvmPoints[pid+p_ofs].coord[2] *= RAD_TO_DEG;
-    }
+    // apply trafo
+    double l_tmp[3] = {0,0,0};
+    for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
+      for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
+        l_tmp[l_d1] += l_aCfg.m_trafo[l_d1][l_d2] * l_ucvmPoints[l_pid+l_pOfs].coord[l_d2];
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_ucvmPoints[l_pid+l_pOfs].coord[l_di] = l_tmp[l_di];
+  }
 
-    //! UCVM Query
-#pragma omp master
-{
-    std::cout << "UCVM Query ... ";
-    std::cout.flush();
-    int ucvmStatus = ucvm_query( mMsh.num_nodes, ucvmPoints, ucvmProps );
-    if( ucvmStatus != 0 ) {
-      std::cout << "Failed." << std::endl;
-      std::cerr << "Error: cannot complete UCVM query." << std::endl;
-    }
-    std::cout << "Done!" << std::endl;
-}
-#pragma omp barrier
+  //! Proj4 Transform: UTM->Long,Lat,Elv
+  double *l_xPtr  = &(l_ucvmPoints[l_pOfs].coord[0]);
+  double *l_yPtr  = &(l_ucvmPoints[l_pOfs].coord[1]);
+  double *l_zPtr  = &(l_ucvmPoints[l_pOfs].coord[2]);
+  int l_pntOfs    = sizeof( ucvm_point_t ) / sizeof( double );
+  pj_transform( l_wrkRg.m_pjUtm, l_wrkRg.m_pjGeo, l_wrkRg.m_numPrvt, l_pntOfs,
+                l_xPtr, l_yPtr, l_zPtr );
 
-    ucvm_prop_t *propPtr;
+  // apply rad to deg
+  for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
+    l_ucvmPoints[l_pid+l_pOfs].coord[0] *= RAD_TO_DEG;
+    l_ucvmPoints[l_pid+l_pOfs].coord[1] *= RAD_TO_DEG;
+  }
+
+  //! UCVM Query
+  clock_t l_c = clock();
+
+  std::cout << "UCVM Query... ";
+  std::cout.flush();
+
+  int l_ucvmStatus = ucvm_query( l_msh.m_numNodes, l_ucvmPoints, l_ucvmProps );
+  if( l_ucvmStatus != 0 ) {
+    std::cout << "Failed." << std::endl;
+    std::cerr << "Warning: cannot complete UCVM query, won't annotate velocities." << std::endl;
+  }
+  else {
+    l_c = clock() - l_c;
+    std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
+
+    ucvm_prop_t *l_propPtr;
 
     //! Move to VM Nodes Array
-    for( int_v pid = 0; pid < wrkRg.num_prvt; pid++ ) {
-      switch( aCfg.ucvm_type ) {
+    for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
+      switch( l_aCfg.m_ucvmType ) {
         case 0:   //! Crustal
-          propPtr = &(ucvmProps[pid+p_ofs].crust);
+          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].crust);
           break;
         case 1:   //! Geotechnical layer
-          propPtr = &(ucvmProps[pid+p_ofs].gtl);
+          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].gtl);
           break;
         case 2:   //! Combination
-          propPtr = &(ucvmProps[pid+p_ofs].cmb);
+          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].cmb);
           break;
         default:
-          propPtr = &(ucvmProps[pid+p_ofs].cmb);
+          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].cmb);
       }
 
-      vModelNodes.vm_list[pid+p_ofs].data[0] = propPtr->vp;
-      vModelNodes.vm_list[pid+p_ofs].data[1] = propPtr->vs;
-      vModelNodes.vm_list[pid+p_ofs].data[2] = propPtr->rho;
+      if(    l_propPtr->vp  <= 0
+          || l_propPtr->vs  <= 0
+          || l_propPtr->rho <= 0  ) {
+        std::cerr << "invalid values returned from UCVM, aborting" << std::endl;
+        std::cerr << "vp: " << l_propPtr->vp << std::endl;
+        std::cerr << "vs: " << l_propPtr->vs << std::endl;
+        std::cerr << "rho: " << l_propPtr->rho << std::endl;
+        std::cerr << "x: " << l_ucvmPoints[l_pid+l_pOfs].coord[0] << std::endl;
+        std::cerr << "y: " << l_ucvmPoints[l_pid+l_pOfs].coord[1] << std::endl;
+        std::cerr << "z: " << l_ucvmPoints[l_pid+l_pOfs].coord[2] << std::endl;
+        assert( false );
+      }
+
+      l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[0] = l_propPtr->vp;
+      l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[1] = l_propPtr->vs;
+      l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[2] = l_propPtr->rho;
     }
-  } //! Exit Parallel Region
 
-  delete[] ucvmPoints;
-  delete[] ucvmProps;
+    delete[] l_ucvmPoints;
+    delete[] l_ucvmProps;
 
-  writeVMNodes( vModelNodes, aCfg, mMsh );
+    edge_v::vm::Utility::writeVMNodes( l_vModelNodes, l_aCfg, l_msh );
 
+    //! Phase-2: Elements
+    edge_v::vm::Utility::vmodel l_vModelElmts;
+    edge_v::vm::Utility::vmElmtInit( l_vModelElmts, l_msh );
 
-  //! Phase-2: Elements
+    edge_v::vm::Utility::workerInit( l_wrkRg,
+                                      l_msh.m_numElmts,
+                                     l_aCfg.m_projMesh,
+                                     l_aCfg.m_projVel );
 
-  vmodel vModelElmts;
-  vmElmtInit( vModelElmts, mMsh );
+    edge_v::vm::Utility::vmodel * const l_pVModelNodes = &l_vModelNodes;
 
-  #pragma omp parallel
-  {
-    worker_reg wrkRg;
-    workerInit( wrkRg, mMsh.num_elmts );
+    moab::EntityID                    l_eEntId;
+    moab::EntityHandle                l_eHandle;
+    std::vector< moab::EntityHandle > l_eVertices;
 
-    const real c_min_vs           = aCfg.min_vs;
-    const real c_min_vs2          = aCfg.min_vs2;
-    const real c_max_vp_vs_ratio  = aCfg.max_vp_vs_ratio;
+    const int_v l_eOfs = l_wrkRg.m_workerTid * l_wrkRg.m_workSize;
+    unsigned int l_pIdx;
 
-    vmodel * const pVModelNodes = &vModelNodes;
+    for( int_v l_eid = 0; l_eid < l_wrkRg.m_numPrvt; l_eid++ ) {
+      l_eEntId  = l_eid + l_eOfs + 1;
+      l_rval    = l_msh.m_intf->handle_from_id( moab::MBTET, l_eEntId, l_eHandle );
+      assert( l_rval == moab::MB_SUCCESS );
+      l_eVertices.clear();
 
-    //! Averaging and Clipping
-    real l_vp, l_vs, l_rho, l_vp_vs_ratio, l_lam, l_mu;
-    moab::EntityID                    eEntId;
-    moab::EntityHandle                eHandle;
-    std::vector< moab::EntityHandle > eVertices;
-    moab::ErrorCode                   rval;
+      l_rval = l_msh.m_intf->get_adjacencies( &l_eHandle, 1, 0, false, l_eVertices );
+      assert( l_rval == moab::MB_SUCCESS );
+      assert( l_eVertices.size() == ELMTTYPE );
 
-    const int_v e_ofs = wrkRg.worker_tid * wrkRg.work_size;
-    for( int_v eid = 0; eid < wrkRg.num_prvt; eid++ ) {
-      eEntId = eid + e_ofs + 1;
-      rval = mMsh.intf->handle_from_id( moab::MBTET, eEntId, eHandle );
-      assert( rval == moab::MB_SUCCESS );
-      eVertices.clear();
+      real l_vp  = 0.0;
+      real l_vs  = 0.0;
+      real l_rho = 0.0;
 
-      rval = mMsh.intf->get_adjacencies( &eHandle, 1, 0, false, eVertices );
-      assert( rval == moab::MB_SUCCESS );
-      assert( eVertices.size() == ELMTTYPE );
+      for( int_v l_vId = 0; l_vId < 4; l_vId++ ) {
+        moab::EntityID l_pEntId = l_msh.m_intf->id_from_handle( l_eVertices[l_vId] );
+        l_pIdx = l_pEntId - 1;
 
-      l_vp  = 0;
-      l_vs  = 0;
-      l_rho = 0;
-
-      for( int vid = 0; vid < 4; vid++ ) {
-        moab::EntityID pEntId = mMsh.intf->id_from_handle( eVertices[vid] );
-        unsigned int pidx = pEntId - 1;
-
-        l_vp  += pVModelNodes->vm_list[pidx].data[0];
-        l_vs  += pVModelNodes->vm_list[pidx].data[1];
-        l_rho += pVModelNodes->vm_list[pidx].data[2];
+        l_vp  += l_pVModelNodes->m_vmList[l_pIdx].m_data[0];
+        l_vs  += l_pVModelNodes->m_vmList[l_pIdx].m_data[1];
+        l_rho += l_pVModelNodes->m_vmList[l_pIdx].m_data[2];
       }
 
       l_vp  /= 4.0;
       l_vs  /= 4.0;
       l_rho /= 4.0;
 
-      //! Second Stop
-      if( l_vs < c_min_vs ) {
-        l_vp_vs_ratio = l_vp / l_vs;
-        l_vs          = aCfg.min_vs;
-        l_vp          = aCfg.min_vs * l_vp_vs_ratio;
-      }
+      edge_v::vel::Rules::apply( l_aCfg.m_velRule,
+                                 l_vp,
+                                 l_vs,
+                                 l_rho );
 
-      //! Third Stop
-      l_mu = l_rho * l_vs * l_vs;
-      if( l_vp > l_vs * c_max_vp_vs_ratio ) {
-        l_lam = l_rho * l_vs * l_vs * c_max_vp_vs_ratio * c_max_vp_vs_ratio - 2
-                * l_mu;
-      } else {
-        l_lam = l_rho * l_vp * l_vp - 2 * l_mu;
-      }
+      real l_lam, l_mu;
+      edge_v::vm::Utility::lamePar( l_vp,
+                                    l_vs,
+                                    l_rho,
+                                    l_lam,
+                                    l_mu );
 
-      if( l_lam < 0 ) {
-        if( l_vs < c_min_vs ) {
-          l_vp = 2.45 * l_vs;
-        } else if( l_vs * c_min_vs2 ) {
-          l_vp = 2 * l_vs;
-        } else {
-          l_vp = 1.87 * l_vs;
-        }
-
-        l_lam = l_rho * l_vp * l_vp;
-      }
-
-      vModelElmts.vm_list[eid+e_ofs].data[0] = l_lam;
-      vModelElmts.vm_list[eid+e_ofs].data[1] = l_mu;
-      vModelElmts.vm_list[eid+e_ofs].data[2] = l_rho;
+      l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[0] = l_lam;
+      l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[1] = l_mu;
+      l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[2] = l_rho;
     } //! Tet Elements Loop Over
-  } //! Exit Parallel Region
 
-  vmNodeFinalize( vModelNodes );
+    edge_v::vm::Utility::vmNodeFinalize( l_vModelNodes );
 
-  writeVMElmts( vModelElmts, aCfg, mMsh );
-  writeVMTags(  vModelElmts, aCfg, mMsh );
+    edge_v::vm::Utility::writeVMElmts( l_vModelElmts, l_aCfg, l_msh );
 
-  vmElmtFinalize( vModelElmts );
-  meshFinalize( mMsh );
+    edge_v::vm::Utility::writeVMTags(  l_vModelElmts, l_aCfg, l_msh );
 
-  return 0;
+    edge_v::vm::Utility::vmElmtFinalize( l_vModelElmts );
+  }
+
+  if( l_ucvmStatus != 0 ) {
+    std::cout << "writing mesh " <<  l_aCfg.m_h5mFn << std::endl;
+    l_msh.m_intf->write_mesh( l_aCfg.m_h5mFn.c_str() );
+  }
+
+  edge_v::vm::Utility::meshFinalize( l_msh );
+
+  //! Finish time
+  l_te = clock() - l_te;
+  std::cout << "Time taken: " << (float) l_te / CLOCKS_PER_SEC << "s\n";
+
+  return EXIT_SUCCESS;
 }

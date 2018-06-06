@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -26,7 +26,10 @@
 #include "../common.hpp"
 #include "mesh/common.hpp"
 #include "dg/QuadraturePoints.h"
-#include "data/layout.hpp"
+#include "data/EntityLayout.type"
+
+#ifndef EDGE_SEISMIC_SETUPS_CONVERGENCE_HPP_
+#define EDGE_SEISMIC_SETUPS_CONVERGENCE_HPP_
 
 namespace edge {
   namespace elastic {
@@ -155,7 +158,11 @@ class edge::elastic::setups::Convergence {
 
       // get elements vertices
       real_mesh l_veCoords[3][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
-      mesh::common< T_SDISC.ELEMENT >::getElVeCoords( i_el, i_connElVe, i_vertexChars, l_veCoords );
+      for( unsigned short l_di = 0; l_di < 3; l_di++ )
+        for( unsigned short l_ve = 0; l_ve < C_ENT[T_SDISC.ELEMENT].N_VERTICES; l_ve++ )
+          l_veCoords[l_di][l_ve] = 0;
+
+      mesh::common< T_SDISC.ELEMENT >::getElVeCrds( i_el, i_connElVe, i_vertexChars, l_veCoords );
 
       // get gaussian quadrature points and their weigths
       std::vector< real_mesh > l_ptsX, l_ptsY, l_ptsZ;
@@ -376,3 +383,5 @@ class edge::elastic::setups::Convergence {
       }
     }
 };
+
+#endif

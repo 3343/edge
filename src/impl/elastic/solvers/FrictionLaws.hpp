@@ -21,8 +21,8 @@
  * Friction laws.
  **/
 
-#ifndef FRICTION_LAWS_HPP
-#define FRICTION_LAWS_HPP
+#ifndef EDGE_SEISMIC_FRICTION_LAWS_HPP
+#define EDGE_SEISMIC_FRICTION_LAWS_HPP
 
 #include "FrictionLaws.type"
 #include <cmath>
@@ -51,14 +51,6 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
     /**
      * Applies the linear slip weakening friction law in two dimensions.
      *
-     * Remark: The "distance" between to quad points (i_dt) is dependent on the wave prop time step.
-     *         // TODO: Replace the implementation with a better integration rule.
-     *
-     *         Example:
-     *         <-----wave prop dt1------><----wp dt2---> wave prop time steps
-     *         [-----x------x-----x-----][-x---x---x---] integration points (x)
-     *         <----><------><----------><><---><----->: expected "time stepping"
-     *
      *         _
      *        | mu_s - ( ( mu_s - mu_d ) / D_c ) * delta    if delta  < D_c
      * mu_f = |
@@ -83,21 +75,24 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
      *            Dynamic rupture modeling on unstructured meshes using a discontinuous Galerkin method
      *            Journal of Geophysical Research, Vol. 114, 2009
      *
-     * @param i_dt distance between this quad point and the previous one (or wave prop time step).
+     * @param i_dt time step.
      * @param i_csDmuM shear wave speed divided by Lame parameter mu (minus side).
      * @param i_csDmuP shear wave speed divided by Lame parameter mu (plus side).
      * @param i_mus static friction coefficients.
      * @param i_mud dynamic friction coefficients.
      * @param i_dcInv inverse critical slip distance (1/Dc).
      * @param i_sn0 initial normal stress.
+     * @param i_co0 cohesion.
      * @param i_ss0 initial shear stress.
      * @param i_ms middle state.
      * @param io_dd slip, will be updated with slip contribution of this step.
      * @param io_muf friction coefficient, will be updated according to the friction law.
-     * @parma o_sr will be set to slip rate at this point.
-     * @parma o_tr will be set to traction at this point.
+     * @param o_st will be set to stregth of the fault.
+     * @param o_sr will be set to slip rate at this point.
+     * @param o_tr will be set to traction at this point.
      * @param o_msM will be set to perturbed minus side middle state.
      * @param o_msP will be set to perturbed plus side middle state.
+     * @param o_per will be set to true if middle state was perturbed, false otherwise.
      *
      * @paramt TL_T_REAL precision in all computations.
      **/
@@ -109,14 +104,17 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                                     TL_T_REAL const i_mud[TL_N_CRUNS],
                                     TL_T_REAL const i_dcInv[TL_N_CRUNS],
                                     TL_T_REAL const i_sn0[TL_N_CRUNS],
+                                    TL_T_REAL const i_co0[TL_N_CRUNS],
                                     TL_T_REAL const i_ss0[TL_N_CRUNS],
                                     TL_T_REAL const i_ms[5][TL_N_CRUNS],
                                     TL_T_REAL       io_dd[TL_N_CRUNS],
                                     TL_T_REAL       io_muf[TL_N_CRUNS],
+                                    TL_T_REAL       o_st[TL_N_CRUNS],
                                     TL_T_REAL       o_sr[TL_N_CRUNS],
                                     TL_T_REAL       o_tr[TL_N_CRUNS],
                                     TL_T_REAL       o_msM[5][TL_N_CRUNS],
-                                    TL_T_REAL       o_msP[5][TL_N_CRUNS] ) {
+                                    TL_T_REAL       o_msP[5][TL_N_CRUNS],
+                                    bool            o_per[TL_N_CRUNS] ) {
       // init minus and plus "perturbed" middle states
       for( unsigned short l_qt = 0; l_qt < 5; l_qt++ ) {
         for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
@@ -125,34 +123,30 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
         }
       }
 
-      // fault strength
-      TL_T_REAL l_strength[TL_N_CRUNS];
-      // 1 if fault fails, 0 otherwise
-      bool l_fail[TL_N_CRUNS];
-
       // determine if the fault fails
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
-        l_strength[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru]  = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru] += i_co0[l_ru];
 
         // strength is only relevant for negative normal stress (compression) + switch sign
-        l_strength[l_ru] = (l_strength[l_ru] < 0) ? -l_strength[l_ru] : 0;
+        o_st[l_ru] = (o_st[l_ru] < 0) ? -o_st[l_ru] : 0;
 
         // total shear stress
         TL_T_REAL l_shear = i_ss0[l_ru] + i_ms[2][l_ru];
 
         // eval failure criterion
-        l_fail[l_ru] = ( std::abs(l_shear) > l_strength[l_ru] ) ? 1 : 0;
+        o_per[l_ru] = ( std::abs(l_shear) > o_st[l_ru] ) ? true : false;
       }
 
       // perturb middle states and update friction coefficient
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // compute traction
-        o_tr[l_ru] = l_strength[l_ru] - std::abs(i_ss0[l_ru]);
+        o_tr[l_ru] = o_st[l_ru] - std::abs(i_ss0[l_ru]);
         o_tr[l_ru] = (i_ss0[l_ru] > 0) ? o_tr[l_ru] : -o_tr[l_ru];
 
         // fall back to middle state if the fault is locked
-        o_tr[l_ru] = (l_fail[l_ru]) ? o_tr[l_ru] : i_ms[2][l_ru];
+        o_tr[l_ru] = (o_per[l_ru]) ? o_tr[l_ru] : i_ms[2][l_ru];
 
         // apply difference in 2nd and 4th wave strength to shear stress
         o_msM[2][l_ru] = o_tr[l_ru];
@@ -167,9 +161,6 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
         o_sr[l_ru] = o_msP[4][l_ru] - o_msM[4][l_ru];
 
         // compute resulting slip
-        // TODO: This is not a proper numerical integration
-        //       quadrature points.
-        //       Should we use a multistep method here?
         io_dd[l_ru] += std::abs( o_sr[l_ru] ) * i_dt;
 
         // update friction coefficient
@@ -187,13 +178,14 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
     /**
      * Applies the linear slip weakening friction law in two dimensions.
      *
-     * @param i_dt distance between this quad point and the previous one (or wave prop time step), see linSlipWeak for details.
+     * @param i_dt time step.
      * @param i_lswGlobal per-simulation global parameters of linear slip weakening, shared among all faces.
      * @param i_lswFace per-face parameters of linear slip weakening, private from face to face but shared on among the fused simulations.
      * @param i_ms middle state.
-     * @param io_lswQp private data per-simulation and quad point of each face.
-     * @param o_msM perturbed minus side middle state.
-     * @param o_msP perturbed plus side middle state.
+     * @param io_lswSf private data per-simulation and sub-face of each DG-face.
+     * @param o_msL perturbed left-side middle state.
+     * @param o_msR perturbed right-side middle state.
+     * @param o_per will be set to true if the middle state was perturbed, false otherwise.
      *
      * @paramt TL_T_REAL precision in all computations.
      **/
@@ -202,56 +194,63 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
                          t_LinSlipWeakGlobal<TL_T_REAL, TL_N_CRUNS>        const &i_lswGlobal,
                          t_LinSlipWeakFace<TL_T_REAL>                      const &i_lswFace,
                          TL_T_REAL                                         const  i_ms[5][TL_N_CRUNS],
-                         t_LinSlipWeakFaceQuadPoint<
+                         t_LinSlipWeakSubFace<
                            TL_T_REAL,
                            2,
-                           TL_N_CRUNS >                                               &io_lswQp,
+                           TL_N_CRUNS >                                          &io_lswSf,
                          TL_T_REAL                                                o_msL[5][TL_N_CRUNS],
-                         TL_T_REAL                                                o_msR[5][TL_N_CRUNS] ) {
+                         TL_T_REAL                                                o_msR[5][TL_N_CRUNS],
+                         bool                                                     o_per[TL_N_CRUNS] ) {
       linSlipWeak( i_dt,
                    i_lswFace.csDmuM,
                    i_lswFace.csDmuP,
                    i_lswGlobal.mus,
                    i_lswGlobal.mud,
                    i_lswGlobal.dcInv,
-                   io_lswQp.sn0,
-                   io_lswQp.ss0[0],
+                   io_lswSf.sn0,
+                   io_lswSf.co0,
+                   io_lswSf.ss0[0],
                    i_ms,
-                   io_lswQp.dd[0],
-                   io_lswQp.muf,
-                   io_lswQp.sr[0],
-                   io_lswQp.tr[0],
+                   io_lswSf.dd[0],
+                   io_lswSf.muf,
+                   io_lswSf.st,
+                   io_lswSf.sr[0],
+                   io_lswSf.tr[0],
                    (i_lswFace.lEqM) ? o_msL : o_msR,
-                   (i_lswFace.lEqM) ? o_msR : o_msL );
+                   (i_lswFace.lEqM) ? o_msR : o_msL,
+                   o_per );
     }
 
     /**
      * Applies the given friction law (derived from face data type) by perturbing the middle states.
      *
-     * @param i_qp id of the quadrature point.
+     * @param i_sf id of the sub-face.
      * @param i_dt "time step" of this pertubation. used for slip computation, not to be confused of the time step of seismic wave propagation.
      * @param i_ms middle states for all fused simulations.
      * @param io_faData data of the friction law at the face.
      * @param o_msL will be set to middle states at the left-side for all fused simulations.
      * @param o_msR will be set to middle states at the right-side for all fused simulations.
+     * @param o_per will be set to true if the middle state was perturbed, false otherwise.
      *
      * @paramt TL_T_REAL real type used for arithmetic oprations.
      * @paramt TL_T_FA_DATA face data of the friction law.
      **/
     template< typename TL_T_REAL, typename TL_T_FA_DATA >
-    static void perturb( unsigned short      i_qp,
+    static void perturb( unsigned short      i_sf,
                          TL_T_REAL           i_dt,
                          TL_T_REAL    const  i_ms[5][TL_N_CRUNS],
                          TL_T_FA_DATA       *io_faData,
                          TL_T_REAL           o_msL[5][TL_N_CRUNS],
-                         TL_T_REAL           o_msR[5][TL_N_CRUNS] ) {
+                         TL_T_REAL           o_msR[5][TL_N_CRUNS],
+                         bool                o_per[TL_N_CRUNS] ) {
       perturb( i_dt,
                *(io_faData->gl),
                *(io_faData->fa),
                i_ms,
-              (*(io_faData->qp))[i_qp],
+              (*(io_faData->sf))[i_sf],
                o_msL,
-               o_msR );
+               o_msR,
+               o_per );
     }
 };
 
@@ -263,15 +262,6 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
   private:
     /**
      * Applies the linear slip weakening friction law in three dimensions.
-     *
-     * Remark: The "distance" between to quad points (i_dt) is dependent on the wave prop time step.
-     *         // TODO: Replace the implementation with a better integration rule.
-     *
-     *         Example:
-     *         <-----wave prop dt1------><----wp dt2---> wave prop time steps
-     *         [-----x------x-----x-----][-x---x---x---] integration points (x)
-     *         <----><------><----------><><---><----->: expected "time stepping"
-     *
      *         _
      *        | mu_s - ( ( mu_s - mu_d ) / D_c ) * delta    if delta  < D_c
      * mu_f = |
@@ -296,22 +286,25 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
      *            Verification of an ADER-DG method for complex dynamic rupture problems.
      *            Geosci. Model Dev., 7, 2014
      *
-     * @param i_dt distance between this quad point and the previous one (or wave prop time step).
+     * @param i_dt time step.
      * @param i_csDmuM shear wave speed divided by Lame parameter mu (minus side).
      * @param i_csDmuP shear wave speed divided by Lame parameter mu (plus side).
      * @param i_mus static friction coefficients.
      * @param i_mud dynamic friction coefficients.
      * @param i_dcInv inverse critical slip distance (1/Dc).
      * @param i_sn0 initial normal stress.
+     * @param i_co0 cohesion.
      * @param i_ss0 initial shear stresses. [0]: along-strike, [1]: along-dip.
      * @param i_ss0A absolute initial shear stress (sqrt( i_ss0[0]*i_ss0[0] + i_ss0[1]*i_ss0[1]).
      * @param i_ms middle state.
      * @param io_dd slip, will be updated with slip contribution of this step. [0]: along-strike slip, [1]: along-dip slip.
      * @param io_muf friction coefficient, will be updated according to the friction law.
-     * @parma o_sr will be set to slip rate at this point. [0]: along-strike slip rate, [1]: along-dip slip rate.
-     * @parma o_tr will be set to traction at this point. [0]: along-strike traction, [1]: along-dip traction.
+     * @param o_st will be set to strength of the fault.
+     * @param o_sr will be set to slip rate at this point. [0]: along-strike slip rate, [1]: along-dip slip rate.
+     * @param o_tr will be set to traction at this point. [0]: along-strike traction, [1]: along-dip traction.
      * @param o_msM will be set to perturbed minus side middle state.
      * @param o_msP will be set to perturbed plus side middle state.
+     * @param o_per will be set to true if the middle state was perturbed, false otherwise.
      **/
     template< typename TL_T_REAL >
     static void inline linSlipWeak( TL_T_REAL       i_dt,
@@ -321,15 +314,18 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                                     TL_T_REAL const i_mud[TL_N_CRUNS],
                                     TL_T_REAL const i_dcInv[TL_N_CRUNS],
                                     TL_T_REAL const i_sn0[TL_N_CRUNS],
+                                    TL_T_REAL const i_co0[TL_N_CRUNS],
                                     TL_T_REAL const i_ss0[2][TL_N_CRUNS],
                                     TL_T_REAL const i_ss0A[TL_N_CRUNS],
                                     TL_T_REAL const i_ms[9][TL_N_CRUNS],
                                     TL_T_REAL       io_dd[2][TL_N_CRUNS],
                                     TL_T_REAL       io_muf[TL_N_CRUNS],
+                                    TL_T_REAL       o_st[TL_N_CRUNS],
                                     TL_T_REAL       o_sr[2][TL_N_CRUNS],
                                     TL_T_REAL       o_tr[2][TL_N_CRUNS],
                                     TL_T_REAL       o_msM[9][TL_N_CRUNS],
-                                    TL_T_REAL       o_msP[9][TL_N_CRUNS] ) {
+                                    TL_T_REAL       o_msP[9][TL_N_CRUNS],
+                                    bool            o_per[TL_N_CRUNS] ) {
       // init minus and plus "perturbed" middle states
       for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
         for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
@@ -340,18 +336,15 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
 
       // combined total shear stress
       TL_T_REAL l_shear[TL_N_CRUNS];
-      // fault strength
-      TL_T_REAL l_strength[TL_N_CRUNS];
-      // 1 if fault fails, 0 otherwise
-      bool l_fail[TL_N_CRUNS];
 
       // determine if the fault fails
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // fault strength
-        l_strength[l_ru] = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru]  = io_muf[l_ru] * ( i_sn0[l_ru] + i_ms[0][l_ru] );
+        o_st[l_ru] += i_co0[l_ru];
 
         // strength is only relevant for negative normal stress (compression) + switch sign
-        l_strength[l_ru] = (l_strength[l_ru] < 0) ? -l_strength[l_ru] : 0;
+        o_st[l_ru] = (o_st[l_ru] < 0) ? -o_st[l_ru] : 0;
 
         // total shear stress
         TL_T_REAL l_shear1 = i_ss0[0][l_ru] + i_ms[3][l_ru];
@@ -360,21 +353,20 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
         l_shear[l_ru] = std::sqrt( l_shear1*l_shear1 + l_shear2*l_shear2 );
 
         // eval failure criterion
-        l_fail[l_ru] = ( l_shear[l_ru] > l_strength[l_ru] ) ? true : false;
+        o_per[l_ru] = ( l_shear[l_ru] > o_st[l_ru] ) ? true : false;
       }
 
       // perturb middle states and update friction coefficient
       for( unsigned short l_ru = 0; l_ru < TL_N_CRUNS; l_ru++ ) {
         // compute traction
-        TL_T_REAL l_scale = l_strength[l_ru] / l_shear[l_ru];
+        TL_T_REAL l_scale = o_st[l_ru] / l_shear[l_ru];
 
-        o_tr[0][l_ru]  = (i_ss0[0][l_ru] + i_ms[3][l_ru]) * l_scale - i_ss0[0][l_ru];
-        o_tr[1][l_ru]  = (i_ss0[1][l_ru] + i_ms[5][l_ru]) * l_scale - i_ss0[1][l_ru];
-
+        o_tr[0][l_ru] = (i_ss0[0][l_ru] + i_ms[3][l_ru]) * l_scale - i_ss0[0][l_ru];
+        o_tr[1][l_ru] = (i_ss0[1][l_ru] + i_ms[5][l_ru]) * l_scale - i_ss0[1][l_ru];
 
         // fall back to middle state if the fault is locked
-        o_tr[0][l_ru] = (l_fail[l_ru]) ? o_tr[0][l_ru] : i_ms[3][l_ru];
-        o_tr[1][l_ru] = (l_fail[l_ru]) ? o_tr[1][l_ru] : i_ms[5][l_ru];
+        o_tr[0][l_ru] = (o_per[l_ru]) ? o_tr[0][l_ru] : i_ms[3][l_ru];
+        o_tr[1][l_ru] = (o_per[l_ru]) ? o_tr[1][l_ru] : i_ms[5][l_ru];
 
         // perturb shear stresses
         o_msM[3][l_ru] = o_tr[0][l_ru];
@@ -398,9 +390,6 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
         o_sr[1][l_ru] = o_msP[8][l_ru] - o_msM[8][l_ru];
 
         // compute resulting slip
-        // TODO: This is not a proper numerical integration
-        //       quadrature points.
-        //       Should we use a multistep method here?
         io_dd[0][l_ru] += std::abs(o_sr[0][l_ru]) * i_dt;
         io_dd[1][l_ru] += std::abs(o_sr[1][l_ru]) * i_dt;
 
@@ -426,9 +415,10 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
      * @param i_lswGlobal per-simulation global parameters of linear slip weakening, shared among all faces.
      * @param i_lswFace per-face parameters of linear slip weakening, private from face to face but shared on among the fused simulations.
      * @param i_ms middle state.
-     * @param io_lswQp private data per-simulation and quad point of each face.
-     * @param o_msM perturbed minus side middle state.
-     * @param o_msP perturbed plus side middle state.
+     * @param io_lswSf private data per-simulation and sub-face of each DG-face.
+     * @param o_msL perturbed left-side middle state.
+     * @param o_msR perturbed right-side middle state.
+     * @param o_per will be set to true if the middle state was perturbed, false otherwise.
      *
      * @paramt TL_T_REAL precision in all computations.
      **/
@@ -437,57 +427,64 @@ class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
                          t_LinSlipWeakGlobal< TL_T_REAL, TL_N_CRUNS > const & i_lswGlobal,
                          t_LinSlipWeakFace< TL_T_REAL >               const & i_lswFace,
                          TL_T_REAL                                    const   i_ms[9][TL_N_CRUNS],
-                         t_LinSlipWeakFaceQuadPoint<
+                         t_LinSlipWeakSubFace<
                            TL_T_REAL,
                            3,
-                           TL_N_CRUNS >                                     & io_lswQp,
+                           TL_N_CRUNS >                                     & io_lswSf,
                          TL_T_REAL                                            o_msL[9][TL_N_CRUNS],
-                         TL_T_REAL                                            o_msR[9][TL_N_CRUNS] ) {
+                         TL_T_REAL                                            o_msR[9][TL_N_CRUNS],
+                         bool                                                 o_per[TL_N_CRUNS] ) {
       linSlipWeak( i_dt,
                    i_lswFace.csDmuM,
                    i_lswFace.csDmuP,
                    i_lswGlobal.mus,
                    i_lswGlobal.mud,
                    i_lswGlobal.dcInv,
-                   io_lswQp.sn0,
-                   io_lswQp.ss0,
-                   io_lswQp.ss0A,
+                   io_lswSf.sn0,
+                   io_lswSf.co0,
+                   io_lswSf.ss0,
+                   io_lswSf.ss0A,
                    i_ms,
-                   io_lswQp.dd,
-                   io_lswQp.muf,
-                   io_lswQp.sr,
-                   io_lswQp.tr,
+                   io_lswSf.dd,
+                   io_lswSf.muf,
+                   io_lswSf.st,
+                   io_lswSf.sr,
+                   io_lswSf.tr,
                    (i_lswFace.lEqM) ? o_msL : o_msR,
-                   (i_lswFace.lEqM) ? o_msR : o_msL );
+                   (i_lswFace.lEqM) ? o_msR : o_msL,
+                   o_per );
     }
 
     /**
      * Applies the given friction law (derived from face data type) by perturbing the middle states.
      *
-     * @param i_qp id of the quadrature point.
+     * @param i_sf id of the sub-face.
      * @param i_dt "time step" of this pertubation. used for slip computation, not to be confused of the time step of seismic wave propagation.
      * @param i_ms middle states for all fused simulations.
      * @param io_faData data of the friction law at the face.
      * @param o_msL will be set to middle states at the left-side for all fused simulations.
      * @param o_msR will be set to middle states at the right-side for all fused simulations.
+     * @param o_per will be set to true if the middle state was perturbed, false otherwise.
      *
      * @paramt TL_T_REAL real type used for arithmetic oprations.
      * @paramt TL_T_FA_DATA face data of the friction law.
      **/
     template< typename TL_T_REAL, typename TL_T_FA_DATA >
-    static void perturb( unsigned short         i_qp,
+    static void perturb( unsigned short         i_sf,
                          TL_T_REAL              i_dt,
                          TL_T_REAL      const   i_ms[9][TL_N_CRUNS],
                          TL_T_FA_DATA         * io_faData,
                          TL_T_REAL              o_msL[9][TL_N_CRUNS],
-                         TL_T_REAL              o_msR[9][TL_N_CRUNS] ) {
+                         TL_T_REAL              o_msR[9][TL_N_CRUNS],
+                         bool                   o_per[TL_N_CRUNS] ) {
       perturb( i_dt,
                *(io_faData->gl),
                *(io_faData->fa),
                i_ms,
-              (*(io_faData->qp))[i_qp],
+              (*(io_faData->sf))[i_sf],
                o_msL,
-               o_msR );
+               o_msR,
+               o_per );
     }
 };
 
