@@ -31,6 +31,6 @@ for l_source in l_sources:
   env.sources.append( env.Object( l_source ) )
 
 # prepend main file to edge
-env.sources = env.Object( 'multImplDomains.cpp' ) + env.sources
+env.sources = env.Object( 'main.cpp' ) + env.sources
 
 Export('env')
