@@ -16,7 +16,7 @@ namespace edge_cut{
   namespace surf{
     // Typedefs for Domain
     typedef CGAL::Exact_predicates_inexact_constructions_kernel                 K;
-    typedef FT_to_point_function_wrapper<K::FT, K::Point_3>                     Function;
+    typedef FT_to_point_function_wrapper<K::FT, K::Point_3>                     Function; //TODO Look into wrapping member functions
     typedef CGAL::Implicit_multi_domain_to_labeling_function_wrapper<Function>  Function_wrapper;
     typedef Function_wrapper::Function_vector                                   Function_vector;
     typedef CGAL::Labeled_mesh_domain_3<Function_wrapper, K>                    Labeled_domain;
@@ -62,6 +62,6 @@ namespace edge_cut{
     Polyline_type topoIntersect( Poly_slicer& slicer, K::Plane_3 plane );
     bool checkMonotonic( Polyline_type & i_p, unsigned int i_n, bool i_inc );
     void orderPolyline( Polyline_type & i_p, unsigned int i_n );
-
+    std::list< Polyline_type > build1DFeatures( Surf_mesh&, double, double, double, double, double, double );
   }
 }
