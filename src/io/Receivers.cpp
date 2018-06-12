@@ -238,17 +238,22 @@ void edge::io::Receivers::flush( unsigned int i_re ) {
     l_file.open( m_recvs[i_re].path, std::ios_base::app );
 
     if( l_file.is_open() ) {
+      // stream buffer
+      std::ostringstream l_stream;
+
+      // assemble output stream
       for( unsigned int l_bu = 0; l_bu < m_recvs[i_re].nBuff; l_bu++ ) {
         // write time info
-        l_file << std::to_string( m_recvs[i_re].buffTime[l_bu] );
+        l_stream << std::to_string( m_recvs[i_re].buffTime[l_bu] );
         // write recv values
-        std::ostringstream l_stream;
         for( unsigned int l_va = 0; l_va < m_nQts*N_CRUNS; l_va++ ) {
           l_stream << "," << std::scientific << m_recvs[i_re].buffer[ l_bu*m_nQts*N_CRUNS+l_va ];
         }
-        l_file << l_stream.str();
-        l_file << "\n";
+        l_stream << "\n";
       }
+
+      // write stream to file
+      l_file << l_stream.str();
     }
     else EDGE_LOG_FATAL << "could not open the recv-file: " << m_recvs[i_re].path;
   }

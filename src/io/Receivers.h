@@ -124,7 +124,7 @@ class edge::io::Receivers {
                const t_enLayout      &i_enLayout,
                const int_el         (*i_enVe),
                const t_vertexChars   *i_veChars,
-                     unsigned int     i_bufferSize=100,
+                     unsigned int     i_bufferSize=250,
                      double           i_time=0 );
 
     /**
