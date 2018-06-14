@@ -805,7 +805,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
   // neigh inner-elements
   l_shared.regWrkRgn( l_tg,
-                      1,
+                      2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 5,
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
@@ -814,7 +814,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
   // neigh send-elements
   l_shared.regWrkRgn( l_tg,
-                      1,
+                      2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 6,
                       l_enLayouts[2].timeGroups[l_tg].inner.first+
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
@@ -824,18 +824,18 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       3, l_spType+2, l_internal.m_elementChars );
 
 #ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
-    // src inner-elements
+    // kinematic sources inner-elements
     l_shared.regWrkRgn( l_tg,
-                        2,
-                        l_tg * N_ENTRIES_CONTROL_FLOW + 3,
+                        3,
+                        l_tg * N_ENTRIES_CONTROL_FLOW + 9,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.first,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_tg );
 
-    // src send-elements
+    // kinematic sources send-elements
     l_shared.regWrkRgn( l_tg,
-                        2,
-                        l_tg * N_ENTRIES_CONTROL_FLOW + 4,
+                        3,
+                        l_tg * N_ENTRIES_CONTROL_FLOW + 10,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.first+
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].nEntsOwn-
@@ -846,7 +846,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
     // rupture physics inner-faces
     l_shared.regWrkRgn( l_tg,
-                        2,
+                        1,
                         l_tg * N_ENTRIES_CONTROL_FLOW + 3,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.first,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.size,
@@ -855,7 +855,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
     // rupture physics send- and receive-faces
     l_shared.regWrkRgn( l_tg,
-                        2,
+                        1,
                         l_tg * N_ENTRIES_CONTROL_FLOW + 4,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.first+
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.size,
@@ -868,16 +868,16 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
   // limit, inner-elements
   l_shared.regWrkRgn( l_tg,
-                      3,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 9,
+                      4,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 11,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.first,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
                       l_tg );
 
   // limit, send-elements
   l_shared.regWrkRgn( l_tg,
-                      3,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 10,
+                      4,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 12,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.first+
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].nEntsOwn-

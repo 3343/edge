@@ -23,17 +23,8 @@
 
 #include "sc/ibnd/InternalBoundary.type"
 
-// elastics perform three steps per time step
-// 0) time prediction + local cont
-// 1) neighboring cont
-// 2) sources
-const unsigned short N_STEPS_PER_UPDATE=3;
-#ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
-const unsigned short N_ENTRIES_CONTROL_FLOW=16;
-#else
-// TODO: Add limiter
-const unsigned short N_ENTRIES_CONTROL_FLOW=10;
-#endif
+// number of entries in the control flow
+const unsigned short N_ENTRIES_CONTROL_FLOW=18;
 
 #if PP_ORDER > 9
 #error not supported

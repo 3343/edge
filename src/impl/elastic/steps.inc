@@ -74,7 +74,7 @@ if( i_step == 0 ) {
             m_internal.m_mm );
 #endif
 }
-else if( i_step == 1 ) {
+else if( i_step == 2 ) {
 #if PP_ORDER == 1
   // finite volume: update
   edge::elastic::solvers::FiniteVolume::update( i_first,
@@ -125,7 +125,7 @@ else if( i_step == 1 ) {
           );
 #endif
 }
-else if ( i_step == 2 ) {
+else if ( i_step == 1 ) {
 #ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
   // apply sources
   edge::elastic::solvers::Kinematics< T_SDISC.ELEMENT,
@@ -186,7 +186,7 @@ else if ( i_step == 2 ) {
 
 #endif
 }
-else if( i_step == 3 ) {
+else if( i_step == 4 ) {
   // reset counters in first step since sync
   if( m_updatesSync != 0 ){}
   else {
