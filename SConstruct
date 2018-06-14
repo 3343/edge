@@ -141,7 +141,7 @@ vars.AddVariables(
   EnumVariable( 'equations',
                 'equations solved',
                 'advection',
-                 allowed_values=( 'advection', 'elastic', 'elastic+rupture', 'swe' )
+                 allowed_values=( 'advection', 'elastic', 'swe' )
               ),
   EnumVariable( 'element_type',
                 'element type used',
