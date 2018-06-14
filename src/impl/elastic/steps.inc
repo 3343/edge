@@ -74,6 +74,50 @@ if( i_step == 0 ) {
             m_internal.m_mm );
 #endif
 }
+else if ( i_step == 1 ) {
+#if PP_ORDER == 1
+  edge::elastic::solvers::FiniteVolume::rupture( i_first,
+                                                 i_size,
+                                                 i_enSp[0].first,
+                                                 m_covSimTime,
+                                                 m_dT,
+                                                 m_internal.m_globalShared7[0].connect.bfBe,
+                                                 m_internal.m_globalShared7[0].bfChars,
+                                                 m_internal.m_globalShared5[0].gl,
+                                                 m_internal.m_globalShared5[0].fa,
+                                                 m_internal.m_globalShared5[0].sf,
+                                                 m_internal.m_globalShared7[0].mss,
+                                                 m_internal.m_elementSparseShared3[0],
+                                                 m_internal.m_faceSparseShared4,
+                                                 io_recvsQuad );
+#else
+  edge::elastic::solvers::AderDg<
+    T_SDISC.ELEMENT,
+    N_QUANTITIES,
+    ORDER,
+    ORDER,
+    N_CRUNS
+  >::rupture( i_first,
+              i_size,
+              i_enSp[0].first,
+  (real_base) m_covSimTime,
+  (real_base) m_dT,
+              m_internal.m_globalShared2[0].connect.scDgAd,
+              m_internal.m_globalShared2[0].connect.liDoLiDu,
+              m_internal.m_globalShared2[0].connect.liLp,
+              m_internal.m_elementShared4,
+              m_internal.m_globalShared7[0],
+              m_internal.m_globalShared5[0].gl,
+              m_internal.m_globalShared5[0].fa,
+              m_internal.m_globalShared5[0].sf,
+              m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[0] ],
+              m_internal.m_globalShared2[0].adm[ l_admId[1] ],
+              m_internal.m_globalShared2[0].lock,
+              io_recvsSf,
+              m_internal.m_mm
+);
+#endif
+}
 else if( i_step == 2 ) {
 #if PP_ORDER == 1
   // finite volume: update
@@ -125,9 +169,8 @@ else if( i_step == 2 ) {
           );
 #endif
 }
-else if ( i_step == 1 ) {
-#ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
-  // apply sources
+else if( i_step == 3 ) {
+  // apply kinematic sources
   edge::elastic::solvers::Kinematics< T_SDISC.ELEMENT,
                                       N_QUANTITIES,
                                       ORDER,
@@ -140,51 +183,6 @@ else if ( i_step == 1 ) {
                                                                     m_internal.m_globalShared3,
                                                                     m_internal.m_elementModePrivate1 );
 
-#else
-#if PP_ORDER == 1
-  edge::elastic::solvers::FiniteVolume::rupture( i_first,
-                                                 i_size,
-                                                 i_enSp[0].first,
-                                                 m_covSimTime,
-                                                 m_dT,
-                                                 m_internal.m_globalShared7[0].connect.bfBe,
-                                                 m_internal.m_globalShared7[0].bfChars,
-                                                 m_internal.m_globalShared5[0].gl,
-                                                 m_internal.m_globalShared5[0].fa,
-                                                 m_internal.m_globalShared5[0].sf,
-                                                 m_internal.m_globalShared7[0].mss,
-                                                 m_internal.m_elementSparseShared3[0],
-                                                 m_internal.m_faceSparseShared4,
-                                                 io_recvsQuad );
-#else
-  edge::elastic::solvers::AderDg<
-    T_SDISC.ELEMENT,
-    N_QUANTITIES,
-    ORDER,
-    ORDER,
-    N_CRUNS
-  >::rupture( i_first,
-              i_size,
-              i_enSp[0].first,
-  (real_base) m_covSimTime,
-  (real_base) m_dT,
-              m_internal.m_globalShared2[0].connect.scDgAd,
-              m_internal.m_globalShared2[0].connect.liDoLiDu,
-              m_internal.m_globalShared2[0].connect.liLp,
-              m_internal.m_elementShared4,
-              m_internal.m_globalShared7[0],
-              m_internal.m_globalShared5[0].gl,
-              m_internal.m_globalShared5[0].fa,
-              m_internal.m_globalShared5[0].sf,
-              m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[0] ],
-              m_internal.m_globalShared2[0].adm[ l_admId[1] ],
-              m_internal.m_globalShared2[0].lock,
-              io_recvsSf,
-              m_internal.m_mm
-);
-#endif
-
-#endif
 }
 else if( i_step == 4 ) {
   // reset counters in first step since sync

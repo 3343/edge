@@ -362,8 +362,6 @@ if env['equations'] == 'advection':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ADVECTION']  )
 elif 'elastic' in env['equations']:
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC'] )
-  if 'rupture' in env['equations']:
-      env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC_RUPTURE'] )
 elif env['equations'] == 'swe':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_SWE'] )
 

@@ -320,7 +320,6 @@ if( l_elasticConf.m_kinSrcs.size() > 0 ) {
   PP_INSTR_REG_END(kin)
 }
 
-#ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
 // get layout of sparse source elements
 l_enLayouts.resize( l_enLayouts.size() + 1 );
 edge::data::SparseEntities::denseToSparse( t_spTypeElastic::SOURCE,
@@ -328,7 +327,7 @@ edge::data::SparseEntities::denseToSparse( t_spTypeElastic::SOURCE,
                                            l_enLayouts[2],
                                            l_enLayouts.back() );
 unsigned short l_srcLayout = l_enLayouts.size()-1;
-#else
+
 // set up dynamic rupture face layout
 l_enLayouts.resize( l_enLayouts.size() + 1 );
 unsigned short l_rupLayoutFa = l_enLayouts.size()-1;
@@ -336,7 +335,6 @@ edge::data::SparseEntities::denseToSparse( t_spTypeElastic::RUPTURE,
                                            l_internal.m_faceChars,
                                            l_enLayouts[1],
                                            l_enLayouts[l_rupLayoutFa] );
-#endif
 
 // set up dynamic rupture element layout
 l_enLayouts.resize( l_enLayouts.size() + 1 );
@@ -823,7 +821,6 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups.size() + l_tg,
                       3, l_spType+2, l_internal.m_elementChars );
 
-#ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
     // kinematic sources inner-elements
     l_shared.regWrkRgn( l_tg,
                         3,
@@ -841,9 +838,8 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].nEntsOwn-
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_enLayouts[l_srcLayout].timeGroups.size() + l_tg );
-#else
-    l_spType[0] = { RECEIVER };
 
+    l_spType[0] = { RECEIVER };
     // rupture physics inner-faces
     l_shared.regWrkRgn( l_tg,
                         1,
@@ -864,7 +860,6 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].nEntsNotOwn,
                         l_enLayouts[l_rupLayoutFa].timeGroups.size() + l_tg,
                         1, l_spType, l_internal.m_globalShared7[0].bfChars );
-  #endif
 
   // limit, inner-elements
   l_shared.regWrkRgn( l_tg,
