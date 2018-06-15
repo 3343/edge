@@ -176,7 +176,7 @@ def writeSrs( i_nDims, i_outFile, i_srs ):
   l_flush = 0;
   for l_su in i_srs:
     l_rootGroup['sliprates1'][l_first:l_first+len(l_su)] = l_su
-    if( i_nDims == 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
+    if( i_nDims > 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
     l_first = l_first + len(l_su)
 
     # flush periodically
@@ -201,9 +201,7 @@ def writeSrs( i_nDims, i_outFile, i_srs ):
 #         elastic waves on unstructured meshes I. The two-dimensional isotropic case with external source terms
 #         Eq. (64)
 #
-# Derivative in Wolfram Alpha to obtain moment rate time history:
-#                  d/dt( a*(0.5+b(t-T)^2)*exp(b*(t-T)^2) )
-#                = 2 a b (t - T) e^(b (t - T)^2) (b (t - T)^2 + 1.5)
+# Moment rate time history:  a*(0.5+b(t-T)^2)*exp(b*(t-T)^2) )
 #
 # @param i_t1 start time of the sampling.
 # @param i_t2 end time of the sampling.
@@ -228,7 +226,7 @@ def ricker( i_t1,
   l_t = i_t1
 
   while( l_t < i_t2 ):
-    l_sr.append( 2.0 * l_a * l_b * l_t * math.exp( l_b * l_t**2 ) * ( l_b * l_t**2 + 1.5 )  )
+    l_sr.append( l_a * ( 0.5 + l_b * l_t**2 ) * math.exp( l_b * l_t**2 ) )
     l_t = l_t + i_dt
 
   return l_sr
@@ -409,7 +407,7 @@ for l_sf in l_cfg['subfaults']:
                l_sf['m0'] )
   else:
     l_sr = ricker( l_sf['on'],
-                   l_sf['dur']-l_sf['on'],
+                   l_sf['dur']+l_sf['on'],
                    l_sf['dt'],
                    l_sf['T'],
                    l_sf['m0'] )

@@ -102,6 +102,7 @@ if env['tests']:
   if 'elastic' in env['equations']:
     l_tests = l_tests+['impl/elastic/common.test.cpp',
                        'impl/elastic/sc/Llf.test.cpp',
+                       'impl/elastic/solvers/common.test.cpp',
                        'impl/elastic/setups/RuptureInit.test.cpp',
 #                       'impl/elastic/solvers/InternalBoundary.test.cpp',
                        'impl/elastic/solvers/FrictionLaws.test.cpp',
