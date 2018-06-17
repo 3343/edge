@@ -354,7 +354,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then unzip -a lapack.zip > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mv lapack-release-lapack-3.8.0 lapack; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir lapack/build; cd lapack/build; cmake -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)/../../libs .. > /dev/null; make install > /dev/null; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/../../libs/lib64/lib*.a /usr/local/lib; cd ../..; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/../../libs/lib*/lib*.a /usr/local/lib; cd ../..; fi;
 
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
