@@ -145,6 +145,16 @@ Include:
   make install -j ${N_BUILD_PROC} > /dev/null
   cd ..
 
+  ###############
+  # BLAS/LAPACK #
+  ###############
+  wget https://github.com/Reference-LAPACK/lapack-release/archive/lapack-3.8.0.zip -O lapack.zip
+  unzip -a lapack.zip
+  mv lapack-release-lapack-3.8.0 lapack
+  mkdir lapack/build; cd lapack/build; cmake -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)/../../libs ..; make install
+  ln -s $(pwd)/../../libs/lib64/lib*.a /usr/local/lib/
+  cd ../..
+
   ########
   # EDGE #
   ########
@@ -161,7 +171,7 @@ Include:
   cd submodules/moab
   LANG=C autoreconf -fi
   # sequential
-  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --enable-all-static --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+  F77=gfortran F90=gfortran CC=gcc CXX=g++ ./configure  --with-blas=/usr/local/libblas.a --with-lapack=/usr/local/lib/liblapack.a --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --enable-all-static --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
   make install -j ${N_BUILD_PROC} > /dev/null 2> /dev/null
   cd ../..
 
