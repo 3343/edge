@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -72,6 +72,9 @@ class edge::elastic::solvers::TimePred {
     static unsigned short const TL_N_DIM = C_ENT[TL_T_EL].N_DIM;
     //! number of element modes
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
+
+    //! id of the matrix kernel group
+    static unsigned short const MM_GR = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
 
     /**
      * Sets the given matrix to zero.
@@ -141,13 +144,13 @@ class edge::elastic::solvers::TimePred {
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
           // multiply with transposed stiffness matrices and inverse mass matrix
-          i_mm.m_kernels[(l_de-1)*2]( o_der[l_de-1][0][0],
-                                      i_stiffT[l_di][0],
-                                      o_scratch[0][0] );
+          i_mm.m_kernels[MM_GR][(l_de-1)*2]( o_der[l_de-1][0][0],
+                                             i_stiffT[l_di][0],
+                                             o_scratch[0][0] );
           // multiply with star matrices
-          i_mm.m_kernels[((l_de-1)*2)+1]( i_star[l_di][0],
-                                          o_scratch[0][0],
-                                          o_der[l_de][0][0] );
+          i_mm.m_kernels[MM_GR][((l_de-1)*2)+1]( i_star[l_di][0],
+                                                 o_scratch[0][0],
+                                                 o_der[l_de][0][0] );
         }
 
         // update scalar
@@ -219,13 +222,13 @@ class edge::elastic::solvers::TimePred {
           }
 
           // multiply with transposed stiffness matrices and inverse mass matrix
-          i_mm.m_kernels[(l_de-1)*(TL_N_DIM+1)+l_di]( o_der[l_de-1][0][0],
-                                                      i_stiffT[(l_de-1)*TL_N_DIM+l_di],
-                                                      o_scratch[0][0] );
+          i_mm.m_kernels[MM_GR][(l_de-1)*(TL_N_DIM+1)+l_di]( o_der[l_de-1][0][0],
+                                                             i_stiffT[(l_de-1)*TL_N_DIM+l_di],
+                                                             o_scratch[0][0] );
           // multiply with star matrices
-          i_mm.m_kernels[(l_de-1)*(TL_N_DIM+1)+TL_N_DIM]( i_star[l_di],
-                                                          o_scratch[0][0],
-                                                          o_der[l_de][0][0] );
+          i_mm.m_kernels[MM_GR][(l_de-1)*(TL_N_DIM+1)+TL_N_DIM]( i_star[l_di],
+                                                                 o_scratch[0][0],
+                                                                 o_der[l_de][0][0] );
         }
 
         // update scalar
@@ -289,13 +292,13 @@ class edge::elastic::solvers::TimePred {
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
           // multiply with transposed stiffness matrices and inverse mass matrix
-          i_mm.m_kernels[(l_de-1)*2]( i_stiffT[l_di][0],
-                                      o_der[l_de-1][0][0],
-                                      o_scratch[0][0] );
+          i_mm.m_kernels[MM_GR][(l_de-1)*2]( i_stiffT[l_di][0],
+                                             o_der[l_de-1][0][0],
+                                             o_scratch[0][0] );
           // multiply with star matrices
-          i_mm.m_kernels[((l_de-1)*2)+1]( o_scratch[0][0],
-                                          i_star[l_di][0],
-                                          o_der[l_de][0][0] );
+          i_mm.m_kernels[MM_GR][((l_de-1)*2)+1]( o_scratch[0][0],
+                                                 i_star[l_di][0],
+                                                 o_der[l_de][0][0] );
         }
 
         // update scalar

@@ -1086,6 +1086,40 @@ class edge::linalg::Matrix {
       // free temporary dense matrix
       delete[] l_tmpDe;
     }
+
+    /**
+     * Sets up a fake (dense) CSR structure.
+     * The method allocates memory, for the output data structure, but does not free it.
+     *
+     * @param i_m number of rows in column-major A and C.
+     * @param i_n number of columns in column-major B and C.
+     * @param i_k number of columns/rows in column-major A/B.
+     * @param o_rows will be set to row pointer.
+     * @param o_cols will be set to column index.
+     * @param o_vals will be set to values.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     */
+    template< typename TL_T_REAL >
+    static void fakeCsr( unsigned int     i_m,
+                         unsigned int     i_n,
+                         unsigned int     i_k,
+                         unsigned int * & o_rows,
+                         unsigned int * & o_cols,
+                         TL_T_REAL    * & o_vals ) {
+      // allocate memory
+      o_rows = new unsigned int[i_k+1];
+      o_cols = new unsigned int[i_k*i_k];
+      o_vals = new TL_T_REAL[i_k*i_k];
+
+      for( unsigned int l_n = 0; l_n < i_k*i_k; l_n++ ) {
+        o_vals[l_n] = static_cast<TL_T_REAL>( l_n );
+        o_cols[l_n] = l_n%i_k;
+      }
+      for( unsigned int l_n = 0; l_n < i_k+1; l_n++ ) {
+        o_rows[l_n] = l_n*i_k;
+      }
+    }
 };
 
 #endif

@@ -21,6 +21,7 @@
  * Unit test of sub-cell resolution kernels.
  **/
 #include <catch.hpp>
+#include "data/MmVanilla.hpp"
 #define private public
 #include "Kernels.hpp"
 #undef private
@@ -38,6 +39,16 @@ TEST_CASE( "Sub-cell kernels: Scatter operation.", "[subCellKernels][scatter]" )
    *   -1.0 -0.9 -0.8 -0.7 -0.6 -0.5 -0.4 -0.3 -0.2
    */
 
+  // vanilla kernels
+  edge::data::MmVanilla< float > l_van1;
+
+  // add GEMM kernel
+  l_van1.add( static_cast< unsigned short >( t_mm::SUB_CELL ),
+              2, 9, 4,
+              4, 9, 9,
+              float(1), float(0),
+              true, false, 2 );
+
   // dg dofs
   float l_dgDofs1[2][4][2] = { { { 1.0, -1.0}, {-0.1,  0.1}, {-2.0,  2.0}, {3.0, -3.0} },
                                { {-0.3,  0.3}, { 0.4, -0.4}, { 2.2, -2.2}, {8.0, -8.0} } };
@@ -52,7 +63,7 @@ TEST_CASE( "Sub-cell kernels: Scatter operation.", "[subCellKernels][scatter]" )
   float l_scDofs1[2][9][2];
 
   // perform scatter operation
-  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::scatter( l_dgDofs1, l_scatter1, l_scDofs1 );
+  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::scatter( l_van1, l_dgDofs1, l_scatter1, l_scDofs1 );
 
   // result (1st fused run)
   float l_ut1[2][9] = { {  -2.3, -3.19,  -2.1,  -0.9,  2.5,   -0.7,    0.5,  -1.6, -2.6 },
@@ -86,8 +97,19 @@ TEST_CASE( "Sub-cell kernels: Gather operation.", "[subCellKernels][gather]" ) {
 
   float l_dgDofs1[3][4][2];
 
+  // vanilla kernels
+  edge::data::MmVanilla< float > l_van1;
+
+  // add 3 GEMM kernels (gather is third)
+  for( unsigned short l_mm = 0; l_mm < 3; l_mm++ )
+    l_van1.add( static_cast< unsigned short >( t_mm::SUB_CELL ),
+                3, 4, 9,
+                9, 4, 4,
+                float(1), float(0),
+                true, false, 2 );
+
   // perform gather operation
-  edge::sc::Kernels< QUAD4R, 2, 3, 2 >::gather( l_scDofs1, l_gather1, l_dgDofs1 );
+  edge::sc::Kernels< QUAD4R, 2, 3, 2 >::gather( l_van1, l_scDofs1, l_gather1, l_dgDofs1 );
 
   float l_ut1[3][4] = { { -28.631, -13.652, -16.573,  -13.684},
                         {  50.907,  52.852,  12.449, -144.052},
@@ -145,8 +167,18 @@ TEST_CASE( "Sub-cell kernels: DG extrema.", "[subCellKernels][dgExtrema]" ) {
 
   double l_scratch1[2][9][2];
 
+  // vanilla kernels
+  edge::data::MmVanilla< double > l_van1;
+
+  // add GEMM kernel
+  l_van1.add( static_cast< unsigned short >( t_mm::SUB_CELL ),
+              2, 9, 4,
+              4, 9, 9,
+              double(1), double(0),
+              true, false, 2 );
+
   // determine extrema through sub-cell resolution
-  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::dgExtrema( l_dgDofs1, l_scatter1, l_scratch1, l_min1, l_max1 );
+  edge::sc::Kernels< QUAD4R, 2, 2, 2 >::dgExtrema( l_van1, l_dgDofs1, l_scatter1, l_scratch1, l_min1, l_max1 );
 
   // check results
   REQUIRE( l_min1[0][0] == Approx(-3.19) );

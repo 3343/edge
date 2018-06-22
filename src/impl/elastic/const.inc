@@ -34,6 +34,14 @@ const double SCALE_CFL_ORDER[9] = { 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9 
 
 const double SCALE_CFL=(1.0/N_DIM)*SCALE_CFL_ORDER[PP_ORDER-1];
 
+/**
+ * Kernel groups, used for seismic simulations.
+ **/
+enum class t_mmSeismic: unsigned short {
+  SUB_CELL = static_cast< unsigned short >( t_mm::SUB_CELL ),
+  ADER_DG  = 1
+};
+
 /*
  * Bitsmasks for elastics.
  **/

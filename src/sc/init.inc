@@ -20,115 +20,128 @@
  * @section DESCRIPTION
  * Performs the init of sub-cell data, once limited, limited plus and and extrema sparse types are derived.
  **/
-#if defined(PP_T_KERNELS_XSMM)
 // setup gather/scatter kernels
 {
-  unsigned int l_n_qts = N_QUANTITIES;
-  unsigned int l_n_mds = N_ELEMENT_MODES;
-  unsigned int l_n_scs = CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER); 
-  unsigned int l_n_sfs = CE_N_SUB_FACES(T_SDISC.ELEMENT,ORDER);
+  unsigned int   l_nQts = N_QUANTITIES;
+  unsigned int   l_nMds = N_ELEMENT_MODES;
+  unsigned int   l_nScs = CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER);
+  unsigned int   l_nSfs = CE_N_SUB_FACES(T_SDISC.ELEMENT,ORDER);
+  unsigned short l_mmGr = static_cast< unsigned short >( t_mm::SUB_CELL );
 
+#if defined(PP_T_KERNELS_XSMM)
   // scatter
-  l_internal.m_mm.addScAC( l_n_qts, l_n_scs, l_n_mds, // m, n, k
-                           l_n_mds, l_n_scs, l_n_scs, // ldA, ldB, lcC
-                           static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nScs, l_nMds,                                   // m, n, k
+                       l_nMds, l_nScs, l_nScs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false,                                              // AC, BC
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // scatter fa
-  l_internal.m_mm.addScAC( l_n_qts, l_n_sfs, l_n_mds, // m, n, k
-                           l_n_mds, l_n_sfs, l_n_sfs, // ldA, ldB, lcC
-                           static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nSfs, l_nMds,                                   // m, n, k
+                       l_nMds, l_nSfs, l_nSfs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false,                                              // AC, BC
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // gather
-  l_internal.m_mm.addScAC( l_n_qts, l_n_mds, l_n_scs, // m, n, k
-                           l_n_scs, l_n_mds, l_n_mds, // ldA, ldB, lcC
-                           static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nMds, l_nScs,                                   // m, n, k
+                       l_nScs, l_nMds, l_nMds,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false,                                              // AC, BC
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // sfInt (gather fa)
-  l_internal.m_mm.addScAC( l_n_qts, l_n_mds, l_n_sfs, // m, n, k
-                           l_n_sfs, l_n_mds, l_n_mds, // ldA, ldB, lcC
-                           static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nMds, l_nSfs,                                   // m, n, k
+                       l_nSfs, l_nMds, l_nMds,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false,                                              // AC, BC
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // internal boundary transform
-  l_internal.m_mm.addScBC( l_n_qts, l_n_sfs, l_n_qts,
-                           l_n_qts, l_n_sfs, l_n_sfs,
-                           static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ ); 
-}
-#endif
-#if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
-// setup gather/scatter kernels
-{
-  unsigned int l_n_qts = N_QUANTITIES;
-  unsigned int l_n_mds = N_ELEMENT_MODES;
-  unsigned int l_n_scs = CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER);
-  unsigned int l_n_sfs = CE_N_SUB_FACES(T_SDISC.ELEMENT,ORDER);
-
+  l_internal.m_mm.add( l_mmGr,                                                    // group
+                       l_nQts, l_nSfs, l_nQts,                                    // m, n, k
+                       l_nQts, l_nSfs, l_nSfs,                                    // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0),  // alpha, beta
+                       false, true,                                               // AC, BC
+                       LIBXSMM_GEMM_PREFETCH_NONE );
+#elif defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
   // LIBXSMM is col-major for vanilla GEMMs, so we need to transpose here
 
   // scatter
-  l_internal.m_mm.addSc( l_n_scs, l_n_qts, l_n_mds, // m, n, k
-                         l_n_scs, l_n_mds, l_n_scs, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nScs, l_nQts, l_nMds,                                   // m, n, k
+                       l_nScs, l_nMds, l_nScs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // scatter fa
-  l_internal.m_mm.addSc( l_n_sfs, l_n_qts, l_n_mds, // m, n, k
-                         l_n_sfs, l_n_mds, l_n_sfs, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nSfs, l_nQts, l_nMds,                                   // m, n, k
+                       l_nSfs, l_nMds, l_nSfs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // gather
-  l_internal.m_mm.addSc( l_n_mds, l_n_qts, l_n_scs, // m, n, k
-                         l_n_mds, l_n_scs, l_n_mds, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nMds, l_nQts, l_nScs,                                   // m, n, k
+                       l_nMds, l_nScs, l_nMds,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // sfInt (gather fa)
-  l_internal.m_mm.addSc( l_n_mds, l_n_qts, l_n_sfs, // m, n, k
-                         l_n_mds, l_n_sfs, l_n_mds, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nMds, l_nQts, l_nSfs,                                   // m, n, k
+                       l_nMds, l_nSfs, l_nMds,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       LIBXSMM_GEMM_PREFETCH_NONE );
 
   // internal boundary transform
-  l_internal.m_mm.addSc( l_n_sfs, l_n_qts, l_n_qts,
-                         l_n_sfs, l_n_qts, l_n_sfs,
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0) /*, LIBXSMM_GEMM_PREFETCH_NONE*/ );
-}
-#endif
-#if defined(PP_T_KERNELS_VANILLA)
-// setup gather/scatter kernels
-{
-  unsigned int l_n_qts = N_QUANTITIES;
-  unsigned int l_n_mds = N_ELEMENT_MODES;
-  unsigned int l_n_scs = CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER);
-  unsigned int l_n_sfs = CE_N_SUB_FACES(T_SDISC.ELEMENT,ORDER);
-
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nSfs, l_nQts, l_nQts,                                   // m, n, k
+                       l_nSfs, l_nQts, l_nSfs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       LIBXSMM_GEMM_PREFETCH_NONE );
+#elif defined(PP_T_KERNELS_VANILLA)
   // scatter
-  l_internal.m_mm.addSc( l_n_qts, l_n_scs, l_n_mds, // m, n, k
-                         l_n_mds, l_n_scs, l_n_scs, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0),
-                         true, false, N_CRUNS );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nScs, l_nMds,                                   // m, n, k
+                       l_nMds, l_nScs, l_nScs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false, N_CRUNS );                                   // AC, BC, #fused
 
   // scatter fa
-  l_internal.m_mm.addSc( l_n_qts, l_n_sfs, l_n_mds, // m, n, k
-                         l_n_mds, l_n_sfs, l_n_sfs, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0),
-                         true, false, N_CRUNS );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nSfs, l_nMds,                                   // m, n, k
+                       l_nMds, l_nSfs, l_nSfs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0),
+                       true, false, N_CRUNS );                                   // AC, BC, #fused
 
   // gather
-  l_internal.m_mm.addSc( l_n_qts, l_n_mds, l_n_scs, // m, n, k
-                         l_n_scs, l_n_mds, l_n_mds, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0),
-                         true, false, N_CRUNS );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nMds, l_nScs,                                   // m, n, k
+                       l_nScs, l_nMds, l_nMds,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false, N_CRUNS );                                   // AC, BC, #fused
 
   // sfInt (gather fa)
-  l_internal.m_mm.addSc( l_n_qts, l_n_mds, l_n_sfs, // m, n, k
-                         l_n_sfs, l_n_mds, l_n_mds, // ldA, ldB, lcC
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0),
-                         true, false, N_CRUNS );
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nMds, l_nSfs,                                   // m, n, k
+                       l_nSfs, l_nMds, l_nMds,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       true, false, N_CRUNS );                                   // AC, BC, #fused
 
   // internal boundary transform
-  l_internal.m_mm.addSc( l_n_qts, l_n_sfs, l_n_qts,
-                         l_n_qts, l_n_sfs, l_n_sfs,
-                         static_cast<real_base>(1.0), static_cast<real_base>(0.0),
-                         false, true, N_CRUNS );
-}
+  l_internal.m_mm.add( l_mmGr,                                                   // group
+                       l_nQts, l_nSfs, l_nQts,                                   // m, n, k
+                       l_nQts, l_nSfs, l_nSfs,                                   // ldA, ldB, ldC
+                       static_cast<real_base>(1.0), static_cast<real_base>(0.0), // alpha, beta
+                       false, true, N_CRUNS );                                   // AC, BC, #fused
 #endif
+}
 
 unsigned short l_limLayout;
 unsigned short l_limPlusLayout;

@@ -57,6 +57,14 @@ C_ENT[6] = {
 };
 
 /**
+ * Kernel groups.
+ **/
+enum class t_mm: unsigned short {
+  SUB_CELL = 0
+};
+
+
+/**
  * Determines the maximum of the two input values.
  *
  * @param i_first first value.

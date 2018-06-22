@@ -184,7 +184,6 @@ class edge::sc::Limiter {
         // integrate fluxes over DG element's boundary and project back to DG space
         edge::sc::Kernels<
           TL_T_EL,
-          TL_T_MM,
           TL_O_SP,
           TL_N_QTS,
           TL_N_CRS >::sfInt( i_mm,
@@ -296,7 +295,6 @@ class edge::sc::Limiter {
       // derive element's sub-cell solution
       edge::sc::Kernels<
         TL_T_EL,
-        TL_T_MM,
         TL_O_SP,
         TL_N_QTS,
         TL_N_CRS >::scatterReplace( i_mm,
@@ -567,7 +565,6 @@ class edge::sc::Limiter {
             TL_T_REAL l_dofsDg[TL_N_QTS][TL_N_MDS_EL][TL_N_CRS];
             // project the DG solution back
             edge::sc::Kernels< TL_T_EL,
-                               TL_T_MM,
                                TL_O_SP,
                                TL_N_QTS,
                                TL_N_CRS >::gather( i_mm,
@@ -591,7 +588,6 @@ class edge::sc::Limiter {
             TL_T_REAL l_exDgL[2][TL_N_QTS][TL_N_CRS];
 
             edge::sc::Kernels< TL_T_EL,
-                               TL_T_MM,
                                TL_O_SP,
                                TL_N_QTS,
                                TL_N_CRS >::dgExtrema(  i_mm,
@@ -623,7 +619,6 @@ class edge::sc::Limiter {
             // update the extrema
             TL_T_REAL l_extSc[2][TL_N_QTS][TL_N_CRS];
             edge::sc::Kernels< TL_T_EL,
-                               TL_T_MM,
                                TL_O_SP,
                                TL_N_QTS,
                                TL_N_CRS >::scExtrema(io_dofsSc[l_li],
@@ -657,7 +652,6 @@ class edge::sc::Limiter {
                            l_fMatId += l_fa;
             edge::sc::Kernels<
               TL_T_EL,
-              TL_T_MM,
               TL_O_SP,
               TL_N_QTS,
               TL_N_CRS >::scatterFa(   i_mm,
@@ -672,7 +666,6 @@ class edge::sc::Limiter {
             io_lock[l_li][l_cr] = false;
 
           edge::sc::Kernels< TL_T_EL,
-                             TL_T_MM,
                              TL_O_SP,
                              TL_N_QTS,
                              TL_N_CRS >::gatherSurfDofs( io_dofsSc[l_li],

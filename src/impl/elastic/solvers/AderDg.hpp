@@ -249,7 +249,7 @@ class edge::elastic::solvers::AderDg {
      * @param io_dofs DOFs.
      * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
      * @param io_recvs will be updated with receiver info.
-     * @param i_mm matrix-matrix multiplication kernels for the local step.
+     * @param i_mm matrix-matrix multiplication kernels.
      *
      * @paramt TL_T_LID integer type of local entity ids.
      * @paramt TL_T_REAL floating point type.
@@ -735,7 +735,6 @@ class edge::elastic::solvers::AderDg {
 
           // compute DG extrema
           edge::sc::Kernels< TL_T_EL,
-                             TL_T_MM,
                              TL_O_SP,
                              TL_N_QTS,
                              TL_N_CRS >::dgExtrema(  i_mm,

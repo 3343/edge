@@ -81,6 +81,9 @@ class edge::elastic::solvers::InternalBoundary {
     //! number of sub-faces
     static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
+    //! id of the matrix kernel group
+    static unsigned short const MM_GR = static_cast< unsigned short >( t_mm::SUB_CELL );
+
   public:
     /**
      * Dummy solver perturbating nothing.
@@ -211,11 +214,11 @@ class edge::elastic::solvers::InternalBoundary {
       // remark: the back-rotation to physical coordinates is part of the the flux solver
       TL_T_REAL l_dofs[2][TL_N_QTS][TL_N_SFS][TL_N_CRS];
 #if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
-      i_mm.m_kernelsSc[4]( i_dofsL[0][0], i_tm1[0], l_dofs[0][0][0] );
-      i_mm.m_kernelsSc[4]( i_dofsR[0][0], i_tm1[0], l_dofs[1][0][0] );
+      i_mm.m_kernels[MM_GR][4]( i_dofsL[0][0], i_tm1[0], l_dofs[0][0][0] );
+      i_mm.m_kernels[MM_GR][4]( i_dofsR[0][0], i_tm1[0], l_dofs[1][0][0] );
 #else
-      i_mm.m_kernelsSc[4]( i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
-      i_mm.m_kernelsSc[4]( i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
+      i_mm.m_kernels[MM_GR][4]( i_tm1[0], i_dofsL[0][0], l_dofs[0][0][0] );
+      i_mm.m_kernels[MM_GR][4]( i_tm1[0], i_dofsR[0][0], l_dofs[1][0][0] );
 #endif
 
       // iterate over sub-faces
@@ -268,11 +271,11 @@ class edge::elastic::solvers::InternalBoundary {
 
       // compute fluxes and rotate DOFs back to physical coordinate system
 #if defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
-      i_mm.m_kernelsSc[4]( l_msTmp[0][0][0], i_solMsFluxL[0], o_netUpsL[0][0] );
-      i_mm.m_kernelsSc[4]( l_msTmp[1][0][0], i_solMsFluxR[0], o_netUpsR[0][0] );
+      i_mm.m_kernels[MM_GR][4]( l_msTmp[0][0][0], i_solMsFluxL[0], o_netUpsL[0][0] );
+      i_mm.m_kernels[MM_GR][4]( l_msTmp[1][0][0], i_solMsFluxR[0], o_netUpsR[0][0] );
 #else
-      i_mm.m_kernelsSc[4]( i_solMsFluxL[0], l_msTmp[0][0][0], o_netUpsL[0][0] );
-      i_mm.m_kernelsSc[4]( i_solMsFluxR[0], l_msTmp[1][0][0], o_netUpsR[0][0] );
+      i_mm.m_kernels[MM_GR][4]( i_solMsFluxL[0], l_msTmp[0][0][0], o_netUpsL[0][0] );
+      i_mm.m_kernels[MM_GR][4]( i_solMsFluxR[0], l_msTmp[1][0][0], o_netUpsR[0][0] );
 #endif
     }
 };

@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -61,6 +61,9 @@ class edge::elastic::solvers::VolInt {
     //! number of non-zeros in the jacobians
     static unsigned short const TL_N_NZJ = (N_DIM==2) ? 10 : 24;
 
+    //! id of the matrix kernel group
+    static unsigned short const MM_GR = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
+
   public:
 #ifdef PP_T_KERNELS_VANILLA    
     /**
@@ -83,14 +86,14 @@ class edge::elastic::solvers::VolInt {
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         // multiply with stiffness and inverse mass matrix
-        i_mm.m_kernels[((TL_O_SP-1)*2)]( i_tDofs[0][0],
-                                         i_stiff[l_di][0],
-                                         o_scratch[0][0] );
+        i_mm.m_kernels[MM_GR][((TL_O_SP-1)*2)]( i_tDofs[0][0],
+                                                i_stiff[l_di][0],
+                                                o_scratch[0][0] );
 
         // multiply with star matrix
-        i_mm.m_kernels[((TL_O_SP-1)*2)+1]( i_jac[l_di][0],
-                                           o_scratch[0][0],
-                                           io_dofs[0][0] );
+        i_mm.m_kernels[MM_GR][((TL_O_SP-1)*2)+1]( i_jac[l_di][0],
+                                                  o_scratch[0][0],
+                                                  io_dofs[0][0] );
       }
     }
 #endif
@@ -116,14 +119,14 @@ class edge::elastic::solvers::VolInt {
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         // multiply with stiffness and inverse mass matrix
-        i_mm.m_kernels[((TL_O_SP-1)*2)]( i_stiff[l_di][0],
-                                         i_tDofs[0][0],
-                                         o_scratch[0][0] );
+        i_mm.m_kernels[MM_GR][((TL_O_SP-1)*2)]( i_stiff[l_di][0],
+                                                i_tDofs[0][0],
+                                                o_scratch[0][0] );
 
         // multiply with star matrix
-        i_mm.m_kernels[((TL_O_SP-1)*2)+1]( o_scratch[0][0],
-                                           i_jac[l_di][0],
-                                           io_dofs[0][0] );
+        i_mm.m_kernels[MM_GR][((TL_O_SP-1)*2)+1]( o_scratch[0][0],
+                                                  i_jac[l_di][0],
+                                                  io_dofs[0][0] );
       }
     }
 #endif
@@ -149,14 +152,14 @@ class edge::elastic::solvers::VolInt {
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         // multiply with star matrix
-        i_mm.m_kernels[(TL_O_SP-1)*(TL_N_DIS+1)+TL_N_DIS]( i_jac[l_di],
-                                                           i_tDofs[0][0],
-                                                           o_scratch[0][0] );
+        i_mm.m_kernels[MM_GR][(TL_O_SP-1)*(TL_N_DIS+1)+TL_N_DIS]( i_jac[l_di],
+                                                                  i_tDofs[0][0],
+                                                                  o_scratch[0][0] );
 
         // multiply with stiffness and inverse mass matrix
-        i_mm.m_kernels[(TL_O_SP-1)*(TL_N_DIS+1)+l_di]( o_scratch[0][0],
-                                                       i_stiff[l_di],                                  
-                                                       io_dofs[0][0] );
+        i_mm.m_kernels[MM_GR][(TL_O_SP-1)*(TL_N_DIS+1)+l_di]( o_scratch[0][0],
+                                                              i_stiff[l_di],
+                                                              io_dofs[0][0] );
       }
     }
 #endif

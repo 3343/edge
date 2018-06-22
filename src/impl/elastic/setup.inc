@@ -351,6 +351,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
 {
   EDGE_LOG_INFO << "  setting up libxsmm, sparse";
 
+  unsigned short l_mmGr = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
+
   // determine CSC fill-in strategy
   std::string l_cscFillIn = "none";
   if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
@@ -434,7 +436,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                      l_nzBl[0][0][1]+1, l_maxNzCol+1,
                                                      l_cscFillIn );
 
-      l_internal.m_mm.add(  false,
+      l_internal.m_mm.add(  l_mmGr,
+                            false,
                            &l_stiffTCsc.colPtr[0],  &l_stiffTCsc.rowIdx[0], &l_stiffTCsc.val[0],
                             N_QUANTITIES, l_maxNzCol+1, l_nzBl[0][0][1]+1,
                             N_ELEMENT_MODES, 0, l_maxNzCol+1,
@@ -442,7 +445,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                             LIBXSMM_GEMM_PREFETCH_NONE );
     }
     // generate libxsmm kernel for star matrix
-    l_internal.m_mm.add(  true,
+    l_internal.m_mm.add(  l_mmGr,
+                          true,
                          &l_starCsr.rowPtr[0],  &l_starCsr.colIdx[0], &l_starCsr.val[0],
                           N_QUANTITIES, l_maxNzCol+1, N_QUANTITIES,
                           0, l_maxNzCol+1, N_ELEMENT_MODES,
@@ -490,7 +494,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
 
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_stiffCsc.colPtr[0], &l_stiffCsc.rowIdx[0], &l_stiffCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, l_maxNzRow+1,
                           l_maxNzRow+1, 0, N_ELEMENT_MODES,
@@ -499,7 +504,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
   }
 
   // star matrix
-  l_internal.m_mm.add(  true,
+  l_internal.m_mm.add(  l_mmGr,
+                        true,
                        &l_starCsr.rowPtr[0], &l_starCsr.colIdx[0], &l_starCsr.val[0],
                         N_QUANTITIES, l_maxNzRow+1, N_QUANTITIES,
                         0, N_ELEMENT_MODES, l_maxNzRow+1,
@@ -518,7 +524,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
 
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
@@ -535,7 +542,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
 
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
@@ -551,7 +559,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
                           N_FACE_MODES, 0, N_ELEMENT_MODES,
@@ -565,7 +574,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                  l_fSolv[0], l_fSolvCsr, TOL.BASIS );
   EDGE_CHECK( l_fSolvCsr.val.size() == N_QUANTITIES*N_QUANTITIES );
 
-  l_internal.m_mm.add(  true,
+  l_internal.m_mm.add(  l_mmGr,
+                        true,
                        &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
                         N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
                         0, N_FACE_MODES, N_FACE_MODES,
