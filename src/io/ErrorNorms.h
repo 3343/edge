@@ -21,8 +21,8 @@
  * Output for error norms.
  **/
 
-#ifndef ERROR_NORMS_H
-#define ERROR_NORMS_H
+#ifndef EDGE_IO_ERROR_NORMS_H
+#define EDGE_IO_ERROR_NORMS_H
 
 #include <string>
 #include "constants.hpp"
