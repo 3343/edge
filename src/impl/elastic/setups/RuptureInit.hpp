@@ -71,6 +71,7 @@ class edge::elastic::setups::RuptureInit {
 
     // dummy fault data
     typedef struct { double sn0[TL_N_SFS][TL_N_CRS];
+                     double co0[TL_N_SFS][TL_N_CRS];
                      double ss0[TL_N_DIS-1][TL_N_SFS][TL_N_CRS]; } t_faultDataDummy;
 
   public:

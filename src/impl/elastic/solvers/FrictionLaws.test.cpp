@@ -56,7 +56,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 2D.", "
 
   // set up friction law
   double l_dt, l_csDmuM, l_csDmuP;
-  double l_mus[1], l_mud[1], l_dcInv[1], l_sn0[1], l_ss0[1], l_muf[1], l_dd[1];
+  double l_mus[1], l_mud[1], l_dcInv[1], l_sn0[1], l_co0[1], l_ss0[1], l_muf[1], l_dd[1];
   double l_msM[5][1], l_msP[5][1];
 
   l_dt = 0.004;
@@ -68,6 +68,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 2D.", "
   l_mud[0]   = 0.55;
   l_dcInv[0] = 2.5;
   l_sn0[0]   = -120E6;
+  l_co0[0]   = 0;
   l_ss0[0]   = 81.6E6;
   l_muf[0]   = 0.59;
   l_dd[0]    = 0.2;
@@ -122,7 +123,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 2D.", "
   edge::elastic::solvers::FrictionLaws< 2, 1 >::linSlipWeak( l_dt,
                                                              l_csDmuM, l_csDmuP,
                                                              l_mus, l_mud, l_dcInv,
-                                                             l_sn0, l_ss0,
+                                                             l_sn0, l_co0, l_ss0,
                                                              l_ms,
                                                              l_dd, l_muf, l_st,
                                                              l_sr, l_ss,
@@ -186,7 +187,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 3D.", "
 
   // set up friction law
   double l_dt, l_csDmuM, l_csDmuP;
-  double l_mus[1], l_mud[1], l_dcInv[1], l_sn0[1], l_ss0[2][1], l_muf[1], l_dd[2][1];
+  double l_mus[1], l_mud[1], l_dcInv[1], l_sn0[1], l_co0[1], l_ss0[2][1], l_muf[1], l_dd[2][1];
   double l_msM[9][1], l_msP[9][1];
 
   l_csDmuM = l_csM / l_muM;
@@ -198,6 +199,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 3D.", "
   l_mud[0]    = 0.55;
   l_dcInv[0]  = 2.5;
   l_sn0[0]    = -120E6;
+  l_co0[0]    = 0;
   l_ss0[0][0] = 40E6;
   l_ss0[1][0] = std::sqrt( 81.6E6 * 81.6E6 - 40.0E6 * 40.0E6 );
   l_muf[0]    = 0.59;
@@ -263,6 +265,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 3D.", "
                    l_mud,
                    l_dcInv,
                    l_sn0,
+                   l_co0,
                    l_ss0,
                    l_ss0A,
                    l_ms,
