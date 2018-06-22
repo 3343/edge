@@ -21,6 +21,7 @@
 # Unit tests for the hex sub-grid.
 ##
 import unittest
+import sympy
 from fractions import Fraction as Fra
 from . import Hex
 
@@ -461,456 +462,284 @@ class TestGridHex( unittest.TestCase ):
     self.assertEqual( l_scSfScRecv[33], [9, -1, -1, -1, -1, -1] )
 
   ##
-  # Tests integration intervals for sub-cells.
-  ##
-  def test_intSc( self ):
-    # first order
-    l_intIn, l_intSend, l_intSurf = Hex.intSc( 0, ['xi0', 'xi1', 'xi2'] )
-
-    self.assertEqual( l_intIn, [] )
-
-    self.assertEqual( l_intSend, [ [ ( 'xi0', 0, 1 ),
-                                     ( 'xi1', 0, 1 ),
-                                     ( 'xi2', 0, 1 ) ] ] )
-
-    self.assertEqual( l_intSurf, [ [ [ ( 'xi0', 0, 1 ),
-                                       ( 'xi1', 0, 1 ),
-                                       ( 'xi2', 0, 1 )  ] ] for l_sf in range(6) ] )
-
-    # second order
-    l_intIn, l_intSend, l_intSurf = Hex.intSc( 1, ['xi0', 'xi1', 'xi2'] )
-
-    self.assertEqual( l_intIn, [ [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                   ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                   ( 'xi2', Fra(1,3), Fra(2,3) ) ] ] )
-
-    self.assertEqual( l_intSend, [ [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                     
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-
-
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-                                   [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-
-
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                   [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-
-
-                                   [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                     ( 'xi2', Fra(2,3), Fra(3,3) ) ] ] )
-
-    self.assertEqual( l_intSurf[0:2], [ [ [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                            ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                          [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                            ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                          [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                            ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-
-                                          [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                            ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                          [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                            ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                           ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                          [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                            ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-
-                                          [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                            ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                          [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                            ( 'xi1', Fra(1,3), Fra(2,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                          [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                            ( 'xi1', Fra(2,3), Fra(3,3) ),
-                                            ( 'xi2', Fra(0,3), Fra(1,3) ) ] ],
-
-
-                                         [ [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                           [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-                                           [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(0,3), Fra(1,3) ) ],
-
-                                           [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                           [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-                                           [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(1,3), Fra(2,3) ) ],
-
-                                           [ ( 'xi0', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-                                           [ ( 'xi0', Fra(1,3), Fra(2,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(2,3), Fra(3,3) ) ],
-                                           [ ( 'xi0', Fra(2,3), Fra(3,3) ),
-                                             ( 'xi1', Fra(0,3), Fra(1,3) ),
-                                             ( 'xi2', Fra(2,3), Fra(3,3) ) ] ] ] )
-
-  ##
   # Tests integration intervals for DG sub-faces.
   ##
   def test_intSfDg(self):
+    l_xi0 = sympy.symbols('xi_0')
+    l_xi1 = sympy.symbols('xi_1')
+    l_xi2 = sympy.symbols('xi_2')
+
+    l_chi0 = sympy.symbols('chi_0')
+    l_chi1 = sympy.symbols('chi_1')
+
     # 1st order
-    l_subs, l_intSfDg = Hex.intSfDg( 0, ['chi0', 'chi1'], ['xi0', 'xi1', 'xi2'] )
+    l_subs, l_intSfDg = Hex.intSfDg( 0, [l_chi0, l_chi1], [l_xi0, l_xi1, l_xi2] )
 
-    self.assertEqual( l_subs,  ( ( ( 'xi0', 'chi1' ),
-                                   ( 'xi1', 'chi0' ),
-                                   ( 'xi2', 0      ) ),
+    self.assertEqual( l_subs,  ( ( ( l_xi0, l_chi1 ),
+                                   ( l_xi1, l_chi0 ),
+                                   ( l_xi2, 0      ) ),
 
-                                 ( ( 'xi0', 'chi0' ),
-                                   ( 'xi1', 0      ),
-                                   ( 'xi2', 'chi1' ) ),
+                                 ( ( l_xi0, l_chi0 ),
+                                   ( l_xi1, 0      ),
+                                   ( l_xi2, l_chi1 ) ),
 
-                                 ( ( 'xi0', 1      ),
-                                   ( 'xi1', 'chi0' ),
-                                   ( 'xi2', 'chi1' ) ),
+                                 ( ( l_xi0, 1      ),
+                                   ( l_xi1, l_chi0 ),
+                                   ( l_xi2, l_chi1 ) ),
 
-                                 ( ( 'xi0', 'chi1' ),
-                                   ( 'xi1', 1 ),
-                                   ( 'xi2', 'chi0' ) ),
+                                 ( ( l_xi0, l_chi1 ),
+                                   ( l_xi1, 1 ),
+                                   ( l_xi2, l_chi0 ) ),
 
-                                 ( ( 'xi0', 0      ),
-                                   ( 'xi1', 'chi1' ),
-                                   ( 'xi2', 'chi0' ) ),
+                                 ( ( l_xi0, 0      ),
+                                   ( l_xi1, l_chi1 ),
+                                   ( l_xi2, l_chi0 ) ),
 
-                                 ( ( 'xi0', 'chi0' ),
-                                   ( 'xi1', 'chi1' ),
-                                   ( 'xi2', 1      ) ) ) )
+                                 ( ( l_xi0, l_chi0 ),
+                                   ( l_xi1, l_chi1 ),
+                                   ( l_xi2, 1      ) ) ) )
 
     self.assertEqual( l_intSfDg, [ [ # DG face 0
-                                     [ ( 'chi0', 0, 1 ),
-                                       ( 'chi1', 0, 1 ) ]
+                                     [ ( l_chi0, 0, 1 ),
+                                       ( l_chi1, 0, 1 ) ]
                                    ],
                                    [ # DG face 1
-                                     [ ( 'chi0', 0, 1 ),
-                                       ( 'chi1', 0, 1 ) ]
+                                     [ ( l_chi0, 0, 1 ),
+                                       ( l_chi1, 0, 1 ) ]
                                    ],
                                    [ # DG face 2
-                                     [ ( 'chi0', 0, 1 ),
-                                       ( 'chi1', 0, 1 ) ]
+                                     [ ( l_chi0, 0, 1 ),
+                                       ( l_chi1, 0, 1 ) ]
                                    ],
                                    [ # DG face 3
-                                     [ ( 'chi0', 0, 1 ),
-                                       ( 'chi1', 0, 1 ) ]
+                                     [ ( l_chi0, 0, 1 ),
+                                       ( l_chi1, 0, 1 ) ]
                                    ],
                                    [ # DG face 4
-                                     [ ( 'chi0', 0, 1 ),
-                                       ( 'chi1', 0, 1 ) ]
+                                     [ ( l_chi0, 0, 1 ),
+                                       ( l_chi1, 0, 1 ) ]
                                    ],
                                    [ # DG face 5
-                                     [ ( 'chi0', 0, 1 ),
-                                       ( 'chi1', 0, 1 ) ]
+                                     [ ( l_chi0, 0, 1 ),
+                                       ( l_chi1, 0, 1 ) ]
                                    ] ] )
 
     # 2nd order
-    l_subs, l_intSfDg = Hex.intSfDg( 1, ['chi0', 'chi1'], ['xi0', 'xi1', 'xi2'] )
+    l_subs, l_intSfDg = Hex.intSfDg( 1, [l_chi0, l_chi1], [l_xi0, l_xi1, l_xi2] )
 
-    self.assertEqual( l_subs,  ( ( ( 'xi0', 'chi1' ),
-                                   ( 'xi1', 'chi0' ),
-                                   ( 'xi2', 0      ) ),
+    self.assertEqual( l_subs,  ( ( ( l_xi0, l_chi1 ),
+                                   ( l_xi1, l_chi0 ),
+                                   ( l_xi2, 0      ) ),
 
-                                 ( ( 'xi0', 'chi0' ),
-                                   ( 'xi1', 0      ),
-                                   ( 'xi2', 'chi1' ) ),
+                                 ( ( l_xi0, l_chi0 ),
+                                   ( l_xi1, 0      ),
+                                   ( l_xi2, l_chi1 ) ),
 
-                                 ( ( 'xi0', 1      ),
-                                   ( 'xi1', 'chi0' ),
-                                   ( 'xi2', 'chi1' ) ),
+                                 ( ( l_xi0, 1      ),
+                                   ( l_xi1, l_chi0 ),
+                                   ( l_xi2, l_chi1 ) ),
 
-                                 ( ( 'xi0', 'chi1' ),
-                                   ( 'xi1', 1 ),
-                                   ( 'xi2', 'chi0' ) ),
+                                 ( ( l_xi0, l_chi1 ),
+                                   ( l_xi1, 1 ),
+                                   ( l_xi2, l_chi0 ) ),
 
-                                 ( ( 'xi0', 0      ),
-                                   ( 'xi1', 'chi1' ),
-                                   ( 'xi2', 'chi0' ) ),
+                                 ( ( l_xi0, 0      ),
+                                   ( l_xi1, l_chi1 ),
+                                   ( l_xi2, l_chi0 ) ),
 
-                                 ( ( 'xi0', 'chi0' ),
-                                   ( 'xi1', 'chi1' ),
-                                   ( 'xi2', 1      ) ) ) )
+                                 ( ( l_xi0, l_chi0 ),
+                                   ( l_xi1, l_chi1 ),
+                                   ( l_xi2, 1      ) ) ) )
 
     self.assertEqual( l_intSfDg, [ [ # DG face 0
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
-
-
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
 
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ]
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
+
+
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ]
                                    ],
 
 
                                    [ # DG face 1
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
-
-
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
 
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ]
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
+
+
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ]
                                    ],
 
 
                                    [ # DG face 2
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
-
-
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
 
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ]
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
+
+
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ]
                                    ],
 
 
                                    [ # DG face 3
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
-
-
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
 
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ]
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
+
+
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ]
                                    ],
 
 
                                    [ # DG face 4
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
-
-
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
 
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ]
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
+
+
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ]
                                    ],
 
 
                                    [ # DG face 5
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(0,3), Fra(1,3) ) ],
-
-
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
-
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(1,3), Fra(2,3) ) ],
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(0,3), Fra(1,3) ) ],
 
 
-                                     [ ( 'chi0', Fra(0,3), Fra(1,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(1,3), Fra(2,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ],
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
 
-                                     [ ( 'chi0', Fra(2,3), Fra(3,3) ),
-                                       ( 'chi1', Fra(2,3), Fra(3,3) ) ]
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(1,3), Fra(2,3) ) ],
+
+
+                                     [ ( l_chi0, Fra(0,3), Fra(1,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(1,3), Fra(2,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ],
+
+                                     [ ( l_chi0, Fra(2,3), Fra(3,3) ),
+                                       ( l_chi1, Fra(2,3), Fra(3,3) ) ]
                                    ] ] )
 
   ##
