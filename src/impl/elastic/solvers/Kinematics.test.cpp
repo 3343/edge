@@ -139,6 +139,8 @@ TEST_CASE( "Kinematics: Apply dirac delta distribution.", "[kinematics][applyDir
 
   // element chars
   t_elementChars l_elChars[7];
+  for( unsigned short l_el = 0; l_el < 7; l_el++ )
+    l_elChars[l_el].spType = 0;
 
   // assign el-ve adjacency
   int l_elVe[7][4];
