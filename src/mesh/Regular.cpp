@@ -820,9 +820,6 @@ void edge::mesh::Regular::getElementsAdjacentVertices( int_el (*o_elementAdjacen
   for( int_el l_el = 0; l_el < m_nRequestedElements; l_el++ ) {
     getElementAdjacentVertices(  o_elementAdjacentVertices[l_el],
                                  l_el );
-                                 int_el i_px,
-                                 int_el i_py,
-                                 int_el i_pz );
   }
 #elif defined PP_T_ELEMENTS_QUAD4R
   // iterate over elements dimension-wise
@@ -1053,7 +1050,10 @@ void edge::mesh::Regular::getFaChars( t_faceChars* o_faceChars ) const {
                            o_faceChars[l_fa].outNormal[2] );
 
     // derive associated element
-    if( m_elementType == Quadrilateral ) {
+    if( m_elementType == Line ){
+      if( l_fa == 0 ) o_faceChars[l_fa].outNormal[0] *= -1;
+    }
+    else if( m_elementType == Quadrilateral ) {
       int_el l_el = l_fa / 2;
 
       // derive position
