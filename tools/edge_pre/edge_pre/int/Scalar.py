@@ -68,7 +68,7 @@ def intQuad( i_fun,
 ##
 def int( i_fun,
          i_int,
-         i_quad=20 ):
+         i_quad=1500 ):
   l_exact = ( len(str(i_fun)) < i_quad )
 
   if( l_exact ):

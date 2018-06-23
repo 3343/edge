@@ -21,6 +21,7 @@
 # Derives matrices based on integrations.
 ##
 import sympy
+from . import Scalar
 
 ##
 # Substitues the given symbols in the functions.
@@ -78,7 +79,7 @@ def intL( i_ints,
   for l_ro in range(len(i_ints)):
     for l_co in range(len(i_funs)):
       # integrate
-      l_intL[l_ro, l_co] = sympy.integrate( i_funs[l_co], *i_ints[l_ro] )
+      l_intL[l_ro, l_co] = Scalar.int( i_funs[l_co], i_ints[l_ro] )[0]
 
   return l_intL
 
@@ -96,7 +97,7 @@ def mass( i_ints,
   for l_ro in range(len(i_funs)):
     for l_co in range(len(i_funs)):
       l_prod = i_funs[l_ro] * i_funs[l_co]
-      l_mass[l_ro, l_co] = sympy.integrate( l_prod, *i_ints )
+      l_mass[l_ro, l_co] = Scalar.int( l_prod, i_ints )[0]
 
   return l_mass
 
@@ -119,7 +120,7 @@ def stiff( i_syms,
     l_der = lambda bf: sympy.diff( bf, l_sy)
 
     # integration
-    l_int = lambda bf: sympy.integrate( bf, *i_int )
+    l_int = lambda bf: Scalar.int( bf, i_int )[0]
 
     l_stiff = l_stiff + [[]]
     l_stiff[-1] = sympy.Matrix.transpose( sympy.Matrix( i_basis ) )

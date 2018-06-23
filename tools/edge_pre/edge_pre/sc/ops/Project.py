@@ -21,6 +21,7 @@
 # Projection operators.
 ##
 import sympy
+import edge_pre.int.Scalar
 
 ##
 # Derives the scatter operator (DG -> sub-cell)
@@ -40,7 +41,7 @@ def scatter( i_syms,
   l_mat = sympy.zeros( len(i_basis), len(i_maps) )
 
   # volume of the reference element
-  l_refVol = sympy.integrate( 1, *i_int )
+  l_refVol = edge_pre.int.Scalar.int( 1, i_int )[0]
 
   # compute entries
   for l_co in range(len(i_maps)):
@@ -58,7 +59,7 @@ def scatter( i_syms,
       l_basis = l_basis.subs( l_subs, simultaneous=True )
 
       # intergrate basis for sub-cell
-      l_mat[l_ro, l_co] = sympy.integrate( l_basis, *i_int )
+      l_mat[l_ro, l_co] = edge_pre.int.Scalar.int( l_basis, i_int )[0]
       l_mat[l_ro, l_co] = l_mat[l_ro, l_co] * i_aDets[l_co]
       # devide by sub-cell volume (integration vs. average)
       l_mat[l_ro, l_co] = l_mat[l_ro, l_co] / l_scVol
@@ -90,7 +91,7 @@ def gather( i_syms,
       l_subs[-1][ i_syms[l_di] ] = i_maps[l_sc][l_di]
 
   # volume of the reference element
-  l_volRef = sympy.integrate( 1, *i_int )
+  l_volRef = edge_pre.int.Scalar.int( 1, i_int )[0]
 
   # least squares part of Al
   for l_sc in range(len(i_maps)):
@@ -103,8 +104,8 @@ def gather( i_syms,
         l_int1 = i_basis[l_co].subs( l_subs[l_sc], simultaneous=True )
 
         # sum product over all sub-cells
-        l_cont =   sympy.integrate( l_int0, *i_int ) \
-                 * sympy.integrate( l_int1, *i_int )
+        l_cont =   edge_pre.int.Scalar.int( l_int0, i_int )[0] \
+                 * edge_pre.int.Scalar.int( l_int1, i_int )[0]
         # scale
         l_cont = l_cont * i_aDets[l_sc]**2
         l_cont = l_cont * 2
@@ -117,7 +118,7 @@ def gather( i_syms,
   for l_rc in range(len(i_basis)):
     # integrate over entire DG element, by adding sub-intervals
     for l_sc in range(len(i_maps)):
-      l_scInt = sympy.integrate( i_basis[l_rc].subs( l_subs[l_sc], simultaneous=True ), *i_int )
+      l_scInt = edge_pre.int.Scalar.int( i_basis[l_rc].subs( l_subs[l_sc], simultaneous=True ), i_int )[0]
       l_scInt = l_scInt * i_aDets[l_sc]
 
       l_aL[ len(i_basis), l_rc ] =  l_aL[ len(i_basis), l_rc ] - l_scInt
