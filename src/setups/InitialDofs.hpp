@@ -401,9 +401,9 @@ class edge::setups::InitialDofs {
                      bool           const (*i_adm)[TL_N_CRS],
                      TL_T_REAL      const (*i_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
                      TL_T_REAL      const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                     TL_T_REAL              o_l1[TL_N_QTS][TL_N_CRS],
-                     TL_T_REAL              o_l2p2[TL_N_QTS][TL_N_CRS],
-                     TL_T_REAL              o_lInf[TL_N_QTS][TL_N_CRS] ) {
+                     double                 o_l1[TL_N_QTS][TL_N_CRS],
+                     double                 o_l2p2[TL_N_QTS][TL_N_CRS],
+                     double                 o_lInf[TL_N_QTS][TL_N_CRS] ) {
       // init error norms
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
         for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
@@ -413,17 +413,17 @@ class edge::setups::InitialDofs {
       TL_T_LID l_li = i_liFirst;
 
       // coordinates and quantities of the expression
-      TL_T_REAL l_cE[TL_N_DIMS];
-      TL_T_REAL l_qE[TL_N_CRS][TL_N_QTS];
+      double l_cE[TL_N_DIMS];
+      double l_qE[TL_N_CRS][TL_N_QTS];
 
       // expressions
-      edge::data::Expression< TL_T_REAL > l_exprs[TL_N_CRS];
+      edge::data::Expression< double > l_exprs[TL_N_CRS];
 
       // bind and compile expressions
       bc( i_exprStrs, l_cE, l_qE, l_exprs );
 
       // get quad-points in reference coordinates
-      std::vector< TL_T_REAL > l_ptsR[3], l_wesR;
+      std::vector< double > l_ptsR[3], l_wesR;
       dg::QuadraturePoints::getQpts( TL_T_EL,
                                      TL_O_SP+1,
                                      C_REF_ELEMENT.VE.ENT[TL_T_EL],
@@ -434,7 +434,7 @@ class edge::setups::InitialDofs {
       TL_T_LID l_qpSc[TL_N_QPS1];
       for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
         // TODO: work-around for SoA
-        TL_T_REAL l_pt[TL_N_DIMS];
+        double l_pt[TL_N_DIMS];
         for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ ) l_pt[l_di] = l_ptsR[l_di][l_qp];
 
         // set sub-cell
@@ -445,7 +445,7 @@ class edge::setups::InitialDofs {
       // iterate over DG-elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
         // get quad-points in physical coordinates
-        std::vector< TL_T_REAL > l_ptsP[3], l_wesP;
+        std::vector< double > l_ptsP[3], l_wesP;
         qps( TL_O_SP+1,
              l_el,
              i_elVe,
@@ -456,7 +456,7 @@ class edge::setups::InitialDofs {
         EDGE_CHECK_EQ( l_wesP.size(), TL_N_QPS1 );
 
         // reference solution
-        TL_T_REAL l_qR[TL_N_CRS][TL_N_QTS][TL_N_QPS1];
+        double l_qR[TL_N_CRS][TL_N_QTS][TL_N_QPS1];
         // compute ref solution at quad points
         for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
           // copy over coordinates
@@ -508,7 +508,7 @@ class edge::setups::InitialDofs {
           // compute errors
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
             for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
-              TL_T_REAL l_diff = std::abs( l_qN[l_qt][l_qp] - l_qR[l_cr][l_qt][l_qp] );
+              double l_diff = std::abs( l_qN[l_qt][l_qp] - l_qR[l_cr][l_qt][l_qp] );
               o_l1[l_qt][l_cr]   += l_diff *          l_wesP[l_qp];
               o_l2p2[l_qt][l_cr] += l_diff * l_diff * l_wesP[l_qp];
               o_lInf[l_qt][l_cr]  = std::max( o_lInf[l_qt][l_cr], l_diff );

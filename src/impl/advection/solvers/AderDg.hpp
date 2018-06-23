@@ -204,7 +204,7 @@ class edge::advection::solvers::AderDg {
               typename TL_T_CHARS_EL >
     static void local( TL_T_LID                                i_first,
                        TL_T_LID                                i_nEls,
-                       TL_T_REAL                               i_dt,
+                       double                                  i_dt,
                        t_dg           const                   &i_dg,
                        TL_T_CHARS_EL  const                   *i_elChars,
                        TL_T_REAL      const                  (*i_starM)[TL_N_DIM],

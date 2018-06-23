@@ -73,7 +73,7 @@ class edge::advection::solvers::TimePred {
      * @paramt TL_T_REAL float point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline ckVanilla( TL_T_REAL       i_dT,
+    static void inline ckVanilla( double          i_dT,
                                   TL_T_REAL const i_stiffT[TL_N_DIM][TL_N_MDS][TL_N_MDS],
                                   TL_T_REAL const i_star[TL_N_DIM],
                                   TL_T_REAL const i_dofs[TL_N_MDS][TL_N_CRS],
