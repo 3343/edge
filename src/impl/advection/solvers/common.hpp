@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Common functionality of the solvers for the advection equations.
  **/
 
-#ifndef ADVSOLS_COMMON_HPP
-#define ADVSOLS_COMMON_HPP
+#ifndef EDGE_ADVECTION_SOLVERS_COMMON_HPP
+#define EDGE_ADVECTION_SOLVERS_COMMON_HPP
 
 #include <cassert>
 

@@ -26,7 +26,7 @@
 // 1) update
 // 2) limit
 const unsigned short N_STEPS_PER_UPDATE=3;
-const unsigned short N_ENTRIES_CONTROL_FLOW=9;
+const unsigned short N_ENTRIES_CONTROL_FLOW=7;
 
 #if PP_ORDER > 9
 #error not supported
@@ -48,8 +48,18 @@ const unsigned short N_QUANTITIES=1;
 #define PP_SCRATCH_MEMORY
 #define PP_SCRATCH_MEMORY_HBW
 struct scratchMem {
+  // scratch memory for the surface integration
+  real_base tResSurf[2][N_QUANTITIES][N_FACE_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.FACE_MODES.PRIVATE)));
   // temporary results
   real_base tRes[N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
+  // sub-cells at the DG faces
+  real_base scFa[4][N_QUANTITIES][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+  // sub-grid
+  real_base sg[N_QUANTITIES][CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+  // sub-grid with ghost cells
+  real_base sgGh[N_QUANTITIES][   CE_N_SUB_CELLS(T_SDISC.ELEMENT, ORDER)
+                                + C_ENT[T_SDISC.ELEMENT].N_FACES *  CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)
+                              ][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
 };
 typedef scratchMem t_scratchMem;
 
@@ -86,13 +96,9 @@ typedef struct {
 #define PP_N_ELEMENT_MODE_PRIVATE_1 1
 typedef real_base t_elementModePrivate1;
 
-// time integrated DOFs, TODO: Remove, flex!
-#define PP_N_ELEMENT_MODE_PRIVATE_2 1
-typedef real_base t_elementModePrivate2;
-
 // flex data holding a time buffer or a time buffer and element-DOFs per entry
-#define PP_N_GLOBAL_SHARED_2 2
-typedef real_base (**t_globalShared2)[N_ELEMENT_MODES][N_CRUNS];
+#define PP_N_GLOBAL_SHARED_3 3
+typedef real_base (**t_globalShared3)[N_ELEMENT_MODES][N_CRUNS];
 
 // parameters a, b, c
 #define PP_N_ELEMENT_SHARED_1 1

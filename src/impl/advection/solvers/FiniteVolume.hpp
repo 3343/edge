@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Finite Volume solver for the advection equation: f(q) = a * q || f(q) = a*q + b*q
  **/
-#ifndef FINITE_VOLUME_HPP
-#define FINITE_VOLUME_HPP
+#ifndef EDGE_ADVECTION_FINITE_VOLUME_HPP
+#define EDGE_ADVECTION_FINITE_VOLUME_HPP
 
 #include <limits>
 #include <cassert>

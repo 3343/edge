@@ -26,6 +26,7 @@
 #include "constants.hpp"
 #include "io/logging.h"
 #include "linalg/Matrix.h"
+#include "Kernels.hpp"
 #include "Detections.hpp"
 #include "ibnd/SuperCell.hpp"
 
@@ -200,6 +201,7 @@ class edge::sc::Limiter {
 
         TL_T_REAL (*l_scratch)[TL_N_QTS][TL_N_MDS_FA][TL_N_CRS] = parallel::g_scratchMem->tResSurf;
 
+#if defined(PP_T_EQUATIONS_ELASTIC)
         // local
         elastic::solvers::SurfInt< TL_T_EL,
                                    TL_N_QTS,
@@ -231,6 +233,9 @@ class edge::sc::Limiter {
                                                       io_dofsDg,
                                                       i_fa,
                                                       i_fMatId+TL_N_FAS );
+#else
+        EDGE_LOG_FATAL << "missing implementation for equations other than elastic";
+#endif
 
         // update the DOFs accordingly
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
@@ -529,10 +534,14 @@ class edge::sc::Limiter {
               l_spTypes[l_fa] = i_charsFa[l_adFa].spType;
 
               // TODO: replace with generic ibnd sp-type
+#if defined(PP_T_EQUATIONS_ELASTIC)
               if( ( l_spTypes[l_fa] & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
                 l_netUpSc[l_fa] = *(i_tDofsScP[l_lp][l_fa]);
               }
               else {
+#else
+              {
+#endif
                 l_netUpSc[l_fa] = nullptr;
               }
 

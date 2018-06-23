@@ -753,10 +753,10 @@ class edge::elastic::solvers::AderDg {
                 edge::sc::Detections< TL_T_EL,
                                       TL_N_QTS,
                                       TL_N_CRS >::dmpFa( i_extP[l_ex],
-                                                        i_extP,
-                                                        o_extC[l_ex],
-                                                        i_lpFaLp[l_lp],
-                                                        l_adm );
+                                                         i_extP,
+                                                         o_extC[l_ex],
+                                                         i_lpFaLp[l_lp],
+                                                         l_adm );
 
                 // update admissibility
 #pragma omp simd

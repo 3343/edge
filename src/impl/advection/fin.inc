@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,16 +24,6 @@ edge::io::ErrorNorms l_errorWriter( l_config.m_errorNormsType,
                                     l_config.m_errorNormsFile );
 
 if( l_errorWriter.outEnabled() ) {
-  // admissibility id based on #time steps
-  // TODO: add function
-  unsigned short l_admId;
-  if(      l_cluster.getUpdatesPer()%3 == 0 )
-    l_admId = 0;
-  else if( l_cluster.getUpdatesPer()%3 == 1 )
-    l_admId = 2;
-  else
-    l_admId = 1;
-
   double l_normsTmp[3][1][N_CRUNS];
   edge::setups::InitialDofs<
     T_SDISC.ELEMENT,
@@ -46,13 +36,13 @@ if( l_errorWriter.outEnabled() ) {
                     l_config.m_refValsExprStrs,
                     l_basis,
                     l_internal.m_connect.elVe,
-                    l_internal.m_globalShared3[0].connect.scSv,
+                    l_internal.m_globalShared2[0].connect.scSv,
                     l_internal.m_vertexChars,
-                    l_internal.m_globalShared3[0].svChars,
+                    l_internal.m_globalShared2[0].svChars,
                     l_internal.m_elementChars,
-                    l_internal.m_globalShared3[0].adm[l_admId],
+                    l_internal.m_globalShared2[0].adm[0], // dummy
                     l_internal.m_elementModePrivate1,
-                    l_internal.m_globalShared3[0].dofs,
+                    l_internal.m_globalShared2[0].dofs,
                     l_normsTmp[0], l_normsTmp[1], l_normsTmp[2] );
 
   // copy over error norms and compute sqrt of l2
