@@ -251,6 +251,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
                     l_internal.m_globalShared2[0].limSync );
   }
 
+#if defined(PP_T_EQUATIONS_ELASTIC)
   if( l_config.m_iBndInt > TOL.TIME ) {
     EDGE_LOG_INFO << "  writing internal boundary #0";
     l_rupWriter.write( 0,
@@ -260,6 +261,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
                        l_internal.m_globalShared5[0].sfQtNaPtr,
                        (real_base*) l_internal.m_globalShared5[0].sf );
   }
+#endif
 
   // print mem stats
   edge::data::common::printMemStats();
@@ -301,6 +303,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
       l_stepWf++;
     }
 
+#if defined(PP_T_EQUATIONS_ELASTIC)
     if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
       EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
       l_rupWriter.write( 0,
@@ -311,6 +314,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
                          (real_base*) l_internal.m_globalShared5[0].sf[0][0].muf );
       l_stepBnd++;
     }
+#endif
 
     // increase step and derive next synchronization point
     l_step++;
