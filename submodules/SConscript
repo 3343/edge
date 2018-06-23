@@ -94,6 +94,7 @@ if env['moab'] != False:
   if env['moab'] != True:
     env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
+    env.AppendUnique( LIBPATH=[ env['moab']+'/lib64'] )
 
   # forward CGNS if available
   conf.CheckLibWithHeaderFlags( 'cgns' )
@@ -104,7 +105,6 @@ if env['moab'] != False:
   conf.CheckLibWithHeaderFlags( 'gfortran' )
 
   # forward ifcore, blas and lapack if available
-  env.AppendUnique( LIBPATH=[ env['moab']+'/lib64'] )
   conf.CheckLibWithHeaderFlags( 'ifcore' )
   conf.CheckLibWithHeaderFlags( 'blas' )
   conf.CheckLibWithHeaderFlags( 'lapack' )
