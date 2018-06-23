@@ -266,6 +266,9 @@ class edge::sc::ibnd::SuperCellInit {
                       unsigned short const    i_scSfSc[TL_N_SCS + TL_N_FAS * TL_N_SFS][TL_N_FAS],
                       t_SuperCell< TL_T_EL,
                                    TL_O_SP > &o_su ) {
+      // abort for non-tets
+      if( TL_T_EL != TET4 ) return;
+
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         // counter for stencils
