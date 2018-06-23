@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -387,23 +387,23 @@ class edge::setups::InitialDofs {
               typename TL_T_VE_CHARS,
               typename TL_T_SV_CHARS,
               typename TL_T_EL_CHARS >
-    static void err( TL_T_LID              i_first,
-                     TL_T_LID              i_size,
-                     TL_T_LID              i_liFirst,
-                     TL_T_SP               i_spType,
-                     std::string   const   i_exprStrs[TL_N_CRS],
-                     dg::Basis     const  &i_basis,
-                     TL_T_LID      const (*i_elVe)[TL_N_VES],
-                     TL_T_LID      const (*i_scSv)[TL_N_VES],
-                     TL_T_VE_CHARS const  *i_veChars,
-                     TL_T_SV_CHARS const  *i_svChars,
-                     TL_T_EL_CHARS const  *i_elChars,
-                     bool          const (*i_adm)[TL_N_CRS],
-                     TL_T_REAL     const (*i_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                     TL_T_REAL     const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                     TL_T_REAL             o_l1[TL_N_QTS][TL_N_CRS],
-                     TL_T_REAL             o_l2p2[TL_N_QTS][TL_N_CRS],
-                     TL_T_REAL             o_lInf[TL_N_QTS][TL_N_CRS] ) {
+    static void err( TL_T_LID               i_first,
+                     TL_T_LID               i_size,
+                     TL_T_LID               i_liFirst,
+                     TL_T_SP                i_spType,
+                     std::string    const   i_exprStrs[TL_N_CRS],
+                     dg::Basis      const  &i_basis,
+                     TL_T_LID       const (*i_elVe)[TL_N_VES],
+                     unsigned short const (*i_scSv)[TL_N_VES],
+                     TL_T_VE_CHARS  const  *i_veChars,
+                     TL_T_SV_CHARS  const  *i_svChars,
+                     TL_T_EL_CHARS  const  *i_elChars,
+                     bool           const (*i_adm)[TL_N_CRS],
+                     TL_T_REAL      const (*i_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                     TL_T_REAL      const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                     TL_T_REAL              o_l1[TL_N_QTS][TL_N_CRS],
+                     TL_T_REAL              o_l2p2[TL_N_QTS][TL_N_CRS],
+                     TL_T_REAL              o_lInf[TL_N_QTS][TL_N_CRS] ) {
       // init error norms
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
         for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
