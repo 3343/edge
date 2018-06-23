@@ -26,7 +26,7 @@ if( i_step == 0 ) {
                                                    i_size,
                                                    m_dT,
                                                    m_internal.m_elementModePrivate1,
-                                                   m_internal.m_elementModePrivate2 );
+                                                   m_internal.m_globalShared3[0] );
 #else
   edge::advection::solvers::AderDg<
     T_SDISC.ELEMENT,
@@ -49,7 +49,7 @@ else if( i_step == 1 ) {
                                                   i_size,
                                                   m_internal.m_connect.elFaEl,
                                                   m_internal.m_elementShared3,
-                                                  m_internal.m_elementModePrivate2,
+                                                  m_internal.m_globalShared3[0],
                                                   m_internal.m_elementModePrivate1 );
 #else
   edge::advection::solvers::AderDg<

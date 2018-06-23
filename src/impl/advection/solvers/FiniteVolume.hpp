@@ -50,7 +50,7 @@ class edge::advection::solvers::FiniteVolume {
                                int_el      i_nElements,
                                double      i_dT,
                          const real_base (*i_dofs)[1][N_ELEMENT_MODES][N_CRUNS],
-                               real_base (*o_tInt)[1][N_ELEMENT_MODES][N_CRUNS] ) {
+                               real_base (**o_tInt)[N_ELEMENT_MODES][N_CRUNS] ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler
       (void) __builtin_assume_aligned(i_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
@@ -81,7 +81,7 @@ class edge::advection::solvers::FiniteVolume {
                               int_el             i_nElements,
                         const int_el           (*i_elFaEl)[C_ENT[T_SDISC.ELEMENT].N_FACES],
                         const t_elementShared2 (*i_fluxSolvers)[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],
-                        const real_base        (*i_tInt)[1][1][N_CRUNS],
+                              real_base        (**i_tInt)[1][N_CRUNS],
                               real_base        (*io_dofs)[1][1][N_CRUNS] ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler

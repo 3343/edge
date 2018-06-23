@@ -731,8 +731,6 @@ static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.FACE_MODES.SHARED,
 /*
  * Sub-cell limiter.
  */
-#if PP_ORDER > 1
 #include "sc/const.inc"
-#endif
 
 #endif
