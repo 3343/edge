@@ -32,6 +32,9 @@
 #include "impl/swe/ts_dep.inc"
 #endif
 
+#include "sc/Steering.hpp"
+#include "sc/Limiter.hpp"
+
 edge::time::TimeGroupStatic::TimeGroupStatic( int_ts          i_rate,
                                               int_ts          i_funMult,
                                               data::Internal &i_internal ):
