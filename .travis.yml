@@ -294,9 +294,13 @@ before_install:
   - cd ..
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install -qq gfortran; fi;
 
+  # install packages
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install -qq gfortran; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install gcc-6 g++-6; fi;
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo apt-get install libarchive-dev squashfs-tools; fi;
+
+  # install open mpi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then tar -xjf openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd openmpi-1.10.3; fi;
@@ -359,8 +363,8 @@ before_install:
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then F77=gfortran F90=gfortran FC=gfortran CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --with-blas=/usr/local/libblas.a --with-lapack=/usr/local/lib/liblapack.a --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then F77=mpifort F90=mpifort FC=mpifort CC=mpicc CXX=mpiCC ./configure --with-blas=/usr/local/lib/libblas.a --with-lapack=/usr/local/lib/liblapack.a --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then LIBS="-lgfortran -lquadmath -lm" F77=gfortran F90=gfortran FC=gfortran CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --with-blas=/usr/local/libblas.a --with-lapack=/usr/local/lib/liblapack.a --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then LIBS="-lgfortran -lquadmath -lm" F77=mpifort F90=mpifort FC=mpifort CC=mpicc CXX=mpiCC ./configure --with-blas=/usr/local/lib/libblas.a --with-lapack=/usr/local/lib/liblapack.a --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install intel sde
