@@ -114,6 +114,8 @@ Include:
   #cd ..
 
 %appinstall edge
+  export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
+
   ########
   # zlib #
   ########
