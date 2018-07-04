@@ -5,7 +5,7 @@
   @author Alexander Breuer (anbreuer AT ucsd.edu)
 
   @section LICENSE
-  Copyright (c) 2017, Regents of the University of California
+  Copyright (c) 2017-2018, Regents of the University of California
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,17 +30,10 @@
     TEMPLATE_GIT_EDGE_CORE
     TEMPLATE_GIT_EDGE_OPT
 
-    TEMPLATE_DEB_IP
-    TEMPLATE_DEB_0_UUID
-    TEMPLATE_DEB_1_UUID
-
-    TEMPLATE_REVENGE_IP
-    TEMPLATE_REVENGE_0_UUID
-    TEMPLATE_REVENGE_1_UUID
-    TEMPLATE_REVENGE_2_UUID
-    TEMPLATE_REVENGE_3_UUID
+    TEMPLATE_CLOUD_0_IP
+    TEMPLATE_CLOUD_0_UUID
 -->
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="100">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="108">
   <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
     <security>
       <!-- Authentification -->
@@ -316,7 +309,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="submodules/libxsmm" />
+              <artifact type="build" src="submodules/libxsmm" />
             </artifacts>
           </job>
         </jobs>
@@ -364,7 +357,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="zlib/zlib" />
+              <artifact type="build" src="zlib/zlib" />
             </artifacts>
           </job>
         </jobs>
@@ -374,13 +367,13 @@
       <stage name="hdf5" fetchMaterials="false">
         <environmentvariables>
           <variable name="HDF5_LINK">
-            <value>https://www.hdfgroup.org/package/gzip/?wpdmdl=4301</value>
+            <value>https://www.hdfgroup.org/package/gzip/?wpdmdl=11810</value>
           </variable>
         </environmentvariables>
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
                 <arg>wget ${HDF5_LINK} -O hdf5.tar.gz</arg>
@@ -413,7 +406,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="hdf5/hdf5_seq" />
+              <artifact type="build" src="hdf5/hdf5_seq" />
             </artifacts>
           </job>
         </jobs>
@@ -423,13 +416,13 @@
       <stage name="netcdf" fetchMaterials="false">
         <environmentvariables>
           <variable name="NETCDF_LINK">
-            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz</value>
+            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz</value>
           </variable>
         </environmentvariables>
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
                 <arg>wget ${NETCDF_LINK} -O netcdf.tar.gz</arg>
@@ -442,7 +435,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="netcdf/">
                 <arg>-c</arg>
-                <arg>CPPFLAGS=-I$(pwd)/../libs/hdf5_seq/include LDFLAGS=-L$(pwd)/../libs/hdf5_seq/lib ./configure --enable-shared=no --disable-dap --prefix=$(pwd)/netcdf_seq</arg>
+                <arg>LIBS="-ldl" HDF5DIR=$(pwd)/../libs/hdf5_seq ZLIBDIR=$(pwd)/../libs/zlib CPPFLAGS="-I${HDF5DIR}/include -I${ZLIBDIR}/include" LDFLAGS="-L${HDF5DIR}/lib -L${ZLIBDIR}/lib" ./configure --enable-shared=no --disable-dap --prefix=$(pwd)/netcdf_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="netcdf/">
@@ -462,7 +455,50 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="netcdf/netcdf_seq" />
+              <artifact type="build" src="netcdf/netcdf_seq" />
+            </artifacts>
+          </job>
+        </jobs>
+      </stage>
+
+      <!-- LAPACK -->
+      <stage name="lapack" fetchMaterials="false">
+        <environmentvariables>
+          <variable name="LAPACK_LINK">
+            <value>https://github.com/Reference-LAPACK/lapack-release/archive/lapack-3.8.0.zip</value>
+          </variable>
+        </environmentvariables>
+        <jobs>
+          <job name="build">
+            <tasks>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>wget ${LAPACK_LINK} -O lapack.zip</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>unzip -a lapack.zip; mv lapack-release-lapack-* lapack; mkdir lapack/build</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="lapack/build">
+                <arg>-c</arg>
+                <arg>cmake -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)/../lapack ..</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="lapack/build">
+                <arg>-c</arg>
+                <arg>make -j ${N_BUILD_PROC}</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="lapack/build">
+                <arg>-c</arg>
+                <arg>make install</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+            <artifacts>
+              <artifact type="build" src="lapack/lapack" />
             </artifacts>
           </job>
         </jobs>
@@ -473,8 +509,10 @@
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
-              <fetchartifact stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="lapack" job="build" srcdir="lapack" dest="libs"/>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
                 <arg>autoreconf -fi</arg>
@@ -482,7 +520,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
+                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a -lgfortran" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --with-lapack=$(pwd)/../../libs/lapack/lib/liblapack.a --with-blas=$(pwd)/../../libs/lapack/lib/libblas.a --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
@@ -502,7 +540,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="submodules/moab/moab_seq" />
+              <artifact type="build" src="submodules/moab/moab_seq" />
             </artifacts>
           </job>
         </jobs>
@@ -520,11 +558,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- edge_opt -->
               <exec command="/bin/bash" workingdir="edge">
@@ -2269,11 +2307,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- edge_opt -->
               <exec command="/bin/bash" workingdir="edge">
@@ -2313,7 +2351,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/adv_line/output/*" dest="xml" />
+              <artifact type="build" src="edge/adv_line/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="adv_quad4r">
@@ -2339,7 +2377,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/adv_quad4r/output/*" dest="xml" />
+              <artifact type="build" src="edge/adv_quad4r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="adv_hex8r">
@@ -2365,7 +2403,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/adv_hex8r/output/*" dest="xml" />
+              <artifact type="build" src="edge/adv_hex8r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="elastic_quad4r">
@@ -2391,7 +2429,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/elastic_quad4r/output/*" dest="xml" />
+              <artifact type="build" src="edge/elastic_quad4r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="elastic_hex8r">
@@ -2417,7 +2455,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/elastic_hex8r/output/*" dest="xml" />
+              <artifact type="build" src="edge/elastic_hex8r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="elastic_tet4_reg">
@@ -2443,7 +2481,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/elastic_tet4_reg/output/*" dest="xml" />
+              <artifact type="build" src="edge/elastic_tet4_reg/output/*" dest="xml" />
             </artifacts>
           </job>
         </jobs>
@@ -2452,7 +2490,7 @@
         <jobs>
           <job name="advection">
             <tasks>
-              <fetchartifact pipeline="" stage="build_run" job="adv_line" srcdir="xml" dest="adv_line">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_line" srcdir="xml" dest="adv_line">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2467,7 +2505,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="adv_quad4r" srcdir="xml" dest="adv_quad4r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_quad4r" srcdir="xml" dest="adv_quad4r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2482,7 +2520,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="adv_hex8r" srcdir="xml" dest="adv_hex8r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_hex8r" srcdir="xml" dest="adv_hex8r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2502,12 +2540,12 @@
               <resource>pyplot</resource>
             </resources>
             <artifacts>
-              <artifact src="adv_*.pdf" />
+              <artifact type="build" src="adv_*.pdf" />
             </artifacts>
           </job>
           <job name="elastic">
             <tasks>
-              <fetchartifact pipeline="" stage="build_run" job="elastic_quad4r" srcdir="xml" dest="elastic_quad4r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_quad4r" srcdir="xml" dest="elastic_quad4r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2522,7 +2560,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="elastic_hex8r" srcdir="xml" dest="elastic_hex8r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_hex8r" srcdir="xml" dest="elastic_hex8r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2537,7 +2575,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="elastic_tet4_reg" srcdir="xml" dest="elastic_tet4_reg">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_tet4_reg" srcdir="xml" dest="elastic_tet4_reg">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2557,7 +2595,7 @@
               <resource>pyplot</resource>
             </resources>
             <artifacts>
-              <artifact src="elastic_*.pdf" />
+              <artifact type="build" src="elastic_*.pdf" />
             </artifacts>
           </job>
         </jobs>
@@ -2576,11 +2614,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- adjust rights -->
               <exec command="/bin/bash" workingdir="edge">
@@ -2789,7 +2827,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/recvs" />
+              <artifact type="build" src="edge/recvs" />
             </artifacts>
           </job>
         </jobs>
@@ -2807,7 +2845,7 @@
               </variable>
             </environmentvariables>
             <tasks>
-              <fetchartifact pipeline="" stage="build_run" job="HSP1a_tet4_reg_omp" srcdir="recvs" dest="HSP1a_tet4_reg_omp">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="HSP1a_tet4_reg_omp" srcdir="recvs" dest="HSP1a_tet4_reg_omp">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="/bin/bash">
@@ -2827,7 +2865,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="plots_hsp1a/*" dest="plots" />
+              <artifact type="build" src="plots_hsp1a/*" dest="plots" />
             </artifacts>
             <resources>
               <resource>pyplot</resource>
@@ -2859,13 +2897,13 @@
             <value>clang++</value>
         </variable>
         <variable name="N_BUILD_PROC">
-            <value>2</value>
+            <value>24</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
         </variable>
         <variable name="OMP_NUM_THREADS">
-            <value>2</value>
+            <value>24</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
@@ -2881,8 +2919,7 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_DEB_0_UUID" />
-        <physical uuid="TEMPLATE_DEB_1_UUID" />
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
       </agents>
       <pipelines>
         <pipeline name="deps_clang"/>
@@ -2910,13 +2947,13 @@
             <value>g++</value>
         </variable>
         <variable name="N_BUILD_PROC">
-            <value>2</value>
+            <value>24</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
         </variable>
         <variable name="OMP_NUM_THREADS">
-            <value>2</value>
+            <value>24</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
@@ -2932,8 +2969,7 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_DEB_0_UUID" />
-        <physical uuid="TEMPLATE_DEB_1_UUID" />
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
       </agents>
       <pipelines>
         <pipeline name="deps_gnu"/>
@@ -2986,9 +3022,6 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_REVENGE_0_UUID" />
-        <physical uuid="TEMPLATE_REVENGE_1_UUID" />
-        <physical uuid="TEMPLATE_REVENGE_2_UUID" />
       </agents>
       <pipelines>
         <pipeline name="deps_intel"/>
@@ -3039,7 +3072,6 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_REVENGE_3_UUID" />
       </agents>
       <pipelines>
         <pipeline name="conv_develop_intel_64_cfr1_xsmm" />
@@ -3052,48 +3084,9 @@
   </environments>
 
   <agents>
-    <agent hostname="deb0" ipaddress="TEMPLATE_DEB_IP" uuid="TEMPLATE_DEB_0_UUID">
+    <agent hostname="cloud0" ipaddress="TEMPLATE_CLOUD_0_IP" uuid="TEMPLATE_CLOUD_0_UUID">
       <resources>
         <resource>cppcheck</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="deb1" ipaddress="TEMPLATE_DEB_IP" uuid="TEMPLATE_DEB_1_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge0"  ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_0_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge1" ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_1_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge2" ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_2_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge3" ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_3_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
         <resource>pyplot</resource>
         <resource>rscript</resource>
       </resources>
