@@ -114,25 +114,34 @@ class edge::setups::InitialDofs {
     }
 
     /**
-     * 1) Binds the coordinates as input, and the quantities as output to the expressions.
-     * 2) Compiles the expressions.
+     * 1) Inits the expression output invalid.
+     * 2) Binds the coordinates as input, and the quantities as output to the expressions.
+     * 3) Compiles the expressions.
      *
      * @param i_exprStrs expression strings.
-     * @param i_crds memory location of coordinates which is used as input.
-     * @param o_qts memory location of quantities which is used as output.
+     * @param io_crds memory location of coordinates which is used as input.
+     * @param io_qts memory location of quantities which is used as output.
      * @param io_exprs expressions to which the memory locations are bound.
      *
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
     static void bc( std::string                         const i_exprStrs[TL_N_CRS],
-                    TL_T_REAL                                 i_crds[TL_N_DIMS],
-                    TL_T_REAL                                 o_qts[TL_N_CRS][TL_N_QTS],
+                    TL_T_REAL                                 io_crds[TL_N_DIMS],
+                    TL_T_REAL                                 io_qts[TL_N_CRS][TL_N_QTS],
                     edge::data::Expression< TL_T_REAL >       io_exprs[TL_N_CRS] ) {
+      // init invalid
+      for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ )
+        io_crds[l_di] = std::numeric_limits< TL_T_REAL >::max();
+
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          io_qts[l_cr][l_qt] = std::numeric_limits< TL_T_REAL >::max();
+
       // bind variables and compile expressions
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-        io_exprs[l_cr].bindCrds( i_crds, TL_N_DIMS );
-        io_exprs[l_cr].bind( "q", o_qts[l_cr], TL_N_QTS );
+        io_exprs[l_cr].bindCrds( io_crds, TL_N_DIMS );
+        io_exprs[l_cr].bind( "q", io_qts[l_cr], TL_N_QTS );
 
         io_exprs[l_cr].compile( i_exprStrs[l_cr] );
       }
