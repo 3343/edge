@@ -604,9 +604,6 @@
                 <runif status="passed" />
               </exec>
             </tasks>
-            <resources>
-              <resource>cppcheck</resource>
-            </resources>
           </job>
           <!-- Shallow Water Equations, line -->
           <job name="swe_line">
@@ -2536,9 +2533,6 @@
                 <runif status="passed" />
               </exec>
             </tasks>
-            <resources>
-              <resource>pyplot</resource>
-            </resources>
             <artifacts>
               <artifact type="build" src="adv_*.pdf" />
             </artifacts>
@@ -2591,9 +2585,6 @@
                 <runif status="passed" />
               </exec>
             </tasks>
-            <resources>
-              <resource>pyplot</resource>
-            </resources>
             <artifacts>
               <artifact type="build" src="elastic_*.pdf" />
             </artifacts>
@@ -2867,9 +2858,6 @@
             <artifacts>
               <artifact type="build" src="plots_hsp1a/*" dest="plots" />
             </artifacts>
-            <resources>
-              <resource>pyplot</resource>
-            </resources>
           </job>
         </jobs>
       </stage>
@@ -3085,11 +3073,6 @@
 
   <agents>
     <agent hostname="cloud0" ipaddress="TEMPLATE_CLOUD_0_IP" uuid="TEMPLATE_CLOUD_0_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
     </agent>
   </agents>
 </cruise>
