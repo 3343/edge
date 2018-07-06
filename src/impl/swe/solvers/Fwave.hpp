@@ -21,8 +21,8 @@
  * F-Wave solver for the one dimensional shallow water equations.
  **/
 
-#ifndef FWAVE_HPP
-#define FWAVE_HPP
+#ifndef EDGE_SWE_FWAVE_HPP
+#define EDGE_SWE_FWAVE_HPP
 
 #include <algorithm>
 #include "constants.hpp"

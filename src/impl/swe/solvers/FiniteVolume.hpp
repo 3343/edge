@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Finite Volume solver for the shallow water equations.
  **/
-#ifndef FINITE_VOLUME_HPP
-#define FINITE_VOLUME_HPP
+#ifndef EDGE_SWE_FINITE_VOLUME_HPP
+#define EDGE_SWE_FINITE_VOLUME_HPP
 
 #include <cmath>
 #include "constants.hpp"
