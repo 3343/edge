@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -96,7 +96,7 @@ class edge::swe::solvers::Fwave {
         l_fJump[0][l_run]  = i_huR[0][l_run] - i_huL[0][l_run];
         l_fJump[1][l_run]  = i_huR[0][l_run] * l_uR[l_run]  + (t_elementModePrivate1) 0.5  * (t_elementModePrivate1) 9.81 * i_hR[0][l_run] * i_hR[0][l_run];
         l_fJump[1][l_run] -= i_huL[0][l_run] * l_uL[l_run]  + (t_elementModePrivate1) 0.5  * (t_elementModePrivate1) 9.81 * i_hL[0][l_run] * i_hL[0][l_run];
-        l_fJump[1][l_run] += (t_elementModePrivate1) 0.5    * (t_elementModePrivate1) 9.81 * ( i_hR[0][l_run] + i_hL[0][l_run] * ( i_bR - i_bL ) );
+        l_fJump[1][l_run] += (t_elementModePrivate1) 0.5    * (t_elementModePrivate1) 9.81 * ( i_hR[0][l_run] + i_hL[0][l_run] ) * ( i_bR - i_bL );
 
         // compute scalar for 2x2 matrix inverse
         l_adMbc[l_run] = (t_elementModePrivate1) 1.0 / ( l_lambdaR[l_run] - l_lambdaL[l_run] );
