@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Dynamic memory allocations, bookeeping, and memory release on destruction.
  **/
 
-#ifndef DYNAMIC_HPP
-#define DYNAMIC_HPP
+#ifndef EDGE_DATA_DYNAMIC_HPP
+#define EDGE_DATA_DYNAMIC_HPP
 
 #include "common.hpp"
 
@@ -132,7 +132,7 @@ class edge::data::Dynamic {
                                             i_hbw );
 
       // allocate memory for the pointers
-      TL_T_FL** l_ptrs = (TL_T_FL **) allocate( ( (i_nSp+1)*i_nEn + 1 )*sizeof(TL_T_FL),
+      TL_T_FL** l_ptrs = (TL_T_FL **) allocate( ( (i_nSp+1)*i_nEn + 1 )*sizeof(TL_T_FL*),
                                                 i_alignment,
                                                 i_hbw );
 
