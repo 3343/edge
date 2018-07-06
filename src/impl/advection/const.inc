@@ -51,7 +51,7 @@ struct scratchMem {
   // scratch memory for the surface integration
   real_base tResSurf[2][N_QUANTITIES][N_FACE_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.FACE_MODES.PRIVATE)));
   // temporary results
-  real_base tRes[N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
+  real_base tRes[2][N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
   // sub-cells at the DG faces
   real_base scFa[4][N_QUANTITIES][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
   // sub-grid
