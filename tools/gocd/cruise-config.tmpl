@@ -2884,14 +2884,8 @@
         <variable name="OMPI_CXX">
             <value>clang++</value>
         </variable>
-        <variable name="N_BUILD_PROC">
-            <value>24</value>
-        </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>24</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
@@ -2934,14 +2928,8 @@
         <variable name="OMPI_CXX">
             <value>g++</value>
         </variable>
-        <variable name="N_BUILD_PROC">
-            <value>24</value>
-        </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>24</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
@@ -2984,14 +2972,8 @@
         <variable name="CXX_MPI_OMP">
             <value>mpiicpc</value>
         </variable>
-        <variable name="N_BUILD_PROC">
-            <value>32</value>
-        </variable>
         <variable name="MPI_EXEC">
             <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>62</value>
         </variable>
         <variable name="KMP_AFFINITY">
             <value>norespect,granularity=fine,compact,1,2</value>
@@ -3039,9 +3021,6 @@
         </variable>
         <variable name="MPI_EXEC">
             <value>eval rm -r inspxe_results* 2> /dev/null || true; mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>62</value>
         </variable>
         <variable name="KMP_AFFINITY">
             <value>norespect,granularity=fine,compact,1,2</value>
