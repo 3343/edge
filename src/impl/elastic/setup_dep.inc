@@ -27,7 +27,6 @@
 #include "impl/elastic/solvers/AderDg.hpp"
 #include "impl/elastic/setups/MmKernels.hpp"
 #include "impl/elastic/solvers/common.hpp"
-#include "impl/elastic/setups/Convergence.hpp"
 #ifdef PP_HAS_NETCDF
 #include "impl/elastic/io/Nrf.h"
 #endif
