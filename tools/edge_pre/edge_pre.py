@@ -203,7 +203,6 @@ for l_ty in l_conf.m_types:
       # get sub-cell reorderings
       l_scDgAd = edge_pre.sc.grid.Quad.scDgAd( l_de )
 
-
       # get sub-cell integration intervals and trafos
       l_mapsSc, l_detsSc = edge_pre.sc.grid.Quad.intSc( l_de, l_symsEl )
 

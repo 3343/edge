@@ -293,6 +293,10 @@ def intSfDg( i_deg, i_symsS, i_symsV ):
 # @return two (inner, send) lists of lists. [*][]: sub-cell, [][*]: face of sub-cell.
 ##
 def scTySf( i_deg ):
+  # special handling for degree 0 elements
+  if( i_deg == 0 ):
+    return [], [ [0,1,2] ]
+
   # get vertices adjacent to the sub-cells
   l_scSvIn, l_scSvSend, l_scSvRecv = scSv( i_deg )
 
