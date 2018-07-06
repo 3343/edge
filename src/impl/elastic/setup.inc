@@ -736,7 +736,6 @@ if( l_elasticConf.m_frictionLaw != "" ) {
   delete[] l_faultData;
 }
 
-#if PP_ORDER > 1
 // setup star matrices
 edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
                                 N_QUANTITIES,
@@ -748,7 +747,6 @@ edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
                                              l_internal.m_connect.elVe,
                                              l_internal.m_elementShared1,
                                              l_internal.m_elementShared4 );
-#endif
 
 // setup solvers
 edge::elastic::solvers::common::setupSolvers( l_internal.m_nElements,

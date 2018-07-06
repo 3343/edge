@@ -37,21 +37,6 @@ edge::sc::Steering::getExtIds( m_updatesSync,
                                l_extIds );
 
 if( i_step == 0 ) {
-#if PP_ORDER == 1
-  EDGE_CHECK_NE( i_enSp, nullptr );
-  // finite volume: time
-  edge::elastic::solvers::FiniteVolume::timePred( i_first,
-                                                  i_size,
-                                                  m_covSimTime,
-                                                  m_dT,
-                                                  i_enSp[2].first,
-                                                  i_enSp[0].first,
-                                                  m_internal.m_elementChars,
-                                                  m_internal.m_elementModePrivate1,
-                                                  m_internal.m_elementModePrivate2,
-                                                  m_internal.m_elementSparseShared3[0],
-                                                  io_recvs );
-#else
   // ADER-DG local
   edge::elastic::solvers::AderDg<
     T_SDISC.ELEMENT,
@@ -72,25 +57,8 @@ if( i_step == 0 ) {
             m_internal.m_globalShared6,
             io_recvs,
             m_internal.m_mm );
-#endif
 }
 else if ( i_step == 1 ) {
-#if PP_ORDER == 1
-  edge::elastic::solvers::FiniteVolume::rupture( i_first,
-                                                 i_size,
-                                                 i_enSp[0].first,
-                                                 m_covSimTime,
-                                                 m_dT,
-                                                 m_internal.m_globalShared7[0].connect.bfBe,
-                                                 m_internal.m_globalShared7[0].bfChars,
-                                                 m_internal.m_globalShared5[0].gl,
-                                                 m_internal.m_globalShared5[0].fa,
-                                                 m_internal.m_globalShared5[0].sf,
-                                                 m_internal.m_globalShared7[0].mss,
-                                                 m_internal.m_elementSparseShared3[0],
-                                                 m_internal.m_faceSparseShared4,
-                                                 io_recvsQuad );
-#else
   edge::elastic::solvers::AderDg<
     T_SDISC.ELEMENT,
     N_QUANTITIES,
@@ -115,26 +83,9 @@ else if ( i_step == 1 ) {
               m_internal.m_globalShared2[0].lock,
               io_recvsSf,
               m_internal.m_mm
-);
-#endif
+            );
 }
 else if( i_step == 2 ) {
-#if PP_ORDER == 1
-  // finite volume: update
-  edge::elastic::solvers::FiniteVolume::update( i_first,
-                                                i_size,
-                                                i_enSp[0].first,
-                                                m_internal.m_connect.elFaEl,
-                                                m_internal.m_connect.elFa,
-                                                m_internal.m_globalShared7[0].connect.bfBe,
-                                                m_internal.m_globalShared7[0].connect.beBf,
-                                                m_internal.m_faceChars,
-                                                m_internal.m_elementShared2,
-                                                m_internal.m_elementShared3,
-                                                m_internal.m_elementModePrivate2,
-                                                m_internal.m_faceSparseShared4,
-                                                m_internal.m_elementModePrivate1 );
-#else
   // ADER-DG: neigh contrib
   edge::elastic::solvers::AderDg<
     T_SDISC.ELEMENT,
@@ -167,7 +118,6 @@ else if( i_step == 2 ) {
             m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[1] ],
             m_internal.m_mm
           );
-#endif
 }
 else if( i_step == 3 ) {
   // apply kinematic sources
