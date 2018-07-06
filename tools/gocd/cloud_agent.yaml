@@ -43,4 +43,4 @@ runcmd:
  - sed -i "s/HOST:PORT/deb.dial3343.org:8154/" /etc/default/go-agent
 
  # fire up the agent
- - /etc/init.d/go-agent start
+ - PRODUCTION_MODE=Y /etc/init.d/go-agent start
