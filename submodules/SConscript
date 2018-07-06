@@ -65,7 +65,7 @@ else:
 # enable zlib if available
 if env['zlib'] != False:
   if env['zlib'] != True:
-    env.AppendUnique( LIBPATH=[ env['zlib']+'/include'] )
+    env.AppendUnique( CPPPATH=[ env['zlib']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['zlib']+'/lib']     )
   conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' )
 
