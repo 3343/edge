@@ -44,6 +44,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "data/SparseEntities.hpp"
 #include "data/Internal.hpp"
 #include "time/Manager.h"
+#include "mesh/common.hpp"
 #include "mesh/SparseTypes.hpp"
 #include "mesh/setup_dep.inc"
 #include "monitor/Timer.hpp"
