@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,6 +24,7 @@ if( i_step == 0 ) {
   edge::swe::solvers::FiniteVolume::netUpdates( i_first,
                                                 i_size,
                                                 m_internal.m_connect.faEl,
+                                                m_internal.m_faceChars,
                                                 m_internal.m_elementModePrivate1,
                                                 m_internal.m_elementModeShared1,
                                                 m_internal.m_faceModePrivate1 );

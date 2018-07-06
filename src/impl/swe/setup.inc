@@ -32,23 +32,27 @@ l_shared.regWrkRgn( 0, 1, 1,
                     l_enLayouts[2].timeGroups[0].inner.size,
                     0 );
 
-// set initial data
-for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
-  edge::swe::setups::Convergence::setDamBreak1D( l_cfr,
-                                                 l_internal.m_nElements,
-                                                 l_internal.m_connect.elVe,
-                                                 l_internal.m_vertexChars,
-                                                 l_internal.m_elementChars,
-                                                 50.5,
-                                                 75.3+l_cfr,
-                                                 2000,
-                                                 1995,
-                                                 l_internal.m_elementModeShared1,
-                                                 l_internal.m_elementModePrivate1 );
+// initialize Bathymetry and DOFs
+{
+  for( int_el l_el = 0; l_el < l_enLayouts[2].nEnts; l_el++ )
+    l_internal.m_elementModeShared1[l_el][0][0] = 0;
+
+  // DG
+  edge::setups::InitialDofs<
+    T_SDISC.ELEMENT,
+    ORDER,
+    N_QUANTITIES,
+    N_CRUNS >::dg( 0,
+                   l_internal.m_nElements,
+                   l_config.m_initValsExprStrs,
+                   l_basis,
+                   l_internal.m_connect.elVe,
+                   l_internal.m_vertexChars,
+                   l_internal.m_elementModePrivate1 );
 }
 
 // get time steps
-// Warning: Those are only valid if the allow time step doesn't lower signicantly
+// Warning: Those are only valid if the allow time step doesn't lower significantly
 edge::swe::solvers::FiniteVolume::getTimeStepStatistics( l_internal.m_nElements,
                                                          l_internal.m_elementChars,
                                                          l_internal.m_elementModePrivate1,

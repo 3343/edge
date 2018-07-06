@@ -64,3 +64,24 @@ const unsigned short N_FACE_MODES=1;
 #else
 #error shallow water constants for element type undefined.
 #endif
+
+/**
+ * Scratch memory (per thread)
+ **/
+#define PP_SCRATCH_MEMORY
+#define PP_SCRATCH_MEMORY_HBW
+struct scratchMem {
+  // scratch memory for the surface integration
+  real_base tResSurf[2][N_QUANTITIES][N_FACE_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.FACE_MODES.PRIVATE)));
+  // temporary results
+  real_base tRes[2][N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
+  // sub-cells at the DG faces
+  real_base scFa[4][N_QUANTITIES][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+  // sub-grid
+  real_base sg[N_QUANTITIES][CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+  // sub-grid with ghost cells
+  real_base sgGh[N_QUANTITIES][   CE_N_SUB_CELLS(T_SDISC.ELEMENT, ORDER)
+                                + C_ENT[T_SDISC.ELEMENT].N_FACES *  CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)
+                              ][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+};
+typedef scratchMem t_scratchMem;

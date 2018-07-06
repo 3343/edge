@@ -61,7 +61,6 @@ class edge::swe::solvers::FiniteVolume {
         // compute time step
         double l_dT  = ( i_volume / l_s );
                l_dT *= i_cfl;
-
         return l_dT;
       }
       else {
@@ -117,17 +116,21 @@ class edge::swe::solvers::FiniteVolume {
     * @param i_first first face.
     * @param i_size number of faces after first.
     * @param i_faEl faces adjacent to elements.
+    * @param i_charsFa face characteristics.
     * @param i_dofs degrees of freedom (height, momentum).
     * @param i_bath bathymetry for the elements.
     * @param o_netUpdate will be set to the net-updates for the faces' adjacent elements.
     *
+    * @paramt struct of the face characterstics, offering member .outNormal.
     **/
-   static void netUpdates(       int_el      i_first,
-                                 int_el      i_size,
-                           const int_el    (*i_faEl)[2],
-                           const real_base (*i_dofs)[N_QUANTITIES][1][N_CRUNS],
-                           const real_base (*i_bath)[1][1],
-                                 real_base (*o_netUpdates)[4][1][N_CRUNS] ) {
+   template< typename TL_T_CHARS_FA >
+   static void netUpdates( int_el                i_first,
+                           int_el                i_size,
+                           int_el        const (*i_faEl)[2],
+                           TL_T_CHARS_FA const  *i_charsFa,
+                           real_base     const (*i_dofs)[N_QUANTITIES][1][N_CRUNS],
+                           real_base     const (*i_bath)[1][1],
+                           real_base           (*o_netUpdates)[4][1][N_CRUNS] ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler
       (void) __builtin_assume_aligned(i_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
@@ -136,8 +139,16 @@ class edge::swe::solvers::FiniteVolume {
       // compute net-updates
       for( int_el l_fa = i_first; l_fa < i_first+i_size; l_fa++ ) {
         // determine neighbors
-        int_el l_le = i_faEl[l_fa][0];
-        int_el l_ri = i_faEl[l_fa][1];
+        int_el l_le, l_ri;
+
+        if( i_charsFa[l_fa].outNormal[0] > 0 ) {
+          l_le = i_faEl[l_fa][0];
+          l_ri = i_faEl[l_fa][1];
+        }
+        else {
+          l_le = i_faEl[l_fa][1];
+          l_ri = i_faEl[l_fa][0];
+        }
 
         // compute net-updates
         solvers::Fwave::computeNetUpdates( i_dofs[l_le][0],    i_dofs[l_ri][0],
