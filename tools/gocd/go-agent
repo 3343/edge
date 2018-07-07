@@ -60,11 +60,6 @@ then
   echo "Go-agent has the following ulimits:"
   ulimit -a
 
-  export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
-  export OMP_NUM_THREADS=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
-  echo "Go-agent uses N_BUILD_PROC=${N_BUILD_PROC}"
-  echo "Go-agent uses OMP_NUM_THREADS=${OMP_NUM_THREADS}"
-
   echo "**************************************"
   echo "* finished setting up the tool chain *"
   echo "**************************************"

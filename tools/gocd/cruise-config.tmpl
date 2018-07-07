@@ -461,49 +461,6 @@
         </jobs>
       </stage>
 
-      <!-- LAPACK -->
-      <stage name="lapack" fetchMaterials="false">
-        <environmentvariables>
-          <variable name="LAPACK_LINK">
-            <value>https://github.com/Reference-LAPACK/lapack-release/archive/lapack-3.8.0.zip</value>
-          </variable>
-        </environmentvariables>
-        <jobs>
-          <job name="build">
-            <tasks>
-              <exec command="/bin/bash">
-                <arg>-c</arg>
-                <arg>wget ${LAPACK_LINK} -O lapack.zip</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash">
-                <arg>-c</arg>
-                <arg>unzip -a lapack.zip; mv lapack-release-lapack-* lapack; mkdir lapack/build</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="lapack/build">
-                <arg>-c</arg>
-                <arg>cmake -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)/../lapack ..</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="lapack/build">
-                <arg>-c</arg>
-                <arg>make -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="lapack/build">
-                <arg>-c</arg>
-                <arg>make install</arg>
-                <runif status="passed" />
-              </exec>
-            </tasks>
-            <artifacts>
-              <artifact type="build" src="lapack/lapack" />
-            </artifacts>
-          </job>
-        </jobs>
-      </stage>
-
       <!-- MOAB -->
       <stage name="moab" fetchMaterials="false">
         <jobs>
@@ -512,7 +469,6 @@
               <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
               <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
               <fetchartifact origin="gocd" stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
-              <fetchartifact origin="gocd" stage="lapack" job="build" srcdir="lapack" dest="libs"/>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
                 <arg>autoreconf -fi</arg>
@@ -520,7 +476,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a -lgfortran" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --with-lapack=$(pwd)/../../libs/lapack/lib/liblapack.a --with-blas=$(pwd)/../../libs/lapack/lib/libblas.a --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
+                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
@@ -2884,6 +2840,12 @@
         <variable name="OMPI_CXX">
             <value>clang++</value>
         </variable>
+        <variable name="N_BUILD_PROC">
+            <value>24</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>24</value>
+        </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
         </variable>
@@ -2928,6 +2890,12 @@
         <variable name="OMPI_CXX">
             <value>g++</value>
         </variable>
+        <variable name="N_BUILD_PROC">
+            <value>24</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>24</value>
+        </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
         </variable>
@@ -2971,6 +2939,12 @@
         </variable>
         <variable name="CXX_MPI_OMP">
             <value>mpiicpc</value>
+        </variable>
+        <variable name="N_BUILD_PROC">
+            <value>64</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>64</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec -n 8</value>
@@ -3017,7 +2991,10 @@
             <value>mpiicpc</value>
         </variable>
         <variable name="N_BUILD_PROC">
-            <value>32</value>
+            <value>64</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>64</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>eval rm -r inspxe_results* 2> /dev/null || true; mpiexec -n 8</value>
