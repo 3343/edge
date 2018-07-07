@@ -482,7 +482,21 @@
               <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
               <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
-              <!-- edge_opt -->
+              <!-- edge_opt: pointers only -->
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>GIT_LFS_SKIP_SMUDGE=1 git clone TEMPLATE_GIT_EDGE_OPT</arg>
+                <runif status="passed" />
+              </exec>
+
+              <!-- edge_opt: download CI data-->
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs pull origin master -I cont/advection cont/elastic cont/swe</arg>
+                <runif status="passed" />
+              </exec>
+
+              <!-- edge_opt: link CI data -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
                 <arg>ln -s ../edge_opt/cont .</arg>
