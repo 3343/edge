@@ -115,7 +115,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
     <pipeline name="CI_develop_gnu" template="CI">
@@ -139,7 +138,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
     <pipeline name="CI_develop_intel" template="CI">
@@ -163,7 +161,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
   </pipelines>
@@ -176,7 +173,7 @@
       </view>
     </authorization>
     <!-- 64 bit precision -->
-    <pipeline name="conv_develop_intel_64_cfr1_xsmm" lockBehavior="none" template="Conv">
+    <pipeline name="conv_develop_gnu_64_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">64</param>
@@ -187,11 +184,10 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
 
-    <pipeline name="conv_develop_intel_64_cfr8_xsmm" lockBehavior="none" template="Conv">
+    <pipeline name="conv_develop_gnu_64_cfr8_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">64</param>
@@ -202,27 +198,11 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
-      </materials>
-    </pipeline>
-
-    <pipeline name="conv_develop_gnu_64_cfr1_xsmm" lockBehavior="none" template="Conv">
-      <params>
-        <param name="toolchain">gnu</param>
-        <param name="EDGE_PRECISION">64</param>
-        <param name="EDGE_CFR">1</param>
-        <param name="EDGE_XSMM">1</param>
-      </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
-      <materials>
-        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
-        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
 
     <!-- 32 bit precision -->
-    <pipeline name="conv_develop_intel_32_cfr1_xsmm" lockBehavior="none" template="Conv">
+    <pipeline name="conv_develop_gnu_32_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">32</param>
@@ -233,11 +213,10 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
 
-    <pipeline name="conv_develop_intel_32_cfr16_xsmm" lockBehavior="none" template="Conv">
+    <pipeline name="conv_develop_gnu_32_cfr16_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_PRECISION">32</param>
@@ -248,22 +227,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
-      </materials>
-    </pipeline>
-
-    <pipeline name="conv_develop_gnu_32_cfr1_xsmm" lockBehavior="none" template="Conv">
-      <params>
-        <param name="toolchain">gnu</param>
-        <param name="EDGE_PRECISION">32</param>
-        <param name="EDGE_CFR">1</param>
-        <param name="EDGE_XSMM">1</param>
-      </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
-      <materials>
-        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
-        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
   </pipelines>
@@ -275,7 +238,7 @@
         <user>edgebot</user>
       </view>
     </authorization>
-    <pipeline name="wp_develop_intel_xsmm" lockBehavior="none" template="WaveProp">
+    <pipeline name="wp_develop_gnu_xsmm" lockBehavior="none" template="WaveProp">
       <params>
         <param name="toolchain">intel</param>
         <param name="EDGE_XSMM">1</param>
@@ -285,7 +248,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
   </pipelines>
@@ -2581,15 +2543,17 @@
                 <runif status="passed" />
               </exec>
 
+              <!-- edge_opt: pointers -->
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>GIT_LFS_SKIP_SMUDGE=1 git clone TEMPLATE_GIT_EDGE_OPT</arg>
+                <runif status="passed" />
+              </exec>
+
               <!-- edge_opt: HSP1a -->
               <exec command="/bin/bash" workingdir="edge_opt">
                 <arg>-c</arg>
-                <arg>git lfs fetch -I bench/seismic/wp/hsp1a</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge_opt">
-                <arg>-c</arg>
-                <arg>git lfs checkout bench/seismic/wp/hsp1a</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/hsp1a/configs bench/seismic/wp/hsp1a/*.xml bench/seismic/wp/hsp1a/*.nc</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2918,8 +2882,59 @@
       <pipelines>
         <pipeline name="deps_gnu"/>
         <pipeline name="CI_develop_gnu" />
+      </pipelines>
+    </environment>
+    <environment name="Gnu_single">
+      <environmentvariables>
+        <variable name="CC_SEQ">
+            <value>gcc</value>
+        </variable>
+        <variable name="CC_OMP">
+            <value>gcc</value>
+        </variable>
+        <variable name="CXX_SEQ">
+            <value>g++</value>
+        </variable>
+        <variable name="CXX_OMP">
+            <value>g++</value>
+        </variable>
+        <variable name="CXX_MPI_OMP">
+            <value>mpiCC</value>
+        </variable>
+        <variable name="OMPI_CXX">
+            <value>g++</value>
+        </variable>
+        <variable name="N_BUILD_PROC">
+            <value>24</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>24</value>
+        </variable>
+        <variable name="MPI_EXEC">
+            <value>mpiexec -n 8</value>
+        </variable>
+        <variable name="EDGE_ARCH_DEBUG">
+            <value>host</value>
+        </variable>
+        <variable name="DEBUGGER">
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+        </variable>
+        <variable name="DEBUGGER_MPI_OMP">
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+        </variable>
+        <variable name="EDGE_ARCH_RELEASE">
+            <value>host</value>
+        </variable>
+      </environmentvariables>
+      <agents>
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
+      </agents>
+      <pipelines>
         <pipeline name="conv_develop_gnu_64_cfr1_xsmm" />
+        <pipeline name="conv_develop_gnu_64_cfr8_xsmm" />
         <pipeline name="conv_develop_gnu_32_cfr1_xsmm" />
+        <pipeline name="conv_develop_gnu_32_cfr16_xsmm" />
+        <pipeline name="wp_develop_gnu_xsmm" />
       </pipelines>
     </environment>
 
@@ -2970,59 +2985,6 @@
       <pipelines>
         <pipeline name="deps_intel"/>
         <pipeline name="CI_develop_intel" />
-      </pipelines>
-    </environment>
-
-    <environment name="Intel_single">
-      <environmentvariables>
-        <variable name="CC_SEQ">
-            <value>icc</value>
-        </variable>
-        <variable name="CC_OMP">
-            <value>icc</value>
-        </variable>
-        <variable name="CXX_SEQ">
-            <value>icpc</value>
-        </variable>
-        <variable name="CXX_OMP">
-            <value>icpc</value>
-        </variable>
-        <variable name="CXX_MPI_OMP">
-            <value>mpiicpc</value>
-        </variable>
-        <variable name="N_BUILD_PROC">
-            <value>64</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>64</value>
-        </variable>
-        <variable name="MPI_EXEC">
-            <value>eval rm -r inspxe_results* 2> /dev/null || true; mpiexec -n 8</value>
-        </variable>
-        <variable name="KMP_AFFINITY">
-            <value>norespect,granularity=fine,compact,1,2</value>
-        </variable>
-        <variable name="EDGE_ARCH_DEBUG">
-            <value>knl</value>
-        </variable>
-        <variable name="DEBUGGER">
-            <value>inspxe-cl --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
-        </variable>
-        <variable name="DEBUGGER_MPI_OMP">
-            <value>inspxe-cl --result-dir=inspxe_results --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
-        </variable>
-        <variable name="EDGE_ARCH_RELEASE">
-            <value>knl</value>
-        </variable>
-      </environmentvariables>
-      <agents>
-      </agents>
-      <pipelines>
-        <pipeline name="conv_develop_intel_64_cfr1_xsmm" />
-        <pipeline name="conv_develop_intel_64_cfr8_xsmm" />
-        <pipeline name="conv_develop_intel_32_cfr1_xsmm" />
-        <pipeline name="conv_develop_intel_32_cfr16_xsmm" />
-        <pipeline name="wp_develop_intel_xsmm" />
       </pipelines>
     </environment>
   </environments>
