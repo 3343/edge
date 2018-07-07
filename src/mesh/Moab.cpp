@@ -1076,7 +1076,7 @@ void edge::mesh::Moab::getElVeEl( int_el  &o_nElVeEl,
     }
 
     // assign next pointer
-    if( l_raw != nullptr ) o_elVeEl[l_el+1] = l_raw;
+    if( o_elVeEl != nullptr && l_raw != nullptr ) o_elVeEl[l_el+1] = l_raw;
   }
 }
 
