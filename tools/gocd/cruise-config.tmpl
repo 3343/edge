@@ -378,12 +378,13 @@
       <stage name="netcdf" fetchMaterials="false">
         <environmentvariables>
           <variable name="NETCDF_LINK">
-            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz</value>
+            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz</value>
           </variable>
         </environmentvariables>
         <jobs>
           <job name="build">
             <tasks>
+              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
               <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
