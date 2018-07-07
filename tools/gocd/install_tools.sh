@@ -39,5 +39,6 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gcc
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gfortran
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 clang
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 valgrind
-sudo pip -q install xmltodict matplotlib
-sudo pip3 -q install xmltodict matplotlib
+sudo su go -c "git lfs install"
+sudo pip -q install xmltodict matplotlib netCDF4
+sudo pip3 -q install xmltodict matplotlib netCDF4
