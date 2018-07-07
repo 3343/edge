@@ -29,6 +29,7 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 make
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 cmake
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 scons
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 git
+sudo apt-get install -qq -o=Dpkg::Use-Pty=0 git-lfs
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 libxml2-utils
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 python-pip python3-pip
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 openmpi-bin
