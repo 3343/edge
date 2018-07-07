@@ -40,6 +40,9 @@ namespace edge {
 
 class edge::mesh::regular::Tet {
   private:
+    // dummy entity characteristics
+    typedef struct {int spType;} t_enCharsDummy;
+
     //! number of hexahedral elements in x-, y- and z-direction.
     unsigned int m_nHex[3];
 
@@ -828,6 +831,31 @@ class edge::mesh::regular::Tet {
     void getConnect( const t_vertexChars  *i_veChars,
                      const t_faceChars    *i_faChars,
                            t_connect      &o_connect );
+
+    /**
+     * Dummy implementation of the parameter queries for unstructured meshes.
+     *
+     * @param i_nDim number of dimensions, ignored.
+     * @param i_nPars number of parameters, ignored,
+     * @param i_names names of the paramters, ignored,
+     * @param o_pars output, ignored.
+     * @return error code, always 1 (parameter missing).
+     *
+     * @paramt TL_T_PAR type of the parameter.
+     * @paramt TL_T_SP sparse type.
+     * @paramt TL_T_CHARS entity characteristics.
+     **/
+    template< typename TL_T_PAR,
+              typename TL_T_SP    = int,
+              typename TL_T_CHARS = t_enCharsDummy >
+    unsigned short getParsDe( unsigned short         i_nDim,
+                              unsigned short         i_nPars,
+                              std::string          * i_names,
+                              TL_T_PAR             * o_pars,
+                              TL_T_SP                i_spType = 0,
+                              TL_T_CHARS     const * i_enChars = nullptr ) {
+      return 1;
+    }
 };
 
 #endif
