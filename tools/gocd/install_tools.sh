@@ -43,3 +43,5 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 git-lfs
 sudo su go -c "git lfs install"
 sudo pip -q install xmltodict matplotlib netCDF4
 sudo pip3 -q install xmltodict matplotlib netCDF4
+wget https://releases.hashicorp.com/vagrant/2.1.2/vagrant_2.1.2_x86_64.deb -O vagrant.deb
+sudo dpkg -i vagrant.deb
