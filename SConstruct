@@ -5,7 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
-# Copyright (c) 2015-2017, Regents of the University of California
+# Copyright (c) 2015-2018, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
 #
@@ -135,22 +135,22 @@ if 'xml' in env:
 vars.AddVariables(
   EnumVariable( 'cfr',
                 'concurrent forward runs',
-                '8',
+                '16',
                  allowed_values=( '1', '2', '4', '8', '12', '16' )
               ),
   EnumVariable( 'equations',
                 'equations solved',
-                'advection',
+                'elastic',
                  allowed_values=( 'advection', 'elastic', 'swe' )
               ),
   EnumVariable( 'element_type',
                 'element type used',
-                'line',
+                'tet4',
                  allowed_values=('line', 'quad4r', 'tria3', 'hex8r', 'tet4' )
               ),
   EnumVariable( 'order',
                 'order of convergence',
-                '1',
+                '4',
                  allowed_values=('1', '2', '3', '4', '5', '6', '7', '8', '9')
               ),
   EnumVariable( 'mode',
@@ -165,12 +165,12 @@ vars.AddVariables(
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
-                '64',
+                '32',
                  allowed_values=('32', '64')
               ),
   EnumVariable( 'parallel',
                 'used parallelization',
-                'none',
+                'omp',
                  allowed_values=('none', 'omp', 'mpi', 'mpi+omp')
               ),
   BoolVariable( 'cov',
