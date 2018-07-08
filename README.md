@@ -81,8 +81,7 @@ Based on the equations and the element type, the following table shows the imple
 | equations |         element types            | CFR | FV | ADER-DG | LIBXSMM |
 |-----------|:--------------------------------:|:---:|:--:|:-------:|:-------:|
 | advection | line, quad4r, tria3, hex8r, tet4 |  x  |  x |    x    |         |
-| elastics  | quad4r, tria3, hex8r, tet4       |  x  |  x |         |         |
-| elastics  | quad4r, tria3, hex8r, tet4       |  x  |    |    x    |    x    |
+| elastics  | quad4r, tria3, hex8r, tet4       |  x  |  x |    x    |    x    |
 | swe       | line                             |  x  |  x |         |         |
 
 ## High Performance Support
