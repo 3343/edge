@@ -406,21 +406,21 @@ script:
   #
   # 1D SWE
   ## release
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/swe/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/swe/line.xml; fi;
 
   ## valgrind
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=8 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
 
   ## code coverage, order=1, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/swe/line.xml; fi;
 
 
