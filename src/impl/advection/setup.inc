@@ -45,8 +45,8 @@
   EDGE_CHECK( l_enLayouts[2].timeGroups.size() == 1 );
 
   l_mpi.addDefault( l_enLayouts[2],
-                    l_internal.m_elementModePrivate2[0][0][0],
-                    N_ELEMENT_MODES*N_CRUNS*sizeof(t_elementModePrivate2),
+                    l_internal.m_globalShared3[0][0][0][0],
+                    N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
                     0,
                     1 );
 #endif
