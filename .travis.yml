@@ -59,7 +59,7 @@ matrix:
             secure: "JXgQNPOzTBuS3ptuB4vWcTJzU3CEdxC/Wrz3cbSlMD5a+rMUujRUg0DtfQZnZ4asikL0+kjNltg0i3z4mgwFoLL1ZvwdjN2aV5fpklHUvgZlv+vXJfKAEKrNwnRTTVzLVGb2kgqqthIQdfCKpn2JEOL73taxJ8HQtrX+wzH+qyz+uOsAYULWRv3rsoRJ6iCtIgCfuCuqWDI3wciEdsr+uhqADDCjV3ovQswleN9mVX0aw7gZNE/2mxn0DgTgDINSn6mMT7S/px0fRw7Kz5ubUmEXMmCsE+Jgc50LTnYAuSk3dwUY4wX0Td7ss8mblygh2xvOO9etESgrJ6xGovC3KbFv+68QOTiKW/VhmUwlDxHBphCf4IQEXBQe4CCgR6mBOREUZp2YTRa0hILNgoi/O/ZheJhx6sWMGWTayfeKIi3DDbh9VOk27/CILUg4XfB2UYif4LWEpLcurkxP20zZTOc4Bys3y98OMRSyxE1Pl30lHJk8vvMXB6XXogaXHx+lF52g4qPFadiW/tBkR0TZDGF2hFFRaYAm6q4r9qjHZjyccGrRmOA5fp6dUHJYawdRsbZWAMZqBOwp3tp67WzfqUmf5eijC1iehyIttFtPud68xnfQlB0DNS258FQAnJKcS59C730kQsAoHF3+7bzpJdJlBkEM4eChe5OlKRuuX6k="
           # set compilers and warm up detection of libraries so that Coverity doesn't get confused with failed builds
           build_command_prepend: "cov-configure --comptype g++ -co $CXX --template; scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1 --clean"
-          build_command:   "scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1"
+          build_command:   "scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1"
           branch_pattern: develop
       env:
         CXX_COMPILER=g++-5
@@ -356,8 +356,8 @@ before_install:
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then LIBS="CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then LIBS="CC=mpicc CXX=mpiCC ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install intel sde
