@@ -549,7 +549,7 @@
               <!-- debugger, o=1, cfr=1,8 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=1 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=1 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -559,7 +559,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=8 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=8 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -571,7 +571,7 @@
               <!-- release, o=1, cfr=1,8 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -581,7 +581,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2773,7 +2773,7 @@
       <!-- ****************************************
            * Stage: Analysis of benchmark results *
            **************************************** -->
-      <stage name="analyze" fetchMaterials="false">
+      <stage name="analyze" fetchMaterials="false" cleanWorkingDir="true">
         <jobs>
           <!-- HSP1a benchmark -->
           <job name="HSP1a">
