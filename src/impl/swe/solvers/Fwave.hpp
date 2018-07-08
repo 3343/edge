@@ -24,6 +24,8 @@
 #ifndef EDGE_SWE_FWAVE_HPP
 #define EDGE_SWE_FWAVE_HPP
 
+#include <cmath>
+
 namespace edge {
   namespace swe {
     namespace solvers {
@@ -61,9 +63,8 @@ class edge::swe::solvers::Fwave {
                                    const TL_T_REAL i_huR[TL_N_CRS],
                                    const TL_T_REAL i_bL,
                                    const TL_T_REAL i_bR,
-                                         TL_T_REAL o_netUpdates[4][TL_N_CRS] ) {
-      // gravity constant
-      TL_T_REAL l_g = 9.80665;
+                                         TL_T_REAL o_netUpdates[4][TL_N_CRS],
+                                         TL_T_REAL i_g = 9.80665 ) {
       // particle veolocities
       TL_T_REAL l_uL[TL_N_CRS];
       TL_T_REAL l_uR[TL_N_CRS];
@@ -91,14 +92,14 @@ class edge::swe::solvers::Fwave {
         l_uR[l_ru] = i_huR[l_ru] / i_hR[l_ru];
 
         // u -/+ sqrt(g*h)
-        l_lambdaL[l_ru] = l_uL[l_ru] - std::sqrt( l_g * i_hL[l_ru] );
-        l_lambdaR[l_ru] = l_uR[l_ru] + std::sqrt( l_g * i_hR[l_ru] );
+        l_lambdaL[l_ru] = l_uL[l_ru] - std::sqrt( i_g * i_hL[l_ru] );
+        l_lambdaR[l_ru] = l_uR[l_ru] + std::sqrt( i_g * i_hR[l_ru] );
 
         // jump in fluxes
         l_fJump[0][l_ru]  = i_huR[l_ru] - i_huL[l_ru];
-        l_fJump[1][l_ru]  = i_huR[l_ru] * l_uR[l_ru]  + TL_T_REAL(0.5)  * l_g * i_hR[l_ru] * i_hR[l_ru];
-        l_fJump[1][l_ru] -= i_huL[l_ru] * l_uL[l_ru]  + TL_T_REAL(0.5)  * l_g * i_hL[l_ru] * i_hL[l_ru];
-        l_fJump[1][l_ru] += TL_T_REAL(0.5) * l_g * ( i_hR[l_ru] + i_hL[l_ru] ) * ( i_bR - i_bL );
+        l_fJump[1][l_ru]  = i_huR[l_ru] * l_uR[l_ru]  + TL_T_REAL(0.5)  * i_g * i_hR[l_ru] * i_hR[l_ru];
+        l_fJump[1][l_ru] -= i_huL[l_ru] * l_uL[l_ru]  + TL_T_REAL(0.5)  * i_g * i_hL[l_ru] * i_hL[l_ru];
+        l_fJump[1][l_ru] += TL_T_REAL(0.5) * i_g * ( i_hR[l_ru] + i_hL[l_ru] ) * ( i_bR - i_bL );
 
         // compute scalar for 2x2 matrix inverse
         l_adMbc[l_ru] = TL_T_REAL(1.0) / ( l_lambdaR[l_ru] - l_lambdaL[l_ru] );
