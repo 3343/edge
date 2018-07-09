@@ -538,18 +538,6 @@ class edge::elastic::solvers::common {
 #error number of dimensions not supported.
 #endif
 
-        // Remark: For triangles and tets the determinant is not equal to the volume
-        //         We apply the effect of the inverse mass matrix right here.
-        //         Effectively this just scales the flux solver by the volume of the element
-        if( T_SDISC.ELEMENT == TRIA3 && ORDER == 1 ) {
-          if( l_exL ) l_jL /= (real_mesh) 2;
-          if( l_exR ) l_jR /= (real_mesh) 2;
-        }
-        else if( T_SDISC.ELEMENT == TET4 && ORDER == 1 ) {
-          if( l_exL ) l_jL /= (real_mesh) 6;
-          if( l_exR ) l_jR /= (real_mesh) 6;
-        }
-
         // ensure positive determinants
         assert( !l_exL || l_jL > 0 );  assert( !l_exR || l_jR > 0 ); assert( i_faceChars[l_fa].area > 0 );
 
