@@ -146,7 +146,7 @@ class edge::swe::solvers::FiniteVolume {
     * @param i_charsFa face characteristics.
     * @param i_dofs degrees of freedom (height, momentum).
     * @param i_bath bathymetry for the elements.
-    * @param o_netUpdate will be set to the net-updates for the faces' adjacent elements.
+    * @param o_netUpdates will be set to the net-updates for the faces' adjacent elements.
     *
     * @paramt TL_T_LID integral type of local ids.
     * @paramt TL_T_REAL floating point precision.
@@ -164,23 +164,37 @@ class edge::swe::solvers::FiniteVolume {
                            TL_T_REAL           (* o_netUpdates)[4][1][TL_N_CRS] ) {
       // compute net-updates
       for( TL_T_LID l_fa = i_first; l_fa < i_first+i_size; l_fa++ ) {
-        // determine neighbors
-        TL_T_LID l_le, l_ri;
+        // assemble left and right DOFs
+        TL_T_REAL l_dofs[2][2][TL_N_CRS];
 
-        if( i_charsFa[l_fa].outNormal[0] > 0 ) {
-          l_le = i_faEl[l_fa][0];
-          l_ri = i_faEl[l_fa][1];
-        }
-        else {
-          l_le = i_faEl[l_fa][1];
-          l_ri = i_faEl[l_fa][0];
+        // adjacent elements
+        const TL_T_LID *l_elsAd = i_faEl[l_fa];
+
+        // pointer to normal
+        auto *l_n = i_charsFa[l_fa].outNormal;
+
+        for( unsigned short l_ad = 0; l_ad < 2; l_ad++ ) {
+          TL_T_LID l_el = l_elsAd[l_ad];
+
+          for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
+            // copy over water heights
+            l_dofs[l_ad][0][l_ru] = i_dofs[l_el][0][0][l_ru];
+
+            // derive face-normal momentum
+            l_dofs[l_ad][1][l_ru] = 0;
+            for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+              l_dofs[l_ad][1][l_ru] += TL_T_REAL(l_n[l_di]) * i_dofs[l_el][1+l_di][0][l_ru];
+            }
+          }
         }
 
         // compute net-updates
-        solvers::Fwave< TL_N_CRS >::computeNetUpdates( i_dofs[l_le][0][0], i_dofs[l_ri][0][0],
-                                                       i_dofs[l_le][1][0], i_dofs[l_ri][1][0],
-                                                       i_bath[l_le][0][0], i_bath[l_ri][0][0],
-                                                       o_netUpdates[l_fa][0] );
+        solvers::Fwave<
+          TL_N_CRS
+        >::computeNetUpdates( l_dofs[0][0],               l_dofs[1][0],
+                              l_dofs[0][1],               l_dofs[1][1],
+                              i_bath[ l_elsAd[0] ][0][0], i_bath[ l_elsAd[1] ][0][0],
+                              o_netUpdates[l_fa][0] );
       }
    }
 
@@ -190,42 +204,57 @@ class edge::swe::solvers::FiniteVolume {
      * @param i_first first face.
      * @param i_size number of faces after first.
      * @param i_dT time step.
+     * @param i_faEl ids of elements adjacent to the faces.
      * @param i_elFa ids of faces adjacent to the elements.
-     * @param i_elChars element characteristics.
-     * @param i_netUpdates of face-local net-updates, private for conurrent runs.
+     * @param i_charsFa face characteristics.
+     * @param i_charsEl element characteristics.
+     * @param i_netUpdates face-local net-updates, private for conurrent runs.
      * @param io_dofs DOFs: shallow water quantities in the elements, private for concurrent runs.
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_REAL floating point precision.
+     * @paramt TL_T_CHARS_FA face characteristics, offering member variabl .outNormal.
      * @paramt TL_T_CHARS_EL element characteristics, offering member variable .volume.
      **/
     template< typename TL_T_LID,
               typename TL_T_REAL,
+              typename TL_T_CHARS_FA,
               typename TL_T_CHARS_EL >
     static void update( TL_T_LID               i_first,
                         TL_T_LID               i_size,
                         TL_T_REAL              i_dT,
+                        TL_T_LID      const (* i_faEl)[2],
                         TL_T_LID      const (* i_elFa)[TL_N_FAS],
-                        TL_T_CHARS_EL const  * i_elChars,
+                        TL_T_CHARS_FA const  * i_charsFa,
+                        TL_T_CHARS_EL const  * i_charsEl,
                         TL_T_REAL     const (* i_netUpdates)[4][1][TL_N_CRS],
                         TL_T_REAL           (* io_dofs)[TL_N_QTS][1][TL_N_CRS] ) {
       // update the elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
-        // determine adjacent faces
-        TL_T_LID l_left  = i_elFa[l_el][0];
-        TL_T_LID l_right = i_elFa[l_el][1];
-
         // scale update (dt / dx)
-        TL_T_REAL l_sca = i_dT * ( TL_T_REAL(1) / TL_T_REAL(i_elChars[l_el].volume) );
+        TL_T_REAL l_sca = i_dT * ( TL_T_REAL(1) / TL_T_REAL(i_charsEl[l_el].volume) );
 
-        for( int_cfr l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
-          // right-going from the left
-          io_dofs[l_el][0][0][l_ru] -= l_sca * i_netUpdates[l_left][2][0][l_ru];
-          io_dofs[l_el][1][0][l_ru] -= l_sca * i_netUpdates[l_left][3][0][l_ru];
+        for( unsigned short l_ad = 0; l_ad < TL_N_FAS; l_ad++ ) {
+          // adjacent face
+          const TL_T_LID l_faAd = i_elFa[l_el][l_ad];
 
-          // left-going from the right
-          io_dofs[l_el][0][0][l_ru] -= l_sca * i_netUpdates[l_right][0][0][l_ru];
-          io_dofs[l_el][1][0][l_ru] -= l_sca * i_netUpdates[l_right][1][0][l_ru];
+          // determine offset (left/right distinction) for net-updates
+          unsigned short l_off = ( i_faEl[l_faAd][0] == l_el ) ? 0 : 2;
+
+          // pointer to normal
+          auto *l_n = i_charsFa[l_faAd].outNormal;
+
+          // apply water height update
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+            io_dofs[l_el][0][0][l_cr] -= l_sca * i_netUpdates[l_faAd][l_off][0][l_cr];
+
+          // apply momentum update
+          for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+            TL_T_REAL l_scaN = l_sca * TL_T_REAL(l_n[l_di]);
+
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+              io_dofs[l_el][l_di+1][0][l_cr] -= l_scaN * i_netUpdates[l_faAd][l_off+1][0][l_cr];
+          }
         }
       }
     }

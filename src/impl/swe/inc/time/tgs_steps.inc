@@ -39,7 +39,9 @@ else if( i_step == 1 ) {
   >::update( i_first,
              i_size,
              real_base(m_dT),
+             m_internal.m_connect.faEl,
              m_internal.m_connect.elFa,
+             m_internal.m_faceChars,
              m_internal.m_elementChars,
              m_internal.m_faceModePrivate1,
              m_internal.m_elementModePrivate1 );

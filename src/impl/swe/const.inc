@@ -31,39 +31,18 @@ const unsigned short N_ENTRIES_CONTROL_FLOW=2;
 
 typedef real_base t_elementModePrivate1;
 typedef real_base t_elementModeShared1;
-typedef real_base t_elementShared1;
 typedef real_base t_faceModePrivate1;
 
-#if defined PP_T_ELEMENTS_LINE
 
-const unsigned short N_QUANTITIES=2;
+// bathymetry
+#define PP_N_ELEMENT_MODE_SHARED_1 1
+const unsigned short N_QUANTITIES=N_DIM+1;
 
 // DOFs are h and hu
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
 
-// bathymetry
-#define PP_N_ELEMENT_MODE_SHARED_1 1
-
-// dx
-#define PP_N_ELEMENT_SHARED_1 1
-
 // left- and right-going net-updates for h and hu
 #define PP_N_FACE_MODE_PRIVATE_1 4
-
-
-#elif defined PP_T_ELEMENTS_QUAD4R
-
-const unsigned short N_QUANTITIES=3;
-
-#define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
-#define PP_N_ELEMENT_MODE_SHARED_1 1
-#define PP_N_ELEMENT_SHARED_1 1
-const unsigned short N_FACE_MODES=1;
-#define PP_N_FACE_MODE_PRIVATE_1 4
-
-#else
-#error shallow water constants for element type undefined.
-#endif
 
 /**
  * Scratch memory (per thread)
