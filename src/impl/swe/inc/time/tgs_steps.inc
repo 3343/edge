@@ -21,21 +21,27 @@
  * Steps for the shallow water equations.
  **/
 if( i_step == 0 ) {
-  edge::swe::solvers::FiniteVolume::netUpdates( i_first,
-                                                i_size,
-                                                m_internal.m_connect.faEl,
-                                                m_internal.m_faceChars,
-                                                m_internal.m_elementModePrivate1,
-                                                m_internal.m_elementModeShared1,
-                                                m_internal.m_faceModePrivate1 );
+  edge::swe::solvers::FiniteVolume<
+    T_SDISC.ELEMENT,
+    N_CRUNS
+  >::netUpdates( i_first,
+                 i_size,
+                 m_internal.m_connect.faEl,
+                 m_internal.m_faceChars,
+                 m_internal.m_elementModePrivate1,
+                 m_internal.m_elementModeShared1,
+                 m_internal.m_faceModePrivate1 );
 }
 else if( i_step == 1 ) {
-  edge::swe::solvers::FiniteVolume::update( i_first,
-                                            i_size,
-                                            m_dT,
-                                            m_internal.m_connect.elFa,
-                                            m_internal.m_elementChars,
-                                            m_internal.m_faceModePrivate1,
-                                            m_internal.m_elementModePrivate1 );
+  edge::swe::solvers::FiniteVolume<
+    T_SDISC.ELEMENT,
+    N_CRUNS
+  >::update( i_first,
+             i_size,
+             real_base(m_dT),
+             m_internal.m_connect.elFa,
+             m_internal.m_elementChars,
+             m_internal.m_faceModePrivate1,
+             m_internal.m_elementModePrivate1 );
 }
 else EDGE_LOG_FATAL << "step not supported";

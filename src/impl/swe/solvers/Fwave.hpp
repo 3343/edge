@@ -64,7 +64,7 @@ class edge::swe::solvers::Fwave {
                                    const TL_T_REAL i_bL,
                                    const TL_T_REAL i_bR,
                                          TL_T_REAL o_netUpdates[4][TL_N_CRS],
-                                         TL_T_REAL i_g = 9.80665 ) {
+                                         TL_T_REAL i_g = TL_T_REAL(9.80665) ) {
       // particle veolocities
       TL_T_REAL l_uL[TL_N_CRS];
       TL_T_REAL l_uR[TL_N_CRS];

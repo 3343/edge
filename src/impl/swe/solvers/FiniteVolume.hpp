@@ -30,15 +30,35 @@
 namespace edge {
   namespace swe {
     namespace solvers {
+      template< t_entityType   TL_T_EL,
+                unsigned short TL_N_CRS >
       class FiniteVolume;
     }
   }
 }
 
+/**
+ * Finite volume solver for the shallow water equations.
+ *
+ * @paramt TL_T_EL element type.
+ * @paramt TL_N_CRS number of fused simulations.
+ **/
+template< t_entityType   TL_T_EL,
+          unsigned short TL_N_CRS >
 class edge::swe::solvers::FiniteVolume {
-  //private:
+  private:
+    //! number of dimensions
+    static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
+
+    //! number of faces per element
+    static const unsigned short TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+    //! number of shallow water quantities
+    static const unsigned short TL_N_QTS = (TL_N_DIS == 1) ? 2 : 3;
+
     /**
      * Computes the CFL time step for the given element.
+     *
      * @param i_h water height.
      * @param i_hu momentum.
      * @param i_volume volume of the element.
@@ -48,7 +68,7 @@ class edge::swe::solvers::FiniteVolume {
     static double computeCflTimeStep( double i_h,
                                       double i_hu,
                                       double i_volume, 
-                                      double i_g = 9.81,
+                                      double i_g   = 9.80665,
                                       double i_cfl = 0.4 ) {
       // only elements with water are updated
       if( i_h > 0 ) {
@@ -73,31 +93,38 @@ class edge::swe::solvers::FiniteVolume {
      * Gets the time step statistics according to the CFL-criterion for the entire mesh across all concurrent runs.
      * The computation uses the minimum time step among all concurrent runs in an element.
      * 
-     * @param i_nElements number of elemnts.
-     * @param i_elementChars element characteristics.
-     * @param i_elementModePrivate DOFs: shallow water quantities in the elements, private for concurrent runs.
+     * @param i_nEls number of elements.
+     * @param i_charsEl element characteristics.
+     * @param i_dofs degrees of freedom for the shallow water equations.
      * @param o_minDt set to minimum occurring time step. This is the minimum among the elements, the minimum of the runs is computed before.
      * @param o_aveDt set to average occuring time step. This is the average among the elements, the average of the runs is computed before.
      * @param o_maxDt set to maximum occuring time step. This is the maximum among the elements, the maximum of the runs is computer before.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_REAL floating point type.
+     * @paramt TL_T_CHARS_EL element characteristics, offereing member variable .volume.
      **/
-    static void getTimeStepStatistics(       int_el                  i_nElements,
-                                       const t_elementChars         *i_elementChars,
-                                       const t_elementModePrivate1 (*i_elementModePrivate)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                                       double                 &o_minDt,
-                                       double                 &o_aveDt,
-                                       double                 &o_maxDt ) {
+    template< typename TL_T_LID,
+              typename TL_T_REAL,
+              typename TL_T_CHARS_EL >
+    static void getTimeStepStatistics( TL_T_LID               i_nEls,
+                                       TL_T_CHARS_EL const  * i_charsEl,
+                                       TL_T_REAL     const (* i_dofs)[TL_N_QTS][1][TL_N_CRS],
+                                       double               & o_minDt,
+                                       double               & o_aveDt,
+                                       double               & o_maxDt ) {
       // intialize statistics
       o_minDt = std::numeric_limits< double >::max();
       o_aveDt = 0;
       o_maxDt = 0;
 
-      for( int_el l_element = 0; l_element < i_nElements; l_element++ ) {
+      for( TL_T_LID l_el = 0; l_el < i_nEls; l_el++ ) {
         // compute minum CFL associated time step for all concurrent runs
         double l_cDt = std::numeric_limits< double >::max();
-        for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
-          l_cDt = std::min( l_cDt, computeCflTimeStep( i_elementModePrivate[l_element][0][0][l_run],
-                                                       i_elementModePrivate[l_element][1][0][l_run],
-                                                       i_elementChars[l_element].volume )               );
+        for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
+          l_cDt = std::min( l_cDt, computeCflTimeStep( i_dofs[l_el][0][0][l_ru],
+                                                       i_dofs[l_el][1][0][l_ru],
+                                                       i_charsEl[l_el].volume ) );
         }
 
         // add element to stats
@@ -107,7 +134,7 @@ class edge::swe::solvers::FiniteVolume {
       }
 
       // average
-      o_aveDt /= i_nElements;
+      o_aveDt /= i_nEls;
     }
 
    /**
@@ -121,25 +148,24 @@ class edge::swe::solvers::FiniteVolume {
     * @param i_bath bathymetry for the elements.
     * @param o_netUpdate will be set to the net-updates for the faces' adjacent elements.
     *
-    * @paramt struct of the face characterstics, offering member .outNormal.
+    * @paramt TL_T_LID integral type of local ids.
+    * @paramt TL_T_REAL floating point precision.
+    * @paramt TL_T_CHARS_FA struct of the face characterstics, offering member .outNormal.
     **/
-   template< typename TL_T_CHARS_FA >
-   static void netUpdates( int_el                i_first,
-                           int_el                i_size,
-                           int_el        const (*i_faEl)[2],
-                           TL_T_CHARS_FA const  *i_charsFa,
-                           real_base     const (*i_dofs)[N_QUANTITIES][1][N_CRUNS],
-                           real_base     const (*i_bath)[1][1],
-                           real_base           (*o_netUpdates)[4][1][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(o_netUpdates, ALIGNMENT.CRUNS);
-#endif
+   template< typename TL_T_LID,
+             typename TL_T_REAL,
+             typename TL_T_CHARS_FA >
+   static void netUpdates( TL_T_LID               i_first,
+                           TL_T_LID               i_size,
+                           TL_T_LID      const (* i_faEl)[2],
+                           TL_T_CHARS_FA const  * i_charsFa,
+                           TL_T_REAL     const (* i_dofs)[TL_N_QTS][1][TL_N_CRS],
+                           TL_T_REAL     const (* i_bath)[1][1],
+                           TL_T_REAL           (* o_netUpdates)[4][1][TL_N_CRS] ) {
       // compute net-updates
-      for( int_el l_fa = i_first; l_fa < i_first+i_size; l_fa++ ) {
+      for( TL_T_LID l_fa = i_first; l_fa < i_first+i_size; l_fa++ ) {
         // determine neighbors
-        int_el l_le, l_ri;
+        TL_T_LID l_le, l_ri;
 
         if( i_charsFa[l_fa].outNormal[0] > 0 ) {
           l_le = i_faEl[l_fa][0];
@@ -151,10 +177,10 @@ class edge::swe::solvers::FiniteVolume {
         }
 
         // compute net-updates
-        solvers::Fwave::computeNetUpdates( i_dofs[l_le][0],    i_dofs[l_ri][0],
-                                           i_dofs[l_le][1],    i_dofs[l_ri][1],
-                                           i_bath[l_le][0][0], i_bath[l_ri][0][0],
-                                           o_netUpdates[ l_fa] );
+        solvers::Fwave< TL_N_CRS >::computeNetUpdates( i_dofs[l_le][0][0], i_dofs[l_ri][0][0],
+                                                       i_dofs[l_le][1][0], i_dofs[l_ri][1][0],
+                                                       i_bath[l_le][0][0], i_bath[l_ri][0][0],
+                                                       o_netUpdates[l_fa][0] );
       }
    }
 
@@ -168,40 +194,38 @@ class edge::swe::solvers::FiniteVolume {
      * @param i_elChars element characteristics.
      * @param i_netUpdates of face-local net-updates, private for conurrent runs.
      * @param io_dofs DOFs: shallow water quantities in the elements, private for concurrent runs.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_REAL floating point precision.
+     * @paramt TL_T_CHARS_EL element characteristics, offering member variable .volume.
      **/
-    static void update(       int_el                   i_first,
-                              int_el                   i_size,
-                              double                   i_dT,
-                        const int_el                 (*i_elFa)[C_ENT[T_SDISC.ELEMENT].N_FACES],
-                        const t_elementChars          *i_elChars,
-                        const real_base              (*i_netUpdates)[4][1][N_CRUNS],
-                              real_base              (*io_dofs)[N_QUANTITIES][1][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_netUpdates, ALIGNMENT.CRUNS);
-      (void) __builtin_assume_aligned(io_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
-
-
-
+    template< typename TL_T_LID,
+              typename TL_T_REAL,
+              typename TL_T_CHARS_EL >
+    static void update( TL_T_LID               i_first,
+                        TL_T_LID               i_size,
+                        TL_T_REAL              i_dT,
+                        TL_T_LID      const (* i_elFa)[TL_N_FAS],
+                        TL_T_CHARS_EL const  * i_elChars,
+                        TL_T_REAL     const (* i_netUpdates)[4][1][TL_N_CRS],
+                        TL_T_REAL           (* io_dofs)[TL_N_QTS][1][TL_N_CRS] ) {
       // update the elements
-      for( int_el l_el = i_first; l_el < i_first+i_size; l_el++ ) {
+      for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
         // determine adjacent faces
-        int_el l_left  = i_elFa[l_el][0];
-        int_el l_right = i_elFa[l_el][1];
+        TL_T_LID l_left  = i_elFa[l_el][0];
+        TL_T_LID l_right = i_elFa[l_el][1];
 
         // scale update (dt / dx)
-        real_base l_scalar = i_dT * (1/i_elChars[l_el].volume);
+        TL_T_REAL l_sca = i_dT * ( TL_T_REAL(1) / TL_T_REAL(i_elChars[l_el].volume) );
 
-#pragma omp simd
-        for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
+        for( int_cfr l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
           // right-going from the left
-          io_dofs[l_el][0][0][l_ru] -= l_scalar * i_netUpdates[l_left][2][0][l_ru];
-          io_dofs[l_el][1][0][l_ru] -= l_scalar * i_netUpdates[l_left][3][0][l_ru];
+          io_dofs[l_el][0][0][l_ru] -= l_sca * i_netUpdates[l_left][2][0][l_ru];
+          io_dofs[l_el][1][0][l_ru] -= l_sca * i_netUpdates[l_left][3][0][l_ru];
 
           // left-going from the right
-          io_dofs[l_el][0][0][l_ru] -= l_scalar * i_netUpdates[l_right][0][0][l_ru];
-          io_dofs[l_el][1][0][l_ru] -= l_scalar * i_netUpdates[l_right][1][0][l_ru];
+          io_dofs[l_el][0][0][l_ru] -= l_sca * i_netUpdates[l_right][0][0][l_ru];
+          io_dofs[l_el][1][0][l_ru] -= l_sca * i_netUpdates[l_right][1][0][l_ru];
         }
       }
     }

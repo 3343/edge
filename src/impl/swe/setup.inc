@@ -53,9 +53,12 @@ l_shared.regWrkRgn( 0, 1, 1,
 
 // get time steps
 // Warning: Those are only valid if the allow time step doesn't lower significantly
-edge::swe::solvers::FiniteVolume::getTimeStepStatistics( l_internal.m_nElements,
-                                                         l_internal.m_elementChars,
-                                                         l_internal.m_elementModePrivate1,
-                                                         l_dT[0],
-                                                         l_dT[1],
-                                                         l_dT[2] );
+edge::swe::solvers::FiniteVolume<
+  T_SDISC.ELEMENT,
+  N_CRUNS
+>::getTimeStepStatistics( l_internal.m_nElements,
+                          l_internal.m_elementChars,
+                          l_internal.m_elementModePrivate1,
+                          l_dT[0],
+                          l_dT[1],
+                          l_dT[2] );
