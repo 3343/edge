@@ -92,6 +92,11 @@ Include:
   #make install
   #cd ..
 
+  ############
+  # Clean up #
+  ############
+  sudo apt-get clean
+
 %appinstall edge
   export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
@@ -181,6 +186,24 @@ Include:
   ############
   echo "cleaning up"
   rm -rf ${INSTALL_DIR}
+
+%apphelp edge
+   Installation of the Extreme-scale Discontinuous Galerkin Environment (EDGE).
+   http://dial3343.org
+
+   Supported configurations:
+     * AVX2 (Haswell, EPYC):
+       - tetrahedral elements
+       - elastic wave equations
+       - orders 1-5
+       - regular (runtime generated) and unstructured meshes (MOAB)
+       - NetCDF/HDF5 support
+       - non-fused simulations (1 concurrent run) only
+       - single precision arithmetic (32bit)
+       - parallelization: LIBXSMM (SIMD), OpenMP (multicore)
+     * AVX512 (Knights Landing, Skylake, Knights Mill), everything as AVX2 except for:
+       - non-fused simulations (1 concurrent run)
+       - fused simulations (16 concurrent runs)
 
 %apprun edge
   # check input
