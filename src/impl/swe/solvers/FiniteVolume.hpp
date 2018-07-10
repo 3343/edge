@@ -164,7 +164,10 @@ class edge::swe::solvers::FiniteVolume {
                            TL_T_REAL           (* o_netUpdates)[4][1][TL_N_CRS] ) {
       // compute net-updates
       for( TL_T_LID l_fa = i_first; l_fa < i_first+i_size; l_fa++ ) {
-        // assemble left and right DOFs
+        // bathymetry
+        TL_T_REAL l_bath[2];
+
+        // left and right DOFs
         TL_T_REAL l_dofs[2][2][TL_N_CRS];
 
         // adjacent elements
@@ -176,14 +179,41 @@ class edge::swe::solvers::FiniteVolume {
         for( unsigned short l_ad = 0; l_ad < 2; l_ad++ ) {
           TL_T_LID l_el = l_elsAd[l_ad];
 
-          for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
-            // copy over water heights
-            l_dofs[l_ad][0][l_ru] = i_dofs[l_el][0][0][l_ru];
+          // default right element: no boundary condition
+          if(    l_ad == 0 ||
+                 (    (i_charsFa[l_fa].spType & OUTFLOW)    != OUTFLOW
+                   && (i_charsFa[l_fa].spType & REFLECTING) != REFLECTING ) ) {
+            // set bathymetry
+            l_bath[l_ad] = i_bath[ l_elsAd[l_ad] ][0][0];
 
-            // derive face-normal momentum
-            l_dofs[l_ad][1][l_ru] = 0;
-            for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-              l_dofs[l_ad][1][l_ru] += TL_T_REAL(l_n[l_di]) * i_dofs[l_el][1+l_di][0][l_ru];
+            // set DOFs
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              // copy over water heights
+              l_dofs[l_ad][0][l_cr] = i_dofs[l_el][0][0][l_cr];
+
+              // derive face-normal momentum
+              l_dofs[l_ad][1][l_cr] = 0;
+              for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+                l_dofs[l_ad][1][l_cr] += TL_T_REAL(l_n[l_di]) * i_dofs[l_el][1+l_di][0][l_cr];
+              }
+            }
+          }
+          else if( (i_charsFa[l_fa].spType & OUTFLOW) == OUTFLOW ) {
+            // set bathymetry
+            l_bath[1] = l_bath[0];
+
+            // set DOFs
+            for( unsigned short l_qt = 0; l_qt < 2; l_qt++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                l_dofs[1][l_qt][l_cr] = l_dofs[0][l_qt][l_cr];
+          }
+          else {
+            // set bathymetry
+            l_bath[1] = l_bath[0];
+
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              l_dofs[1][0][l_cr] =  l_dofs[0][0][l_cr];
+              l_dofs[1][1][l_cr] = -l_dofs[0][1][l_cr];
             }
           }
         }
@@ -191,9 +221,9 @@ class edge::swe::solvers::FiniteVolume {
         // compute net-updates
         solvers::Fwave<
           TL_N_CRS
-        >::computeNetUpdates( l_dofs[0][0],               l_dofs[1][0],
-                              l_dofs[0][1],               l_dofs[1][1],
-                              i_bath[ l_elsAd[0] ][0][0], i_bath[ l_elsAd[1] ][0][0],
+        >::computeNetUpdates( l_dofs[0][0], l_dofs[1][0],
+                              l_dofs[0][1], l_dofs[1][1],
+                              l_bath[0],    l_bath[1],
                               o_netUpdates[l_fa][0] );
       }
    }

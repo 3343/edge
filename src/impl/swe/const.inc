@@ -34,6 +34,15 @@ typedef real_base t_elementModeShared1;
 typedef real_base t_faceModePrivate1;
 
 
+/*
+ * Bitmasks for the shallow water equations.
+ **/
+static_assert( sizeof(int_spType) >= 4, "size of entity type too small" );
+typedef enum: int_spType {
+  REFLECTING = 101, // TODO: change to bitmask
+  OUTFLOW    = 105, // TODO: change to bitmask
+} t_spTypeSwe;
+
 // bathymetry
 #define PP_N_ELEMENT_MODE_SHARED_1 1
 const unsigned short N_QUANTITIES=N_DIM+1;
