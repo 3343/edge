@@ -95,7 +95,7 @@ Include:
   ############
   # Clean up #
   ############
-  sudo apt-get clean
+  apt-get clean
 
 %appinstall edge
   export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
