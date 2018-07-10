@@ -252,6 +252,68 @@
     </pipeline>
   </pipelines>
 
+  <!-- Continuous Deployment -->
+  <pipelines group="CD">
+    <pipeline name="container">
+      <timer onlyOnChanges="true">0 00 23 ? * *</timer>
+      <materials>
+        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
+      </materials>
+
+      <stage name="virtual_machine">
+        <jobs>
+          <job name="bootstrap">
+            <tasks>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant destroy -f</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant up</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant halt</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="container" fetchMaterials="false">
+        <jobs>
+          <job name="bootstrap">
+            <tasks>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant up</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant ssh -c "sudo singularity build edge.simg /vagrant/debian.def"</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant destroy -f</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </pipelines>
+
   <templates>
     <!-- *******************************************
          *>>>>>>>       Dependencies        <<<<<<<*
@@ -2811,6 +2873,14 @@
     </pipeline>
   </templates>
   <environments>
+    <environment name="CD">
+      <agents>
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
+      </agents>
+      <pipelines>
+        <pipeline name="container" />
+      </pipelines>
+    </environment>
     <environment name="Clang">
       <environmentvariables>
         <variable name="CC_SEQ">
