@@ -21,12 +21,21 @@
 #
 # @section DESCRIPTION
 # Vagrant configuration, which allows to run Singularity in user space through a virtual machine.
-#   1) Fire the machine up by running `vagrant up`.
-#   2) ssh in the machine via `vagrant ssh`.
+#   1) Fire up the machine by running `vagrant up`.
+#   2) Run the bootstrap (time consuming) `vagrant ssh -c "sudo singularity build edge.simg /vagrant/debian.def"`.
+#   3) Copy the container to the host: `vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg` 
 ##
 
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/jessie64"
+
+  config.vm.provider "virtualbox" do |vb|
+    # 2GB of memory required for compilation
+    vb.memory = "2048"
+
+    # limit to single VPU
+    vb.cpus = 1
+  end
 
   # bootstrap, which installs Singularity.
   config.vm.provision "shell", inline: <<-SHELL
