@@ -20,10 +20,12 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Vagrant configuration, which allows to run Singularity in user space through a virtual machine.
+# Vagrant configuration, which allows to run Singularity builds in user space through a virtual machine.
+#
+# Singularity example:
 #   1) Fire up the machine by running `vagrant up`.
 #   2) Run the bootstrap (time consuming) `vagrant ssh -c "sudo singularity build edge.simg /vagrant/debian.def"`.
-#   3) Copy the container to the host: `vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg` 
+#   3) Copy the container to the host: `vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg`.
 ##
 
 Vagrant.configure("2") do |config|
@@ -47,12 +49,14 @@ Vagrant.configure("2") do |config|
     sudo apt-get install -qq -o=Dpkg::Use-Pty=0 git
     sudo apt-get install -qq -o=Dpkg::Use-Pty=0 squashfs-tools
     sudo apt-get install -qq -o=Dpkg::Use-Pty=0 debootstrap
+
+    # install Singularity
     git clone https://github.com/singularityware/singularity.git
     cd singularity
     ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
-    make
-    sudo make install
+    make > /dev/null
+    sudo make install > /dev/null
     cd ..
     rm -rf singularity
   SHELL
