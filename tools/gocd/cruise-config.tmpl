@@ -34,7 +34,7 @@
     TEMPLATE_CLOUD_0_UUID
 -->
 <cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="108">
-  <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
+  <server artifactsdir="artifacts" purgeStart="80.0" purgeUpto="100.0" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
     <security>
       <!-- Authentification -->
       <authConfigs>
@@ -254,7 +254,7 @@
 
   <!-- Continuous Deployment -->
   <pipelines group="CD">
-    <pipeline name="container">
+    <pipeline name="singularity">
       <timer onlyOnChanges="true">0 00 23 ? * *</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
@@ -309,6 +309,9 @@
                 <runif status="passed" />
               </exec>
             </tasks>
+            <artifacts>
+              <artifact type="build" src="edge/tools/singularity/edge.simg" />
+            </artifacts>
           </job>
         </jobs>
       </stage>
@@ -2879,7 +2882,7 @@
         <physical uuid="TEMPLATE_CLOUD_0_UUID" />
       </agents>
       <pipelines>
-        <pipeline name="container" />
+        <pipeline name="singularity" />
       </pipelines>
     </environment>
     <environment name="Clang">
