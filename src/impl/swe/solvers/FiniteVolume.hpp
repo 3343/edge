@@ -61,15 +61,15 @@ class edge::swe::solvers::FiniteVolume {
      *
      * @param i_h water height.
      * @param i_hu momentum.
-     * @param i_volume volume of the element.
+     * @param i_inDia in-circle diameter of the element.
      * @param i_g gravity.
      * @param i_cfl cfl number.
      **/
     static double computeCflTimeStep( double i_h,
                                       double i_hu,
-                                      double i_volume, 
+                                      double i_inDia,
                                       double i_g   = 9.80665,
-                                      double i_cfl = 0.4 ) {
+                                      double i_cfl = 0.9 ) {
       // only elements with water are updated
       if( i_h > 0 ) {
         // compute particle velocity
@@ -79,7 +79,8 @@ class edge::swe::solvers::FiniteVolume {
         double l_s = std::abs( l_u ) + std::sqrt( i_g * i_h );
 
         // compute time step
-        double l_dT  = ( i_volume / l_s );
+        double l_dT  = ( i_inDia / l_s );
+               l_dT /= TL_N_DIS;
                l_dT *= i_cfl;
         return l_dT;
       }
@@ -124,7 +125,7 @@ class edge::swe::solvers::FiniteVolume {
         for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
           l_cDt = std::min( l_cDt, computeCflTimeStep( i_dofs[l_el][0][0][l_ru],
                                                        i_dofs[l_el][1][0][l_ru],
-                                                       i_charsEl[l_el].volume ) );
+                                                       i_charsEl[l_el].inDia ) );
         }
 
         // add element to stats
@@ -268,6 +269,9 @@ class edge::swe::solvers::FiniteVolume {
           // adjacent face
           const TL_T_LID l_faAd = i_elFa[l_el][l_ad];
 
+          // derive scaling of the net-update
+          TL_T_REAL l_scaFa = l_sca * i_charsFa[l_faAd].area;
+
           // determine offset (left/right distinction) for net-updates
           unsigned short l_off = ( i_faEl[l_faAd][0] == l_el ) ? 0 : 2;
 
@@ -276,11 +280,11 @@ class edge::swe::solvers::FiniteVolume {
 
           // apply water height update
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            io_dofs[l_el][0][0][l_cr] -= l_sca * i_netUpdates[l_faAd][l_off][0][l_cr];
+            io_dofs[l_el][0][0][l_cr] -= l_scaFa * i_netUpdates[l_faAd][l_off][0][l_cr];
 
           // apply momentum update
           for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-            TL_T_REAL l_scaN = l_sca * TL_T_REAL(l_n[l_di]);
+            TL_T_REAL l_scaN = l_scaFa * TL_T_REAL(l_n[l_di]);
 
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               io_dofs[l_el][l_di+1][0][l_cr] -= l_scaN * i_netUpdates[l_faAd][l_off+1][0][l_cr];
