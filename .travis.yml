@@ -378,6 +378,7 @@ before_install:
   # clone EDGE's asset repository
   - git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
   - cd edge_opt
+  - git checkout b176fa2
   - git lfs fetch -I cont/advection; git lfs fetch -I cont/elastic; git lfs fetch -I cont/swe
   - git lfs checkout cont/advection cont/elastic cont/swe
   - cd ..
