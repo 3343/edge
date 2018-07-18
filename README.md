@@ -43,7 +43,7 @@
 
 * *swe (1D)*:
 
-  Solve the one-dimensional shallow water equations (SWE) in conservative form. Quantity ```q(x,t)=(h,hu)``` contains the water height ```h``` and the momentum ```hu```. The flux function is nonlinear.
+  Solves the one-dimensional Shallow Water Equations (SWE) in conservative form. Quantity ```q(x,t)=(h,hu)``` contains the water height ```h``` and the momentum ```hu```. The flux function is nonlinear. Bathymetry is supported.
 
   ```
   q_t + f(q)_x = 0,
@@ -51,6 +51,20 @@
          |         hu           |
   f(q) = |                      |
          | hu^2 + 1/2 * g * h^2 |
+  ```
+
+ * *swe (2D)*:
+
+  Solves the two-dimensional Shallow Water Equations (SWE) in conservative form. Quantity `q(x,t)=(h,hu,hv)` contains the water height `h`, the momentum `hu` in x-direction and the momentum `hv` in y-direction. The flux function is nonlinear. Bathymetry is supported.
+
+  ```
+  q_t + f(q)_x + g(q)_x = 0,
+
+         |         hu           |         |          hv          |
+         |                      |         |                      |
+  f(q) = | hu^2 + 1/2 * g * h^2 |, g(q) = |          huv         |
+         |                      |         |                      |
+         |         huv          |         | hv^2 + 1/2 * g * h^2 |
   ```
 
 ## Elements
@@ -82,7 +96,7 @@ Based on the equations and the element type, the following table shows the imple
 |-----------|:--------------------------------:|:---:|:--:|:-------:|:-------:|
 | advection | line, quad4r, tria3, hex8r, tet4 |  x  |  x |    x    |         |
 | elastics  | quad4r, tria3, hex8r, tet4       |  x  |  x |    x    |    x    |
-| swe       | line                             |  x  |  x |         |         |
+| swe       | linem quad4r, tria3              |  x  |  x |         |         |
 
 ## High Performance Support
 | Microarchitecture | Machine(s) |
