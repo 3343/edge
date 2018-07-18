@@ -92,6 +92,7 @@ if env['tests']:
              'io/Config.test.cpp',
              'io/Receivers.test.cpp',
              'io/InternalBoundary.test.cpp',
+             'impl/swe/solvers/Fwave.test.cpp'
               ]
   if env['moab'] != False:
     l_tests = l_tests + [ 'mesh/Moab.test.cpp' ]

@@ -33,7 +33,6 @@ typedef real_base t_elementModePrivate1;
 typedef real_base t_elementModeShared1;
 typedef real_base t_faceModePrivate1;
 
-
 /*
  * Bitmasks for the shallow water equations.
  **/
@@ -50,7 +49,7 @@ const unsigned short N_QUANTITIES=N_DIM+1;
 // DOFs are h and hu
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
 
-// left- and right-going net-updates for h and hu
+// normal left- and right-going net-updates for h and hu
 #define PP_N_FACE_MODE_PRIVATE_1 4
 
 /**

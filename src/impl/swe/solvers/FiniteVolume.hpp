@@ -89,6 +89,74 @@ class edge::swe::solvers::FiniteVolume {
       }
     }
 
+    /**
+     * @brief Computes the left and right quantities by rotating the momentum and applying boundary conditions.
+     *
+     * @param i_spType sparse type of the face.
+     * @param i_elsAd elements adjacent to the face.
+     * @param i_n normal of the face.
+     * @param i_dofs degrees of freedom.
+     * @param i_bath bathymetry.
+     * @param o_dofs will be set to the quantities (h and hu) on the left and rightside of the face. [*][][]: left/right [][*][]: quantity, [][][*]: fused run.
+     * @param o_bath will be set to bathymetry on the left and right side of the face.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_SP integral type of the sparse type.
+     * @paramt TL_T_REAL floating point precision.
+     */
+    template< typename TL_T_LID,
+              typename TL_T_SP,
+              typename TL_T_REAL >
+    static void qtsLr( TL_T_SP            i_spType,
+                       TL_T_LID           i_elsAd[2],
+                       TL_T_REAL          i_n[2],
+                       TL_T_REAL const (* i_dofs)[TL_N_QTS][1][TL_N_CRS],
+                       TL_T_REAL const (* i_bath)[1][1],
+                       TL_T_REAL          o_dofs[2][2][TL_N_CRS],
+                       TL_T_REAL          o_bath[2] ) {
+      for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+        TL_T_LID l_elAd = i_elsAd[l_sd];
+
+        // default right element: no boundary condition
+        if(       l_sd == 0 ||
+            (    (i_spType & OUTFLOW)    != OUTFLOW
+              && (i_spType & REFLECTING) != REFLECTING ) ) {
+          // set bathymetry
+          o_bath[l_sd] = i_bath[ l_elAd ][0][0];
+
+          // set DOFs
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            // copy over water heights
+            o_dofs[l_sd][0][l_cr] = i_dofs[l_elAd][0][0][l_cr];
+
+            // derive face-normal momentum
+            o_dofs[l_sd][1][l_cr] = 0;
+            for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
+              o_dofs[l_sd][1][l_cr] += TL_T_REAL(i_n[l_di]) * i_dofs[l_elAd][1+l_di][0][l_cr];
+            }
+          }
+        }
+        else if( (i_spType & OUTFLOW) == OUTFLOW ) {
+          // set bathymetry
+          o_bath[1] = o_bath[0];
+
+          // set DOFs
+          for( unsigned short l_qt = 0; l_qt < 2; l_qt++ )
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+              o_dofs[1][l_qt][l_cr] = o_dofs[0][l_qt][l_cr];
+        }
+        else {
+          // set bathymetry
+          o_bath[1] = o_bath[0];
+
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            o_dofs[1][0][l_cr] =  o_dofs[0][0][l_cr];
+            o_dofs[1][1][l_cr] = -o_dofs[0][1][l_cr];
+          }
+        }
+      }
+    }
+
   public:
     /**
      * Gets the time step statistics according to the CFL-criterion for the entire mesh across all concurrent runs.
@@ -138,31 +206,31 @@ class edge::swe::solvers::FiniteVolume {
       o_aveDt /= i_nEls;
     }
 
-   /**
-    * Computes the net-updates for the given faces using the f-wave solver.
-    *
-    * @param i_first first face.
-    * @param i_size number of faces after first.
-    * @param i_faEl faces adjacent to elements.
-    * @param i_charsFa face characteristics.
-    * @param i_dofs degrees of freedom (height, momentum).
-    * @param i_bath bathymetry for the elements.
-    * @param o_netUpdates will be set to the net-updates for the faces' adjacent elements.
-    *
-    * @paramt TL_T_LID integral type of local ids.
-    * @paramt TL_T_REAL floating point precision.
-    * @paramt TL_T_CHARS_FA struct of the face characterstics, offering member .outNormal.
+    /**
+     * Computes the normal net-updates for the given faces using the f-wave solver.
+     *
+     * @param i_first first face.
+     * @param i_size number of faces after first.
+     * @param i_faEl faces adjacent to elements.
+     * @param i_charsFa face characteristics.
+     * @param i_dofs degrees of freedom (height, momentum).
+     * @param i_bath bathymetry for the elements.
+     * @param o_nusN will be set to the normal net-updates for the faces' adjacent elements.
+     *
+     * @paramt TL_T_LID integral type of local ids.
+     * @paramt TL_T_REAL floating point precision.
+     * @paramt TL_T_CHARS_FA struct of the face characterstics, offering member .outNormal.
     **/
-   template< typename TL_T_LID,
-             typename TL_T_REAL,
-             typename TL_T_CHARS_FA >
-   static void netUpdates( TL_T_LID               i_first,
-                           TL_T_LID               i_size,
-                           TL_T_LID      const (* i_faEl)[2],
-                           TL_T_CHARS_FA const  * i_charsFa,
-                           TL_T_REAL     const (* i_dofs)[TL_N_QTS][1][TL_N_CRS],
-                           TL_T_REAL     const (* i_bath)[1][1],
-                           TL_T_REAL           (* o_netUpdates)[4][1][TL_N_CRS] ) {
+    template< typename TL_T_LID,
+              typename TL_T_REAL,
+              typename TL_T_CHARS_FA >
+    static void nusN( TL_T_LID               i_first,
+                      TL_T_LID               i_size,
+                      TL_T_LID      const (* i_faEl)[2],
+                      TL_T_CHARS_FA const  * i_charsFa,
+                      TL_T_REAL     const (* i_dofs)[TL_N_QTS][1][TL_N_CRS],
+                      TL_T_REAL     const (* i_bath)[1][1],
+                      TL_T_REAL           (* o_nusN)[2][2][TL_N_CRS] ) {
       // compute net-updates
       for( TL_T_LID l_fa = i_first; l_fa < i_first+i_size; l_fa++ ) {
         // bathymetry
@@ -174,60 +242,28 @@ class edge::swe::solvers::FiniteVolume {
         // adjacent elements
         const TL_T_LID *l_elsAd = i_faEl[l_fa];
 
-        // pointer to normal
-        auto *l_n = i_charsFa[l_fa].outNormal;
+        // normal
+        TL_T_REAL l_n[TL_N_DIS];
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+          l_n[l_di] = i_charsFa[l_fa].outNormal[l_di];
 
-        for( unsigned short l_ad = 0; l_ad < 2; l_ad++ ) {
-          TL_T_LID l_el = l_elsAd[l_ad];
-
-          // default right element: no boundary condition
-          if(    l_ad == 0 ||
-                 (    (i_charsFa[l_fa].spType & OUTFLOW)    != OUTFLOW
-                   && (i_charsFa[l_fa].spType & REFLECTING) != REFLECTING ) ) {
-            // set bathymetry
-            l_bath[l_ad] = i_bath[ l_elsAd[l_ad] ][0][0];
-
-            // set DOFs
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              // copy over water heights
-              l_dofs[l_ad][0][l_cr] = i_dofs[l_el][0][0][l_cr];
-
-              // derive face-normal momentum
-              l_dofs[l_ad][1][l_cr] = 0;
-              for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-                l_dofs[l_ad][1][l_cr] += TL_T_REAL(l_n[l_di]) * i_dofs[l_el][1+l_di][0][l_cr];
-              }
-            }
-          }
-          else if( (i_charsFa[l_fa].spType & OUTFLOW) == OUTFLOW ) {
-            // set bathymetry
-            l_bath[1] = l_bath[0];
-
-            // set DOFs
-            for( unsigned short l_qt = 0; l_qt < 2; l_qt++ )
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                l_dofs[1][l_qt][l_cr] = l_dofs[0][l_qt][l_cr];
-          }
-          else {
-            // set bathymetry
-            l_bath[1] = l_bath[0];
-
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              l_dofs[1][0][l_cr] =  l_dofs[0][0][l_cr];
-              l_dofs[1][1][l_cr] = -l_dofs[0][1][l_cr];
-            }
-          }
-        }
+        qtsLr( i_charsFa[l_fa].spType,
+               l_elsAd,
+               l_n,
+               i_dofs,
+               i_bath,
+               l_dofs,
+               l_bath );
 
         // compute net-updates
         solvers::Fwave<
           TL_N_CRS
-        >::computeNetUpdates( l_dofs[0][0], l_dofs[1][0],
-                              l_dofs[0][1], l_dofs[1][1],
-                              l_bath[0],    l_bath[1],
-                              o_netUpdates[l_fa][0] );
+        >::nusN( l_dofs[0][0],    l_dofs[1][0],
+                 l_dofs[0][1],    l_dofs[1][1],
+                 l_bath[0],       l_bath[1],
+                 o_nusN[l_fa][0], o_nusN[l_fa][1] );
       }
-   }
+    }
 
     /**
      * Updates the elements with net-update contribution within a time step.
@@ -239,8 +275,8 @@ class edge::swe::solvers::FiniteVolume {
      * @param i_elFa ids of faces adjacent to the elements.
      * @param i_charsFa face characteristics.
      * @param i_charsEl element characteristics.
-     * @param i_netUpdates face-local net-updates, private for conurrent runs.
-     * @param io_dofs DOFs: shallow water quantities in the elements, private for concurrent runs.
+     * @param i_nusN normal face-local net-updates.
+     * @param io_dofs DOFs: shallow water quantities in the elements.
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_REAL floating point precision.
@@ -258,7 +294,7 @@ class edge::swe::solvers::FiniteVolume {
                         TL_T_LID      const (* i_elFa)[TL_N_FAS],
                         TL_T_CHARS_FA const  * i_charsFa,
                         TL_T_CHARS_EL const  * i_charsEl,
-                        TL_T_REAL     const (* i_netUpdates)[4][1][TL_N_CRS],
+                        TL_T_REAL     const (* i_nusN)[2][2][TL_N_CRS],
                         TL_T_REAL           (* io_dofs)[TL_N_QTS][1][TL_N_CRS] ) {
       // update the elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
@@ -273,21 +309,23 @@ class edge::swe::solvers::FiniteVolume {
           TL_T_REAL l_scaFa = l_sca * i_charsFa[l_faAd].area;
 
           // determine offset (left/right distinction) for net-updates
-          unsigned short l_off = ( i_faEl[l_faAd][0] == l_el ) ? 0 : 2;
+          unsigned short l_sd = ( i_faEl[l_faAd][0] != l_el );
 
-          // pointer to normal
-          auto *l_n = i_charsFa[l_faAd].outNormal;
+          // normal
+          TL_T_REAL l_n[TL_N_DIS];
+          for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+          l_n[l_di] = i_charsFa[l_faAd].outNormal[l_di];
 
           // apply water height update
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-            io_dofs[l_el][0][0][l_cr] -= l_scaFa * i_netUpdates[l_faAd][l_off][0][l_cr];
+            io_dofs[l_el][0][0][l_cr] -= l_scaFa * i_nusN[l_faAd][l_sd][0][l_cr];
 
           // apply momentum update
           for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
             TL_T_REAL l_scaN = l_scaFa * TL_T_REAL(l_n[l_di]);
 
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-              io_dofs[l_el][l_di+1][0][l_cr] -= l_scaN * i_netUpdates[l_faAd][l_off+1][0][l_cr];
+              io_dofs[l_el][l_di+1][0][l_cr] -= l_scaN * i_nusN[l_faAd][l_sd][1][l_cr];
           }
         }
       }
