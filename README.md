@@ -53,7 +53,7 @@
          | hu^2 + 1/2 * g * h^2 |
   ```
 
- * *swe (2D)*:
+* *swe (2D)*:
 
   Solves the two-dimensional Shallow Water Equations (SWE) in conservative form. Quantity `q(x,t)=(h,hu,hv)` contains the water height `h`, the momentum `hu` in x-direction and the momentum `hv` in y-direction. The flux function is nonlinear. Bathymetry is supported.
 
