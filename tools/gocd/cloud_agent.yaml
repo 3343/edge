@@ -26,6 +26,7 @@
 package_update: true
 
 packages:
+  - sudo
   - git
 
 runcmd:
