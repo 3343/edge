@@ -96,7 +96,7 @@ Based on the equations and the element type, the following table shows the imple
 |-----------|:--------------------------------:|:---:|:--:|:-------:|:-------:|
 | advection | line, quad4r, tria3, hex8r, tet4 |  x  |  x |    x    |         |
 | elastics  | quad4r, tria3, hex8r, tet4       |  x  |  x |    x    |    x    |
-| swe       | linem quad4r, tria3              |  x  |  x |         |         |
+| swe       | line, quad4r, tria3              |  x  |  x |         |         |
 
 ## High Performance Support
 | Microarchitecture | Machine(s) |
