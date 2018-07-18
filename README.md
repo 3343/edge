@@ -58,7 +58,7 @@
   Solves the two-dimensional Shallow Water Equations (SWE) in conservative form. Quantity `q(x,t)=(h,hu,hv)` contains the water height `h`, the momentum `hu` in x-direction and the momentum `hv` in y-direction. The flux function is nonlinear. Bathymetry is supported.
 
   ```
-  q_t + f(q)_x + g(q)_x = 0,
+  q_t + f(q)_x + g(q)_y = 0,
 
          |         hu           |         |          hv          |
          |                      |         |                      |
