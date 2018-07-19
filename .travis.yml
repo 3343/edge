@@ -50,7 +50,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
         coverity_scan:
           project:
             name: "3343/edge"
@@ -64,6 +64,7 @@ matrix:
       env:
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         SYSTEM_SETUP=1
         USE_MPI=1
         COVERITY=1
@@ -77,12 +78,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=swe
         T_ELEMENTS=line
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -96,12 +98,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=advection
         T_ELEMENTS=line
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -115,12 +118,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=advection
         T_ELEMENTS=quad4r
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -134,12 +138,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tria3
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=1
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -150,12 +155,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tria3
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -169,12 +175,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=advection
         T_ELEMENTS=hex8r
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -188,12 +195,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tet4
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -208,12 +216,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=quad4r
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -227,12 +236,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tria3
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -246,12 +256,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=hex8r
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -265,12 +276,13 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tet4
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
         USE_MPI=0
         GCOV=gcov-8
         SYSTEM_SETUP=1
@@ -284,11 +296,12 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8']
+          packages: ['g++-8', 'gfortran-8']
       env:
         SINGULARITY_VERSION=2.5.1
         CXX_COMPILER=g++-8
         CC_COMPILER=gcc-8
+        FORT_COMPILER=gfortran-8
 
 before_install:
   - cd ..
@@ -298,6 +311,9 @@ before_install:
   # set compilers
   - export CXX=${CXX_COMPILER}
   - export CC=${CC_COMPILER}
+  - export FC=${FORT_COMPILER}
+  - export F77=${FORT_COMPILER}
+  - export F90=${FORT_COMPILER}
 
   # install packages
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo apt-get install libarchive-dev squashfs-tools; fi;
