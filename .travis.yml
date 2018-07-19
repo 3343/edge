@@ -295,6 +295,10 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
 
+  # set compilers
+  - export CXX=${CXX_COMPILER}
+  - export CC=${CC_COMPILER}
+
   # install packages
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo apt-get install libarchive-dev squashfs-tools; fi;
 
@@ -302,7 +306,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then tar -xjf openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd openmpi-1.10.3; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --enable-static --disable-shared > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then ./configure --enable-static --disable-shared > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then make -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then sudo make install > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd ..; fi;
@@ -312,7 +316,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget -O cppcheck.tar.gz https://github.com/danmar/cppcheck/archive/1.83.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir cppcheck; tar -xzf cppcheck.tar.gz -C cppcheck --strip-components=1 > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
@@ -325,13 +329,13 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget ftp://sourceware.org/pub/valgrind/valgrind-3.13.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.13.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.13.0; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir zlib && tar -xzf zlib.tar.gz -C zlib --strip-components=1; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --static --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; ./configure --static --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install hdf5
@@ -339,7 +343,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xf hdf5.tar.bz2 -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sed "s/\(.*\)(void) HDF_NO_UBSAN/HDF_NO_UBSAN \1(void)/" -i src/H5detect.c; fi; # remove, once fixed
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CFLAGS=-w CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CFLAGS=-w ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CFLAGS=-w CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
@@ -355,7 +359,7 @@ before_install:
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
@@ -388,7 +392,7 @@ before_install:
   - cd edge
   - ln -s $(pwd)/../edge_opt/cont .
 
-     # use MPI wrapper, if necessary
+  # update MPI wrappers
   - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
   - ${CXX} --version
   - export MOAB_DIR=submodules/moab/build
