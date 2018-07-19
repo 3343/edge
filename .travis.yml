@@ -335,9 +335,10 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install hdf5
-  - if [ "$SYSTEM_SETUP" = "1" ]; then for repeat in $(seq 1 10); do wget https://www.hdfgroup.org/package/gzip/?wpdmdl=11810 --no-verbose -O hdf5.tar.gz; if [ $? = 0 ]; then break; fi; sleep 30s; done; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then for repeat in $(seq 1 10); do wget https://www.hdfgroup.org/package/gzip/?wpdmdl=11811 --no-verbose -O hdf5.tar.bz2; if [ $? = 0 ]; then break; fi; sleep 30s; done; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xf hdf5.tar.bz2 -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sed "s/\(.*\)(void) HDF_NO_UBSAN/HDF_NO_UBSAN \1(void)/" -i src/H5detect.c; fi; # remove, once fixed
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CFLAGS=-w CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CFLAGS=-w CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
