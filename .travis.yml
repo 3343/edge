@@ -50,7 +50,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
         coverity_scan:
           project:
             name: "3343/edge"
@@ -62,9 +62,9 @@ matrix:
           build_command:   "scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1"
           branch_pattern: develop
       env:
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         SYSTEM_SETUP=1
         USE_MPI=1
         COVERITY=1
@@ -78,15 +78,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=swe
         T_ELEMENTS=line
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -98,15 +98,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=line
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -118,15 +118,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -138,15 +138,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tria3
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=1
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -155,15 +155,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tria3
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -175,15 +175,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -195,15 +195,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tet4
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -216,15 +216,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -236,15 +236,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tria3
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -256,15 +256,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -276,15 +276,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tet4
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-8
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -296,12 +296,12 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-8', 'gfortran-8']
+          packages: ['g++-7', 'gfortran-7']
       env:
         SINGULARITY_VERSION=2.5.1
-        CXX_COMPILER=g++-8
-        CC_COMPILER=gcc-8
-        FORT_COMPILER=gfortran-8
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
 
 before_install:
   - cd ..
