@@ -38,7 +38,7 @@ notifications:
     urls:
       - https://webhooks.gitter.im/e/43c875b57e67fd07bc8b
 
-language: cpp
+language: generic
 
 matrix:
   include:
@@ -295,6 +295,16 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
 
+   # set up compilers
+  - if [ "$USE_MPI" = "0" ]; then export CC=${CC_COMPILER}; fi;
+  - if [ "$USE_MPI" = "1" ]; then export OMPI_CC=${CC_COMPILER}; fi;
+  - if [ "$USE_MPI" = "1" ]; then export CC=mpiCC; fi;
+  - ${CC} --version
+  - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
+  - if [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER}; fi;
+  - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
+  - ${CXX} --version
+
   # install packages
   - if [ "$SINGULARITY_VERSION" != "" ]; then sudo apt-get install libarchive-dev squashfs-tools; fi;
 
@@ -387,11 +397,6 @@ before_install:
   - cd edge
   - ln -s $(pwd)/../edge_opt/cont .
 
-   # set up compilers
-  - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
-  - if [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER}; fi;
-  - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
-  - ${CXX} --version
   - export MOAB_DIR=submodules/moab/build
 
 script:
