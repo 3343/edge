@@ -389,7 +389,7 @@ before_install:
 
   # install LIBXSMM
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local BLAS=0 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local BLAS=0 -j $N_BUILD_PROC; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install singularity and dependencies
