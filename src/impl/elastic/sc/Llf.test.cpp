@@ -1334,6 +1334,10 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Net-updates at DG-face", "[el
 
     // compute the result
     double l_res[5][3][3];
+    for( unsigned short l_qt = 0; l_qt < 5; l_qt++ )
+      for( unsigned short l_sf = 0; l_sf < 3; l_sf++ )
+        for( unsigned short l_cr = 0; l_cr < 3; l_cr++ )
+          l_res[l_qt][l_sf][l_cr] = std::numeric_limits< double >::max();
 
     l_llf.nuFaSf( 0.006,
                   3,

@@ -116,6 +116,9 @@ class edge::mesh::common {
 
       // get outer point normal of local face
       real_mesh l_locOutNormal[3];
+      for( unsigned short l_di = 0; l_di < 3; l_di++ )
+        l_locOutNormal[l_di] = std::numeric_limits< real_mesh >::max();
+
       linalg::Geom::computeOutPtNormal( TRIA3,
                                         l_locFaCoords[0],
                                         l_normalPt,

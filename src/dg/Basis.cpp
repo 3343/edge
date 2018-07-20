@@ -66,6 +66,8 @@ void edge::dg::Basis::initMassMatrix() {
 
   real_base *l_mass = nullptr;
   l_mass = new real_base[ pre::dg::g_massSize ];
+  for( unsigned int l_en = 0; l_en < pre::dg::g_massSize; l_en++ )
+    l_mass[l_en] = std::numeric_limits< real_base >::max();
 
   // set values
   for( std::size_t l_va = 0; l_va < pre::dg::g_massSize; l_va++ )
