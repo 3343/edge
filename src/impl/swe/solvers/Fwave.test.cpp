@@ -48,10 +48,8 @@ TEST_CASE( "Test the derivation of eigenvalues.", "[Fwave][eigenValue]" ) {
                                        l_lam,
                                        1.0 );
 
-  for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-    for( unsigned short l_cr = 0; l_cr < 4; l_cr++ ) {
-      REQUIRE( l_lam[l_sd][l_cr] == Approx( -6.16227766016837933 ) );
-      REQUIRE( l_lam[l_sd][l_cr] == Approx(  6 )                   );
-    }
+  for( unsigned short l_cr = 0; l_cr < 4; l_cr++ ) {
+    REQUIRE( l_lam[0][l_cr] == Approx( -6.16227766016837933 ) );
+    REQUIRE( l_lam[1][l_cr] == Approx(  6 )                   );
   }
 }
