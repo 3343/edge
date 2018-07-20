@@ -418,6 +418,9 @@ script:
   - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck --version; fi;
   - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1; fi;
 
+  # disable advanced exprtk features to speedup compilation
+  - export CXXFLAGS=-Dexprtk_disable_enhanced_features
+
   #
   # SWE
   #
