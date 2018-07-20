@@ -342,7 +342,7 @@ before_install:
 
   # install valgrind
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install libc6-dbg; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then wget ftp://sourceware.org/pub/valgrind/valgrind-3.13.0.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://mirrors.kernel.org/sourceware/valgrind/valgrind-3.13.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.13.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.13.0; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
