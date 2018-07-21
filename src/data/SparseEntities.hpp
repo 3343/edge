@@ -145,7 +145,7 @@ class edge::data::SparseEntities {
         }
 
         // iter over dense receive entities
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].send.size(); l_nr++ ) {
+        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].receive.size(); l_nr++ ) {
           for( int_el l_de = i_deLayout.timeGroups[l_tg].receive[l_nr].first; l_de < i_deLayout.timeGroups[l_tg].receive[l_nr].first + i_deLayout.timeGroups[l_tg].receive[l_nr].size; l_de++ ) {
             if( (i_chars[l_de].spType & i_spType) == i_spType ) o_spLayout.timeGroups[l_tg].receive[l_nr].size++;
           }
