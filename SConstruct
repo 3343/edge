@@ -397,6 +397,7 @@ if 'omp' in env['parallel']:
     env.Append( CPPFLAGS = ['-fopenmp'] )
     env.Append( LINKFLAGS = ['-fopenmp'] )
   elif compilers == 'clang':
+    env.Append( CPPFLAGS = ['-Wno-error=pass-failed'] ) # suppress failed autovectorization
     env.Append( CPPFLAGS = ['-fopenmp=libiomp5'] )
     env.Append( LINKFLAGS = ['-fopenmp=libiomp5'] )
     # get the path of libiomp5 from clang
