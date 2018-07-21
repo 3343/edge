@@ -86,6 +86,9 @@ class edge::mesh::common {
       // get local face's vertex coords
       real_mesh l_locFaCoords[3][3];
       real_mesh l_normalPt[3];
+      for( unsigned short l_di = 0; l_di < 3; l_di++ )
+        l_normalPt[l_di] = std::numeric_limits< real_mesh >::max();
+
       for( unsigned int l_dim = 0; l_dim < 3; l_dim++ ) {
         if( i_localFace == 0 ) {
           l_locFaCoords[l_dim][0] = i_veChars[ i_elVe[i_elIdLoc][0] ].coords[l_dim];
