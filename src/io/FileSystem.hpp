@@ -93,7 +93,7 @@ class edge::io::FileSystem {
           // try to continue by creating the directory
           int l_error = mkdir( l_dirCreate.c_str(), S_IRWXU | S_IRWXG );
           if( l_error != 0 ) {
-            EDGE_LOG_FATAL << "  creating " << l_dirCreate << " failed: " << std::strerror( l_error );
+            EDGE_LOG_FATAL << "  creating " << l_dirCreate << " failed: " << std::strerror( errno );
           }
 
           // wait for the file system
