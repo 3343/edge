@@ -45,17 +45,24 @@ if( l_errorWriter.outEnabled() ) {
                     l_internal.m_globalShared2[0].dofs,
                     l_normsTmp[0], l_normsTmp[1], l_normsTmp[2] );
 
-  // copy over error norms and compute sqrt of l2
-  double l_norms[N_CRUNS][3][1];
+  // perform reductions
+  double l_norms[3][1][N_CRUNS];
 #ifdef PP_USE_MPI
-  EDGE_LOG_FATAL << "missing allreduce";
+  MPI_Allreduce( &l_normsTmp[0][0][0], &l_norms[0][0][0], N_CRUNS, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( &l_normsTmp[1][0][0], &l_norms[1][0][0], N_CRUNS, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( &l_normsTmp[2][0][0], &l_norms[2][0][0], N_CRUNS, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+#else
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    l_norms[0][0][l_cr] = l_normsTmp[0][0][l_cr];
+    l_norms[1][0][l_cr] = l_normsTmp[1][0][l_cr];
+    l_norms[2][0][l_cr] = l_normsTmp[2][0][l_cr];
+  }
 #endif
 
-  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
-    l_norms[l_cr][0][0] = l_normsTmp[0][0][l_cr];
-    l_norms[l_cr][1][0] = l_normsTmp[1][0][l_cr];
-    l_norms[l_cr][2][0] = std::sqrt( l_normsTmp[2][0][l_cr] );
-  }
+  // compute l2
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ )
+    l_norms[1][0][l_cr] = std::sqrt( l_norms[1][0][l_cr] );
 
+  // write
   l_errorWriter.write( l_norms );
 }

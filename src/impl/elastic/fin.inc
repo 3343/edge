@@ -45,19 +45,27 @@ if( l_errorWriter.outEnabled() ) {
                     l_internal.m_globalShared2[0].dofs,
                     l_normsTmp[0], l_normsTmp[1], l_normsTmp[2] );
 
-  // copy over error norms and compute sqrt of l2
-  double l_norms[N_CRUNS][3][N_QUANTITIES];
+  // perform reductions
+  double l_norms[3][N_QUANTITIES][N_CRUNS];
 #ifdef PP_USE_MPI
-  EDGE_LOG_FATAL << "missing allreduce";
-#endif
-
-  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
-    for( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
-      l_norms[l_cr][0][l_qt] = l_normsTmp[0][l_qt][l_cr];
-      l_norms[l_cr][1][l_qt] = l_normsTmp[1][l_qt][l_cr];
-      l_norms[l_cr][2][l_qt] = std::sqrt( l_normsTmp[2][l_qt][l_cr] );
+  MPI_Allreduce( &l_normsTmp[0][0][0], &l_norms[0][0][0], N_QUANTITIES*N_CRUNS, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( &l_normsTmp[1][0][0], &l_norms[1][0][0], N_QUANTITIES*N_CRUNS, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( &l_normsTmp[2][0][0], &l_norms[2][0][0], N_QUANTITIES*N_CRUNS, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+#else
+  for( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+      l_norms[0][l_qt][l_cr] = l_normsTmp[0][l_qt][l_cr];
+      l_norms[1][l_qt][l_cr] = l_normsTmp[1][l_qt][l_cr];
+      l_norms[2][l_qt][l_cr] = l_normsTmp[2][l_qt][l_cr];
     }
   }
+#endif
 
+  // compute l2
+  for( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ )
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ )
+      l_norms[1][l_qt][l_cr] = std::sqrt( l_norms[1][l_qt][l_cr] );
+
+  // write
   l_errorWriter.write( l_norms );
 }

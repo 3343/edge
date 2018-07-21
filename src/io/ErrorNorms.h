@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,14 +40,14 @@ class edge::io::ErrorNorms {
      *
      * @param i_errorNorms error norms. [0][][]: L1, [1][][]: L2, [2][][]: Linf; [][*][]: quantity; [][][*]: cfr
      **/
-    void print( const double i_errorNorms[N_CRUNS][3][N_QUANTITIES] );
+    void print( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] );
 
     /**
      * Writes the error norms to disk.
      *
      * @param i_errorNorms error norms. [0][][]: L1, [1][][]: L2, [2][][]: Linf; [][*][]: quantity; [][][*]: cfr
      **/
-    void writeXml( const double i_errorNorms[N_CRUNS][3][N_QUANTITIES] );
+    void writeXml( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] );
 
   public:
     enum OutType {
@@ -96,7 +96,7 @@ class edge::io::ErrorNorms {
      *
      * @param i_errorNorms error norms. [0][][]: L1, [1][][]: L2, [2][][]: Linf; [][*][]: quantity; [][][*]: cfr
      **/
-    void write( const double i_errorNorms[N_CRUNS][3][N_QUANTITIES] );
+    void write( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] );
 };
 
 #endif
