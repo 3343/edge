@@ -40,7 +40,7 @@ runcmd:
  - ./tools/gocd/install_tools.sh
 
  # add agent's config
- - cp tools/gocd/go-agent /etc/default
+ - cp ./tools/gocd/go-agent /etc/default
  - sed -i "s/HOST:PORT/deb.dial3343.org:8154/" /etc/default/go-agent
 
  # fire up the agent
