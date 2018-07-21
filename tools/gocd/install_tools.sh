@@ -37,6 +37,7 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gmsh
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gcc
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gfortran
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 clang
+sudo apt-get install -qq -o=Dpkg::Use-Pty=0 libiomp5 libiomp-dev
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 valgrind
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 git-lfs
