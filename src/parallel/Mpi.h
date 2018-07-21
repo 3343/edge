@@ -110,7 +110,8 @@ class edge::parallel::Mpi {
      **/
     Mpi( unsigned int i_iter=100 )
 #ifdef PP_USE_MPI
-      : m_nIterPerCheck( i_iter )
+      : m_nIterPerCheck( i_iter ),
+        m_comm( MPI_COMM_WORLD )
 #endif
     {};
 

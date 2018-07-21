@@ -42,7 +42,6 @@ void edge::parallel::Mpi::start( int i_argc, char *i_argv[] ) {
         // ensure the required threading support of MPI
         EDGE_CHECK( l_tdSu == MPI_THREAD_FUNNELED );
       }
-      m_comm = MPI_COMM_WORLD;
       MPI_Comm_size (   m_comm, &g_nRanks   );
       MPI_Comm_rank(    m_comm, &g_rank     );
       MPI_Get_version(  m_verStd,   m_verStd+1 );
