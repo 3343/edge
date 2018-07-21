@@ -43,8 +43,12 @@ edge::time::TimeGroupStatic::TimeGroupStatic( int_ts          i_rate,
  m_internal( i_internal )
 {
   m_covSimTime = 0;
+  m_updatesSync = 0;
   m_updatesPer = 0;
   m_updatesReq = 0;
+  m_dTgen = std::numeric_limits< double >::max();
+  m_dTfin = std::numeric_limits< double >::max();
+  m_dT = std::numeric_limits< double >::max();
 }
 
 void edge::time::TimeGroupStatic::setUp( double i_dTfun,
