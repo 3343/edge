@@ -43,7 +43,7 @@ enum class t_mmSeismic: unsigned short {
 };
 
 /*
- * Bitsmasks for elastics.
+ * Bitmasks for elastics.
  **/
 static_assert( sizeof(int_spType) >= 4, "size of entity type too small" );
 typedef enum: int_spType {
