@@ -434,10 +434,10 @@ script:
 
   ## valgrind
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/swe/line.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=8 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/swe/line.xml; fi;
 
   ## code coverage, order=1, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
@@ -468,10 +468,10 @@ script:
 
   ## valgrind, debug, cfr 4, orders 1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/line.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/line.xml; fi;
 
   ## code coverage, orders=1&2, cfr=4
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" -j $N_BUILD_PROC > /dev/null; fi;
@@ -518,16 +518,16 @@ script:
 
   ## valgrind, cfr=4, orders=1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
   # valgrind, unstructured, cfr=4, order=2-3, MPI enabled
 #  - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then gmsh -3 cont/advection/sine/tria3_mpi.geo -part 3 -o tria3_mpi.msh; fi;
@@ -563,10 +563,10 @@ script:
 
   ## valgrind, cfr=2, orders=1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/hex8r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/hex8r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
   ## code coverage, orders=1-2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
@@ -584,10 +584,10 @@ script:
 
   ## valgrind, cfr=2, orders=1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
   ## code coverage, order=1-2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
@@ -629,16 +629,16 @@ script:
 
   # valgrind, fv, cfr=1,2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=1 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## code coverage, fv, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
@@ -649,10 +649,10 @@ script:
 
   # valgrind, order=2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## code coverage, order=2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" -j $N_BUILD_PROC > /dev/null; fi;
