@@ -37,13 +37,13 @@
 }
 
 {
-   gomp_team_start
+   gomp_pthread_create
    Memcheck:Leak
    match-leak-kinds: possible
    fun:calloc
    ...
    fun:pthread_create*
-   fun:gomp_team_start
+   ...
    fun:GOMP_parallel
    fun:*edge*parallel*Shared*init*
    fun:main
