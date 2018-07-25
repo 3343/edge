@@ -107,6 +107,12 @@ def intSc( i_deg, i_ty, i_syms, i_shape, i_svs, i_scSv, i_scSfScRecv ):
       l_maps[2][-1]  = l_maps[2][-1]  + [ l_mapsFlat[ l_scId ]  ]
       l_aDets[2][-1] = l_aDets[2][-1] + [ l_aDetsFlat[ l_scId ] ]
 
+  # simplify mappings
+  for l_ty in range( len(l_maps) ):
+    for l_ma in range( len(l_maps[l_ty]) ):
+      for l_di in range( len(l_maps[l_ty][l_ma]) ):
+        l_maps[l_ty][l_ma][l_di] = sympy.simplify( l_maps[l_ty][l_ma][l_di] )
+
   return l_maps, l_aDets
 
 ##

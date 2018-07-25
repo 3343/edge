@@ -662,3 +662,5 @@ for l_ty in l_conf.m_types:
     l_path = l_conf.m_out['subcell'] + l_dirExt + l_ty + '_' + str(l_de) + '_sfint.csv'
     with open( l_path, 'w' ) as l_fi:
       l_fi.write( edge_pre.io.ArrStr.float3d( [ l_sf.tolist() for l_sf in l_sfInt ] ) )
+
+  logging.info( 'we are done' )
