@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -107,14 +107,16 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
   EDGE_LOG_INFO << "sharing the build config, note that every change requires a recompile";
   EDGE_LOG_INFO << "  running without a recompile will just use the settings of the";
   EDGE_LOG_INFO << "  last compile and ignore changed runtime parameters:";
-  EDGE_LOG_INFO << "    date / time of the build:          " << __DATE__ << " / " << __TIME__;
-  EDGE_LOG_INFO << "    compiler name / version:           " << l_compiler << " / " << __VERSION__;
-  EDGE_LOG_INFO << "    inst. set build / arch runtime:    " << l_instSet << " / " << i_build.child("arch").text().as_string();
+  EDGE_LOG_INFO << "    date / time of the build:          " << __DATE__      << " / " << __TIME__;
+  EDGE_LOG_INFO << "    compiler name / version:           " << l_compiler    << " / " << __VERSION__;
+  EDGE_LOG_INFO << "    inst. set build / arch runtime:    " << l_instSet     << " / " << i_build.child("arch").text().as_string();
+  EDGE_LOG_INFO << "    cfr (build / runtime):             " << PP_N_CRUNS    << " / " << i_build.child("cfr").text().as_string();
+  EDGE_LOG_INFO << "    equations       (build / runtime): " << l_equations   << " / " << i_build.child("equations").text().as_string();
   EDGE_LOG_INFO << "    element_type    (build / runtime): " << l_elementType << " / " << i_build.child("element_type").text().as_string();
-  EDGE_LOG_INFO << "    mesh type build / moab runtime:    " << l_meshType << " / " << i_build.child("moab").text().as_string();
-  EDGE_LOG_INFO << "    equations       (build / runtime): " << l_equations << " / " << i_build.child("equations").text().as_string();
-  EDGE_LOG_INFO << "    order           (build / runtime): " << PP_ORDER << " / " << i_build.child("order").text().as_string();
-  EDGE_LOG_INFO << "    xsmm            (build / runtime): " << l_xsmm << " / " << i_build.child("xsmm").text().as_string();
+  EDGE_LOG_INFO << "    order           (build / runtime): " << PP_ORDER      << " / " << i_build.child("order").text().as_string();
+  EDGE_LOG_INFO << "    precision       (build / runtime): " << PP_PRECISION  << " / " << i_build.child("precision").text().as_string();
+  EDGE_LOG_INFO << "    mesh type build / moab runtime:    " << l_meshType    << " / " << i_build.child("moab").text().as_string();
+  EDGE_LOG_INFO << "    xsmm            (build / runtime): " << l_xsmm        << " / " << i_build.child("xsmm").text().as_string();
   EDGE_LOG_INFO << "some derived parameters: ";
   EDGE_LOG_INFO << "  #element modes: " << N_ELEMENT_MODES;
 #if defined PP_USE_MEMKIND
