@@ -382,8 +382,8 @@ before_install:
   # install intel sde
   - "wget --delete-after --no-check-certificate --save-cookies cookie.txt --keep-session-cookies --post-data=\"accept_license=1&op=Continue&form_id=intel_licensed_dls_step_1\"  https://software.intel.com/protected-download/267266/144917"
   - "wget --no-check-certificate --no-cookies --header \"Cookie: $(echo $(grep 'SSESS[^ ]*' cookie.txt) | awk '{print $6 \"=\" $7}');\" https://software.intel.com/system/files/managed/2a/1a/sde-external-8.16.0-2018-01-30-lin.tar.bz2"
-  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf sde-external-7.49.0-2016-07-07-lin.tar.bz2; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd sde-external-7.49.0-2016-07-07-lin; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf sde-external-8.16.0-2018-01-30-lin.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd sde-external-8.16.0-2018-01-30-lin; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/sde64 /usr/local/bin/sde64; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
