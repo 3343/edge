@@ -30,12 +30,51 @@
 #include <fstream>
 #include <sstream>
 
-void edge::io::Receivers::print() {
-  for( unsigned int l_re = 0; l_re < m_recvs.size(); l_re++ )
-    EDGE_LOG_INFO_ALL << "  receiver #" << l_re << " added at: "
-                      << m_recvs[l_re].coords[0] << " "
-                      << m_recvs[l_re].coords[1] << " "
-                      << m_recvs[l_re].coords[2];
+void edge::io::Receivers::print( unsigned int i_nRecvs ) {
+  // coordinates of all receivers
+  double (*l_recvCrds)[3] = (double (*)[3]) new double[3*i_nRecvs];
+
+  // init invalid
+  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_recvCrds[l_re][l_di] = std::numeric_limits< double >::max();
+
+  // assign local receivers
+  for( unsigned int l_re = 0; l_re < m_recvs.size(); l_re++ ) {
+    unsigned int l_reId = m_recvs[l_re].id;
+
+    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+      l_recvCrds[l_reId][l_di] = m_recvs[l_re].coords[l_di];
+    }
+  }
+
+#ifdef PP_USE_MPI
+  // receive buffer
+  double (*l_buf)[3] = (double (*)[3]) new double[3*i_nRecvs];
+
+  MPI_Reduce( l_recvCrds,
+              l_buf,
+              3*i_nRecvs,
+              MPI_DOUBLE,
+              MPI_MIN,
+              0,
+              MPI_COMM_WORLD );
+
+  // copy back
+  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_recvCrds[l_re][l_di] = l_buf[l_re][l_di];
+
+  delete[] l_buf;
+#endif
+
+  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
+    EDGE_LOG_INFO << "  receiver #" << l_re << " added at: "
+                  << l_recvCrds[l_re][0]
+                  << ((N_DIM > 1) ? " " +std::to_string(l_recvCrds[l_re][1]) : "")
+                  << ((N_DIM > 2) ? " " +std::to_string(l_recvCrds[l_re][2]) : "");
+
+  delete[] l_recvCrds;
 }
 
 void edge::io::Receivers::init(       t_entityType    i_enType,
@@ -156,6 +195,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
 
           // add a new receiver
           m_recvs.resize( m_recvs.size()+1 );
+          m_recvs.back().id = l_re;
           for( unsigned short l_di = 0; l_di < 3; l_di++ )
             m_recvs.back().coords[l_di] = l_recvCrds[l_di];
           m_recvs.back().buffer.resize( N_QUANTITIES*N_CRUNS*m_buffSize );

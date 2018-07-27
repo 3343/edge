@@ -37,6 +37,8 @@ namespace edge {
 class edge::io::Receivers {
   protected:
     struct Recv {
+      //! id of the receiver
+      unsigned int id;
       //! coordinates of the receivers
       double coords[3];
       //! number of buffered values
@@ -99,8 +101,10 @@ class edge::io::Receivers {
 
     /**
      * Prints statistics of the receivers.
+     *
+     * @param i_nRecvs number of global receivers.
      **/
-    void print();
+    void print( unsigned int i_nRecvs );
 
     /**
      * Initialzes the receiver output.

@@ -39,7 +39,7 @@ if( l_config.m_recvCrds[0].size() > 0 ) {
                                         l_enLayouts[2],
                                         l_internal.m_connect.elVe[0],
                                         l_internal.m_vertexChars );
-   l_receivers.print();
+   l_receivers.print( l_config.m_recvCrds[0].size() );
 
    // get dense-entities with receivers
    std::vector< int_el > l_enRecv;
