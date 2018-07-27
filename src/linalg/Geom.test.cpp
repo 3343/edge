@@ -44,6 +44,112 @@ TEST_CASE( "Inside/outside derivation: Points with respect to lines", "[geom][in
   REQUIRE( edge::linalg::Geom::inside( LINE, l_veCrds, &l_pt ) == 2 );
 }
 
+TEST_CASE( "Projection of a point outside of an entity to the surface of the entity.", "[geom][outProjSurf]" ) {
+  double l_pt[3] = { 99, 99, 99 };
+
+  double l_line[2] = {0, 1};
+
+  l_pt[0] = -2;
+  edge::linalg::Geom::closestPoint( LINE, l_line, l_pt );
+  REQUIRE( l_pt[0] == Approx(0) );
+
+  l_pt[0] = 3;
+  edge::linalg::Geom::closestPoint( LINE, l_line, l_pt );
+  REQUIRE( l_pt[0] == Approx(1) );
+
+  double l_quad[2][4] = { {0,1,1,0}, {0,0,1,1} };
+
+  l_pt[0] = -2; l_pt[1] = -2;
+  edge::linalg::Geom::closestPoint( QUAD4R, l_quad[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0) );
+  REQUIRE( l_pt[1] == Approx(0) );
+
+  l_pt[0] = -2; l_pt[1] = 0.5;
+  edge::linalg::Geom::closestPoint( QUAD4R, l_quad[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0  ) );
+  REQUIRE( l_pt[1] == Approx(0.5) );
+
+  l_pt[0] = -2; l_pt[1] = 2;
+  edge::linalg::Geom::closestPoint( QUAD4R, l_quad[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0) );
+  REQUIRE( l_pt[1] == Approx(1) );
+
+
+  double l_hex[3][8] = { {0,1,1,0,0,1,1,0}, {0,0,1,1,0,0,1,1}, {0,0,0,0,1,1,1,1} };
+
+  l_pt[0] = -2; l_pt[1] = 2; l_pt[2] = 3;
+  edge::linalg::Geom::closestPoint( HEX8R, l_hex[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0) );
+  REQUIRE( l_pt[1] == Approx(1) );
+  REQUIRE( l_pt[2] == Approx(1) );
+
+  l_pt[0] = -2; l_pt[1] = 2; l_pt[2] = -3;
+  edge::linalg::Geom::closestPoint( HEX8R, l_hex[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0) );
+  REQUIRE( l_pt[1] == Approx(1) );
+  REQUIRE( l_pt[2] == Approx(0) );
+
+  l_pt[0] = -2; l_pt[1] = 2; l_pt[2] = 0.25;
+  edge::linalg::Geom::closestPoint( HEX8R, l_hex[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0)    );
+  REQUIRE( l_pt[1] == Approx(1)    );
+  REQUIRE( l_pt[2] == Approx(0.25) );
+
+  double l_tria[2][3] = { {0,1,0}, {0,0,1} };
+
+  // TODO: Fails because of a bug in wykobi
+  // l_pt[0] = -1; l_pt[1] = -1;
+  // edge::linalg::Geom::closestPoint( TRIA3, l_tria[0], l_pt );
+  // REQUIRE( l_pt[0] == Approx(0) );
+  // REQUIRE( l_pt[1] == Approx(0) );
+
+  l_pt[0] = 0.25; l_pt[1] = -1;
+  edge::linalg::Geom::closestPoint( TRIA3, l_tria[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0.25) );
+  REQUIRE( l_pt[1] == Approx(0) );
+
+  l_pt[0] = 10; l_pt[1] = 10;
+  edge::linalg::Geom::closestPoint( TRIA3, l_tria[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0.5) );
+  REQUIRE( l_pt[1] == Approx(0.5) );
+
+  l_pt[0] = 1.0 - 0.33 + 500; l_pt[1] = 0.33 + 500;
+  edge::linalg::Geom::closestPoint( TRIA3, l_tria[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(1 - 0.33) );
+  REQUIRE( l_pt[1] == Approx(0.33) );
+
+  l_pt[0] = 0.25; l_pt[1] = 0.25;
+  edge::linalg::Geom::closestPoint( TRIA3, l_tria[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0.25) );
+  REQUIRE( l_pt[1] == Approx(0.25) );
+
+  double l_tet[3][4] = { {0,1,0,0}, {0,0,1,0}, {0,0,0,1} };
+
+  l_pt[0] = 0; l_pt[1] = 0; l_pt[2] = 0;
+  edge::linalg::Geom::closestPoint( TET4, l_tet[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0) );
+  REQUIRE( l_pt[1] == Approx(0) );
+  REQUIRE( l_pt[2] == Approx(0) );
+
+  l_pt[0] = 0.5; l_pt[1] = 0; l_pt[2] = 0;
+  edge::linalg::Geom::closestPoint( TET4, l_tet[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0.5) );
+  REQUIRE( l_pt[1] == Approx(0) );
+  REQUIRE( l_pt[2] == Approx(0) );
+
+  l_pt[0] = 0.5; l_pt[1] = 0.5; l_pt[2] = 0;
+  edge::linalg::Geom::closestPoint( TET4, l_tet[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(0.5) );
+  REQUIRE( l_pt[1] == Approx(0.5) );
+  REQUIRE( l_pt[2] == Approx(0) );
+
+  l_pt[0] = 1; l_pt[1] = 1; l_pt[2] = 1;
+  edge::linalg::Geom::closestPoint( TET4, l_tet[0], l_pt );
+  REQUIRE( l_pt[0] == Approx(1.0/3.0) );
+  REQUIRE( l_pt[1] == Approx(1.0/3.0) );
+  REQUIRE( l_pt[2] == Approx(1.0/3.0) );
+}
+
 TEST_CASE( "Inside/outside derivation: Points with respect to quad4 elements", "[geom][nsideQuad4]" ) {
   real_mesh l_veCrds[2][4];
   real_mesh l_pt[2];
@@ -301,7 +407,7 @@ TEST_CASE( "Geom: Matrix rotating a 3D vector onto another vector", "[Geom][rotM
   l_v1[0] = 0; l_v1[1] = 1; l_v1[2] = 0;
 
   // get rotation matrix
-  edge::linalg::GeomT<3>::rotMat( l_v0, l_v1, l_rm );
+  edge::linalg::GeomTs<3>::rotMat( l_v0, l_v1, l_rm );
 
   // apply rotation matrix
   edge::linalg::Matrix::matMulB0( 3, 1, 3,
@@ -326,4 +432,43 @@ TEST_CASE( "Geom: Matrix rotating a 3D vector onto another vector", "[Geom][rotM
   REQUIRE( l_rt[0] == Approx(0.0) );
   REQUIRE( l_rt[1] == Approx(0.0) );
   REQUIRE( l_rt[2] == Approx(1.0) );
+}
+
+TEST_CASE( "Geom: Angle between two vectors.", "[Geom][angle]" ) {
+  double l_angle = std::numeric_limits< double >::max();
+
+  double l_v1[2] = { 1.0, 0.0 };
+  double l_v2[2] = { 0.0, 1.0 };
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v1, l_v2 );
+  REQUIRE( l_angle == Approx(3.14159265/2) );
+
+  double l_v3[2] = { 10.0, 0.0 };
+  double l_v4[2] = {  0.0,  9.0 };
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v3, l_v4 );
+  REQUIRE( l_angle == Approx(3.14159265/2) );
+
+  double l_v5[2] = { 10.0, 0.0 };
+  double l_v6[2] = { 12.0, 0.0} ;
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v5, l_v6 );
+  REQUIRE( l_angle == Approx(0) );
+
+  double l_v7[2] = {  10.0, 0.0 };
+  double l_v8[2] = { -12.0, 0.0 };
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v7, l_v8 );
+  REQUIRE( l_angle == Approx(3.14159265) );
+
+  double l_v9[2]  = { 10.0,   0.0 };
+  double l_v10[2] = {  0,   -30.0 };
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v9, l_v10 );
+  REQUIRE( l_angle == Approx(1.5*3.14159265) );
+
+  double l_v11[2] = { 0,    3.0 };
+  double l_v12[2] = { 1.0,  1.0 };
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v11, l_v12 );
+  REQUIRE( l_angle == Approx(1.75*3.14159265) );
+
+  double l_v13[2] = { -1.0, -1.0  };
+  double l_v14[2] = {  1.0, -1.0 };
+  l_angle = edge::linalg::GeomTs< 2 >::angle( l_v13, l_v14 );
+  REQUIRE( l_angle == Approx(0.5*3.14159265) );
 }

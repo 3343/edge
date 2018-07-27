@@ -22,3 +22,6 @@
 [submodule "submodules/eigen"]
 	path = submodules/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
+[submodule "submodules/wykobi"]
+	path = submodules/wykobi
+	url = https://github.com/ArashPartow/wykobi.git

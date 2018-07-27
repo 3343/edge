@@ -796,7 +796,7 @@ class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 > {
             // coordinate system to the (probably adjusted) face-normal
             TL_T_REAL_MESH l_rm[3][3];
 
-            linalg::GeomT<3>::rotMat( i_bndCrds[0], l_faCrds[0], l_rm );
+            linalg::GeomTs<3>::rotMat( i_bndCrds[0], l_faCrds[0], l_rm );
 
             // apply the rotation to the two remaining basis vectors to obtain the tangents
             linalg::Matrix::matMulB0( 3, 1, 3,
