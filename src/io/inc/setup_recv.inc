@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -27,7 +27,7 @@ edge::io::ReceiversSf<real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS> l_recvsSf; // 
 
 // setup receivers
 if( l_config.m_recvCrds[0].size() > 0 ) {
-  EDGE_LOG_INFO << "searching for receivers in the mesh..";
+  EDGE_LOG_INFO << "searching for receivers, those outside will be projected to the mesh boundaries..";
 
   // init receivers and print info
   l_receivers.init(                     T_SDISC.ELEMENT,
