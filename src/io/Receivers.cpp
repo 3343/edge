@@ -100,7 +100,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
   std::vector< real_mesh > l_minDist;
   // init invalid
   for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-    l_enIds.push_back( std::numeric_limits< unsigned int >::max() );
+    l_enIds.push_back( std::numeric_limits< int_el >::max() );
     l_minDist.push_back( std::numeric_limits< double >::max() );
   }
 

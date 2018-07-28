@@ -306,7 +306,9 @@ class edge::sc::ibnd::SuperCellInit {
 
           // check if this is a new stencil
           if( l_scs.size() > 1 && l_scs[0] < l_scs[1] ) {
+#ifndef __INTEL_COMPILER
             EDGE_CHECK_LT( l_nSt, o_su.col[l_fa].TL_N_ST );
+#endif
             // store the stencil
             o_su.col[l_fa].sc[l_nSt][0] = l_scs[0];
             o_su.col[l_fa].sc[l_nSt][1] = l_scs[1];
