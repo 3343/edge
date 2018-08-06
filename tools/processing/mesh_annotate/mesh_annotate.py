@@ -43,7 +43,7 @@ logging.basicConfig( level=logging.DEBUG,
                      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' )
 
 # welcome our users
-logging.info( 'Performing the mesh annotation, please hold..' )
+logging.info( 'performing the mesh annotation, please hold..' )
 
 # parse xml config
 logging.info('parsing XML')
@@ -86,10 +86,17 @@ else:
 
 # evaluate expression
 logging.info( 'evaluating expression' )
-l_vals = mesh_annotate.Expression.eval( len(l_config.m_vars),
-                                        l_config.m_expr,
-                                        l_elVe,
-                                        l_veCrds )
+if( l_config.m_type == 'vertices' ):
+  l_vals = mesh_annotate.Expression.evalVe( len(l_config.m_vars),
+                                            l_config.m_expr,
+                                            l_elVe,
+                                            l_veCrds )
+elif( l_config.m_type == 'centroids' ):
+  l_cens = l_mesh.cen( l_elTy )
+  l_vals = mesh_annotate.Expression.evalPt( len(l_config.m_vars),
+                                            l_config.m_expr,
+                                            l_cens )
+else: assert( False )
 
 # wipe global ids tag
 logging.info( 'wiping entity ids' )
@@ -103,3 +110,5 @@ for l_va in range(len(l_config.m_vars)):
                 l_vals[l_va, :].flatten() )
 
 l_mesh.write( l_config.m_meshes['out'] )
+
+logging.info( 'done' )

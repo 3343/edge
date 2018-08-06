@@ -239,22 +239,33 @@ class Mesh:
            i_type ):
     l_moabType = self.m_types[i_type]
 
+    # vertex coordinates
     l_veCrds = self.veCrds()
     l_veCrds = numpy.array( l_veCrds )
+    # entities
     l_ens = self.m_moab.get_entities_by_type( self.m_root, l_moabType )
+    # connectivity
+    l_conn = self.conn( l_ens )
+    if( i_type == 'tria' ):
+      l_conn = numpy.reshape( l_conn, (-1, 3) )
+    elif( i_type == 'tet' ):
+      l_conn = numpy.reshape( l_conn, (-1, 4) )
+    else:
+      assert( False )
+    l_ids = self.getIds( l_ens )
 
     # compute centroids
-    l_cens = []
-    for l_en in l_ens:
-      l_enVeHan = self.m_moab.get_adjacencies( l_en, 0, op_type=pymoab.types.UNION )
-      
-      l_ves = l_veCrds[ self.getIds( l_enVeHan ) ]
-      l_cen = numpy.zeros(3)
-      for l_ve in l_ves:
-        l_cen = l_cen + l_ve
-      l_cen = l_cen / len(l_ves)
+    l_cens = numpy.zeros( ( len(l_ens), 3 ), dtype = 'float64')
+    for l_en in range( len(l_ens) ):
+      l_id = l_ids[l_en]
 
-      l_cens = l_cens + [l_cen]
+      l_ves = l_conn[l_id]
+      l_cen = numpy.zeros(3)
+
+      for l_ve in l_ves:
+        l_cen = l_cen + l_veCrds[l_ve]
+      l_cen = l_cen / len(l_ves)
+      l_cens[ l_id ] = l_cen
 
     return l_cens
 

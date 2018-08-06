@@ -40,6 +40,8 @@ class Config:
     for l_va in l_conf.find('vars').findall('var'):
       self.m_vars.append( l_va.text )
 
+    self.m_type = l_conf.find('type').text
+
     # expression for the variables
     self.m_expr = l_conf.find('expr').text
 
@@ -57,6 +59,8 @@ class Config:
     logging.info( '  XML config:' )
     for l_va in range( len(self.m_vars) ):
       logging.info( '    var #' + str(l_va) + ': ' + self.m_vars[l_va] )
+
+    logging.info( '  type: '+self.m_type )
 
     logging.info('  expr:')
     for l_li in self.m_expr.split('\n'):

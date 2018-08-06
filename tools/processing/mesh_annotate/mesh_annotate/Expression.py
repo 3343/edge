@@ -23,6 +23,31 @@
 import numpy
 
 ##
+# Evaluates the expression for the given points
+#
+# @param i_nVars number of variables.
+# @param i_expr expression which gets evaluated.
+# @param i_ptCrds coordinates of the points.
+##
+def evalPt( i_nVars,
+            i_expr,
+            i_ptCrds ):
+  # determine result values
+  l_vals = numpy.zeros( (i_nVars, len(i_ptCrds) ), dtype = 'float64')
+
+  l_comp = compile( i_expr, '<string>', 'exec' )
+
+  for l_pt in range( len(i_ptCrds) ):
+    l_vars = { 'x': i_ptCrds[l_pt, 0],
+               'y': i_ptCrds[l_pt, 1],
+               'z': i_ptCrds[l_pt, 2] }
+
+    exec( l_comp, l_vars )
+    l_vals[:, l_pt] = l_vars['q']
+
+  return l_vals
+
+##
 # Evaluates the expression for the given entities.
 # The average values of the vertices will be used.
 #
@@ -31,10 +56,10 @@ import numpy
 # @param i_enVe vertices adjacent to the entities.
 # @param i_veCrds coordinates of the vertices.
 ##
-def eval( i_nVars,
-          i_expr,
-          i_enVe,
-          i_veCrds ):
+def evalVe( i_nVars,
+            i_expr,
+            i_enVe,
+            i_veCrds ):
   # determine result values
   l_vals = numpy.zeros( (i_nVars, len(i_enVe) ), dtype = 'float64')
 
