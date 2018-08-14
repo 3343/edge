@@ -1,17 +1,6 @@
 
 #include "surf/meshUtils.h"
 
-// Sizing field
-// The vector of depth values, "m_layers," must be in decreasing order
-//
-//     baseValue
-// ----------------- layers[0]
-//     scales[0]
-// ----------------- layers[1]
-//     scales[1]
-// ----------------- layers[2]
-//       ...
-//
 edge_cut::surf::K::FT
 edge_cut::surf::DepthSizingField::operator()( const Point_3& p, const int, const Index& ) const
 {
@@ -31,13 +20,13 @@ edge_cut::surf::DepthSizingField::operator()( const Point_3& p, const int, const
 
 
 edge_cut::surf::Polyline_type
-edge_cut::surf::topoIntersect( Poly_slicer& slicer, K::Plane_3 plane ) {
+edge_cut::surf::topoIntersect( Poly_slicer& i_slicer, K::Plane_3 i_plane ) {
   Polylines     polylines;
   Polyline_type ridges;
 
-  slicer( plane, std::back_inserter( polylines ) );
-  std::cout << "The plane " << plane.a() << "x + " << plane.b() << "y + "
-            << plane.c() << "z = " << -1*plane.d() << " intersects the topography at "
+  i_slicer( i_plane, std::back_inserter( polylines ) );
+  std::cout << "The plane " << i_plane.a() << "x + " << i_plane.b() << "y + "
+            << i_plane.c() << "z = " << -1*i_plane.d() << " intersects the topography at "
             << polylines.size() << " polylines." << std::endl;
   if( polylines.size() == 1 ) {
     ridges = *(polylines.begin());
@@ -48,9 +37,6 @@ edge_cut::surf::topoIntersect( Poly_slicer& slicer, K::Plane_3 plane ) {
 }
 
 
-// Returns True if polyline is increasing or decreasing in the (i_n+1)th
-// component. If i_inc is True, checks if increasing. Otherwise, checks if
-// decreasing.
 bool
 edge_cut::surf::checkMonotonic( Polyline_type & i_p, unsigned int i_n, bool i_inc ) {
   if ( i_n > 2 ) {
@@ -122,12 +108,12 @@ edge_cut::surf::orderPolyline( Polyline_type & i_p, unsigned int i_n ) {
 
 std::list< edge_cut::surf::Polyline_type >
 edge_cut::surf::build1DFeatures(  Surf_mesh&  i_topoSurface,
-                  double      i_xMin,
-                  double      i_xMax,
-                  double      i_yMin,
-                  double      i_yMax,
-                  double      i_y0,
-                  double      i_zMin             )
+                                  double      i_xMin,
+                                  double      i_xMax,
+                                  double      i_yMin,
+                                  double      i_yMax,
+                                  double      i_y0,
+                                  double      i_zMin             )
 {
   std::list< Polyline_type > features;
   Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
@@ -154,7 +140,7 @@ edge_cut::surf::build1DFeatures(  Surf_mesh&  i_topoSurface,
   orderPolyline( xMaxRidges, 1 );
 
   // TODO create function to remove duplicate code
-  // 
+  //
   // Trim polylines to computational domain and add corner vertices.
   // This is to avoid the case where there already exists a vertex close to one
   // of the corners of the domain. It is not clear what an acceptable tolerance
