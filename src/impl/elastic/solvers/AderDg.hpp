@@ -735,7 +735,6 @@ class edge::elastic::solvers::AderDg {
 
           // compute DG extrema
           edge::sc::Kernels< TL_T_EL,
-                             TL_T_MM,
                              TL_O_SP,
                              TL_N_QTS,
                              TL_N_CRS >::dgExtrema(  i_mm,
