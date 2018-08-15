@@ -71,6 +71,7 @@ class edge::elastic::setups::RuptureInit {
 
     // dummy fault data
     typedef struct { double sn0[TL_N_SFS][TL_N_CRS];
+                     double co0[TL_N_SFS][TL_N_CRS];
                      double ss0[TL_N_DIS-1][TL_N_SFS][TL_N_CRS]; } t_faultDataDummy;
 
   public:
@@ -225,14 +226,22 @@ class edge::elastic::setups::RuptureInit {
         unsigned short const *l_elVeFa = C_REF_ELEMENT.FA_VE_CC.ENT[TL_T_EL];
         l_elVeFa += l_faL * TL_N_VES_FA;
 
-        // check that the first element-face vertex matches the first face vertex
-        EDGE_CHECK_EQ( i_elVe[l_elL][ l_elVeFa[0] ], i_faVe[l_fa][0] );
+        // check that the first element-face vertex matches the first face vertex for 3D elements
+        EDGE_CHECK( (TL_N_DIS != 3) ||
+                    (i_elVe[l_elL][ l_elVeFa[0] ] == i_faVe[l_fa][0]) );
 
         // determine if we have reorder the sub-faces
         bool l_reorder = false;
-        for( unsigned short l_v0 = 2; l_v0 < TL_N_VES_FA; l_v0++ ) {
-          if( i_elVe[l_elL][l_elVeFa[1]] > i_elVe[l_elL][l_elVeFa[l_v0]] )
-            l_reorder = true;
+        if( TL_N_DIS == 2) {
+          // 2D elements are reorderd if the first vertex has large id than the second one
+          l_reorder = (i_elVe[l_elL][l_elVeFa[1]] < i_elVe[l_elL][l_elVeFa[0]]);
+        }
+        else {
+          for( unsigned short l_v0 = 2; l_v0 < TL_N_VES_FA; l_v0++ ) {
+            // 3D elements are reorder if the second id is not the second smallest one (by construction 0 holds the smallest id)
+            if( i_elVe[l_elL][l_elVeFa[1]] > i_elVe[l_elL][l_elVeFa[l_v0]] )
+              l_reorder = true;
+          }
         }
 
         // iterate over fused runs

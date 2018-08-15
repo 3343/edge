@@ -87,7 +87,7 @@ class edge::elastic::sc::UpWindSolver< 2 > {
       solvers::common::setupSolver2d( i_mpL[2], i_mpR[2],
                                       i_mpL[0], i_mpR[0],
                                       i_mpL[1], i_mpR[1],
-                                      i_n[0], i_n[1], 0,
+                                      i_n[0], i_n[1],
                                       o_upL[0],
                                       o_upL[1],
                                       i_fs );
@@ -95,7 +95,7 @@ class edge::elastic::sc::UpWindSolver< 2 > {
       solvers::common::setupSolver2d( i_mpL[2], i_mpR[2],
                                       i_mpL[0], i_mpR[0],
                                       i_mpL[1], i_mpR[1],
-                                      -i_n[0], -i_n[1], 0,
+                                      -i_n[0], -i_n[1],
                                       o_upR[0],
                                       o_upR[1] );
 

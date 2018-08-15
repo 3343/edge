@@ -242,7 +242,7 @@ struct edge::sc::t_SubCell {
   bool (*lock)[TL_N_CRS];
 
   //! number of times the sub-cell solution was limited since synchronization
-  unsigned int (*limSync)[TL_N_CRS];
+  unsigned int (*limSync)[TL_N_CRS] = nullptr;
 };
 
 #endif

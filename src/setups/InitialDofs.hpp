@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -114,25 +114,34 @@ class edge::setups::InitialDofs {
     }
 
     /**
-     * 1) Binds the coordinates as input, and the quantities as output to the expressions.
-     * 2) Compiles the expressions.
+     * 1) Inits the expression output invalid.
+     * 2) Binds the coordinates as input, and the quantities as output to the expressions.
+     * 3) Compiles the expressions.
      *
      * @param i_exprStrs expression strings.
-     * @param i_crds memory location of coordinates which is used as input.
-     * @param o_qts memory location of quantities which is used as output.
+     * @param io_crds memory location of coordinates which is used as input.
+     * @param io_qts memory location of quantities which is used as output.
      * @param io_exprs expressions to which the memory locations are bound.
      *
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
     static void bc( std::string                         const i_exprStrs[TL_N_CRS],
-                    TL_T_REAL                                 i_crds[TL_N_DIMS],
-                    TL_T_REAL                                 o_qts[TL_N_CRS][TL_N_QTS],
+                    TL_T_REAL                                 io_crds[TL_N_DIMS],
+                    TL_T_REAL                                 io_qts[TL_N_CRS][TL_N_QTS],
                     edge::data::Expression< TL_T_REAL >       io_exprs[TL_N_CRS] ) {
+      // init invalid
+      for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ )
+        io_crds[l_di] = std::numeric_limits< TL_T_REAL >::max();
+
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
+          io_qts[l_cr][l_qt] = std::numeric_limits< TL_T_REAL >::max();
+
       // bind variables and compile expressions
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-        io_exprs[l_cr].bindCrds( i_crds, TL_N_DIMS );
-        io_exprs[l_cr].bind( "q", o_qts[l_cr], TL_N_QTS );
+        io_exprs[l_cr].bindCrds( io_crds, TL_N_DIMS );
+        io_exprs[l_cr].bind( "q", io_qts[l_cr], TL_N_QTS );
 
         io_exprs[l_cr].compile( i_exprStrs[l_cr] );
       }
@@ -387,23 +396,23 @@ class edge::setups::InitialDofs {
               typename TL_T_VE_CHARS,
               typename TL_T_SV_CHARS,
               typename TL_T_EL_CHARS >
-    static void err( TL_T_LID              i_first,
-                     TL_T_LID              i_size,
-                     TL_T_LID              i_liFirst,
-                     TL_T_SP               i_spType,
-                     std::string   const   i_exprStrs[TL_N_CRS],
-                     dg::Basis     const  &i_basis,
-                     TL_T_LID      const (*i_elVe)[TL_N_VES],
-                     TL_T_LID      const (*i_scSv)[TL_N_VES],
-                     TL_T_VE_CHARS const  *i_veChars,
-                     TL_T_SV_CHARS const  *i_svChars,
-                     TL_T_EL_CHARS const  *i_elChars,
-                     bool          const (*i_adm)[TL_N_CRS],
-                     TL_T_REAL     const (*i_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                     TL_T_REAL     const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
-                     TL_T_REAL             o_l1[TL_N_QTS][TL_N_CRS],
-                     TL_T_REAL             o_l2p2[TL_N_QTS][TL_N_CRS],
-                     TL_T_REAL             o_lInf[TL_N_QTS][TL_N_CRS] ) {
+    static void err( TL_T_LID               i_first,
+                     TL_T_LID               i_size,
+                     TL_T_LID               i_liFirst,
+                     TL_T_SP                i_spType,
+                     std::string    const   i_exprStrs[TL_N_CRS],
+                     dg::Basis      const  &i_basis,
+                     TL_T_LID       const (*i_elVe)[TL_N_VES],
+                     unsigned short const (*i_scSv)[TL_N_VES],
+                     TL_T_VE_CHARS  const  *i_veChars,
+                     TL_T_SV_CHARS  const  *i_svChars,
+                     TL_T_EL_CHARS  const  *i_elChars,
+                     bool           const (*i_adm)[TL_N_CRS],
+                     TL_T_REAL      const (*i_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                     TL_T_REAL      const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
+                     double                 o_l1[TL_N_QTS][TL_N_CRS],
+                     double                 o_l2p2[TL_N_QTS][TL_N_CRS],
+                     double                 o_lInf[TL_N_QTS][TL_N_CRS] ) {
       // init error norms
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
         for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
@@ -413,17 +422,17 @@ class edge::setups::InitialDofs {
       TL_T_LID l_li = i_liFirst;
 
       // coordinates and quantities of the expression
-      TL_T_REAL l_cE[TL_N_DIMS];
-      TL_T_REAL l_qE[TL_N_CRS][TL_N_QTS];
+      double l_cE[TL_N_DIMS];
+      double l_qE[TL_N_CRS][TL_N_QTS];
 
       // expressions
-      edge::data::Expression< TL_T_REAL > l_exprs[TL_N_CRS];
+      edge::data::Expression< double > l_exprs[TL_N_CRS];
 
       // bind and compile expressions
       bc( i_exprStrs, l_cE, l_qE, l_exprs );
 
       // get quad-points in reference coordinates
-      std::vector< TL_T_REAL > l_ptsR[3], l_wesR;
+      std::vector< double > l_ptsR[3], l_wesR;
       dg::QuadraturePoints::getQpts( TL_T_EL,
                                      TL_O_SP+1,
                                      C_REF_ELEMENT.VE.ENT[TL_T_EL],
@@ -434,7 +443,7 @@ class edge::setups::InitialDofs {
       TL_T_LID l_qpSc[TL_N_QPS1];
       for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
         // TODO: work-around for SoA
-        TL_T_REAL l_pt[TL_N_DIMS];
+        double l_pt[TL_N_DIMS];
         for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ ) l_pt[l_di] = l_ptsR[l_di][l_qp];
 
         // set sub-cell
@@ -445,7 +454,7 @@ class edge::setups::InitialDofs {
       // iterate over DG-elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
         // get quad-points in physical coordinates
-        std::vector< TL_T_REAL > l_ptsP[3], l_wesP;
+        std::vector< double > l_ptsP[3], l_wesP;
         qps( TL_O_SP+1,
              l_el,
              i_elVe,
@@ -456,7 +465,7 @@ class edge::setups::InitialDofs {
         EDGE_CHECK_EQ( l_wesP.size(), TL_N_QPS1 );
 
         // reference solution
-        TL_T_REAL l_qR[TL_N_CRS][TL_N_QTS][TL_N_QPS1];
+        double l_qR[TL_N_CRS][TL_N_QTS][TL_N_QPS1];
         // compute ref solution at quad points
         for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
           // copy over coordinates
@@ -508,7 +517,7 @@ class edge::setups::InitialDofs {
           // compute errors
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
             for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
-              TL_T_REAL l_diff = std::abs( l_qN[l_qt][l_qp] - l_qR[l_cr][l_qt][l_qp] );
+              double l_diff = std::abs( l_qN[l_qt][l_qp] - l_qR[l_cr][l_qt][l_qp] );
               o_l1[l_qt][l_cr]   += l_diff *          l_wesP[l_qp];
               o_l2p2[l_qt][l_cr] += l_diff * l_diff * l_wesP[l_qp];
               o_lInf[l_qt][l_cr]  = std::max( o_lInf[l_qt][l_cr], l_diff );

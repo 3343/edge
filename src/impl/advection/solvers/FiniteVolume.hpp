@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Finite Volume solver for the advection equation: f(q) = a * q || f(q) = a*q + b*q
  **/
-#ifndef FINITE_VOLUME_HPP
-#define FINITE_VOLUME_HPP
+#ifndef EDGE_ADVECTION_FINITE_VOLUME_HPP
+#define EDGE_ADVECTION_FINITE_VOLUME_HPP
 
 #include <limits>
 #include <cassert>
@@ -50,7 +50,7 @@ class edge::advection::solvers::FiniteVolume {
                                int_el      i_nElements,
                                double      i_dT,
                          const real_base (*i_dofs)[1][N_ELEMENT_MODES][N_CRUNS],
-                               real_base (*o_tInt)[1][N_ELEMENT_MODES][N_CRUNS] ) {
+                               real_base (**o_tInt)[N_ELEMENT_MODES][N_CRUNS] ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler
       (void) __builtin_assume_aligned(i_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
@@ -81,7 +81,7 @@ class edge::advection::solvers::FiniteVolume {
                               int_el             i_nElements,
                         const int_el           (*i_elFaEl)[C_ENT[T_SDISC.ELEMENT].N_FACES],
                         const t_elementShared2 (*i_fluxSolvers)[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],
-                        const real_base        (*i_tInt)[1][1][N_CRUNS],
+                              real_base        (**i_tInt)[1][N_CRUNS],
                               real_base        (*io_dofs)[1][1][N_CRUNS] ) {
 #if __has_builtin(__builtin_assume_aligned)
       // share alignment with compiler

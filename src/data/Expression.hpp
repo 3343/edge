@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Expressions in EDGE.
  **/
-#ifndef EXPRESSION_HPP
-#define EXPRESSION_HPP
+#ifndef EDGE_DATA_EXPRESSION_HPP
+#define EDGE_DATA_EXPRESSION_HPP
 
 #include <string>
 #include "constants.hpp"

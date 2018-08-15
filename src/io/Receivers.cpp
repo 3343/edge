@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,18 +30,51 @@
 #include <fstream>
 #include <sstream>
 
-void edge::io::Receivers::print() {
-  // rank's local receivers
-  unsigned int l_nRecvsL = m_recvs.size();
-  // global receivers
-  unsigned int l_nRecvsG;
+void edge::io::Receivers::print( unsigned int i_nRecvs ) {
+  // coordinates of all receivers
+  double (*l_recvCrds)[3] = (double (*)[3]) new double[3*i_nRecvs];
+
+  // init invalid
+  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_recvCrds[l_re][l_di] = std::numeric_limits< double >::max();
+
+  // assign local receivers
+  for( unsigned int l_re = 0; l_re < m_recvs.size(); l_re++ ) {
+    unsigned int l_reId = m_recvs[l_re].id;
+
+    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+      l_recvCrds[l_reId][l_di] = m_recvs[l_re].coords[l_di];
+    }
+  }
+
 #ifdef PP_USE_MPI
-  int l_err = MPI_Allreduce( &l_nRecvsL, &l_nRecvsG, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD );
-  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-#else
-  l_nRecvsG = l_nRecvsL;
+  // receive buffer
+  double (*l_buf)[3] = (double (*)[3]) new double[3*i_nRecvs];
+
+  MPI_Reduce( l_recvCrds,
+              l_buf,
+              3*i_nRecvs,
+              MPI_DOUBLE,
+              MPI_MIN,
+              0,
+              MPI_COMM_WORLD );
+
+  // copy back
+  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
+    for( unsigned short l_di = 0; l_di < 3; l_di++ )
+      l_recvCrds[l_re][l_di] = l_buf[l_re][l_di];
+
+  delete[] l_buf;
 #endif
-  EDGE_LOG_INFO << "  we have " << l_nRecvsG << " active receivers in the domain" << ", buffer size: " << m_buffSize;
+
+  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
+    EDGE_LOG_INFO << "  receiver #" << l_re << " added at: "
+                  << l_recvCrds[l_re][0]
+                  << ((N_DIM > 1) ? " " +std::to_string(l_recvCrds[l_re][1]) : "")
+                  << ((N_DIM > 2) ? " " +std::to_string(l_recvCrds[l_re][2]) : "");
+
+  delete[] l_recvCrds;
 }
 
 void edge::io::Receivers::init(       t_entityType    i_enType,
@@ -62,35 +95,98 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
 
   unsigned short l_nVe = C_ENT[i_enType].N_VERTICES;
 
-  // set of receivers to find
-  std::set< unsigned int > l_rSet;
-  for( unsigned int l_rc = 0; l_rc < i_nRecvs; l_rc++ ) l_rSet.insert( l_rc );
+  // entity ids of the receivers and the minimum distances
+  std::vector< int_el >    l_enIds;
+  std::vector< real_mesh > l_minDist;
+  // init invalid
+  for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
+    l_enIds.push_back( std::numeric_limits< int_el >::max() );
+    l_minDist.push_back( std::numeric_limits< double >::max() );
+  }
 
-  // iterate over the time groups
+  // iterate over the receivers
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
+    // first considered entity
+    int_el l_first = 0;
+
+    // iterate over the time groups
+    for( int_tg l_tg = 0; l_tg < i_enLayout.timeGroups.size(); l_tg++ ) {
+      int_el l_size  = i_enLayout.timeGroups[l_tg].nEntsOwn;
+
+      // iterate over the owned entities
+      for( int_el l_en = l_first; l_en < l_first+l_size; l_en++ ) {
+        // buffer entity ves
+        EDGE_CHECK_LE( l_nVe, 8 );
+        real_mesh l_tmpVe[ 3*8 ];
+        for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
+          int_el l_veId = i_enVe[l_en*l_nVe+l_ve];
+
+          for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+            l_tmpVe[l_di*l_nVe + l_ve] = i_veChars[l_veId].coords[l_di];
+          }
+        }
+
+        // compute distance (projected if not inside)
+        real_mesh l_tmpCrds[3];
+        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+          l_tmpCrds[l_di] = i_recvCrds[l_re][l_di];
+        }
+        edge::linalg::Geom::closestPoint( i_enType,
+                                          l_tmpVe,
+                                          l_tmpCrds );
+        real_mesh l_dist = edge::linalg::GeomT< 3 >::norm( l_tmpCrds, i_recvCrds[l_re] );
+
+        // save if this is a new minimum
+        if( l_dist < l_minDist[l_re] ) {
+          l_enIds[l_re] = l_en;
+          l_minDist[l_re] = l_dist;
+        }
+      }
+      l_first += i_enLayout.timeGroups[l_tg].nEntsOwn +
+                 i_enLayout.timeGroups[l_tg].nEntsNotOwn;
+    }
+  }
+
+  // derive receivers, which are our responsibility
+  std::vector< unsigned short > l_recvOwn( i_nRecvs );
+  parallel::Mpi::min( i_nRecvs,
+                      l_minDist.data(),
+                      l_recvOwn.data() );
+
+  // add the receivers
   int_el l_first = 0;
-
   for( int_tg l_tg = 0; l_tg < i_enLayout.timeGroups.size(); l_tg++ ) {
     int_el l_size  = i_enLayout.timeGroups[l_tg].nEntsOwn;
 
     // iterate over the owned entities
     for( int_el l_en = l_first; l_en < l_first+l_size; l_en++ ) {
-      // buffer ves
-      EDGE_CHECK_LE( l_nVe, 8 );
-      real_mesh l_tmpVe[ 3*8 ];
+      // iterate over the receivers
+      for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
+        // only continue if the receiver is owned and matches the element
+        if( l_en == l_enIds[l_re] && l_recvOwn[l_re] == 1 ) {
+          // get the vertices of the entity
+          real_mesh l_tmpVe[ 3 * 8];
+          for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
+            int_el l_veId = i_enVe[l_en*l_nVe+l_ve];
 
-      // get the vertices
-      for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
-        int_el l_veId = i_enVe[l_en*l_nVe+l_ve];
+            for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+              l_tmpVe[l_di*l_nVe + l_ve] = i_veChars[l_veId].coords[l_di];
+            }
+          }
 
-        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-          l_tmpVe[l_di*l_nVe + l_ve] = i_veChars[l_veId].coords[l_di];
-        }
-      }
+          // init the receiver coordinates
+          real_mesh l_recvCrds[3];
+          for( unsigned short l_di = 0; l_di < 3; l_di++ )
+            l_recvCrds[l_di] = i_recvCrds[l_re][l_di];
 
-      // iterate over the non-found receivers
-      for( std::set< unsigned int >::iterator l_rc = l_rSet.begin(); l_rc != l_rSet.end(); ) {
-        // check if the receiver is inside
-        if( linalg::Geom::inside( i_enType, l_tmpVe, i_recvCrds[*l_rc] ) != 0 ) {
+          // project receiver to the element's surface if required
+          edge::linalg::Geom::closestPoint( i_enType,
+                                            l_tmpVe,
+                                            l_recvCrds );
+
           // set info
           if( m_recvs.size() > 0 && m_recvs.back().en < l_en ) {
             m_spEnToRecv.push_back( m_recvs.size() );
@@ -99,7 +195,9 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
 
           // add a new receiver
           m_recvs.resize( m_recvs.size()+1 );
-
+          m_recvs.back().id = l_re;
+          for( unsigned short l_di = 0; l_di < 3; l_di++ )
+            m_recvs.back().coords[l_di] = l_recvCrds[l_di];
           m_recvs.back().buffer.resize( N_QUANTITIES*N_CRUNS*m_buffSize );
           m_recvs.back().buffTime.resize( m_buffSize );
           m_recvs.back().nBuff = 0;
@@ -107,11 +205,11 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
           m_recvs.back().tg    = l_tg;
           m_recvs.back().en    = l_en;
           m_recvs.back().enTg  = l_en-l_first;
-          m_recvs.back().path  = i_outDir+"/"+i_recvNames[*l_rc]+".csv";
+          m_recvs.back().path  = i_outDir+"/"+i_recvNames[l_re]+".csv";
 
           // determine the location in reference coordinates
           real_mesh l_ref[3] = {0,0,0};
-          linalg::Mappings::phyToRef( i_enType, l_tmpVe, i_recvCrds[*l_rc], l_ref );
+          linalg::Mappings::phyToRef( i_enType, l_tmpVe, l_recvCrds, l_ref );
 
           // check for reasonable coords
           for( unsigned short l_di = 0; l_di < C_ENT[i_enType].N_DIM; l_di++ ) {
@@ -123,11 +221,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
           for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
             dg::Basis::evalBasis( l_md, T_SDISC.ELEMENT, m_recvs.back().evaBasis[l_md], l_ref[0], l_ref[1], l_ref[2] );
           }
-
-          // delete this receiver from the list of non-found receivers
-          l_rc = l_rSet.erase(l_rc);
         }
-        else l_rc++;
       }
     }
     l_first += i_enLayout.timeGroups[l_tg].nEntsOwn +
@@ -241,17 +335,22 @@ void edge::io::Receivers::flush( unsigned int i_re ) {
     l_file.open( m_recvs[i_re].path, std::ios_base::app );
 
     if( l_file.is_open() ) {
+      // stream buffer
+      std::ostringstream l_stream;
+
+      // assemble output stream
       for( unsigned int l_bu = 0; l_bu < m_recvs[i_re].nBuff; l_bu++ ) {
         // write time info
-        l_file << std::to_string( m_recvs[i_re].buffTime[l_bu] );
+        l_stream << std::to_string( m_recvs[i_re].buffTime[l_bu] );
         // write recv values
-        std::ostringstream l_stream;
         for( unsigned int l_va = 0; l_va < m_nQts*N_CRUNS; l_va++ ) {
           l_stream << "," << std::scientific << m_recvs[i_re].buffer[ l_bu*m_nQts*N_CRUNS+l_va ];
         }
-        l_file << l_stream.str();
-        l_file << "\n";
+        l_stream << "\n";
       }
+
+      // write stream to file
+      l_file << l_stream.str();
     }
     else EDGE_LOG_FATAL << "could not open the recv-file: " << m_recvs[i_re].path;
   }

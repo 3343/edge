@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -27,4 +27,7 @@
 
 #pragma GCC system_header
 //#define exprtk_disable_enhanced_features
+#define exprtk_disable_return_statement
+#define exprtk_disable_string_capabilities
+#define exprtk_disable_rtl_io_file
 #include "submodules/exprtk/exprtk.hpp"

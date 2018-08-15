@@ -277,135 +277,6 @@ class edge::linalg::Matrix {
     }
 
     /**
-     * @DEPRECATED Replaced by version with support for beta.
-     *
-     * Performs the operation C[r] = A.B[r], for all 0 =< r =< #matrices.
-     * Here, B and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
-     *
-     * @param i_r number of B and C matrices.
-     * @param i_m blas identifier M.
-     * @param i_n blas identifier N.
-     * @param i_k blas identifier K.
-     * @param i_a matrix A.
-     * @param i_b matrix B.
-     * @param o_c matrix C, will bet set to A.B.
-     *
-     * @paramt TL_T_REAL_A precision of matrix A.
-     * @paramt TL_T_REAL_B precision of matrix B.
-     * @paramt TL_T_REAL_C precision of matrix C.
-     **/
-    template <typename TL_T_REAL_A, typename TL_T_REAL_B, typename TL_T_REAL_C>
-    static void matMulB0FusedBC(       unsigned short  i_r,
-                                       unsigned int    i_m,
-                                       unsigned int    i_n,
-                                       unsigned int    i_k,
-                                 const TL_T_REAL_A    *i_a,
-                                 const TL_T_REAL_B    *i_b,
-                                       TL_T_REAL_C    *o_c ) {
-      // reset result to zero
-      for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-        for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
-          for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_n*i_r + l_n*i_r + l_r] = 0;
-          }
-        }
-      }
-
-      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
-        for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-          for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
-            for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k + l_k] * i_b[l_k*i_n*i_r + l_n*i_r + l_r];
-            }
-          }
-        }
-      }
-    }
-
-    /**
-     * @DEPRECATED Replaced by version with support for beta.
-     * 
-     * Performs the operation C[r] = A[r].B, for all 0 =< r =< #matrices.
-     * Here, A and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
-     *
-     * @param i_r number of A and C matrices.
-     * @param i_m blas identifier M.
-     * @param i_n blas identifier N.
-     * @param i_k blas identifier K.
-     * @param i_a matrix A.
-     * @param i_b matrix B.
-     * @param o_c matrix C, will bet set to A.B.
-     *
-     * @paramt TL_T_REAL_A precision of matrix A.
-     * @paramt TL_T_REAL_B precision of matrix B.
-     * @paramt TL_T_REAL_C precision of matrix C.
-     **/
-    template <typename TL_T_REAL_A, typename TL_T_REAL_B, typename TL_T_REAL_C>
-    static void matMulB0FusedAC(       unsigned short  i_r,
-                                       unsigned int    i_m,
-                                       unsigned int    i_n,
-                                       unsigned int    i_k,
-                                 const TL_T_REAL_A    *i_a,
-                                 const TL_T_REAL_B    *i_b,
-                                       TL_T_REAL_C    *o_c ) {
-      // reset result to zero
-      for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-        for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
-          for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-            o_c[l_m*i_n*i_r + l_n*i_r + l_r] = 0;
-          }
-        }
-      }
-
-      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
-        for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-          for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
-            for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k*i_r + l_k*i_r + l_r] * i_b[l_k*i_n + l_n];
-            }
-          }
-        }
-      }
-    }
-
-    /**
-     * @DEPRECATED Replaced by version with support for beta.
-     *
-     * Performs the operation C[r] += A.B[r], for all 0 =< r =< #matrices.
-     * Here, B and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
-     *
-     * @param i_r number of B and C matrices.
-     * @param i_m blas identifier M.
-     * @param i_n blas identifier N.
-     * @param i_k blas identifier K.
-     * @param i_a matrix A.
-     * @param i_b matrix B.
-     * @param o_c matrix C, will bet set to A.B.
-     *
-     * @paramt TL_T_REAL_A precision of matrix A.
-     * @paramt TL_T_REAL_B precision of matrix B.
-     * @paramt TL_T_REAL_C precision of matrix C.
-     **/
-    template <typename TL_T_REAL_A, typename TL_T_REAL_B, typename TL_T_REAL_C>
-    static void matMulB1FusedBC(       unsigned short  i_r,
-                                       unsigned int    i_m,
-                                       unsigned int    i_n,
-                                       unsigned int    i_k,
-                                 const TL_T_REAL_A    *i_a,
-                                 const TL_T_REAL_B    *i_b,
-                                       TL_T_REAL_C    *o_c ) {
-      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
-        for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-          for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
-            for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_n*i_r + l_n*i_r + l_r] += i_a[l_m*i_k + l_k] * i_b[l_k*i_n*i_r + l_n*i_r + l_r];
-            }
-          }
-        }
-      }
-    }
-
-    /**
      * Performs the operation C[r] * beta += A[r].B, for all 0 =< r =< #matrices.
      * Here, A and C are arrays of matrices, with 0 =< r =< #matrices being the fastest dimensions.
      *
@@ -1085,6 +956,40 @@ class edge::linalg::Matrix {
 
       // free temporary dense matrix
       delete[] l_tmpDe;
+    }
+
+    /**
+     * Sets up a fake (dense) CSR structure.
+     * The method allocates memory, for the output data structure, but does not free it.
+     *
+     * @param i_m number of rows in column-major A and C.
+     * @param i_n number of columns in column-major B and C.
+     * @param i_k number of columns/rows in column-major A/B.
+     * @param o_rows will be set to row pointer.
+     * @param o_cols will be set to column index.
+     * @param o_vals will be set to values.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     */
+    template< typename TL_T_REAL >
+    static void fakeCsr( unsigned int     i_m,
+                         unsigned int     i_n,
+                         unsigned int     i_k,
+                         unsigned int * & o_rows,
+                         unsigned int * & o_cols,
+                         TL_T_REAL    * & o_vals ) {
+      // allocate memory
+      o_rows = new unsigned int[i_k+1];
+      o_cols = new unsigned int[i_k*i_k];
+      o_vals = new TL_T_REAL[i_k*i_k];
+
+      for( unsigned int l_n = 0; l_n < i_k*i_k; l_n++ ) {
+        o_vals[l_n] = static_cast<TL_T_REAL>( l_n );
+        o_cols[l_n] = l_n%i_k;
+      }
+      for( unsigned int l_n = 0; l_n < i_k+1; l_n++ ) {
+        o_rows[l_n] = l_n*i_k;
+      }
     }
 };
 

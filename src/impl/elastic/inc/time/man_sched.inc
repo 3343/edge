@@ -18,7 +18,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Scheduling for elastics with rupture physics.
+ * Scheduling for elastics with rupture physics or kinematic sources.
  **/
 
 /*
@@ -31,7 +31,7 @@
  */
 
 // make sure we have our entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 16, "entries of control flow not matching" );
+static_assert( N_ENTRIES_CONTROL_FLOW == 18, "entries of control flow not matching" );
 
 // get number of updates since sync
 int_ts l_nUpsSync = m_timeGroups[0]->getUpdatesSync();
@@ -93,19 +93,19 @@ if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
 
   // receive time integrated DG DOFs
   m_mpi.beginRecvs(0, 0);
-  m_cflow[13] = 1;
+  m_cflow[15] = 1;
 
   // receive candidate admissibility
   m_mpi.beginRecvs(0, l_ad[0] );
-  m_cflow[15] = 1;
+  m_cflow[17] = 1;
 
   // init communication
   m_cflow[ 2] = 0;
   m_cflow[ 7] = 2;
   m_cflow[ 8] = 2;
-  m_cflow[11] = 2;
-  m_cflow[12] = 2;
+  m_cflow[13] = 2;
   m_cflow[14] = 2;
+  m_cflow[16] = 2;
 }
 
 /*
@@ -141,26 +141,33 @@ if( m_cflow[ 7] == 1 && m_mpi.finRecvs(0, l_ex[0]) ) m_cflow[7] = 2;
 if( m_cflow[ 8] == 1 && m_mpi.finSends(0, l_ad[0]) ) m_cflow[8] = 2;
 
 
-// compute limit+, inner
+// compute kinematic sources, inner-elements
 if( m_cflow[ 9] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 9) ) m_cflow[9] = 2;
 
-// compute limit+, send
+// compute kinematic sources, send-elements
 if( m_cflow[10] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 10) ) m_cflow[10] = 2;
 
+
+// compute limit+, inner
+if( m_cflow[11] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 11) ) m_cflow[11] = 2;
+
+// compute limit+, send
+if( m_cflow[12] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 12) ) m_cflow[12] = 2;
+
 // MPI-recv: SC-DOFs
-if( m_cflow[11] == 1 && m_mpi.finRecvs(0, l_sc[0]) ) m_cflow[11] = 2;
+if( m_cflow[13] == 1 && m_mpi.finRecvs(0, l_sc[0]) ) m_cflow[13] = 2;
 
 // MPI-send: SC DOF
-if( m_cflow[12] == 1 && m_mpi.finSends(0, l_sc[0]) ) m_cflow[12] = 2;
+if( m_cflow[14] == 1 && m_mpi.finSends(0, l_sc[0]) ) m_cflow[14] = 2;
 
 // MPI-recv: DG-DOF
-if( m_cflow[13] == 1 &&m_mpi.finRecvs(0, 0) ) m_cflow[13] = 2;
+if( m_cflow[15] == 1 &&m_mpi.finRecvs(0, 0) ) m_cflow[15] = 2;
 
 // MPI-send: extrema
-if( m_cflow[14] == 1 && m_mpi.finSends(0, l_ex[0]) ) m_cflow[14] = 2;
+if( m_cflow[16] == 1 && m_mpi.finSends(0, l_ex[0]) ) m_cflow[16] = 2;
 
 // MPI-receive: candidate admissibility
-if( m_cflow[15] == 1 &&  m_mpi.finRecvs(0, l_ad[0]) ) m_cflow[15] = 2;
+if( m_cflow[17] == 1 &&  m_mpi.finRecvs(0, l_ad[0]) ) m_cflow[17] = 2;
 
 /*
  * resolve dependencies
@@ -180,13 +187,13 @@ if( m_cflow[1] == 2 && m_cflow[2] == 0 ) {
 }
 
 // MPI-recv SC DOFs + MPI-send SC DOFs done: compute rupture for send/recv
-if( m_cflow[11] == 2 && m_cflow[12] == 2 && m_cflow[4] == 0 ) {
+if( m_cflow[13] == 2 && m_cflow[14] == 2 && m_cflow[4] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 4);
   m_cflow[4] = 1;
 }
 
 // compute inner local + compute send local + MPI-recv DG DOFs + MPI-recv extrema done: compute neigh, send
-if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[13] == 2 && m_cflow[7] == 2 && m_cflow[6] == 0 ) {
+if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[15] == 2 && m_cflow[7] == 2 && m_cflow[6] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 6);
   m_cflow[6] = 1;
 
@@ -221,45 +228,57 @@ if( m_cflow[4] == 2 && m_cflow[6] == 2 && m_cflow[8] == 0 ) {
   m_recvsSf.flushIf();
 }
 
-//   compute rupture, inner + compute rupture, send/recv
-// + compute neigh, inner + compute neigh, send
-// + MPI-recv candidate admissibility done:
-//     compute limit+, send
-if(    m_cflow[3] == 2 && m_cflow[4] == 2
-    && m_cflow[5] == 2 && m_cflow[6] == 2
-    && m_cflow[15] == 2
-    && m_cflow[10] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 10);
-  m_cflow[10] = 1;
-
-  // we obtained this time steps admissibility from adjacent ranks:
-  // the limiter's sends have to be complete
-  EDGE_CHECK_EQ( m_cflow[11], 2 );
-  EDGE_CHECK_EQ( m_cflow[12], 2 );
-  EDGE_CHECK_EQ( m_cflow[13], 2 );
-  EDGE_CHECK_EQ( m_cflow[14], 2 );
-
-  // reset communication
-  m_cflow[11] = 0;
-  m_cflow[12] = 0;
-  m_cflow[13] = 0;
-  m_cflow[14] = 0;
-  m_cflow[15] = 0;
-}
-
-// compute rupture, inner + compute rupture, send/recv + compute neigh, inner + compute neigh, send done: compute limit+, inner
-if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[5] == 2 && m_cflow[6] == 2 && m_cflow[9] == 0 ) {
+// compute neighboring, inner done: compute kinematic sources inner
+if( m_cflow[5] == 2 && m_cflow[9] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 9);
   m_cflow[9] = 1;
 }
 
+// compute neighboring, inner done: compute kinematic sources inner
+if( m_cflow[6] == 2 && m_cflow[10] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 10);
+  m_cflow[10] = 1;
+}
+
+//   compute rupture, inner + compute rupture, send/recv
+// + compute kinematic, inner + compute kinematic, send
+// + MPI-recv candidate admissibility done:
+//     compute limit+, send
+if(    m_cflow[3] == 2 && m_cflow[4] == 2
+    && m_cflow[9] == 2 && m_cflow[10] == 2
+    && m_cflow[17] == 2
+    && m_cflow[12] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 12);
+  m_cflow[12] = 1;
+
+  // we obtained this time steps admissibility from adjacent ranks:
+  // the limiter's sends have to be complete
+  EDGE_CHECK_EQ( m_cflow[13], 2 );
+  EDGE_CHECK_EQ( m_cflow[14], 2 );
+  EDGE_CHECK_EQ( m_cflow[15], 2 );
+  EDGE_CHECK_EQ( m_cflow[16], 2 );
+
+  // reset communication
+  m_cflow[13] = 0;
+  m_cflow[14] = 0;
+  m_cflow[15] = 0;
+  m_cflow[16] = 0;
+  m_cflow[17] = 0;
+}
+
+// compute rupture, inner + compute rupture, send/recv + compute kinematic, inner + compute kinematic, send done: compute limit+, inner
+if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[9] == 2 && m_cflow[10] == 2 && m_cflow[11] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 11);
+  m_cflow[11] = 1;
+}
+
 // compute limit+, send done:
 //   MPI-recv SC-DOFs, MPI-recv SC-DOFs, MPI-recv DG-DOFs, MPI-send extrema, MPI-recv candidate admissibility
-if( m_cflow[10] == 2 && m_cflow[11] == 0 ) {
-  EDGE_CHECK_EQ( m_cflow[12], 0 );
-  EDGE_CHECK_EQ( m_cflow[13], 0 );
+if( m_cflow[12] == 2 && m_cflow[13] == 0 ) {
   EDGE_CHECK_EQ( m_cflow[14], 0 );
   EDGE_CHECK_EQ( m_cflow[15], 0 );
+  EDGE_CHECK_EQ( m_cflow[16], 0 );
+  EDGE_CHECK_EQ( m_cflow[17], 0 );
 
   m_mpi.beginRecvs(0, l_sc[1]);
   m_mpi.beginSends(0, l_sc[1]);
@@ -272,15 +291,15 @@ if( m_cflow[10] == 2 && m_cflow[11] == 0 ) {
   }
 
   // fire and forget comunication: relevant in next time step
-  m_cflow[11] = 2;
-  m_cflow[12] = 2;
   m_cflow[13] = 2;
   m_cflow[14] = 2;
   m_cflow[15] = 2;
+  m_cflow[16] = 2;
+  m_cflow[17] = 2;
 }
 
 // inner limit+ + send limit+ done
-if( m_cflow[9] == 2 && m_cflow[10] == 2 ) {
+if( m_cflow[11] == 2 && m_cflow[12] == 2 ) {
   // perform safety checks
   EDGE_CHECK_EQ( m_cflow[ 0], 2 );
   EDGE_CHECK_EQ( m_cflow[ 1], 2 );
@@ -290,13 +309,16 @@ if( m_cflow[9] == 2 && m_cflow[10] == 2 ) {
   EDGE_CHECK_EQ( m_cflow[ 5], 2 );
   EDGE_CHECK_EQ( m_cflow[ 6], 2 );
 
+  EDGE_CHECK_EQ( m_cflow[ 9], 2 );
+  EDGE_CHECK_EQ( m_cflow[10], 2 );
+
   // fire and forget
   EDGE_CHECK_EQ( m_cflow[ 7], 2 );
-  EDGE_CHECK_EQ( m_cflow[11], 2 );
-  EDGE_CHECK_EQ( m_cflow[12], 2 );
   EDGE_CHECK_EQ( m_cflow[13], 2 );
   EDGE_CHECK_EQ( m_cflow[14], 2 );
   EDGE_CHECK_EQ( m_cflow[15], 2 );
+  EDGE_CHECK_EQ( m_cflow[16], 2 );
+  EDGE_CHECK_EQ( m_cflow[17], 2 );
 
   // this is the final and most restrictive condition of the time step, update the ts-info
   m_timeGroups[0]->updateTsInfo();
@@ -318,14 +340,16 @@ if( m_cflow[9] == 2 && m_cflow[10] == 2 ) {
     m_cflow[ 6] = 0;
     m_cflow[ 9] = 0;
     m_cflow[10] = 0;
+    m_cflow[11] = 0;
+    m_cflow[12] = 0;
   
     // set possible ongoing communication relevant for next time step
     m_cflow[ 7] = 1;
-    m_cflow[11] = 1;
-    m_cflow[12] = 1;
     m_cflow[13] = 1;
     m_cflow[14] = 1;
     m_cflow[15] = 1;
+    m_cflow[16] = 1;
+    m_cflow[17] = 1;
 
     // print a progress report
     if(   edge::parallel::g_rank==0

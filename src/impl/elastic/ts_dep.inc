@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,13 +21,7 @@
  * Dependencies of the elastic computations in a static time cluster.
  **/
 
-#if PP_ORDER == 1
-#include "impl/elastic/solvers/FiniteVolume.hpp"
-#else
 #include "impl/elastic/solvers/AderDg.hpp"
-#endif
-#include "sc/Steering.hpp"
-#include "sc/Limiter.hpp"
 #include "sc/Boundary.hpp"
 
 #include "solvers/Kinematics.hpp"

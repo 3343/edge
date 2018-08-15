@@ -65,6 +65,7 @@ else:
 # enable zlib if available
 if env['zlib'] != False:
   if env['zlib'] != True:
+    env.AppendUnique( CPPPATH=[ env['zlib']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['zlib']+'/lib']     )
   conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' )
 
@@ -94,20 +95,13 @@ if env['moab'] != False:
   if env['moab'] != True:
     env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
+    env.AppendUnique( LIBPATH=[ env['moab']+'/lib64'] )
 
   # forward CGNS if available
   conf.CheckLibWithHeaderFlags( 'cgns' )
 
-  # forward gfortran if available
-  conf.CheckLibWithHeaderFlags( 'm' )
-  conf.CheckLibWithHeaderFlags( 'quadmath' )
-  conf.CheckLibWithHeaderFlags( 'gfortran' )
-
-  # forward ifcore, blas and lapack if available
-  env.AppendUnique( LIBPATH=[ env['moab']+'/lib64'] )
+  # forward ifcore if available
   conf.CheckLibWithHeaderFlags( 'ifcore' )
-  conf.CheckLibWithHeaderFlags( 'blas' )
-  conf.CheckLibWithHeaderFlags( 'lapack' )
 
   if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
     env.AppendUnique( CPPDEFINES=['PP_T_MESH_UNSTRUCTURED'] )

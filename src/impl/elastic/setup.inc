@@ -320,7 +320,6 @@ if( l_elasticConf.m_kinSrcs.size() > 0 ) {
   PP_INSTR_REG_END(kin)
 }
 
-#ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
 // get layout of sparse source elements
 l_enLayouts.resize( l_enLayouts.size() + 1 );
 edge::data::SparseEntities::denseToSparse( t_spTypeElastic::SOURCE,
@@ -328,7 +327,7 @@ edge::data::SparseEntities::denseToSparse( t_spTypeElastic::SOURCE,
                                            l_enLayouts[2],
                                            l_enLayouts.back() );
 unsigned short l_srcLayout = l_enLayouts.size()-1;
-#else
+
 // set up dynamic rupture face layout
 l_enLayouts.resize( l_enLayouts.size() + 1 );
 unsigned short l_rupLayoutFa = l_enLayouts.size()-1;
@@ -336,7 +335,6 @@ edge::data::SparseEntities::denseToSparse( t_spTypeElastic::RUPTURE,
                                            l_internal.m_faceChars,
                                            l_enLayouts[1],
                                            l_enLayouts[l_rupLayoutFa] );
-#endif
 
 // set up dynamic rupture element layout
 l_enLayouts.resize( l_enLayouts.size() + 1 );
@@ -352,6 +350,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
 #if defined PP_T_KERNELS_XSMM
 {
   EDGE_LOG_INFO << "  setting up libxsmm, sparse";
+
+  unsigned short l_mmGr = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
 
   // determine CSC fill-in strategy
   std::string l_cscFillIn = "none";
@@ -436,7 +436,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                      l_nzBl[0][0][1]+1, l_maxNzCol+1,
                                                      l_cscFillIn );
 
-      l_internal.m_mm.add(  false,
+      l_internal.m_mm.add(  l_mmGr,
+                            false,
                            &l_stiffTCsc.colPtr[0],  &l_stiffTCsc.rowIdx[0], &l_stiffTCsc.val[0],
                             N_QUANTITIES, l_maxNzCol+1, l_nzBl[0][0][1]+1,
                             N_ELEMENT_MODES, 0, l_maxNzCol+1,
@@ -444,7 +445,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                             LIBXSMM_GEMM_PREFETCH_NONE );
     }
     // generate libxsmm kernel for star matrix
-    l_internal.m_mm.add(  true,
+    l_internal.m_mm.add(  l_mmGr,
+                          true,
                          &l_starCsr.rowPtr[0],  &l_starCsr.colIdx[0], &l_starCsr.val[0],
                           N_QUANTITIES, l_maxNzCol+1, N_QUANTITIES,
                           0, l_maxNzCol+1, N_ELEMENT_MODES,
@@ -492,7 +494,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
 
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_stiffCsc.colPtr[0], &l_stiffCsc.rowIdx[0], &l_stiffCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, l_maxNzRow+1,
                           l_maxNzRow+1, 0, N_ELEMENT_MODES,
@@ -501,7 +504,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
   }
 
   // star matrix
-  l_internal.m_mm.add(  true,
+  l_internal.m_mm.add(  l_mmGr,
+                        true,
                        &l_starCsr.rowPtr[0], &l_starCsr.colIdx[0], &l_starCsr.val[0],
                         N_QUANTITIES, l_maxNzRow+1, N_QUANTITIES,
                         0, N_ELEMENT_MODES, l_maxNzRow+1,
@@ -520,7 +524,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
 
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
@@ -537,7 +542,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
 
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                           N_ELEMENT_MODES, 0, N_FACE_MODES,
@@ -553,7 +559,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                    l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS,
                                                    std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
                                                    l_cscFillIn );
-    l_internal.m_mm.add(  false,
+    l_internal.m_mm.add(  l_mmGr,
+                          false,
                          &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
                           N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
                           N_FACE_MODES, 0, N_ELEMENT_MODES,
@@ -567,7 +574,8 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                                  l_fSolv[0], l_fSolvCsr, TOL.BASIS );
   EDGE_CHECK( l_fSolvCsr.val.size() == N_QUANTITIES*N_QUANTITIES );
 
-  l_internal.m_mm.add(  true,
+  l_internal.m_mm.add(  l_mmGr,
+                        true,
                        &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
                         N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
                         0, N_FACE_MODES, N_FACE_MODES,
@@ -728,7 +736,6 @@ if( l_elasticConf.m_frictionLaw != "" ) {
   delete[] l_faultData;
 }
 
-#if PP_ORDER > 1
 // setup star matrices
 edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
                                 N_QUANTITIES,
@@ -740,7 +747,6 @@ edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
                                              l_internal.m_connect.elVe,
                                              l_internal.m_elementShared1,
                                              l_internal.m_elementShared4 );
-#endif
 
 // setup solvers
 edge::elastic::solvers::common::setupSolvers( l_internal.m_nElements,
@@ -805,7 +811,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
   // neigh inner-elements
   l_shared.regWrkRgn( l_tg,
-                      1,
+                      2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 5,
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
@@ -814,7 +820,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
   // neigh send-elements
   l_shared.regWrkRgn( l_tg,
-                      1,
+                      2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 6,
                       l_enLayouts[2].timeGroups[l_tg].inner.first+
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
@@ -823,30 +829,28 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups.size() + l_tg,
                       3, l_spType+2, l_internal.m_elementChars );
 
-#ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
-    // src inner-elements
+    // kinematic sources inner-elements
     l_shared.regWrkRgn( l_tg,
-                        2,
-                        l_tg * N_ENTRIES_CONTROL_FLOW + 3,
+                        3,
+                        l_tg * N_ENTRIES_CONTROL_FLOW + 9,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.first,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_tg );
 
-    // src send-elements
+    // kinematic sources send-elements
     l_shared.regWrkRgn( l_tg,
-                        2,
-                        l_tg * N_ENTRIES_CONTROL_FLOW + 4,
+                        3,
+                        l_tg * N_ENTRIES_CONTROL_FLOW + 10,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.first+
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].nEntsOwn-
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_enLayouts[l_srcLayout].timeGroups.size() + l_tg );
-#else
-    l_spType[0] = { RECEIVER };
 
+    l_spType[0] = { RECEIVER };
     // rupture physics inner-faces
     l_shared.regWrkRgn( l_tg,
-                        2,
+                        1,
                         l_tg * N_ENTRIES_CONTROL_FLOW + 3,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.first,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.size,
@@ -855,7 +859,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 
     // rupture physics send- and receive-faces
     l_shared.regWrkRgn( l_tg,
-                        2,
+                        1,
                         l_tg * N_ENTRIES_CONTROL_FLOW + 4,
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.first+
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].inner.size,
@@ -864,20 +868,19 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                         l_enLayouts[l_rupLayoutFa].timeGroups[l_tg].nEntsNotOwn,
                         l_enLayouts[l_rupLayoutFa].timeGroups.size() + l_tg,
                         1, l_spType, l_internal.m_globalShared7[0].bfChars );
-  #endif
 
   // limit, inner-elements
   l_shared.regWrkRgn( l_tg,
-                      3,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 9,
+                      4,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 11,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.first,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
                       l_tg );
 
   // limit, send-elements
   l_shared.regWrkRgn( l_tg,
-                      3,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 10,
+                      4,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 12,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.first+
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].inner.size,
                       l_enLayouts[l_limPlusLayout].timeGroups[l_tg].nEntsOwn-

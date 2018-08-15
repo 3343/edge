@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -37,6 +37,10 @@ namespace edge {
 class edge::io::Receivers {
   protected:
     struct Recv {
+      //! id of the receiver
+      unsigned int id;
+      //! coordinates of the receivers
+      double coords[3];
       //! number of buffered values
       unsigned int nBuff;
       //! buffer
@@ -97,8 +101,10 @@ class edge::io::Receivers {
 
     /**
      * Prints statistics of the receivers.
+     *
+     * @param i_nRecvs number of global receivers.
      **/
-    void print();
+    void print( unsigned int i_nRecvs );
 
     /**
      * Initialzes the receiver output.
@@ -124,7 +130,7 @@ class edge::io::Receivers {
                const t_enLayout      &i_enLayout,
                const int_el         (*i_enVe),
                const t_vertexChars   *i_veChars,
-                     unsigned int     i_bufferSize=100,
+                     unsigned int     i_bufferSize=250,
                      double           i_time=0 );
 
     /**

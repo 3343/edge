@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,7 @@
 
 
 // make sure we have our eight entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 9, "entries of control flow not matching" );
+static_assert( N_ENTRIES_CONTROL_FLOW == 7, "entries of control flow not matching" );
 
 // initialize control flow if neccessary
 if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
@@ -40,14 +40,12 @@ if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 1);
   m_cflow[0] = 1;  m_cflow[1] = 1;
 
-  m_mpi.beginRecvs(0);
+  m_mpi.beginRecvs(0, 0);
   m_cflow[5] = 1;
 
   m_cflow[2] = 0;
   m_cflow[3] = 0;
   m_cflow[4] = 0;
-  m_cflow[6] = 0;
-  m_cflow[7] = 0;
 }
 
 ////////////////////////////////////////
@@ -64,7 +62,7 @@ if( m_cflow[0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 0) ) m_cflow
 if( m_cflow[1] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 1) ) m_cflow[1] = 2;
 
 // sends completed
-if( m_cflow[2] == 1 && m_mpi.finSends(0) ) m_cflow[2] = 2;
+if( m_cflow[2] == 1 && m_mpi.finSends(0, 0) ) m_cflow[2] = 2;
 
 // inner-elements finished neighboring computations
 if( m_cflow[3] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 3) ) m_cflow[3] = 2;
@@ -73,22 +71,13 @@ if( m_cflow[3] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 3) ) m_cflow
 if( m_cflow[4] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 4) ) m_cflow[4] = 2;
 
 // receive completed
-if( m_cflow[5] == 1 && m_mpi.finRecvs(0) ) m_cflow[5] = 2;
-
-// TODO: MPI exchange of admissibility for face ghost elements
-// TODO: MPI exchange of extrema for vertex ghost elements
-
-// inner-elements are limited
-if( m_cflow[6] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 6) ) m_cflow[6] = 2;
-
-// send-elements are limited
-if( m_cflow[7] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 7) ) m_cflow[7] = 2;
+if( m_cflow[5] == 1 && m_mpi.finRecvs(0, 0) ) m_cflow[5] = 2;
 
 /*
  * Simple implementation: "Blocking"
  */
 if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[2] == 0 ) {
-    m_mpi.beginSends(0);
+    m_mpi.beginSends(0, 0);
     m_cflow[2] = 1;
 }
 
@@ -111,17 +100,8 @@ if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[5] == 2 ) {
   m_cflow[5] = 0;
 }
 
-// neighboring updates done
-if( m_cflow[3] == 2 && m_cflow[4] == 2 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 6);
-  m_shared.setStatusAll(parallel::Shared::RDY, 7);
-
-  m_cflow[3] = m_cflow[4] = 0;
-  m_cflow[6] = m_cflow[7] = 1;
-}
-
 // limiting complete
-if( m_cflow[6] == 2 && m_cflow[7] == 2 && m_cflow[2] == 2 ) {
+if( m_cflow[3] == 2 && m_cflow[4] == 2 ) {
   m_timeGroups[0]->updateTsInfo();
 
   if( !m_timeGroups[0]->finished() ) {
@@ -129,12 +109,12 @@ if( m_cflow[6] == 2 && m_cflow[7] == 2 && m_cflow[2] == 2 ) {
     m_shared.setStatusAll(parallel::Shared::RDY, 1);
     m_cflow[0] = m_cflow[1] = 1;
 
-    m_mpi.beginRecvs(0);
+    m_mpi.beginRecvs(0, 0);
     m_cflow[5] = 1;
 
     m_cflow[2] = 0;
   }
   else m_cflow[5] = 2;
 
-  m_cflow[6] = m_cflow[7] = 0;
+  m_cflow[3] = m_cflow[4] = 0;
 }

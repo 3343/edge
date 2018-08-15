@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (c) 2017-2018, Intel Corporation
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,11 @@
 #
 
 # global build group variables
+if [[ -z $EDGE_DEPS ]]
+then
+  EDGE_DEPS=./deps
+fi
+
 if [[ -z $EDGE_CXX  ]]
 then
   EDGE_CXX=mpiCC
@@ -106,7 +111,7 @@ do
   rm -rf .sconsign.dblite
 
   # finally let's build the code
-  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=./deps zlib=./deps hdf5=./deps netcdf=./deps moab=./deps -j ${EDGE_PAR_COMPILE}
+  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=${EDGE_DEPS} zlib=${EDGE_DEPS} hdf5=${EDGE_DEPS} netcdf=${EDGE_DEPS} moab=${EDGE_DEPS} -j ${EDGE_PAR_COMPILE}
 
   # copy binary
   cp ./build/edge ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}

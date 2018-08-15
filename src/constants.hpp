@@ -57,6 +57,14 @@ C_ENT[6] = {
 };
 
 /**
+ * Kernel groups.
+ **/
+enum class t_mm: unsigned short {
+  SUB_CELL = 0
+};
+
+
+/**
  * Determines the maximum of the two input values.
  *
  * @param i_first first value.
@@ -723,8 +731,6 @@ static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.FACE_MODES.SHARED,
 /*
  * Sub-cell limiter.
  */
-#if PP_ORDER > 1
 #include "sc/const.inc"
-#endif
 
 #endif

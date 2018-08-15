@@ -359,6 +359,9 @@ class edge::elastic::sc::Llf {
             // get id of the the adjacent element
             TL_T_LID l_elAd = i_elFaEl[l_el][l_ty];
 
+            // use own element, if at a boundary
+            if( l_elAd == std::numeric_limits< TL_T_LID >::max() ) l_elAd = l_el;
+
             // get material parameters of the adjacent element
             TL_T_REAL l_mpElAd[3];
             l_mpElAd[0] = i_matPars[l_elAd].lam;

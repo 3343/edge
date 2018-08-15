@@ -140,8 +140,8 @@ TEST_CASE( "Initialization of the communication layout", "[initLayout]" ) {
 
 
   // create a dummy pointer
-  double l_data;
-  double *l_dPtr = &l_data;
+  double l_data[256 * (20 * 9 * 8)];
+  double *l_dPtr = &l_data[0];
 
   // create dummy size per entry
   std::size_t l_bytes = 20 * 9 * 8 * sizeof(double);

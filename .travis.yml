@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2016-2017, Regents of the University of California
+# Copyright (c) 2016-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -38,7 +38,7 @@ notifications:
     urls:
       - https://webhooks.gitter.im/e/43c875b57e67fd07bc8b
 
-language: cpp
+language: generic
 
 matrix:
   include:
@@ -50,7 +50,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
         coverity_scan:
           project:
             name: "3343/edge"
@@ -59,11 +59,12 @@ matrix:
             secure: "JXgQNPOzTBuS3ptuB4vWcTJzU3CEdxC/Wrz3cbSlMD5a+rMUujRUg0DtfQZnZ4asikL0+kjNltg0i3z4mgwFoLL1ZvwdjN2aV5fpklHUvgZlv+vXJfKAEKrNwnRTTVzLVGb2kgqqthIQdfCKpn2JEOL73taxJ8HQtrX+wzH+qyz+uOsAYULWRv3rsoRJ6iCtIgCfuCuqWDI3wciEdsr+uhqADDCjV3ovQswleN9mVX0aw7gZNE/2mxn0DgTgDINSn6mMT7S/px0fRw7Kz5ubUmEXMmCsE+Jgc50LTnYAuSk3dwUY4wX0Td7ss8mblygh2xvOO9etESgrJ6xGovC3KbFv+68QOTiKW/VhmUwlDxHBphCf4IQEXBQe4CCgR6mBOREUZp2YTRa0hILNgoi/O/ZheJhx6sWMGWTayfeKIi3DDbh9VOk27/CILUg4XfB2UYif4LWEpLcurkxP20zZTOc4Bys3y98OMRSyxE1Pl30lHJk8vvMXB6XXogaXHx+lF52g4qPFadiW/tBkR0TZDGF2hFFRaYAm6q4r9qjHZjyccGrRmOA5fp6dUHJYawdRsbZWAMZqBOwp3tp67WzfqUmf5eijC1iehyIttFtPud68xnfQlB0DNS258FQAnJKcS59C730kQsAoHF3+7bzpJdJlBkEM4eChe5OlKRuuX6k="
           # set compilers and warm up detection of libraries so that Coverity doesn't get confused with failed builds
           build_command_prepend: "cov-configure --comptype g++ -co $CXX --template; scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1 --clean"
-          build_command:   "scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1"
+          build_command:   "scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=yes parallel=mpi+omp mode=release tests=1"
           branch_pattern: develop
       env:
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         SYSTEM_SETUP=1
         USE_MPI=1
         COVERITY=1
@@ -77,14 +78,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=swe
         T_ELEMENTS=line
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -96,14 +98,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=line
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -115,14 +118,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -134,14 +138,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tria3
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=1
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -150,14 +155,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tria3
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -169,14 +175,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -188,14 +195,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=advection
         T_ELEMENTS=tet4
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -208,14 +216,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -227,14 +236,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tria3
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -246,14 +256,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -265,14 +276,15 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tet4
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
         USE_MPI=0
-        GCOV=gcov-5
+        GCOV=gcov-7
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
@@ -284,19 +296,29 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-7', 'gfortran-7']
       env:
-        SINGULARITY_VERSION=2.3.1
-        CXX_COMPILER=g++-5
-        CC_COMPILER=gcc-5
+        SINGULARITY_VERSION=2.5.1
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
 
 before_install:
   - cd ..
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install -qq gfortran; fi;
 
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install gcc-6 g++-6; fi;
+  # set compilers
+  - export CXX=${CXX_COMPILER}
+  - export CC=${CC_COMPILER}
+  - export FC=${FORT_COMPILER}
+  - export F77=${FORT_COMPILER}
+  - export F90=${FORT_COMPILER}
+
+  # install packages
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo apt-get install libarchive-dev squashfs-tools; fi;
+
+  # install open mpi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then tar -xjf openmpi-1.10.3.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then cd openmpi-1.10.3; fi;
@@ -310,7 +332,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget -O cppcheck.tar.gz https://github.com/danmar/cppcheck/archive/1.83.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir cppcheck; tar -xzf cppcheck.tar.gz -C cppcheck --strip-components=1 > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd cppcheck; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then CXX=${CXX_COMPILER} make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then make SRCDIR=build CFGDIR=$(pwd)/cfg HAVE_RULES=no CXXFLAGS="-O2 -DNDEBUG -Wall -Wno-sign-compare -Wno-unused-function -std=c++11" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then export PATH=$(pwd):$PATH; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
@@ -320,28 +342,29 @@ before_install:
 
   # install valgrind
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install libc6-dbg; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://valgrind.org/downloads/valgrind-3.11.0.tar.bz2; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.11.0.tar.bz2; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.11.0; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://mirrors.kernel.org/sourceware/valgrind/valgrind-3.13.0.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.13.0.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.13.0; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir zlib && tar -xzf zlib.tar.gz -C zlib --strip-components=1; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --static --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd zlib; ./configure --static --prefix=/usr/local && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install hdf5
-  - if [ "$SYSTEM_SETUP" = "1" ]; then for repeat in $(seq 1 10); do wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 --no-verbose -O hdf5.tar.gz; if [ $? = 0 ]; then break; fi; sleep 30s; done; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then for repeat in $(seq 1 10); do wget https://www.hdfgroup.org/package/gzip/?wpdmdl=11811 --no-verbose -O hdf5.tar.bz2; if [ $? = 0 ]; then break; fi; sleep 30s; done; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir hdf5; tar -xf hdf5.tar.bz2 -C hdf5 --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd hdf5; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CFLAGS=-w CC=${CC_COMPILER} CXX=${CXX_COMPILER}  ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sed "s/\(.*\)(void) HDF_NO_UBSAN/HDF_NO_UBSAN \1(void)/" -i src/H5detect.c; fi; # remove, once fixed
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CFLAGS=-w ./configure --enable-shared=no --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CFLAGS=-w CC=mpicc CXX=mpiCC ./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install netcdf
-  - if [ "$SYSTEM_SETUP" = "1" ]; then wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz -O netcdf.tar.gz; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz -O netcdf.tar.gz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir netcdf; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xzf netcdf.tar.gz -C netcdf --strip-components=1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd netcdf; fi;
@@ -352,21 +375,21 @@ before_install:
   # install moab
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/moab; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then autoreconf -fi; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then CXX=${CXX_COMPILER} CC=${CC_COMPILER} ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-debug --enable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --enable-tools --enable-all-static --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-metis=yes --download-metis --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "0" ]; then ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --disable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --disable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then CC=mpicc CXX=mpiCC ./configure --disable-blaslapack --with-eigen3=$(pwd)/../eigen --disable-debug --disable-optimize --disable-shared --enable-static --with-pic=1 --disable-fortran  --disable-tools --with-pnetcdf=no --with-hdf5=yes --with-netcdf=yes --with-mpi --prefix=/usr/local > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install intel sde
   - "wget --delete-after --no-check-certificate --save-cookies cookie.txt --keep-session-cookies --post-data=\"accept_license=1&op=Continue&form_id=intel_licensed_dls_step_1\"  https://software.intel.com/protected-download/267266/144917"
-  - "wget --no-check-certificate --no-cookies --header \"Cookie: $(echo $(grep 'SSESS[^ ]*' cookie.txt) | awk '{print $6 \"=\" $7}');\" https://software.intel.com/system/files/managed/2f/ac/sde-external-7.49.0-2016-07-07-lin.tar.bz2"
-  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf sde-external-7.49.0-2016-07-07-lin.tar.bz2; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd sde-external-7.49.0-2016-07-07-lin; fi;
+  - "wget --no-check-certificate --no-cookies --header \"Cookie: $(echo $(grep 'SSESS[^ ]*' cookie.txt) | awk '{print $6 \"=\" $7}');\" https://software.intel.com/system/files/managed/2a/1a/sde-external-8.16.0-2018-01-30-lin.tar.bz2"
+  - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf sde-external-8.16.0-2018-01-30-lin.tar.bz2; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd sde-external-8.16.0-2018-01-30-lin; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/sde64 /usr/local/bin/sde64; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install LIBXSMM
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local BLAS=0 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local BLAS=0 INTRINSICS=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # install singularity and dependencies
@@ -378,6 +401,7 @@ before_install:
   # clone EDGE's asset repository
   - git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
   - cd edge_opt
+  - git log | head -n 1
   - git lfs fetch -I cont/advection; git lfs fetch -I cont/elastic; git lfs fetch -I cont/swe
   - git lfs checkout cont/advection cont/elastic cont/swe
   - cd ..
@@ -385,9 +409,7 @@ before_install:
   - cd edge
   - ln -s $(pwd)/../edge_opt/cont .
 
-   # set up compilers
-  - if [ "$USE_MPI" = "0" ]; then export CXX=${CXX_COMPILER}; fi;
-  - if [ "$USE_MPI" = "1" ]; then export OMPI_CXX=${CXX_COMPILER}; fi;
+  # update MPI wrappers
   - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
   - ${CXX} --version
   - export MOAB_DIR=submodules/moab/build
@@ -397,26 +419,29 @@ script:
   - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck --version; fi;
   - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1; fi;
 
+  # disable advanced exprtk features to speedup compilation
+  - export CXXFLAGS=-Dexprtk_disable_enhanced_features
+
   #
   # SWE
   #
   # 1D SWE
   ## release
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/swe/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/swe/line.xml; fi;
 
   ## valgrind
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/swe/line.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=8 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/swe/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=8 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/swe/line.xml; fi;
 
   ## code coverage, order=1, cfr=2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons equations=swe cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/swe/line.xml cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "swe" ] && [ "${T_ELEMENTS}" = "line" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_1_2/edge -x cont/swe/line.xml; fi;
 
 
@@ -444,10 +469,10 @@ script:
 
   ## valgrind, debug, cfr 4, orders 1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/line.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/line.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/line.xml; fi;
 
   ## code coverage, orders=1&2, cfr=4
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=4 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_4" -j $N_BUILD_PROC > /dev/null; fi;
@@ -494,16 +519,16 @@ script:
 
   ## valgrind, cfr=4, orders=1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=1 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/advection/sine/quad4r.xml order=2 cfr=4 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=1 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/advection/sine/tria3_uns.xml order=2 cfr=4 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tria3_uns.xml; fi;
 
   # valgrind, unstructured, cfr=4, order=2-3, MPI enabled
 #  - if [ "$USE_MPI" = "1" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tria3" ]; then gmsh -3 cont/advection/sine/tria3_mpi.geo -part 3 -o tria3_mpi.msh; fi;
@@ -539,10 +564,10 @@ script:
 
   ## valgrind, cfr=2, orders=1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/hex8r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/hex8r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/hex8r.xml; fi;
 
   ## code coverage, orders=1-2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/advection/sine/hex8r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
@@ -560,10 +585,10 @@ script:
 
   ## valgrind, cfr=2, orders=1-2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/tet4_uns.xml; fi;
 
   ## code coverage, order=1-2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/advection/sine/tet4_uns.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
@@ -605,16 +630,16 @@ script:
 
   # valgrind, fv, cfr=1,2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=1 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=1 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## code coverage, fv, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=1 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_1_2" -j $N_BUILD_PROC > /dev/null; fi;
@@ -625,10 +650,10 @@ script:
 
   # valgrind, order=2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/quad4r.xml; fi;
 
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
   ## code coverage, order=2, cfr=2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "quad4r" ]; then scons xml=cont/elastic/plane_waves/quad4r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" -j $N_BUILD_PROC > /dev/null; fi;
@@ -637,12 +662,14 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons xml=cont/elastic/plane_waves/tria3_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
-  # Knights Landing: Elastics on tria3 elements
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=2 cfr=8 arch=knl parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
+  # Knights Landing / Knights Mill: Elastics on tria3 elements
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=2 precision=32 cfr=16 arch=knl parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then sde64 -knm -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=3 cfr=8 arch=knl parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then scons element_type=tria3 order=3 precision=32 cfr=16 arch=knl parallel=omp equations=elastic moab=yes xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tria3" ]; then sde64 -knm -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tria3_uns.xml; fi;
 
 
 
@@ -668,9 +695,11 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  ## hex8r, regular KNL
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons order=2 cfr=8 arch=knl parallel=omp xml=cont/elastic/plane_waves/hex8r.xml -j $N_BUILD_PROC xsmm=yes; fi;
+  ## hex8r, regular KNL / KNM
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons order=2 precision=32 cfr=16 arch=knl parallel=omp xml=cont/elastic/plane_waves/hex8r.xml -j $N_BUILD_PROC xsmm=yes; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then sde64 -knm -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
+
 
   ## tet4, unstructured, fv, cfr=1,2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=1 zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
@@ -690,20 +719,20 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 mode=debug cov=1 build_dir="cov_${EQUATIONS}_${T_ELEMENTS}_2_2" zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./cov_${EQUATIONS}_${T_ELEMENTS}_2_2/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
-  ## tet4, unstructured, KNL
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons order=2 cfr=8 arch=knl parallel=omp xml=cont/elastic/plane_waves/tet4_uns.xml xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
+  ## tet4, unstructured, KNL / KNM
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons order=2 precision=32 cfr=16 arch=knl parallel=omp xml=cont/elastic/plane_waves/tet4_uns.xml xsmm=yes zlib=yes hdf5=yes netcdf=yes zlib=yes hdf5=yes netcdf=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -knm -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
 
   #
   # Singularity bootstrap
   #
-  - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; tar -czf /tmp/edge.tar.gz edge; fi
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity create --size 4096 /tmp/singularity.img; fi;
-  - if [ "$SINGULARITY_VERSION" != "" ]; then gunzip -c /tmp/edge.tar.gz | sudo singularity import /tmp/singularity.img; fi
   # enforce fewer builds in boostrap to fit in limited windows of public Travis CI
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5 6/for order in 1 2 3/g' edge/tools/singularity/debian.def; fi
+  - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; fi
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5/for order in 1 2 3/g'     edge/tools/singularity/debian.def; fi
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for mesh_type in reg uns/for mesh_type in uns/g' edge/tools/singularity/debian.def; fi
   # run bootstrap
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity bootstrap /tmp/singularity.img edge/tools/singularity/debian.def; fi;
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity build --sandbox /tmp/singularity.img edge/tools/singularity/debian.def; fi;
 
 after_success:
   - ${GCOV} -v

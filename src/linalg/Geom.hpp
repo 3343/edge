@@ -21,11 +21,12 @@
  * Geometry functions.
  **/
 
-#ifndef GEOM_HPP
-#define GEOM_HPP
+#ifndef EDGE_LINALG_GEOM_HPP
+#define EDGE_LINALG_GEOM_HPP
 
 #include <cassert>
 #include <cmath>
+#include "submodules/wykobi/wykobi.hpp"
 #include "constants.hpp"
 #include "io/logging.h"
 #include "monitor/instrument.hpp"
@@ -36,11 +37,17 @@ namespace edge {
   namespace linalg {
     class Geom;
 
-    template< unsigned short TL_N_DIM >
+    template< unsigned short TL_N_DIS >
     class GeomT;
 
+    template< unsigned short TL_N_DIS >
+    class GeomTs;
+
     template<>
-    class GeomT<3>;
+    class GeomTs<2>;
+
+    template<>
+    class GeomTs<3>;
   }
 }
 
@@ -703,11 +710,144 @@ class edge::linalg::Geom {
 
       return l_result;
     }
+
+    /**
+     * @brief Projects a point outside of an entity to the surface of the entity.
+     *        If the point is inside the entity, nothing is done.
+     *
+     * @param i_enType entity type.
+     * @param i_veCrds vertex coordinates of the entity.
+     * @param io_pt will be used as input and updated accordingly.
+     */
+    template< typename TL_T_REAL >
+    static void closestPoint( t_entityType         i_enType,
+                              TL_T_REAL     const *i_veCrds,
+                              TL_T_REAL           *io_pt ) {
+      unsigned short l_nVes = C_ENT[i_enType].N_VERTICES;
+
+      if( i_enType == LINE || i_enType == QUAD4R || i_enType == HEX8R ) {
+        // number of dimensions
+        unsigned short l_nDis = C_ENT[i_enType].N_DIM;
+
+        // derive minimum and maximum vertex coordinates
+        TL_T_REAL l_minMax[2][3];
+        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+          l_minMax[0][l_di] = std::numeric_limits< TL_T_REAL >::max();
+          l_minMax[1][l_di] = std::numeric_limits< TL_T_REAL >::lowest();
+        }
+
+        for( unsigned short l_ve = 0; l_ve < l_nVes; l_ve++ ) {
+          for( unsigned short l_di = 0; l_di < l_nDis; l_di++ ) {
+            l_minMax[0][l_di] = std::min( l_minMax[0][l_di],
+                                          i_veCrds[l_di*l_nVes+l_ve] );
+            l_minMax[1][l_di] = std::max( l_minMax[1][l_di],
+                                          i_veCrds[l_di*l_nVes+l_ve] );
+          }
+        }
+
+        // crop by cube
+        for( unsigned short l_di  = 0; l_di < l_nDis; l_di++ ) {
+          io_pt[l_di] = std::min( io_pt[l_di], l_minMax[1][l_di] );
+          io_pt[l_di] = std::max( io_pt[l_di], l_minMax[0][l_di] );
+        }
+      }
+      else if( i_enType == TRIA3 ) {
+        // init triangle
+        wykobi::triangle< TL_T_REAL, 2 > l_tria;
+        for( unsigned short l_di = 0; l_di < 2; l_di++ )
+          for( unsigned short l_ve = 0; l_ve < 3; l_ve++ )
+            l_tria[l_ve][l_di] = i_veCrds[l_di*l_nVes+l_ve];
+
+        // compute closest point
+        wykobi::point2d< TL_T_REAL > l_pt;
+        l_pt = wykobi::closest_point_on_triangle_from_point( l_tria,
+                                                             io_pt[0], io_pt[1] );
+
+        // save result
+        for( unsigned short l_di = 0; l_di < 2; l_di++ )
+          io_pt[l_di] = l_pt[l_di];
+      }
+      else if( i_enType == TET4 ) {
+        // query faces if the point is not inside
+        if( inside( i_enType, i_veCrds, io_pt ) == 0 ) {
+          // minimum distance to point
+          TL_T_REAL l_distMin = std::numeric_limits< TL_T_REAL >::max();
+
+          wykobi::point3d< TL_T_REAL > l_ptIn;
+          for( unsigned short l_di = 0; l_di < 3; l_di++ )
+            l_ptIn[l_di] = io_pt[l_di];
+
+          // iterate over faces
+          for( unsigned short l_fa = 0; l_fa < 4; l_fa++ ) {
+            // assemble triangle
+            wykobi::triangle< TL_T_REAL, 3 > l_tria;
+            for( unsigned short l_ve = 0; l_ve < 3; l_ve++ ) {
+              unsigned short l_veId = C_REF_ELEMENT.FA_VE_CC.TET[l_fa][l_ve];
+
+              for( unsigned short l_di = 0; l_di < 3; l_di++ )
+                l_tria[l_ve][l_di] = i_veCrds[l_di*l_nVes+l_veId];
+            }
+
+            // compute closest point
+            wykobi::point3d< TL_T_REAL > l_pt;
+            l_pt = wykobi::closest_point_on_triangle_from_point( l_tria,
+                                                                 l_ptIn );
+
+            // update point for a new minimum
+            TL_T_REAL l_dist = wykobi::distance( l_ptIn, l_pt );
+            if( l_dist < l_distMin ) {
+              l_distMin = l_dist;
+              for( unsigned short l_di = 0; l_di < 3; l_di++ )
+                io_pt[l_di] = l_pt[l_di];
+            }
+          }
+        }
+      }
+      else EDGE_LOG_FATAL;
+    }
 };
 
-template< unsigned short TL_N_DIM >
+template< unsigned short TL_N_DIS >
 class edge::linalg::GeomT {
   public:
+    /**
+     * @brief Computes the scalar product of the two vectors v1 and v2.
+     *
+     * @param i_v1 first vector.
+     * @param i_v2 second vecto.
+     * @return scalar product of the two vectors.
+     *
+     * @tparam TL_T_REAL floating point type.
+     */
+    template< typename TL_T_REAL >
+    static TL_T_REAL sprod( TL_T_REAL const i_v1[TL_N_DIS],
+                            TL_T_REAL const i_v2[TL_N_DIS] ) {
+      TL_T_REAL l_sp = 0;
+      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+        l_sp += i_v1[l_di] * i_v2[l_di];
+
+      return l_sp;
+    }
+
+    /**
+     * @brief Computes the L2 norm of the given vector
+     *
+     * @param i_vec vector for which the norm is computed.
+     * @return L2 norm of the given vector.
+     *
+     * @paramt floating point type.
+     */
+    template< typename TL_T_REAL >
+    static TL_T_REAL normL2( TL_T_REAL const i_vec[TL_N_DIS] ) {
+      TL_T_REAL l_l2 = 0;
+
+      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+        l_l2 += i_vec[l_di] * i_vec[l_di];
+      l_l2 = std::sqrt( l_l2 );
+
+      return l_l2;
+    }
+
     /**
      * Computes the norm of the vector given by the two points.
      *
@@ -717,12 +857,12 @@ class edge::linalg::GeomT {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL  >
-    static TL_T_REAL norm( TL_T_REAL const i_pt0[TL_N_DIM],
-                           TL_T_REAL const i_pt1[TL_N_DIM] ) {
+    static TL_T_REAL norm( TL_T_REAL const i_pt0[TL_N_DIS],
+                           TL_T_REAL const i_pt1[TL_N_DIS] ) {
 
       TL_T_REAL l_length = 0;
 
-      for( unsigned short l_di = 0; l_di < TL_N_DIM; l_di++ ) {
+      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         TL_T_REAL l_diff = i_pt1[l_di] - i_pt0[l_di];
         l_length += l_diff * l_diff;
       }
@@ -733,7 +873,29 @@ class edge::linalg::GeomT {
 };
 
 template<>
-class edge::linalg::GeomT< 3 > {
+class edge::linalg::GeomTs< 2 > {
+  public:
+    /**
+     * @brief Computes the angle between two vectors.
+     *
+     * @param i_v0 first vector.
+     * @param i_v1 second vector.
+     * @return angle between the two vectors.
+     *
+     * @paramt TL_T_REAL floating point type.
+     */
+    template< typename TL_T_REAL >
+    static TL_T_REAL angle( TL_T_REAL const i_v0[2],
+                            TL_T_REAL const i_v1[2] ) {
+      TL_T_REAL l_an = atan2(i_v1[1], i_v1[0]) - atan2(i_v0[1], i_v0[0]);
+      if( l_an < 0 ) l_an += 2*M_PI;
+
+      return l_an;
+    }
+};
+
+template<>
+class edge::linalg::GeomTs< 3 > {
   public:
     /**
      * Computes the norm of the vector given by the two points.

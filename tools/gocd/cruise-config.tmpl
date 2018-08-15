@@ -5,7 +5,7 @@
   @author Alexander Breuer (anbreuer AT ucsd.edu)
 
   @section LICENSE
-  Copyright (c) 2017, Regents of the University of California
+  Copyright (c) 2017-2018, Regents of the University of California
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,18 +30,11 @@
     TEMPLATE_GIT_EDGE_CORE
     TEMPLATE_GIT_EDGE_OPT
 
-    TEMPLATE_DEB_IP
-    TEMPLATE_DEB_0_UUID
-    TEMPLATE_DEB_1_UUID
-
-    TEMPLATE_REVENGE_IP
-    TEMPLATE_REVENGE_0_UUID
-    TEMPLATE_REVENGE_1_UUID
-    TEMPLATE_REVENGE_2_UUID
-    TEMPLATE_REVENGE_3_UUID
+    TEMPLATE_CLOUD_0_IP
+    TEMPLATE_CLOUD_0_UUID
 -->
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="100">
-  <server artifactsdir="artifacts" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="108">
+  <server artifactsdir="artifacts" purgeStart="80.0" purgeUpto="100.0" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
     <security>
       <!-- Authentification -->
       <authConfigs>
@@ -69,13 +62,13 @@
     </authorization>
 
     <pipeline name="deps_clang" template="Deps">
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
+      <timer onlyOnChanges="true">0 00 22 ? * *</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
     </pipeline>
     <pipeline name="deps_gnu" template="Deps">
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
+      <timer onlyOnChanges="true">0 00 22 ? * *</timer>
       <materials>
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" />
       </materials>
@@ -122,7 +115,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
     <pipeline name="CI_develop_gnu" template="CI">
@@ -146,7 +138,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
     <pipeline name="CI_develop_intel" template="CI">
@@ -170,7 +161,6 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
     </pipeline>
   </pipelines>
@@ -183,36 +173,6 @@
       </view>
     </authorization>
     <!-- 64 bit precision -->
-    <pipeline name="conv_develop_intel_64_cfr1_xsmm" lockBehavior="none" template="Conv">
-      <params>
-        <param name="toolchain">intel</param>
-        <param name="EDGE_PRECISION">64</param>
-        <param name="EDGE_CFR">1</param>
-        <param name="EDGE_XSMM">1</param>
-      </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
-      <materials>
-        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
-        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
-      </materials>
-    </pipeline>
-
-    <pipeline name="conv_develop_intel_64_cfr8_xsmm" lockBehavior="none" template="Conv">
-      <params>
-        <param name="toolchain">intel</param>
-        <param name="EDGE_PRECISION">64</param>
-        <param name="EDGE_CFR">8</param>
-        <param name="EDGE_XSMM">1</param>
-      </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
-      <materials>
-        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
-        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
-      </materials>
-    </pipeline>
-
     <pipeline name="conv_develop_gnu_64_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">gnu</param>
@@ -224,41 +184,24 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
+      </materials>
+    </pipeline>
+
+    <pipeline name="conv_develop_gnu_64_cfr8_xsmm" lockBehavior="none" template="Conv">
+      <params>
+        <param name="toolchain">gnu</param>
+        <param name="EDGE_PRECISION">64</param>
+        <param name="EDGE_CFR">8</param>
+        <param name="EDGE_XSMM">1</param>
+      </params>
+      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
+      <materials>
+        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
+        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
       </materials>
     </pipeline>
 
     <!-- 32 bit precision -->
-    <pipeline name="conv_develop_intel_32_cfr1_xsmm" lockBehavior="none" template="Conv">
-      <params>
-        <param name="toolchain">intel</param>
-        <param name="EDGE_PRECISION">32</param>
-        <param name="EDGE_CFR">1</param>
-        <param name="EDGE_XSMM">1</param>
-      </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
-      <materials>
-        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
-        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
-      </materials>
-    </pipeline>
-
-    <pipeline name="conv_develop_intel_32_cfr16_xsmm" lockBehavior="none" template="Conv">
-      <params>
-        <param name="toolchain">intel</param>
-        <param name="EDGE_PRECISION">32</param>
-        <param name="EDGE_CFR">16</param>
-        <param name="EDGE_XSMM">1</param>
-      </params>
-      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
-      <materials>
-        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
-        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
-      </materials>
-    </pipeline>
-
     <pipeline name="conv_develop_gnu_32_cfr1_xsmm" lockBehavior="none" template="Conv">
       <params>
         <param name="toolchain">gnu</param>
@@ -270,7 +213,20 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
+      </materials>
+    </pipeline>
+
+    <pipeline name="conv_develop_gnu_32_cfr16_xsmm" lockBehavior="none" template="Conv">
+      <params>
+        <param name="toolchain">gnu</param>
+        <param name="EDGE_PRECISION">32</param>
+        <param name="EDGE_CFR">16</param>
+        <param name="EDGE_XSMM">1</param>
+      </params>
+      <timer onlyOnChanges="true">0 00 23 ? * FRI</timer>
+      <materials>
+        <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
+        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
       </materials>
     </pipeline>
   </pipelines>
@@ -282,9 +238,9 @@
         <user>edgebot</user>
       </view>
     </authorization>
-    <pipeline name="wp_develop_intel_xsmm" lockBehavior="none" template="WaveProp">
+    <pipeline name="wp_develop_gnu_xsmm" lockBehavior="none" template="WaveProp">
       <params>
-        <param name="toolchain">intel</param>
+        <param name="toolchain">gnu</param>
         <param name="EDGE_XSMM">1</param>
         <param name="EDGE_MODE_RELEASE">release</param>
       </params>
@@ -292,8 +248,73 @@
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
-        <git url="TEMPLATE_GIT_EDGE_OPT" dest="edge_opt"/>
       </materials>
+    </pipeline>
+  </pipelines>
+
+  <!-- Continuous Deployment -->
+  <pipelines group="CD">
+    <pipeline name="singularity">
+      <timer onlyOnChanges="true">0 00 23 ? * *</timer>
+      <materials>
+        <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
+      </materials>
+
+      <stage name="virtual_machine">
+        <approval type="manual" />
+        <jobs>
+          <job name="bootstrap">
+            <tasks>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant destroy -f</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant up</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant halt</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="container" fetchMaterials="false">
+        <jobs>
+          <job name="bootstrap">
+            <tasks>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant up</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant ssh -c "sudo singularity build edge.simg /vagrant/debian.def"</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant destroy -f</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+            <artifacts>
+              <artifact type="build" src="edge/tools/singularity/edge.simg" />
+            </artifacts>
+          </job>
+        </jobs>
+      </stage>
     </pipeline>
   </pipelines>
 
@@ -316,7 +337,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="submodules/libxsmm" />
+              <artifact type="build" src="submodules/libxsmm" />
             </artifacts>
           </job>
         </jobs>
@@ -344,7 +365,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="zlib/">
                 <arg>-c</arg>
-                <arg>./configure --static --prefix=$(pwd)/zlib</arg>
+                <arg>LDFLAGS="-fPIC" CFLAGS="-fPIC" ./configure --static --prefix=$(pwd)/zlib</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="zlib/">
@@ -364,7 +385,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="zlib/zlib" />
+              <artifact type="build" src="zlib/zlib" />
             </artifacts>
           </job>
         </jobs>
@@ -374,13 +395,13 @@
       <stage name="hdf5" fetchMaterials="false">
         <environmentvariables>
           <variable name="HDF5_LINK">
-            <value>https://www.hdfgroup.org/package/gzip/?wpdmdl=4301</value>
+            <value>https://www.hdfgroup.org/package/gzip/?wpdmdl=11810</value>
           </variable>
         </environmentvariables>
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
                 <arg>wget ${HDF5_LINK} -O hdf5.tar.gz</arg>
@@ -393,7 +414,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="hdf5/">
                 <arg>-c</arg>
-                <arg>./configure --enable-shared=no --with-zlib=$(pwd)/../libs/zlib --prefix=$(pwd)/hdf5_seq</arg>
+                <arg>LDFLAGS="-fPIC" CFLAGS="-fPIC" ./configure --enable-shared=no --with-zlib=$(pwd)/../libs/zlib --prefix=$(pwd)/hdf5_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="hdf5/">
@@ -413,7 +434,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="hdf5/hdf5_seq" />
+              <artifact type="build" src="hdf5/hdf5_seq" />
             </artifacts>
           </job>
         </jobs>
@@ -423,13 +444,14 @@
       <stage name="netcdf" fetchMaterials="false">
         <environmentvariables>
           <variable name="NETCDF_LINK">
-            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz</value>
+            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz</value>
           </variable>
         </environmentvariables>
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
                 <arg>wget ${NETCDF_LINK} -O netcdf.tar.gz</arg>
@@ -442,7 +464,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="netcdf/">
                 <arg>-c</arg>
-                <arg>CPPFLAGS=-I$(pwd)/../libs/hdf5_seq/include LDFLAGS=-L$(pwd)/../libs/hdf5_seq/lib ./configure --enable-shared=no --disable-dap --prefix=$(pwd)/netcdf_seq</arg>
+                <arg>LDFLAGS="-fPIC" CFLAGS="-fPIC" LIBS="-ldl" HDF5DIR=$(pwd)/../libs/hdf5_seq ZLIBDIR=$(pwd)/../libs/zlib CPPFLAGS="-I${HDF5DIR}/include -I${ZLIBDIR}/include" LDFLAGS="-L${HDF5DIR}/lib -L${ZLIBDIR}/lib" ./configure --enable-shared=no --disable-dap --prefix=$(pwd)/netcdf_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="netcdf/">
@@ -462,7 +484,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="netcdf/netcdf_seq" />
+              <artifact type="build" src="netcdf/netcdf_seq" />
             </artifacts>
           </job>
         </jobs>
@@ -473,8 +495,9 @@
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
-              <fetchartifact stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
+              <fetchartifact origin="gocd" stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
                 <arg>autoreconf -fi</arg>
@@ -482,7 +505,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
+                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
@@ -502,7 +525,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="submodules/moab/moab_seq" />
+              <artifact type="build" src="submodules/moab/moab_seq" />
             </artifacts>
           </job>
         </jobs>
@@ -520,13 +543,27 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
-              <!-- edge_opt -->
+              <!-- edge_opt: pointers only -->
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>GIT_LFS_SKIP_SMUDGE=1 git clone TEMPLATE_GIT_EDGE_OPT</arg>
+                <runif status="passed" />
+              </exec>
+
+              <!-- edge_opt: download CI data-->
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs pull origin master -I cont/advection cont/elastic cont/swe</arg>
+                <runif status="passed" />
+              </exec>
+
+              <!-- edge_opt: link CI data -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
                 <arg>ln -s ../edge_opt/cont .</arg>
@@ -566,9 +603,6 @@
                 <runif status="passed" />
               </exec>
             </tasks>
-            <resources>
-              <resource>cppcheck</resource>
-            </resources>
           </job>
           <!-- Shallow Water Equations, line -->
           <job name="swe_line">
@@ -581,7 +615,7 @@
               <!-- debugger, o=1, cfr=1,8 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=1 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=1 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -591,7 +625,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=8 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=8 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -603,7 +637,7 @@
               <!-- release, o=1, cfr=1,8 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -613,7 +647,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons equations=swe cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2269,16 +2303,23 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
-              <!-- edge_opt -->
+              <!-- edge_opt: pointers -->
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>GIT_LFS_SKIP_SMUDGE=1 git clone TEMPLATE_GIT_EDGE_OPT</arg>
+                <runif status="passed" />
+              </exec>
+
+              <!-- edge_opt: link benchmarks -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>ln -s ../edge_opt/bench .</arg>
+                <arg>ln -s .../edge_opt/bench .</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
@@ -2313,7 +2354,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/adv_line/output/*" dest="xml" />
+              <artifact type="build" src="edge/adv_line/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="adv_quad4r">
@@ -2339,7 +2380,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/adv_quad4r/output/*" dest="xml" />
+              <artifact type="build" src="edge/adv_quad4r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="adv_hex8r">
@@ -2365,7 +2406,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/adv_hex8r/output/*" dest="xml" />
+              <artifact type="build" src="edge/adv_hex8r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="elastic_quad4r">
@@ -2391,7 +2432,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/elastic_quad4r/output/*" dest="xml" />
+              <artifact type="build" src="edge/elastic_quad4r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="elastic_hex8r">
@@ -2417,7 +2458,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/elastic_hex8r/output/*" dest="xml" />
+              <artifact type="build" src="edge/elastic_hex8r/output/*" dest="xml" />
             </artifacts>
           </job>
           <job name="elastic_tet4_reg">
@@ -2443,7 +2484,7 @@
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/elastic_tet4_reg/output/*" dest="xml" />
+              <artifact type="build" src="edge/elastic_tet4_reg/output/*" dest="xml" />
             </artifacts>
           </job>
         </jobs>
@@ -2452,7 +2493,7 @@
         <jobs>
           <job name="advection">
             <tasks>
-              <fetchartifact pipeline="" stage="build_run" job="adv_line" srcdir="xml" dest="adv_line">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_line" srcdir="xml" dest="adv_line">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2467,7 +2508,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="adv_quad4r" srcdir="xml" dest="adv_quad4r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_quad4r" srcdir="xml" dest="adv_quad4r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2482,7 +2523,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="adv_hex8r" srcdir="xml" dest="adv_hex8r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_hex8r" srcdir="xml" dest="adv_hex8r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2498,16 +2539,13 @@
                 <runif status="passed" />
               </exec>
             </tasks>
-            <resources>
-              <resource>pyplot</resource>
-            </resources>
             <artifacts>
-              <artifact src="adv_*.pdf" />
+              <artifact type="build" src="adv_*.pdf" />
             </artifacts>
           </job>
           <job name="elastic">
             <tasks>
-              <fetchartifact pipeline="" stage="build_run" job="elastic_quad4r" srcdir="xml" dest="elastic_quad4r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_quad4r" srcdir="xml" dest="elastic_quad4r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2522,7 +2560,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="elastic_hex8r" srcdir="xml" dest="elastic_hex8r">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_hex8r" srcdir="xml" dest="elastic_hex8r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2537,7 +2575,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact pipeline="" stage="build_run" job="elastic_tet4_reg" srcdir="xml" dest="elastic_tet4_reg">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_tet4_reg" srcdir="xml" dest="elastic_tet4_reg">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2553,11 +2591,8 @@
                 <runif status="passed" />
               </exec>
             </tasks>
-            <resources>
-              <resource>pyplot</resource>
-            </resources>
             <artifacts>
-              <artifact src="elastic_*.pdf" />
+              <artifact type="build" src="elastic_*.pdf" />
             </artifacts>
           </job>
         </jobs>
@@ -2576,11 +2611,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- adjust rights -->
               <exec command="/bin/bash" workingdir="edge">
@@ -2596,15 +2631,22 @@
                 <runif status="passed" />
               </exec>
 
+              <!-- edge_opt: pointers -->
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>GIT_LFS_SKIP_SMUDGE=1 git clone TEMPLATE_GIT_EDGE_OPT</arg>
+                <runif status="passed" />
+              </exec>
+
               <!-- edge_opt: HSP1a -->
               <exec command="/bin/bash" workingdir="edge_opt">
                 <arg>-c</arg>
-                <arg>git lfs fetch -I bench/seismic/wp/hsp1a</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/hsp1a/configs</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge_opt">
                 <arg>-c</arg>
-                <arg>git lfs checkout bench/seismic/wp/hsp1a</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/hsp1a/*.nc</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2635,11 +2677,11 @@
               <variable name="EDGE_EXEC">
                   <value>./build/edge</value>
               </variable>
-              <variable name="SRC_CONFIG">
-                  <value>bench/seismic/wp/hsp1a/reg_src.xml</value>
+              <variable name="SRC_DISC">
+                  <value>bench/seismic/wp/hsp1a/hsp1a_reg_src.nc</value>
               </variable>
               <variable name="EDGE_CONFIG">
-                  <value>bench/seismic/wp/hsp1a/configs/reg_96.xml</value>
+                  <value>bench/seismic/wp/hsp1a/configs/reg_64.xml</value>
               </variable>
               <variable name="EDGE_ELEMENT_TYPE">
                   <value>tet4</value>
@@ -2655,7 +2697,7 @@
                   <value>libs/netcdf_seq</value>
               </variable>
               <variable name="BENCH_RECVS">
-                  <value>hsp1a_reg_recvs_96</value>
+                  <value>hsp1a_reg_recvs_64</value>
               </variable>
             </environmentvariables>
 
@@ -2667,17 +2709,17 @@
                 <runif status="passed" />
               </exec>
 
-              <!-- generate kinematic source description -->
+              <!-- link kinematic source description -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>PATH=${EDGE_NETCDF}/bin:$PATH python tools/processing/kinematic_bench.py --xml ${SRC_CONFIG}</arg>
+                <arg>ln -s ${SRC_DISC} .</arg>
                 <runif status="passed" />
               </exec>
 
               <!-- o=1,..4, cfr=1 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=1 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2693,7 +2735,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=1 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2709,7 +2751,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=1 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2725,7 +2767,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=4 element_type=${EDGE_ELEMENT_TYPE} cfr=1 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=4 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2739,10 +2781,10 @@
                 <runif status="passed" />
               </exec>
 
-              <!-- o=1,..3, cfr=8 -->
+              <!-- o=1,..3, cfr=4 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=8 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2752,13 +2794,13 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>mv ${BENCH_RECVS} recvs/o1c8</arg>
+                <arg>mv ${BENCH_RECVS} recvs/o1c4</arg>
                 <runif status="passed" />
               </exec>
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=8 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2768,13 +2810,13 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>mv ${BENCH_RECVS} recvs/o2c8</arg>
+                <arg>mv ${BENCH_RECVS} recvs/o2c4</arg>
                 <runif status="passed" />
               </exec>
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=8 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2784,12 +2826,12 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>mv ${BENCH_RECVS} recvs/o3c8</arg>
+                <arg>mv ${BENCH_RECVS} recvs/o3c4</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="edge/recvs" />
+              <artifact type="build" src="edge/recvs" />
             </artifacts>
           </job>
         </jobs>
@@ -2797,7 +2839,7 @@
       <!-- ****************************************
            * Stage: Analysis of benchmark results *
            **************************************** -->
-      <stage name="analyze" fetchMaterials="false">
+      <stage name="analyze" fetchMaterials="false" cleanWorkingDir="true">
         <jobs>
           <!-- HSP1a benchmark -->
           <job name="HSP1a">
@@ -2807,7 +2849,7 @@
               </variable>
             </environmentvariables>
             <tasks>
-              <fetchartifact pipeline="" stage="build_run" job="HSP1a_tet4_reg_omp" srcdir="recvs" dest="HSP1a_tet4_reg_omp">
+              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="HSP1a_tet4_reg_omp" srcdir="recvs" dest="HSP1a_tet4_reg_omp">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="/bin/bash">
@@ -2822,22 +2864,27 @@
               </exec>
               <exec command="/bin/bash">
                 <arg>-c</arg>
-                <arg>mkdir plots_hsp1a; dims=(x y z); for dir in HSP1a_tet4_reg_omp/recvs/*; do for dim in 0 1 2; do for recv in `seq 1 12`; do basedir=$(basename ${dir}); if [ $(echo ${basedir} | grep c8) ] ; then fruns=8; else fruns=1 ; fi; python edge/tools/processing/recvs_compare_csv.py --in_csv ref_hsp1a/${dims[$dim]}_${recv}.csv ${dir}/hsp1a_${recv}.csv --cols 1 $((7*${fruns} + ${dim})) --out_pdf plots_hsp1a/${basedir}_${recv}_${dims[$dim]}.pdf; done; done; done</arg>
+                <arg>mkdir plots_hsp1a; dims=(x y z); for dir in HSP1a_tet4_reg_omp/recvs/*; do for dim in 0 1 2; do for recv in `seq 1 12`; do basedir=$(basename ${dir}); if [ $(echo ${basedir} | grep c4) ] ; then fruns=4; else fruns=1 ; fi; python edge/tools/processing/recvs_compare_csv.py --in_csv ref_hsp1a/${dims[$dim]}_${recv}.csv ${dir}/hsp1a_${recv}.csv --cols 1 $((7*${fruns} + ${dim})) --out_pdf plots_hsp1a/${basedir}_${recv}_${dims[$dim]}.pdf; done; done; done</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
             <artifacts>
-              <artifact src="plots_hsp1a/*" dest="plots" />
+              <artifact type="build" src="plots_hsp1a/*" dest="plots" />
             </artifacts>
-            <resources>
-              <resource>pyplot</resource>
-            </resources>
           </job>
         </jobs>
       </stage>
     </pipeline>
   </templates>
   <environments>
+    <environment name="CD">
+      <agents>
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
+      </agents>
+      <pipelines>
+        <pipeline name="singularity" />
+      </pipelines>
+    </environment>
     <environment name="Clang">
       <environmentvariables>
         <variable name="CC_SEQ">
@@ -2859,13 +2906,13 @@
             <value>clang++</value>
         </variable>
         <variable name="N_BUILD_PROC">
+            <value>1</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
             <value>2</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>2</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
@@ -2881,8 +2928,7 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_DEB_0_UUID" />
-        <physical uuid="TEMPLATE_DEB_1_UUID" />
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
       </agents>
       <pipelines>
         <pipeline name="deps_clang"/>
@@ -2910,13 +2956,13 @@
             <value>g++</value>
         </variable>
         <variable name="N_BUILD_PROC">
+            <value>1</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
             <value>2</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>2</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
@@ -2932,14 +2978,64 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_DEB_0_UUID" />
-        <physical uuid="TEMPLATE_DEB_1_UUID" />
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
       </agents>
       <pipelines>
         <pipeline name="deps_gnu"/>
         <pipeline name="CI_develop_gnu" />
+      </pipelines>
+    </environment>
+    <environment name="Gnu_single">
+      <environmentvariables>
+        <variable name="CC_SEQ">
+            <value>gcc</value>
+        </variable>
+        <variable name="CC_OMP">
+            <value>gcc</value>
+        </variable>
+        <variable name="CXX_SEQ">
+            <value>g++</value>
+        </variable>
+        <variable name="CXX_OMP">
+            <value>g++</value>
+        </variable>
+        <variable name="CXX_MPI_OMP">
+            <value>mpiCC</value>
+        </variable>
+        <variable name="OMPI_CXX">
+            <value>g++</value>
+        </variable>
+        <variable name="N_BUILD_PROC">
+            <value>24</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>24</value>
+        </variable>
+        <variable name="MPI_EXEC">
+            <value>mpiexec -n 8</value>
+        </variable>
+        <variable name="EDGE_ARCH_DEBUG">
+            <value>host</value>
+        </variable>
+        <variable name="DEBUGGER">
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+        </variable>
+        <variable name="DEBUGGER_MPI_OMP">
+            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+        </variable>
+        <variable name="EDGE_ARCH_RELEASE">
+            <value>host</value>
+        </variable>
+      </environmentvariables>
+      <agents>
+        <physical uuid="TEMPLATE_CLOUD_0_UUID" />
+      </agents>
+      <pipelines>
         <pipeline name="conv_develop_gnu_64_cfr1_xsmm" />
+        <pipeline name="conv_develop_gnu_64_cfr8_xsmm" />
         <pipeline name="conv_develop_gnu_32_cfr1_xsmm" />
+        <pipeline name="conv_develop_gnu_32_cfr16_xsmm" />
+        <pipeline name="wp_develop_gnu_xsmm" />
       </pipelines>
     </environment>
 
@@ -2961,13 +3057,13 @@
             <value>mpiicpc</value>
         </variable>
         <variable name="N_BUILD_PROC">
-            <value>32</value>
+            <value>64</value>
+        </variable>
+        <variable name="OMP_NUM_THREADS">
+            <value>64</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>62</value>
         </variable>
         <variable name="KMP_AFFINITY">
             <value>norespect,granularity=fine,compact,1,2</value>
@@ -2986,117 +3082,16 @@
         </variable>
       </environmentvariables>
       <agents>
-        <physical uuid="TEMPLATE_REVENGE_0_UUID" />
-        <physical uuid="TEMPLATE_REVENGE_1_UUID" />
-        <physical uuid="TEMPLATE_REVENGE_2_UUID" />
       </agents>
       <pipelines>
         <pipeline name="deps_intel"/>
         <pipeline name="CI_develop_intel" />
       </pipelines>
     </environment>
-
-    <environment name="Intel_single">
-      <environmentvariables>
-        <variable name="CC_SEQ">
-            <value>icc</value>
-        </variable>
-        <variable name="CC_OMP">
-            <value>icc</value>
-        </variable>
-        <variable name="CXX_SEQ">
-            <value>icpc</value>
-        </variable>
-        <variable name="CXX_OMP">
-            <value>icpc</value>
-        </variable>
-        <variable name="CXX_MPI_OMP">
-            <value>mpiicpc</value>
-        </variable>
-        <variable name="N_BUILD_PROC">
-            <value>32</value>
-        </variable>
-        <variable name="MPI_EXEC">
-            <value>eval rm -r inspxe_results* 2> /dev/null || true; mpiexec -n 8</value>
-        </variable>
-        <variable name="OMP_NUM_THREADS">
-            <value>62</value>
-        </variable>
-        <variable name="KMP_AFFINITY">
-            <value>norespect,granularity=fine,compact,1,2</value>
-        </variable>
-        <variable name="EDGE_ARCH_DEBUG">
-            <value>knl</value>
-        </variable>
-        <variable name="DEBUGGER">
-            <value>inspxe-cl --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
-        </variable>
-        <variable name="DEBUGGER_MPI_OMP">
-            <value>inspxe-cl --result-dir=inspxe_results --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
-        </variable>
-        <variable name="EDGE_ARCH_RELEASE">
-            <value>knl</value>
-        </variable>
-      </environmentvariables>
-      <agents>
-        <physical uuid="TEMPLATE_REVENGE_3_UUID" />
-      </agents>
-      <pipelines>
-        <pipeline name="conv_develop_intel_64_cfr1_xsmm" />
-        <pipeline name="conv_develop_intel_64_cfr8_xsmm" />
-        <pipeline name="conv_develop_intel_32_cfr1_xsmm" />
-        <pipeline name="conv_develop_intel_32_cfr16_xsmm" />
-        <pipeline name="wp_develop_intel_xsmm" />
-      </pipelines>
-    </environment>
   </environments>
 
   <agents>
-    <agent hostname="deb0" ipaddress="TEMPLATE_DEB_IP" uuid="TEMPLATE_DEB_0_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="deb1" ipaddress="TEMPLATE_DEB_IP" uuid="TEMPLATE_DEB_1_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge0"  ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_0_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge1" ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_1_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge2" ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_2_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
-    </agent>
-    <agent hostname="revenge3" ipaddress="TEMPLATE_REVENGE_IP" uuid="TEMPLATE_REVENGE_3_UUID">
-      <resources>
-        <resource>cppcheck</resource>
-        <resource>knl</resource>
-        <resource>pyplot</resource>
-        <resource>rscript</resource>
-      </resources>
+    <agent hostname="cloud0" ipaddress="TEMPLATE_CLOUD_0_IP" uuid="TEMPLATE_CLOUD_0_UUID">
     </agent>
   </agents>
 </cruise>

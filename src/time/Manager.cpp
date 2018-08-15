@@ -29,13 +29,7 @@ void edge::time::Manager::schedule() {
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "src/impl/advection/inc/time/man_sched.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
-
-#ifndef PP_T_EQUATIONS_ELASTIC_RUPTURE
-#include "src/impl/elastic/inc/time/man_sched_src.inc"
-#else
-#include "src/impl/elastic/inc/time/man_sched_rup.inc"
-#endif
-
+#include "src/impl/elastic/inc/time/man_sched.inc"
 #elif defined PP_T_EQUATIONS_SWE
 #include "src/impl/swe/inc/time/man_sched.inc"
 #else

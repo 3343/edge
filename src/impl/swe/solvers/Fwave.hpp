@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,106 +21,228 @@
  * F-Wave solver for the one dimensional shallow water equations.
  **/
 
-#ifndef FWAVE_HPP
-#define FWAVE_HPP
+#ifndef EDGE_SWE_FWAVE_HPP
+#define EDGE_SWE_FWAVE_HPP
 
-#include <algorithm>
-#include "constants.hpp"
+#include <cmath>
 
 namespace edge {
   namespace swe {
     namespace solvers {
+      template< unsigned short TL_N_CRS >
       class Fwave;
     }
   }
 }
 
+/**
+ * @brief One-dimensional f-Wave solver for the shallow water equations.
+ *
+ * @paramt TL_N_CRS number of fused simulations.
+ **/
+template< unsigned short TL_N_CRS >
 class edge::swe::solvers::Fwave {
+  private:
+    /**
+     * @brief Derives approximate eigenvalues (Einfeldt speeds), as the extrema of characteristics speeds and Roe speeds.
+     *
+     * @param i_hL water height for the left element.
+     * @param i_hR water height for the right element.
+     * @param i_huL momentum for left element.
+     * @param i_huR momentum for right element.
+     * @param o_lam will be set to eigenvalues.
+     * @param i_g gravity constant.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     */
+    template< typename TL_T_REAL >
+    static void evs( TL_T_REAL const i_hL[TL_N_CRS],
+                     TL_T_REAL const i_hR[TL_N_CRS],
+                     TL_T_REAL const i_uL[TL_N_CRS],
+                     TL_T_REAL const i_uR[TL_N_CRS],
+                     TL_T_REAL       o_lam[2][TL_N_CRS],
+                     TL_T_REAL       i_g = TL_T_REAL(9.80665) ) {
+      // compute characteristic speeds
+      TL_T_REAL l_charL[TL_N_CRS], l_charR[TL_N_CRS];
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        l_charL[l_cr] = i_uL[l_cr] - std::sqrt( i_g * i_hL[l_cr] );
+        l_charR[l_cr] = i_uR[l_cr] + std::sqrt( i_g * i_hR[l_cr] );
+      }
+
+      // compute roe averages
+      TL_T_REAL l_hRoe[TL_N_CRS], l_uRoe[TL_N_CRS];
+      TL_T_REAL l_roeL[TL_N_CRS], l_roeR[TL_N_CRS];
+
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        TL_T_REAL l_hSqrtL = std::sqrt(i_hL[l_cr]);
+        TL_T_REAL l_hSqrtR = std::sqrt(i_hR[l_cr]);
+
+        l_hRoe[l_cr]  = TL_T_REAL(0.5) * ( i_hL[l_cr] + i_hL[l_cr] );
+        l_uRoe[l_cr]  = l_hSqrtL * i_uL[l_cr] + l_hSqrtR * i_uR[l_cr];
+        l_uRoe[l_cr] /= l_hSqrtL + l_hSqrtR;
+
+        TL_T_REAL l_ghSqrtRoe = std::sqrt( i_g * l_hRoe[l_cr]);
+        l_roeL[l_cr] = l_uRoe[l_cr] - l_ghSqrtRoe;
+        l_roeR[l_cr] = l_uRoe[l_cr] + l_ghSqrtRoe;
+      }
+
+      // assign resulting values
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        o_lam[0][l_cr] = std::min( l_charL[l_cr], l_roeL[l_cr] );
+        o_lam[1][l_cr] = std::max( l_charR[l_cr], l_roeR[l_cr] );
+      }
+    }
+
+    /**
+     * @brief Computes the wave strength in the wave decomposition.
+     *
+     * @param i_fJump jump in fluxes.
+     * @param i_lam eigenvalues.
+     * @param o_beta will be set to wave strengths.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     */
+    template< typename TL_T_REAL >
+    static void waveStrengths( TL_T_REAL const i_fJump[2][TL_N_CRS],
+                               TL_T_REAL const i_lam[2][TL_N_CRS],
+                               TL_T_REAL       o_beta[2][TL_N_CRS] ) {
+      TL_T_REAL l_adMbc[TL_N_CRS];
+      TL_T_REAL l_iR[2][2][TL_N_CRS];
+
+      // compute inverse right eigenvector matrix
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        l_adMbc[l_cr] = TL_T_REAL(1.0) / ( i_lam[1][l_cr] - i_lam[0][l_cr] );
+
+        l_iR[0][0][l_cr] =  l_adMbc[l_cr] * i_lam[1][l_cr];
+        l_iR[0][1][l_cr] = -l_adMbc[l_cr];
+        l_iR[1][0][l_cr] = -l_adMbc[l_cr] * i_lam[0][l_cr];
+        l_iR[1][1][l_cr] =  l_adMbc[l_cr];
+      }
+
+      // wave strengths
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        o_beta[0][l_cr]  = l_iR[0][0][l_cr] * i_fJump[0][l_cr];
+        o_beta[0][l_cr] += l_iR[0][1][l_cr] * i_fJump[1][l_cr];
+
+        o_beta[1][l_cr]  = l_iR[1][0][l_cr] * i_fJump[0][l_cr];
+        o_beta[1][l_cr] += l_iR[1][1][l_cr] * i_fJump[1][l_cr];
+      }
+    }
+
+    /**
+     * @brief Computes 1d net-updates based on the given eigenvector decomposition.
+     *
+     * @param i_lam eigenvalues.
+     * @param i_beta wave strengths.
+     * @param o_nusL will be set to left net-updates.
+     * @param o_nusR will be set to right net-updates.
+     *
+     * @paramt TL_T_REAL floating point precision.
+     */
+    template< typename TL_T_REAL >
+    static void nus( TL_T_REAL const i_lam[2][TL_N_CRS],
+                     TL_T_REAL const i_beta[2][TL_N_CRS],
+                     TL_T_REAL       o_nusL[2][TL_N_CRS],
+                     TL_T_REAL       o_nusR[2][TL_N_CRS] ) {
+      // init net-updates
+      for( unsigned short l_qt = 0; l_qt < 2; l_qt++ ) {
+        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+          o_nusL[l_qt][l_cr] = 0;
+          o_nusR[l_qt][l_cr] = 0;
+        }
+      }
+
+      // compute net-updates
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        if( i_lam[0][l_cr] < 0 ) {
+          o_nusL[0][l_cr] += i_beta[0][l_cr];
+          o_nusL[1][l_cr] += i_beta[0][l_cr] * i_lam[0][l_cr];
+        }
+        else {
+          o_nusR[0][l_cr] += i_beta[0][l_cr];
+          o_nusR[1][l_cr] += i_beta[0][l_cr] * i_lam[0][l_cr];
+        }
+
+        if( i_lam[1][l_cr] > 0 ) {
+          o_nusR[0][l_cr] += i_beta[1][l_cr];
+          o_nusR[1][l_cr] += i_beta[1][l_cr] * i_lam[1][l_cr];
+        }
+        else {
+          o_nusL[0][l_cr] += i_beta[1][l_cr];
+          o_nusL[1][l_cr] += i_beta[1][l_cr] * i_lam[1][l_cr];
+        }
+      }
+    }
+
   public:
     /**
-     * Updates the DoFs of an element with contribution of the face.
+     * Computes the normal net-updates.
      *
-     * @param i_hL water height for the left/minus side element.
-     * @param i_hR water height for the right/plus side element.
-     * @param i_huL momentum for left/minus side element.
-     * @param i_huR momentum for right/plus side element.
-     * @param i_bL b for the left/minus side element.
-     * @param i_bR b for the right/plus side element.
-     * @param o_netUpdates set to the net-update of the face.
+     * @param i_hL water height for the left element.
+     * @param i_hR water height for the right element.
+     * @param i_huL momentum for left element.
+     * @param i_huR momentum for right element.
+     * @param i_bL bathymetry for the left element.
+     * @param i_bR bathymetry for the right element.
+     * @param o_nusL will be set to left net-updates.
+     * @param o_nusR will be set to right net-updates.
+     * @param i_g gravity constant.
+     *
+     * @paramt TL_T_REAL floating point precision.
      **/
-    static void computeNetUpdates( const t_elementModePrivate1   i_hL[ N_ELEMENT_MODES][N_CRUNS],
-                                   const t_elementModePrivate1   i_hR[ N_ELEMENT_MODES][N_CRUNS],
-                                   const t_elementModePrivate1   i_huL[N_ELEMENT_MODES][N_CRUNS],
-                                   const t_elementModePrivate1   i_huR[N_ELEMENT_MODES][N_CRUNS],
-                                   const t_elementModeShared1    i_bL,
-                                   const t_elementModeShared1    i_bR,
-                                         t_elementModePrivate1   o_netUpdates[4][N_FACE_MODES][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      (void) __builtin_assume_aligned(i_hL, ALIGNMENT.CRUNS);  (void) __builtin_assume_aligned(i_hR, ALIGNMENT.CRUNS);
-      (void) __builtin_assume_aligned(i_huL, ALIGNMENT.CRUNS); (void) __builtin_assume_aligned(i_huR, ALIGNMENT.CRUNS);
-      (void) __builtin_assume_aligned(o_netUpdates, ALIGNMENT.CRUNS);
-#endif
-
+    template< typename TL_T_REAL >
+    static void nusN( TL_T_REAL const i_hL[TL_N_CRS],
+                      TL_T_REAL const i_hR[TL_N_CRS],
+                      TL_T_REAL const i_huL[TL_N_CRS],
+                      TL_T_REAL const i_huR[TL_N_CRS],
+                      TL_T_REAL const i_bL,
+                      TL_T_REAL const i_bR,
+                      TL_T_REAL       o_nusL[2][TL_N_CRS],
+                      TL_T_REAL       o_nusR[2][TL_N_CRS],
+                      TL_T_REAL       i_g = TL_T_REAL(9.80665) ) {
       // particle veolocities
-      t_elementModePrivate1 l_uL[N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
-      t_elementModePrivate1 l_uR[N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
+      TL_T_REAL l_uL[TL_N_CRS];
+      TL_T_REAL l_uR[TL_N_CRS];
 
       // eigenvalues
-      t_elementModePrivate1 l_lambdaL[N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
-      t_elementModePrivate1 l_lambdaR[N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
+      TL_T_REAL l_lam[2][TL_N_CRS];
 
       // jump in fluxes
-      t_elementModePrivate1 l_fJump[2][N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
+      TL_T_REAL l_fJump[2][TL_N_CRS];
 
-      // scalar of the matrix inversion
-      t_elementModePrivate1 l_adMbc[N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
+      // wave strengths
+      TL_T_REAL l_beta[2][TL_N_CRS];
 
-      // inverse matrix
-      t_elementModePrivate1 l_iR[2][2][N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
-
-      // eigencoefficients
-      t_elementModePrivate1 l_beta[2][N_CRUNS] __attribute__((aligned(ALIGNMENT.BASE.STACK)));
-
-      // iterate over concurrent forward runs
-#pragma omp simd
-      for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
-        // particle velocity
-        l_uL[l_run] = i_huL[0][l_run] / i_hL[0][l_run];
-        l_uR[l_run] = i_huR[0][l_run] / i_hR[0][l_run];
-
-        // u -/+ sqrt(g*h)
-        l_lambdaL[l_run] = l_uL[l_run] - std::sqrt( 9.81 * i_hL[0][l_run] );
-        l_lambdaR[l_run] = l_uR[l_run] + std::sqrt( 9.81 * i_hR[0][l_run] );
-
-        // jump in fluxes
-        l_fJump[0][l_run]  = i_huR[0][l_run] - i_huL[0][l_run];
-        l_fJump[1][l_run]  = i_huR[0][l_run] * l_uR[l_run]  + (t_elementModePrivate1) 0.5  * (t_elementModePrivate1) 9.81 * i_hR[0][l_run] * i_hR[0][l_run];
-        l_fJump[1][l_run] -= i_huL[0][l_run] * l_uL[l_run]  + (t_elementModePrivate1) 0.5  * (t_elementModePrivate1) 9.81 * i_hL[0][l_run] * i_hL[0][l_run];
-        l_fJump[1][l_run] += (t_elementModePrivate1) 0.5    * (t_elementModePrivate1) 9.81 * ( i_hR[0][l_run] + i_hL[0][l_run] * ( i_bR - i_bL ) );
-
-        // compute scalar for 2x2 matrix inverse
-        l_adMbc[l_run] = (t_elementModePrivate1) 1.0 / ( l_lambdaR[l_run] - l_lambdaL[l_run] );
-
-        l_iR[0][0][l_run] =  l_adMbc[l_run] * l_lambdaR[l_run];
-        l_iR[0][1][l_run] = -l_adMbc[l_run];
-        l_iR[1][0][l_run] = -l_adMbc[l_run] * l_lambdaL[l_run];
-        l_iR[1][1][l_run] =  l_adMbc[l_run];
-
-        // compute eigen coefficients
-        l_beta[0][l_run]  = l_iR[0][0][l_run] * l_fJump[0][l_run];
-        l_beta[0][l_run] += l_iR[0][1][l_run] * l_fJump[1][l_run];
-
-        l_beta[1][l_run]  = l_iR[1][0][l_run] * l_fJump[0][l_run];
-        l_beta[1][l_run] += l_iR[1][1][l_run] * l_fJump[1][l_run];
-
-        // update DOFs
-        // TODO: This fails in supercritical states!
-        o_netUpdates[0][0][l_run] = l_beta[0][l_run];
-        o_netUpdates[1][0][l_run] = l_beta[0][l_run] * l_lambdaL[l_run];
-
-        o_netUpdates[2][0][l_run] = l_beta[1][l_run];
-        o_netUpdates[3][0][l_run] = l_beta[1][l_run] * l_lambdaR[l_run];
+      // derive particle velocities
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        l_uL[l_cr] = i_huL[l_cr] / i_hL[l_cr];
+        l_uR[l_cr] = i_huR[l_cr] / i_hR[l_cr];
       }
+
+      // compute eigenvalues
+      evs( i_hL,   i_hR,
+           l_uL,   l_uR,
+           l_lam );
+
+      // compute jumps in fluxes
+      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+        // jump in fluxes
+        l_fJump[0][l_cr]  = i_huR[l_cr] - i_huL[l_cr];
+        l_fJump[1][l_cr]  = i_huR[l_cr] * l_uR[l_cr]  + TL_T_REAL(0.5)  * i_g * i_hR[l_cr] * i_hR[l_cr];
+        l_fJump[1][l_cr] -= i_huL[l_cr] * l_uL[l_cr]  + TL_T_REAL(0.5)  * i_g * i_hL[l_cr] * i_hL[l_cr];
+        l_fJump[1][l_cr] += TL_T_REAL(0.5) * i_g * ( i_hR[l_cr] + i_hL[l_cr] ) * ( i_bR - i_bL );
+      }
+
+      // compute wave strengths
+      waveStrengths( l_fJump,
+                     l_lam,
+                     l_beta );
+
+      // compute net-updates
+      nus( l_lam,
+           l_beta,
+           o_nusL,
+           o_nusR );
     }
 };
 

@@ -27,7 +27,9 @@
 #include <string>
 
 #pragma GCC diagnostic push
+#if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include <submodules/include/optionparser.h>
 #pragma GCC diagnostic pop
 

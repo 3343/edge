@@ -5,7 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2016-2017, Regents of the University of California
+# Copyright (c) 2016-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -22,8 +22,9 @@
 # Replaces vars and functions with compatible notation.
 ##
 
-for l_file in SolverElastic2D.inc
-#for l_file in Trafo2D.inc TrafoInv2D.inc
+for l_file in TrafoElastic2D.inc TrafoInvElastic2D.inc FlMidElastic2D.inc FrMidElastic2D.inc FlMidAcoustic2D.inc FrMidAcoustic2D.inc
+#for l_file in EntFixHarten2D.inc
+#for l_file in EntFixHarten3D.inc
 #for l_file in Trafo3D.inc TrafoInv3D.inc FlMid3D.inc FrMid3D.inc
 #for l_file in MiddleStateJumpL2D.inc MiddleStateJumpR2D.inc MiddleStateFlux2D.inc
 #for l_file in MiddleStateJumpL3D.inc MiddleStateJumpR3D.inc MiddleStateFlux3D.inc
@@ -37,12 +38,6 @@ sed -i -e ':a' -e 'N' -e '$!ba' -e 's/\\\n//g' ${l_file}
 # replace math functions
 sed -i 's/Power/std::pow/g' ${l_file}
 sed -i 's/Sqrt/std::sqrt/g' ${l_file}
-
-# replace free-surface boundary condition
-if [[ $l_file == SolverElastic2D.inc ]]
-then
-  sed -i 's/fsbnd/(i_freeSurface ? -1.0 : 1.0)/g' ${l_file}
-fi
 
 # replace variable names
 if [[ $l_file == "MiddleStateFlux2D.inc" || $l_file == "MiddleStateFlux3D.inc" ]]

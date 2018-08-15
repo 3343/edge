@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,39 +20,52 @@
  * @section DESCRIPTION
  * Finalize for elastics.
  **/
-
-// get the error norms
-double l_errorNorms[N_CRUNS][3][N_QUANTITIES];
-
-// create output
 edge::io::ErrorNorms l_errorWriter( l_config.m_errorNormsType,
                                     l_config.m_errorNormsFile );
 
-bool l_convergence = false;
+if( l_errorWriter.outEnabled() ) {
+  double l_normsTmp[3][N_QUANTITIES][N_CRUNS];
+  edge::setups::InitialDofs<
+    T_SDISC.ELEMENT,
+    ORDER,
+    N_QUANTITIES,
+    N_CRUNS >::err( 0,
+                    l_internal.m_nElements,
+                    0,
+                    t_enTypeShared::LIMIT,
+                    l_config.m_refValsExprStrs,
+                    l_basis,
+                    l_internal.m_connect.elVe,
+                    l_internal.m_globalShared2[0].connect.scSv,
+                    l_internal.m_vertexChars,
+                    l_internal.m_globalShared2[0].svChars,
+                    l_internal.m_elementChars,
+                    l_internal.m_globalShared2[0].adm[0], // dummy
+                    l_internal.m_elementModePrivate1,
+                    l_internal.m_globalShared2[0].dofs,
+                    l_normsTmp[0], l_normsTmp[1], l_normsTmp[2] );
 
-for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
-  if( l_internal.m_globalPrivate1[0][l_run].initialDofs == setupChars::InitialDofs::planeWaves ) {
-    // we assume global time stepping by passing nEntsOwn below
-    EDGE_CHECK( l_enLayouts[2].timeGroups.size() == 1 );
-
-    // get plane wave error if output is requested
-    if( l_errorWriter.outEnabled() )
-      edge::elastic::setups::Convergence::getPlaneErrorNorms( l_run,
-                                                              l_basis,
-                                                              l_mesh.getInMap(),
-                                                              l_mesh.getElLayout(),
-                                                              l_internal.m_connect,
-                                                              l_internal.m_vertexChars,
-                                                              l_internal.m_elementChars,
-                                                              l_internal.m_elementModePrivate1,
-                                                              l_errorNorms[l_run],
-                                                              -50+l_run*5,
-                                                              -50+l_run*5,
-                                                              -50+l_run*5 );
-    l_convergence = true;
+  // perform reductions
+  double l_norms[3][N_QUANTITIES][N_CRUNS];
+#ifdef PP_USE_MPI
+  MPI_Allreduce( &l_normsTmp[0][0][0], &l_norms[0][0][0], N_QUANTITIES*N_CRUNS, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( &l_normsTmp[1][0][0], &l_norms[1][0][0], N_QUANTITIES*N_CRUNS, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( &l_normsTmp[2][0][0], &l_norms[2][0][0], N_QUANTITIES*N_CRUNS, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+#else
+  for( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+      l_norms[0][l_qt][l_cr] = l_normsTmp[0][l_qt][l_cr];
+      l_norms[1][l_qt][l_cr] = l_normsTmp[1][l_qt][l_cr];
+      l_norms[2][l_qt][l_cr] = l_normsTmp[2][l_qt][l_cr];
+    }
   }
-}
+#endif
 
-if( l_convergence ) {
-  l_errorWriter.write( l_errorNorms );
+  // compute l2
+  for( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ )
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ )
+      l_norms[1][l_qt][l_cr] = std::sqrt( l_norms[1][l_qt][l_cr] );
+
+  // write
+  l_errorWriter.write( l_norms );
 }

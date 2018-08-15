@@ -31,36 +31,44 @@ const unsigned short N_ENTRIES_CONTROL_FLOW=2;
 
 typedef real_base t_elementModePrivate1;
 typedef real_base t_elementModeShared1;
-typedef real_base t_elementShared1;
 typedef real_base t_faceModePrivate1;
 
-#if defined PP_T_ELEMENTS_LINE
+/*
+ * Bitmasks for the shallow water equations.
+ **/
+static_assert( sizeof(int_spType) >= 4, "size of entity type too small" );
+typedef enum: int_spType {
+  REFLECTING = 101, // TODO: change to bitmask
+  OUTFLOW    = 105, // TODO: change to bitmask
+} t_spTypeSwe;
 
-const unsigned short N_QUANTITIES=2;
+// bathymetry
+#define PP_N_ELEMENT_MODE_SHARED_1 1
+const unsigned short N_QUANTITIES=N_DIM+1;
 
 // DOFs are h and hu
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
 
-// bathymetry
-#define PP_N_ELEMENT_MODE_SHARED_1 1
-
-// dx
-#define PP_N_ELEMENT_SHARED_1 1
-
-// left- and right-going net-updates for h and hu
+// normal left- and right-going net-updates for h and hu
 #define PP_N_FACE_MODE_PRIVATE_1 4
 
-
-#elif defined PP_T_ELEMENTS_QUAD4R
-
-const unsigned short N_QUANTITIES=3;
-
-#define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
-#define PP_N_ELEMENT_MODE_SHARED_1 1
-#define PP_N_ELEMENT_SHARED_1 1
-const unsigned short N_FACE_MODES=1;
-#define PP_N_FACE_MODE_PRIVATE_1 4
-
-#else
-#error shallow water constants for element type undefined.
-#endif
+/**
+ * Scratch memory (per thread)
+ **/
+#define PP_SCRATCH_MEMORY
+#define PP_SCRATCH_MEMORY_HBW
+struct scratchMem {
+  // scratch memory for the surface integration
+  real_base tResSurf[2][N_QUANTITIES][N_FACE_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.FACE_MODES.PRIVATE)));
+  // temporary results
+  real_base tRes[2][N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
+  // sub-cells at the DG faces
+  real_base scFa[4][N_QUANTITIES][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+  // sub-grid
+  real_base sg[N_QUANTITIES][CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+  // sub-grid with ghost cells
+  real_base sgGh[N_QUANTITIES][   CE_N_SUB_CELLS(T_SDISC.ELEMENT, ORDER)
+                                + C_ENT[T_SDISC.ELEMENT].N_FACES *  CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)
+                              ][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
+};
+typedef scratchMem t_scratchMem;

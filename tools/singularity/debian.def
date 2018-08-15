@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2016-2017, Regents of the University of California
+# Copyright (c) 2016-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,22 +20,7 @@
 # @section DESCRIPTION
 #
 # Debian bootstrap for EDGE and supporting software.
-#
-# Assumes that /edge.tar.gz in the image already contains EDGE and EDGEpre's assets:
-#   git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
-#   cd edge_opt
-#   git lfs fetch -I tools/edge_pre
-#   git lfs checkout tools/edge_pre
-#   cd ..
-#   git clone --recursive git@github.com:3343/edge.git
-#   cd edge
-#   git checkout develop
-#   get submodule update
-#   cp -r ../edge_opt/tools/edge_pre/* submodules/edge_pre
-#   cd ..
-#   tar -czf /tmp/edge.tar.gz edge
-#   sudo singularity import YOUR_IMAGE.img /tmp/edge.tar.gz
-#   sudo singularity bootstrap YOUR_IMAGE.img ./debian.def
+# Build a container via: `sudo singularity build ./edge.simg ./debian.def`
 ##
 BootStrap: debootstrap
 OSVersion: jessie
@@ -56,24 +41,21 @@ Include:
 
   export INSTALL_DIR=/tmp/singularity_install_$(date +'%s')
 
-  export N_BUILD_PROC=4
+  export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
   # move to tmp dir
   mkdir ${INSTALL_DIR}
   cd ${INSTALL_DIR}
 
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y wget
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y make
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y cmake
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y scons=2.3.1-2
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y am-utils
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y python
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y python3
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y git
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y vim
   apt-get install -qq -o=Dpkg::Use-Pty=0 -y dh-autoreconf
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y zlib1g zlib1g-dev
 
   #################
   # gnu compilers #
@@ -84,12 +66,10 @@ Include:
   echo "Pin-Priority: 100"      >> /etc/apt/preferences.d/gcc
 
   apt-get install -t testing -qq -o=Dpkg::Use-Pty=0 -y g++-6
-  apt-get install -t testing -qq -o=Dpkg::Use-Pty=0 -y gfortran-6
 
   # set links
   ln -f -s /usr/bin/g++-6      /usr/bin/g++
   ln -f -s /usr/bin/gcc-6      /usr/bin/gcc
-  ln -f -s /usr/bin/gfortran-6 /usr/bin/gfortran
 
   ###########
   # OpenMPI #
@@ -112,6 +92,14 @@ Include:
   #make install
   #cd ..
 
+  ############
+  # Clean up #
+  ############
+  apt-get clean
+
+%appinstall edge
+  export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
+
   ########
   # zlib #
   ########
@@ -119,14 +107,14 @@ Include:
   mkdir zlib
   tar -xzf zlib.tar.gz -C zlib --strip-components=1
   cd zlib
-  ./configure --static --prefix=/usr/local> /dev/null
+  ./configure --static --prefix=/usr/local > /dev/null
   make install -j ${N_BUILD_PROC} > /dev/null
   cd ..
 
   ########
   # HDF5 #
   ########
-  wget https://www.hdfgroup.org/package/gzip/?wpdmdl=4301 -O hdf5.tar.gz
+  wget https://www.hdfgroup.org/package/gzip/?wpdmdl=11810 -O hdf5.tar.gz
   mkdir hdf5
   tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
   cd hdf5
@@ -137,7 +125,7 @@ Include:
   ##########
   # NetCDF #
   ##########
-  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz -O netcdf.tar.gz
+  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz -O netcdf.tar.gz
   mkdir netcdf
   tar -xzf netcdf.tar.gz -C netcdf --strip-components=1
   cd netcdf
@@ -149,8 +137,11 @@ Include:
   # EDGE #
   ########
   echo 'building edge'
-  cp -r /edge .
+  git clone https://github.com/3343/edge.git
   cd edge
+  git checkout develop
+  git submodule init
+  git submodule update
 
   # build libxsmm
   cd submodules/libxsmm
@@ -161,23 +152,30 @@ Include:
   cd submodules/moab
   LANG=C autoreconf -fi
   # sequential
-  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --enable-all-static --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
-  make install -j ${N_BUILD_PROC} > /dev/null 2> /dev/null
+  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+  make install -j ${N_BUILD_PROC} > /dev/null
   cd ../..
 
-  for order in 1 2 3 4 5 6
+  for order in 1 2 3 4 5
   do
-    for cfr in 1 8
+    # haswell
+    for mesh_type in reg uns
     do
-      for mesh_type in reg uns
-      do
-        for arch in hsw knl
-        do
-          if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
+      if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
 
-          CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=${arch} xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
-            cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_${arch}_xsmm_omp
-        done
+      CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+      cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr1_hsw_xsmm_omp
+    done
+
+    # AVX512
+    for mesh_type in reg uns
+    do
+      if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
+
+      for cfr in 1 16
+      do
+        CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+        cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_avx512_xsmm_omp
       done
     done
   done
@@ -189,7 +187,25 @@ Include:
   echo "cleaning up"
   rm -rf ${INSTALL_DIR}
 
-%runscript
+%apphelp edge
+   Installation of the Extreme-scale Discontinuous Galerkin Environment (EDGE).
+   http://dial3343.org
+
+   Supported configurations:
+     * AVX2 (Haswell, EPYC):
+       - tetrahedral elements
+       - elastic wave equations
+       - orders 1-5
+       - regular (runtime generated) and unstructured meshes (MOAB)
+       - NetCDF/HDF5 support
+       - non-fused simulations (1 concurrent run) only
+       - single precision arithmetic (32bit)
+       - parallelization: LIBXSMM (SIMD), OpenMP (multicore)
+     * AVX512 (Knights Landing, Skylake, Knights Mill), everything as AVX2 except for:
+       - non-fused simulations (1 concurrent run)
+       - fused simulations (16 concurrent runs)
+
+%apprun edge
   # check input
   if [ "$#" -ne 1 ]
   then
@@ -212,22 +228,23 @@ Include:
   fi
 
   # catch non-supported executables
-  if [ "${CFR}" != "1" ] && [ "${CFR}" != "8" ]
+  if [ "${CFR}" != "1" ] && [ "${CFR}" != "16" ]
   then
     echo "CFR-tag: is not supported (<cfr>CFR</cfr>); ${CFR}"
     exit 1
   fi
 
-  if [ "${ORDER}" != "1" ] && [ "${ORDER}" != "2" ] && [ "${ORDER}" != "3" ] && [ "${ORDER}" != "4" ] && [ "${ORDER}" != "5" ] && [ "${ORDER}" != "6" ]
+  if [ "${ORDER}" != "1" ] && [ "${ORDER}" != "2" ] && [ "${ORDER}" != "3" ] && [ "${ORDER}" != "4" ] && [ "${ORDER}" != "5" ]
   then
     echo "Error: ORDER-tag is not supported (<order>ORDER</order>); ${ORDER}"
     exit 1
   fi
 
-  if [ "${ARCH}" != "hsw" ] && [ "${ARCH}" != "knl" ]
+  if [ "${ARCH}" != "hsw" ] && [ "${ARCH}" != "avx512" ]
   then
-    echo "Warning: ARCH-tag is not supported (<arch>ARCH</arch>): ${ARCH}; falling back to hsw"
+    echo "Warning: ARCH-tag is not supported (<arch>ARCH</arch>): ${ARCH}; falling back to hsw and CFR=1"
     ARCH=hsw
+    CFR=1
   fi
 
   # define excecutable

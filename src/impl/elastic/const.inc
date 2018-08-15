@@ -23,17 +23,8 @@
 
 #include "sc/ibnd/InternalBoundary.type"
 
-// elastics perform three steps per time step
-// 0) time prediction + local cont
-// 1) neighboring cont
-// 2) sources
-const unsigned short N_STEPS_PER_UPDATE=3;
-#ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
-const unsigned short N_ENTRIES_CONTROL_FLOW=16;
-#else
-// TODO: Add limiter
-const unsigned short N_ENTRIES_CONTROL_FLOW=10;
-#endif
+// number of entries in the control flow
+const unsigned short N_ENTRIES_CONTROL_FLOW=18;
 
 #if PP_ORDER > 9
 #error not supported
@@ -43,8 +34,16 @@ const double SCALE_CFL_ORDER[9] = { 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9 
 
 const double SCALE_CFL=(1.0/N_DIM)*SCALE_CFL_ORDER[PP_ORDER-1];
 
+/**
+ * Kernel groups, used for seismic simulations.
+ **/
+enum class t_mmSeismic: unsigned short {
+  SUB_CELL = static_cast< unsigned short >( t_mm::SUB_CELL ),
+  ADER_DG  = 1
+};
+
 /*
- * Bitsmasks for elastics.
+ * Bitmasks for elastics.
  **/
 static_assert( sizeof(int_spType) >= 4, "size of entity type too small" );
 typedef enum: int_spType {

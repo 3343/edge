@@ -5,7 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
-# Copyright (c) 2015-2017, Regents of the University of California
+# Copyright (c) 2015-2018, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
 #
@@ -135,22 +135,22 @@ if 'xml' in env:
 vars.AddVariables(
   EnumVariable( 'cfr',
                 'concurrent forward runs',
-                '8',
+                '16',
                  allowed_values=( '1', '2', '4', '8', '12', '16' )
               ),
   EnumVariable( 'equations',
                 'equations solved',
-                'advection',
-                 allowed_values=( 'advection', 'elastic', 'elastic+rupture', 'swe' )
+                'elastic',
+                 allowed_values=( 'advection', 'elastic', 'swe' )
               ),
   EnumVariable( 'element_type',
                 'element type used',
-                'line',
+                'tet4',
                  allowed_values=('line', 'quad4r', 'tria3', 'hex8r', 'tet4' )
               ),
   EnumVariable( 'order',
                 'order of convergence',
-                '1',
+                '4',
                  allowed_values=('1', '2', '3', '4', '5', '6', '7', '8', '9')
               ),
   EnumVariable( 'mode',
@@ -165,12 +165,12 @@ vars.AddVariables(
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
-                '64',
+                '32',
                  allowed_values=('32', '64')
               ),
   EnumVariable( 'parallel',
                 'used parallelization',
-                'none',
+                'omp',
                  allowed_values=('none', 'omp', 'mpi', 'mpi+omp')
               ),
   BoolVariable( 'cov',
@@ -362,8 +362,6 @@ if env['equations'] == 'advection':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ADVECTION']  )
 elif 'elastic' in env['equations']:
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC'] )
-  if 'rupture' in env['equations']:
-      env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC_RUPTURE'] )
 elif env['equations'] == 'swe':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_SWE'] )
 
@@ -399,6 +397,7 @@ if 'omp' in env['parallel']:
     env.Append( CPPFLAGS = ['-fopenmp'] )
     env.Append( LINKFLAGS = ['-fopenmp'] )
   elif compilers == 'clang':
+    env.Append( CPPFLAGS = ['-Wno-error=pass-failed'] ) # suppress failed autovectorization
     env.Append( CPPFLAGS = ['-fopenmp=libiomp5'] )
     env.Append( LINKFLAGS = ['-fopenmp=libiomp5'] )
     # get the path of libiomp5 from clang
@@ -432,6 +431,9 @@ if env['inst'] == False:
   env.Append( CXXFLAGS = ["-pedantic", "-Wshadow"] ) # some strict flags break compilation with opari..
 if compilers != 'intel':
   env.Append( CXXFLAGS = ["-Wundef"] ) # intel compiler gets this flag back if we can define system headers as in GCC..
+else:
+  # silence annoying warnings
+  env.Append( CXXFLAGS = ["-diag-disable", "186,11074,11076"] )
 
 # set optimization mode
 if 'debug' in env['mode']:

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * ADER time prediction for the advection equation.
  **/
-#ifndef TIME_PRED_HPP
-#define TIME_PRED_HPP
+#ifndef EDGE_ADVECTION_TIME_PRED_HPP
+#define EDGE_ADVECTION_TIME_PRED_HPP
 
 #include "constants.hpp"
 #include "linalg/Matrix.h"
@@ -73,7 +73,7 @@ class edge::advection::solvers::TimePred {
      * @paramt TL_T_REAL float point precision.
      **/
     template< typename TL_T_REAL >
-    static void inline ckVanilla( TL_T_REAL       i_dT,
+    static void inline ckVanilla( double          i_dT,
                                   TL_T_REAL const i_stiffT[TL_N_DIM][TL_N_MDS][TL_N_MDS],
                                   TL_T_REAL const i_star[TL_N_DIM],
                                   TL_T_REAL const i_dofs[TL_N_MDS][TL_N_CRS],
@@ -99,22 +99,30 @@ class edge::advection::solvers::TimePred {
 
         for( unsigned int l_di = 0; l_di < TL_N_DIM; l_di++ ) {
           // multiply with transposed stiffness matrices and inverse mass matrix
-          linalg::Matrix::matMulB0FusedAC( TL_N_CRS,
-                                           1,
-                                           TL_N_MDS,
-                                           TL_N_MDS,
-                                           o_der[l_de-1][0],
-                                           i_stiffT[l_di][0],
-                                           o_scratch[0] );
+          linalg::Matrix::matMulFusedAC( TL_N_CRS,                    // #fused
+                                         1,                           // m
+                                         TL_N_MDS,                    // n
+                                         TL_N_MDS,                    // k
+                                         TL_N_MDS,                    // ldA
+                                         TL_N_MDS,                    // ldB
+                                         TL_N_MDS,                    // ldC
+                                         static_cast<real_base>(0.0), // beta
+                                         o_der[l_de-1][0],
+                                         i_stiffT[l_di][0],
+                                         o_scratch[0] );
 
           // multiply with star "matrices"
-          linalg::Matrix::matMulB1FusedBC( TL_N_CRS,
-                                           1,
-                                           TL_N_MDS,
-                                           1,
-                                           i_star+l_di,
-                                           o_scratch[0],
-                                           o_der[l_de][0] );
+          linalg::Matrix::matMulFusedBC( TL_N_CRS,                    // #fused
+                                         1,                           // m
+                                         TL_N_MDS,                    // n
+                                         1,                           // k
+                                         1,                           // ldA
+                                         TL_N_MDS,                    // ldB
+                                         TL_N_MDS,                    // ldC
+                                         static_cast<real_base>(1.0), // beta
+                                         i_star+l_di,
+                                         o_scratch[0],
+                                         o_der[l_de][0] );
         }
 
         // update scalar

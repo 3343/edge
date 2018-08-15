@@ -44,6 +44,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "data/SparseEntities.hpp"
 #include "data/Internal.hpp"
 #include "time/Manager.h"
+#include "mesh/common.hpp"
 #include "mesh/SparseTypes.hpp"
 #include "mesh/setup_dep.inc"
 #include "monitor/Timer.hpp"
@@ -251,7 +252,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
                     l_internal.m_globalShared2[0].limSync );
   }
 
-#ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
+#if defined(PP_T_EQUATIONS_ELASTIC)
   if( l_config.m_iBndInt > TOL.TIME ) {
     EDGE_LOG_INFO << "  writing internal boundary #0";
     l_rupWriter.write( 0,
@@ -303,7 +304,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
       l_stepWf++;
     }
 
-#ifdef PP_T_EQUATIONS_ELASTIC_RUPTURE
+#if defined(PP_T_EQUATIONS_ELASTIC)
     if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
       EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
       l_rupWriter.write( 0,
@@ -315,6 +316,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
       l_stepBnd++;
     }
 #endif
+
     // increase step and derive next synchronization point
     l_step++;
     if( (l_stepWf+1)*l_config.m_waveFieldInt < (l_stepBnd+1)*l_config.m_iBndInt )

@@ -24,12 +24,9 @@
 #include "setups/InitialDofs.hpp"
 #include "impl/elastic/io/Config.h"
 #include "impl/elastic/setups/MmKernels.hpp"
-#if PP_ORDER > 1
 #include "impl/elastic/solvers/AderDg.hpp"
 #include "impl/elastic/setups/MmKernels.hpp"
-#endif
 #include "impl/elastic/solvers/common.hpp"
-#include "impl/elastic/setups/Convergence.hpp"
 #ifdef PP_HAS_NETCDF
 #include "impl/elastic/io/Nrf.h"
 #endif

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -44,6 +44,10 @@ edge::mesh::Moab::Moab(       unsigned int  i_dim,
  ,m_periodicVal(i_periodicVal)
 #endif
   {
+  m_tagMat = 0;
+  m_tagLId = 0;
+  m_tagGId = 0;
+
   EDGE_LOG_INFO << "  initialized MOAB:";
   printMoab();
 }
@@ -1076,7 +1080,7 @@ void edge::mesh::Moab::getElVeEl( int_el  &o_nElVeEl,
     }
 
     // assign next pointer
-    if( l_raw != nullptr ) o_elVeEl[l_el+1] = l_raw;
+    if( o_elVeEl != nullptr && l_raw != nullptr ) o_elVeEl[l_el+1] = l_raw;
   }
 }
 

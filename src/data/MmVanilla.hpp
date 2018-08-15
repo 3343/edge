@@ -87,14 +87,16 @@ class edge::data::MmVanilla {
         /**
          * Constructor.
          *
-         * i_m number of rows in column-major A and C.
-         * i_n number of columns in column-major B and C.
-         * i_k number of columns/rows in column-major A/B.
-         * i_ldA leading dimension of column-major A.
-         * i_ldB leading dimension of column-major B.
-         * i_ldC leading dimension of column-major C.
-         * i_beta beta parameter (needs to be 0 or 1 for now).
-         * i_nCrs number of fused runs.
+         * @param i_m number of rows in column-major A and C.
+         * @param i_n number of columns in column-major B and C.
+         * @param i_k number of columns/rows in column-major A/B.
+         * @param i_ldA leading dimension of column-major A.
+         * @param i_ldB leading dimension of column-major B.
+         * @param i_ldC leading dimension of column-major C.
+         * @param i_beta beta parameter (needs to be 0 or 1 for now).
+         * @param i_fusedAC true if matrices A and C are fused.
+         * @param i_fusedBC true if matrices B and C are fused.
+         * @param i_nCrs number of fused runs.
          **/
         Vanilla( unsigned int   i_m,
                  unsigned int   i_n,
@@ -146,12 +148,13 @@ class edge::data::MmVanilla {
 
   public:
     //! vanilla matrix kernels
-    std::vector< Vanilla > m_kernels;
-    std::vector< Vanilla > m_kernelsSc;
+    std::vector< std::vector< Vanilla > > m_kernels;
 
     /**
      * Adds a vanilla kernels (either fused or non-fused).
+     * If the given kernel group does not exist, new groups until the given id are created.
      *
+     * @param i_group id of the kernel group.
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
      * @param i_k number of columns/rows in column-major A/B.
@@ -160,8 +163,12 @@ class edge::data::MmVanilla {
      * @param i_ldC leading dimension of column-major C.
      * @param i_alpha parameter alpha, ignored.
      * @param i_beta parameter beta, needs to be TL_T_REAL(0) or TL_T_REAL(1) for now.
+     * @param i_fusedAC true if matrices A and C are fused.
+     * @param i_fusedBC true if matrices B and C are fused.
+     * @param i_nCfr number of fused simulations.
      **/
-    void add( unsigned int   i_m,
+    void add( unsigned short i_group,
+              unsigned int   i_m,
               unsigned int   i_n,
               unsigned int   i_k,
               unsigned int   i_ldA,
@@ -180,53 +187,18 @@ class edge::data::MmVanilla {
                    << " fusedAC=" << i_fusedAC << " fusedBC=" << i_fusedBC
                    << " cfr=" << i_nCfr;
 
-      // add kernel
-      m_kernels.push_back( Vanilla( i_m, i_n, i_k,
-                                    i_ldA, i_ldB, i_ldC,
-                                    i_beta,
-                                    i_fusedAC,
-                                    i_fusedBC,
-                                    i_nCfr ) );
-    }
+      EDGE_CHECK( i_nCfr == 1 || (i_fusedAC || i_fusedBC) );
 
-    /**
-     * Adds a vanilla kernels (either fused or non-fused), Sc
-     *
-     * @param i_m number of rows in column-major A and C.
-     * @param i_n number of columns in column-major B and C.
-     * @param i_k number of columns/rows in column-major A/B.
-     * @param i_ldA leading dimension of column-major A.
-     * @param i_ldB leading dimension of column-major B.
-     * @param i_ldC leading dimension of column-major C.
-     * @param i_alpha parameter alpha, ignored.
-     * @param i_beta parameter beta, needs to be TL_T_REAL(0) or TL_T_REAL(1) for now.
-     **/
-    void add( unsigned int   i_m,
-              unsigned int   i_n,
-              unsigned int   i_k,
-              unsigned int   i_ldA,
-              unsigned int   i_ldB,
-              unsigned int   i_ldC,
-              TL_T_REAL      i_alpha,
-              TL_T_REAL      i_beta,
-              bool           i_fusedAC,
-              bool           i_fusedBC,
-              unsigned short i_nCfr ) {
-      // verbose output
-      EDGE_VLOG(1) << "  adding vanilla-kernel #" << m_kernels.size() << " (dense), Sc"
-                   << " M=" << i_m << " N=" << i_n << " K=" << i_k
-                   << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
-                   << " alpha=" << i_alpha << " beta=" << i_beta
-                   << " fusedAC=" << i_fusedAC << " fusedBC=" << i_fusedBC
-                   << " cfr=" << i_nCfr;
+      // add kernel groups, if required
+      if( i_group >= m_kernels.size() ) m_kernels.resize( i_group+1 );
 
       // add kernel
-      m_kernelsSc.push_back( Vanilla( i_m, i_n, i_k,
-                                    i_ldA, i_ldB, i_ldC,
-                                    i_beta,
-                                    i_fusedAC,
-                                    i_fusedBC,
-                                    i_nCfr ) );
+      m_kernels[i_group].push_back( Vanilla( i_m, i_n, i_k,
+                                             i_ldA, i_ldB, i_ldC,
+                                             i_beta,
+                                             i_fusedAC,
+                                             i_fusedBC,
+                                             i_nCfr ) );
     }
 };
 #endif

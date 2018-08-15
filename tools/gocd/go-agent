@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2017, Regents of the University of California
+# Copyright (c) 2017-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,16 +23,13 @@
 ##
 
 # get the server certificate via
-# openssl s_client -showcerts -connect HOST:PORT </dev/null 2>/dev/null|openssl x509 -outform PEM
+# openssl s_client -showcerts -connect HOST:PORT </dev/null 2>/dev/null|openssl x509 -outform PEM > /var/go/root-cert.pem
 
 GO_SERVER_URL=https://HOST:PORT/go
 AGENT_BOOTSTRAPPER_ARGS="-rootCertFile /var/go/root-cert.pem -sslVerificationMode NO_VERIFY_HOST"
 
 AGENT_WORK_DIR=/var/lib/${SERVICE_NAME:-go-agent}
 DAEMON=Y
-VNC=N
-
-TOOL_CHAIN=intel
 
 if [ "$PRODUCTION_MODE" == "Y" ]
 then
@@ -48,14 +45,6 @@ then
     source /opt/intel/inspector/inspxe-vars.sh
     # load intel compilers
     source /opt/intel/bin/compilervars.sh intel64
-
-    # linux brew installs are secondary
-    # avoids conflics with system libstdc++ in icpc-builds
-    export PATH="$PATH:/var/go/.linuxbrew/bin"
-    export MANPATH="$MANPATH:/var/go/.linuxbrew/share/man"
-    export INFOPATH="$INFOPATH:/var/go/.linuxbrew/share/info"
-  else
-    export PATH="/var/go/.linuxbrew/bin:$PATH"
   fi
 
   # set unlimited stack

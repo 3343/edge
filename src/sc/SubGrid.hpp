@@ -67,7 +67,6 @@ class edge::sc::SubGrid {
     //! number of sub-faces per element face
     static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
 
-
     //! number of sub-cells per element
     static unsigned short const TL_N_SCS  = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
@@ -89,7 +88,7 @@ class edge::sc::SubGrid {
     static TL_T_LID ptSc( TL_T_REAL     const i_pt[TL_N_DIS],
                           TL_T_LID      const i_scSv[TL_N_SCS][TL_N_VES],
                           TL_T_SV_CHARS const i_svChars[TL_N_SVS] ) {
-      // sub-cell which is clostest to the point
+      // sub-cell which is closest to the point
       TL_T_LID l_scM = std::numeric_limits< TL_T_LID >::max();
 
       // current minimum, squared distance (over all vertices)

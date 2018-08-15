@@ -638,9 +638,9 @@ TEST_CASE( "Initial Dofs: errors.", "[initialDofs][err]" ) {
   // check for errors of matching reference solution
   for( unsigned short l_qt = 0; l_qt < 3; l_qt++ ) {
     for( unsigned short l_cr = 0; l_cr < 2; l_cr++ ) {
-      REQUIRE( l_l1[l_qt][l_qt]   == Approx(0.0) );
-      REQUIRE( l_l2p2[l_qt][l_qt] == Approx(0.0) );
-      REQUIRE( l_lInf[l_qt][l_qt] == Approx(0.0) );
+      REQUIRE( l_l1[l_qt][l_cr]   == Approx(0.0) );
+      REQUIRE( l_l2p2[l_qt][l_cr] == Approx(0.0) );
+      REQUIRE( l_lInf[l_qt][l_cr] == Approx(0.0) );
     }
   }
 

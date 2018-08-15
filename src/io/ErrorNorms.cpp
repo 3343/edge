@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -25,29 +25,29 @@
 #include <io/logging.h>
 #include "submodules/include/pugixml.hpp"
 
-void edge::io::ErrorNorms::print( const double i_errorNorms[N_CRUNS][3][N_QUANTITIES] ) {
+void edge::io::ErrorNorms::print( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] ) {
   EDGE_LOG_INFO << "fasten your seat belts, error norms cming next.";
   for( unsigned int l_norm = 0; l_norm < 3; l_norm++ ) {
     for( unsigned int l_q = 0; l_q < N_QUANTITIES; l_q++ ) {
       for( int_cfr l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) {
         if( l_norm == 0 ) {
           EDGE_LOG_INFO << "  L1   error, quantity #"
-                        << l_q << ", cfr #" << l_cfr << ": " << i_errorNorms[l_cfr][0][l_q];
+                        << l_q << ", cfr #" << l_cfr << ": " << i_errorNorms[0][l_q][l_cfr];
         }
         else if( l_norm == 1 ) {
           EDGE_LOG_INFO << "  L2   error, quantity #"
-                        << l_q << ", cfr #" << l_cfr << ": " << i_errorNorms[l_cfr][1][l_q];
+                        << l_q << ", cfr #" << l_cfr << ": " << i_errorNorms[1][l_q][l_cfr];
         }
         else if( l_norm == 2 ) {
           EDGE_LOG_INFO << "  Linf error, quantity #"
-                        << l_q << ", cfr #" << l_cfr << ": " << i_errorNorms[l_cfr][2][l_q];
+                        << l_q << ", cfr #" << l_cfr << ": " << i_errorNorms[2][l_q][l_cfr];
         }
       }
     }
   }
 }
 
-void edge::io::ErrorNorms::writeXml( const double i_errorNorms[N_CRUNS][3][N_QUANTITIES] ) {
+void edge::io::ErrorNorms::writeXml( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] ) {
   if( parallel::g_rank == 0 ) {
     pugi::xml_document l_doc;
 
@@ -76,7 +76,7 @@ void edge::io::ErrorNorms::writeXml( const double i_errorNorms[N_CRUNS][3][N_QUA
           pugi::xml_node l_cfrNd;
 
           l_cfrNd = l_qNd.append_child( "cfr" );
-          l_cfrNd.text() = i_errorNorms[l_cfr][l_norm][l_q];
+          l_cfrNd.text() = i_errorNorms[l_norm][l_q][l_cfr];
         }
       }
     }
@@ -85,7 +85,7 @@ void edge::io::ErrorNorms::writeXml( const double i_errorNorms[N_CRUNS][3][N_QUA
   }
 }
 
-void edge::io::ErrorNorms::write( const double i_errorNorms[N_CRUNS][3][N_QUANTITIES] ) {
+void edge::io::ErrorNorms::write( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] ) {
   if( m_outType == sout || m_outType == sout_file ) print( i_errorNorms );
   if( m_outType == file || m_outType == sout_file ) writeXml( i_errorNorms );
 }

@@ -28,13 +28,15 @@ TEST_CASE( "Vanilla: GEMM.", "[mmVanilla][gemm]" ) {
   edge::data::MmVanilla< float > l_van1;
 
   // add GEMM kernel
-  l_van1.add( 3, 3, 3,
+  l_van1.add( 0,
+              3, 3, 3,
               3, 3, 3,
               float(1), float(0),
               true, false,
               1 );
 
-  l_van1.add( 3, 3, 3,
+  l_van1.add( 0,
+              3, 3, 3,
               3, 3, 3,
               float(1), float(1),
               true, false,
@@ -47,7 +49,7 @@ TEST_CASE( "Vanilla: GEMM.", "[mmVanilla][gemm]" ) {
   float l_res1[3][3];
 
   // run first kernel
-  l_van1.m_kernels[0]( l_mat1[0], l_mat1[0], l_res1[0] );
+  l_van1.m_kernels[0][0]( l_mat1[0], l_mat1[0], l_res1[0] );
 
   // check result
   REQUIRE( l_res1[0][0] == Approx( 30 ) );
@@ -64,7 +66,7 @@ TEST_CASE( "Vanilla: GEMM.", "[mmVanilla][gemm]" ) {
 
 
   // run second kernel (adds results)
-  l_van1.m_kernels[1]( l_mat1[0], l_mat1[0], l_res1[0] );
+  l_van1.m_kernels[0][1]( l_mat1[0], l_mat1[0], l_res1[0] );
 
   // check result
   REQUIRE( l_res1[0][0] == Approx( 2*30 ) );
@@ -78,4 +80,29 @@ TEST_CASE( "Vanilla: GEMM.", "[mmVanilla][gemm]" ) {
   REQUIRE( l_res1[2][0] == Approx( 2*102 ) );
   REQUIRE( l_res1[2][1] == Approx( 2*126 ) );
   REQUIRE( l_res1[2][2] == Approx( 2*150 ) );
+
+  // generate first kernel in different group
+  l_van1.add( 3,
+              3, 3, 3,
+              3, 3, 3,
+              float(1), float(0),
+              true, false,
+              1 );
+
+  // run first kernel
+  l_van1.m_kernels[3][0]( l_mat1[0], l_mat1[0], l_res1[0] );
+
+  // check result
+  REQUIRE( l_res1[0][0] == Approx( 30 ) );
+  REQUIRE( l_res1[0][1] == Approx( 36 ) );
+  REQUIRE( l_res1[0][2] == Approx( 42 ) );
+
+  REQUIRE( l_res1[1][0] == Approx( 66 ) );
+  REQUIRE( l_res1[1][1] == Approx( 81 ) );
+  REQUIRE( l_res1[1][2] == Approx( 96 ) );
+
+  REQUIRE( l_res1[2][0] == Approx( 102 ) );
+  REQUIRE( l_res1[2][1] == Approx( 126 ) );
+  REQUIRE( l_res1[2][2] == Approx( 150 ) );
+
 }

@@ -64,6 +64,7 @@ class edge::elastic::setups::MmKernels {
       // check for non-fused setup
       EDGE_CHECK( i_nCrs == 1 );
 
+      unsigned short l_mmGr = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
       unsigned short l_nMdsFa = CE_N_ELEMENT_MODES( C_ENT[i_tEl].TYPE_FACES, i_order );
       unsigned short l_nMdsEl = CE_N_ELEMENT_MODES( i_tEl,                   i_order );
 
@@ -71,7 +72,8 @@ class edge::elastic::setups::MmKernels {
       // (multiplication with transposed stiffness matrix and star matrix)
       for( unsigned int l_de = 1; l_de < i_order; l_de++ ) {
         // multiplication with transpose stiffness matrix
-        io_mm.add( CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ),    // m
+        io_mm.add( l_mmGr,                                           // group
+                   CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ),    // m
                    i_nQts,                                           // n
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de-1 ),  // k
                    l_nMdsEl,                                         // ldA
@@ -82,7 +84,8 @@ class edge::elastic::setups::MmKernels {
                    LIBXSMM_GEMM_PREFETCH_NONE );
       
         // multiplication with star matrix
-        io_mm.add( CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ), // m
+        io_mm.add( l_mmGr,                                        // group
+                   CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ), // m
                    i_nQts,                                        // n
                    i_nQts,                                        // k
                    l_nMdsEl,                                      // ldA
@@ -95,7 +98,8 @@ class edge::elastic::setups::MmKernels {
 
       // add two volume integration kernels
       // (multiplication with stiffness matrix and star matrix)
-      io_mm.add( l_nMdsEl,                                   // m
+      io_mm.add( l_mmGr,                                     // group
+                 l_nMdsEl,                                   // m
                  i_nQts,                                     // n
                  CE_N_ELEMENT_MODES_CK( i_tEl, i_order, 1 ), // k
                  l_nMdsEl,                                   // ldA
@@ -105,7 +109,8 @@ class edge::elastic::setups::MmKernels {
                  static_cast<real_base>(0.0),                // beta
                  LIBXSMM_GEMM_PREFETCH_NONE );               // (ORDER-1)*2
 
-      io_mm.add( l_nMdsEl,                    // m
+      io_mm.add( l_mmGr,                      // group
+                 l_nMdsEl,                    // m
                  i_nQts,                      // n
                  i_nQts,                      // k
                  l_nMdsEl,                    // ldA
@@ -116,7 +121,8 @@ class edge::elastic::setups::MmKernels {
                  LIBXSMM_GEMM_PREFETCH_NONE ); // (ORDER-1)*2+1
 
       // add first flux matrix
-      io_mm.add( l_nMdsFa,                    // m
+      io_mm.add( l_mmGr,                      // group
+                 l_nMdsFa,                    // m
                  i_nQts,                      // n
                  l_nMdsEl,                    // k
                  l_nMdsFa,                    // ldA
@@ -127,7 +133,8 @@ class edge::elastic::setups::MmKernels {
                  LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ); // (ORDER-1)*2+2
 
       // add flux solver
-      io_mm.add( l_nMdsFa,                    // m
+      io_mm.add( l_mmGr,                      // group
+                 l_nMdsFa,                    // m
                  i_nQts,                      // n
                  i_nQts,                      // k
                  l_nMdsFa,                    // ldA
@@ -138,7 +145,8 @@ class edge::elastic::setups::MmKernels {
                  LIBXSMM_GEMM_PREFETCH_NONE ); // (ORDER-1)*2+3
 
       // add second flux matrix
-      io_mm.add( l_nMdsEl,                    // m
+      io_mm.add( l_mmGr,                      // group
+                 l_nMdsEl,                    // m
                  i_nQts,                      // n
                  l_nMdsFa,                    // k
                  l_nMdsEl,                    // ldA
@@ -170,12 +178,14 @@ class edge::elastic::setups::MmKernels {
                      data::MmVanilla< TL_T_REAL > &io_mm ) {
       unsigned short l_nMdsFa = CE_N_ELEMENT_MODES( C_ENT[i_tEl].TYPE_FACES, i_order );
       unsigned short l_nMdsEl = CE_N_ELEMENT_MODES( i_tEl, i_order );
+      unsigned short l_mmGr = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
 
       // (O-1)*2 kernels for time integration
       // (multiplication with transposed stiffness matrix and star matrix)
       for( unsigned int l_de = 1; l_de < i_order; l_de++ ) {
         // multiplication with transpose stiffness matrix
-        io_mm.add( i_nQts,                                           // m
+        io_mm.add( l_mmGr,                                           // group
+                   i_nQts,                                           // m
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de-1 ),  // n
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ),    // k
                    l_nMdsEl,                                         // ldA
@@ -187,8 +197,9 @@ class edge::elastic::setups::MmKernels {
                    false,                                            // fused BC
                    i_nCrs );
       
-        // // multiplication with star matrix
-        io_mm.add( i_nQts,                                        // m
+        // multiplication with star matrix
+        io_mm.add( l_mmGr,                                        // group
+                   i_nQts,                                        // m
                    CE_N_ELEMENT_MODES_CK( i_tEl, i_order, l_de ), // n
                    i_nQts,                                        // k
                    i_nQts,                                        // ldA
@@ -203,7 +214,8 @@ class edge::elastic::setups::MmKernels {
 
       // add two volume integration kernels
       // (multiplication with stiffness matrix and star matrix)
-      io_mm.add( i_nQts,                                     // m
+      io_mm.add( l_mmGr,                                     // group
+                 i_nQts,                                     // m
                  l_nMdsEl,                                   // n
                  CE_N_ELEMENT_MODES_CK( i_tEl, i_order, 1 ), // k
                  l_nMdsEl,                                   // ldA
@@ -215,7 +227,8 @@ class edge::elastic::setups::MmKernels {
                  false,                                      // fused BC
                  i_nCrs ); // (ORDER-1)*2
 
-      io_mm.add( i_nQts,                      // m
+      io_mm.add( l_mmGr,                      // group
+                 i_nQts,                      // m
                  l_nMdsEl,                    // n
                  i_nQts,                      // k
                  i_nQts,                      // ldA
@@ -228,7 +241,8 @@ class edge::elastic::setups::MmKernels {
                  i_nCrs ); // (ORDER-1)*2+1
 
       // add first flux matrix
-      io_mm.add( i_nQts,                      // m
+      io_mm.add( l_mmGr,                      // group
+                 i_nQts,                      // m
                  l_nMdsFa,                    // n
                  l_nMdsEl,                    // k
                  l_nMdsEl,                    // ldA
@@ -241,7 +255,8 @@ class edge::elastic::setups::MmKernels {
                  i_nCrs);                     // (ORDER-1)*2+2
 
       // add flux solver
-      io_mm.add( i_nQts,                      // m
+      io_mm.add( l_mmGr,                      // group
+                 i_nQts,                      // m
                  l_nMdsFa,                    // n
                  i_nQts,                      // k
                  i_nQts,                      // ldA
@@ -254,7 +269,8 @@ class edge::elastic::setups::MmKernels {
                  i_nCrs );                    // (ORDER-1)*2+3
 
       // add second flux matrix
-      io_mm.add( i_nQts,                      // m
+      io_mm.add( l_mmGr,                      // group
+                 i_nQts,                      // m
                  l_nMdsEl,                    // n
                  l_nMdsFa,                    // k
                  l_nMdsFa,                    // ldA

@@ -249,7 +249,7 @@ class edge::elastic::solvers::AderDg {
      * @param io_dofs DOFs.
      * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
      * @param io_recvs will be updated with receiver info.
-     * @param i_mm matrix-matrix multiplication kernels for the local step.
+     * @param i_mm matrix-matrix multiplication kernels.
      *
      * @paramt TL_T_LID integer type of local entity ids.
      * @paramt TL_T_REAL floating point type.
@@ -307,23 +307,21 @@ class edge::elastic::solvers::AderDg {
 
         // write receivers (if required)
         if( !( (i_elChars[l_el].spType & RECEIVER) == RECEIVER) ) {} // no receivers in the current element
-        // we have receivers in the current element
-        else {
-          // iterate of possible multiple receiver-ouput per time step
-          while( true ) {
-            TL_T_REAL l_rePt[1];
-            l_rePt[0] = io_recvs.getRecvTimeRel( l_enRe, i_time, i_dt );
-            if( !(l_rePt[0] >= 0) ) break;
+        else { // we have receivers in the current element
+          while( true ) { // iterate of possible multiple receiver-ouput per time step
+            double l_rePt = io_recvs.getRecvTimeRel( l_enRe, i_time, i_dt );
+            if( !(l_rePt >= 0) ) break;
             else {
+              TL_T_REAL l_rePts = l_rePt;
               // eval time prediction at the given point
-              TimePred< TL_T_EL,
-                        TL_N_QTS,
-                        TL_O_SP,
-                        TL_O_TI,
-                        TL_N_CRS >::evalTimePrediction( 1,
-                                                        l_rePt,
+              TimePred< T_SDISC.ELEMENT,
+                        N_QUANTITIES,
+                        ORDER,
+                        ORDER,
+                        N_CRUNS >::evalTimePrediction(  1,
+                                                       &l_rePts,
                                                         l_derBuffer,
-                          (TL_T_REAL (*)[TL_N_QTS][TL_N_MDS][TL_N_CRS])l_tmp );
+                          (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmp );
 
               // write this time prediction
               io_recvs.writeRecvAll( l_enRe, l_tmp );
@@ -756,10 +754,10 @@ class edge::elastic::solvers::AderDg {
                 edge::sc::Detections< TL_T_EL,
                                       TL_N_QTS,
                                       TL_N_CRS >::dmpFa( i_extP[l_ex],
-                                                        i_extP,
-                                                        o_extC[l_ex],
-                                                        i_lpFaLp[l_lp],
-                                                        l_adm );
+                                                         i_extP,
+                                                         o_extC[l_ex],
+                                                         i_lpFaLp[l_lp],
+                                                         l_adm );
 
                 // update admissibility
 #pragma omp simd

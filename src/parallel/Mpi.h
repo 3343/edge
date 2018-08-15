@@ -41,10 +41,10 @@ namespace edge {
 
 class edge::parallel::Mpi {
   private:
+#ifdef PP_USE_MPI
     //! number of iterations over comm list until a check for new work is performed
     unsigned int m_nIterPerCheck;
 
-#ifdef PP_USE_MPI
     //! communicator
     MPI_Comm m_comm;
 
@@ -108,7 +108,12 @@ class edge::parallel::Mpi {
      *
      * @param i_iter number of iterations in message progressions.
      **/
-    Mpi( unsigned int i_iter=100 ): m_nIterPerCheck( i_iter ){};
+    Mpi( unsigned int i_iter=100 )
+#ifdef PP_USE_MPI
+      : m_nIterPerCheck( i_iter ),
+        m_comm( MPI_COMM_WORLD )
+#endif
+    {};
 
     /**
      * Initializes MPI.
