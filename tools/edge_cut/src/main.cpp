@@ -53,31 +53,11 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "ready to go..";
 
 
-  // Construct Implicit Domain
-  Function l_hSpace1(&posHSpaceDisp);
-  Function l_hSpace2(&negHSpaceDisp);
-  Function l_uTopo(&belowTopo);
-  Function_vector l_halfSpaces;
-  l_halfSpaces.push_back( l_hSpace1 );
-  l_halfSpaces.push_back( l_hSpace2 );
-  l_halfSpaces.push_back( l_uTopo );
-
-  std::vector<std::string> l_vps;
-  l_vps.push_back("+--");
-  l_vps.push_back("-+-");
-
-  K::Point_3  l_bndSphereCenter( 415000, 3775000, -10000 );
-  K::FT       l_bndSphereRadiusSquared = 150000.0*150000.0;
-  K::Sphere_3 l_bndSphere( l_bndSphereCenter, l_bndSphereRadiusSquared );
-
-  Mesh_domain l_domain( Function_wrapper( l_halfSpaces, l_vps ), l_bndSphere, 1e-3 );
-
-
   // Compute the 1D Features we want to preserve
   // This removes "rounded edges" at the boundary of the domain and creates a
   // shart fault/topography interface
   std::stringstream   topoStream;
-  Surf_mesh           topoSurface;
+  Polyhedron          topoSurface;
   g_topo.writeTriaToOff( topoStream );
   if (!topoStream || !(topoStream >> topoSurface) || topoSurface.is_empty()
              || !CGAL::is_triangle_mesh(topoSurface)) {
@@ -87,9 +67,29 @@ int main( int i_argc, char *i_argv[] ) {
   topoStream.str( std::string() );
   topoStream.clear();
 
-  std::list< Polyline_type > features;
-  features = build1DFeatures( topoSurface, X_MIN, X_MAX, Y_MIN, Y_MAX, Y0, Z_MIN );
-  l_domain.add_features( features.begin(), features.end() );
+  Polyhedron l_freeSurfBdry;
+  edge_cut::surf::makeFreeSurfBdry( l_freeSurfBdry );
+  std::ofstream fsb("fsbdry.off");
+  fsb << l_freeSurfBdry;
+  fsb.close();
+
+  // Create a vector with only one element: the pointer to the polyhedron.
+  std::vector<Polyhedron*> poly_ptrs_vector(1, &topoSurface);
+
+  // Create a polyhedral domain, with only one polyhedron,
+  // and no "bounding polyhedron", so the volumetric part of the domain will be
+  // empty.
+  Mesh_domain l_domain(poly_ptrs_vector.begin(), poly_ptrs_vector.end());
+
+  // Get sharp features
+  l_domain.detect_features(); //includes detection of borders
+
+  // Mesh criteria
+  Mesh_criteria l_criteria( CGAL::parameters::edge_size = 500,
+                            CGAL::parameters::facet_angle = 25,
+                            CGAL::parameters::facet_size = 300,
+                            CGAL::parameters::facet_distance = 100);
+
 
 
   // Meshing Criteria
@@ -106,35 +106,35 @@ int main( int i_argc, char *i_argv[] ) {
   //      has its center on the theoretical surface to be meshed. The center of the Surface
   //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
   //      is a poor approximation to the theoretical surface
-  std::vector< K::FT > l_layers = {-500, -1000, -3000, -6000, -11000, -21000, -31000};
-  std::vector< K::FT > l_scales = {1.000, 2.333, 4.222, 8.000, 8.111, 8.444, 10.000};
-
-  K::FT l_edgeLengthBase, l_facetSizeBase, l_facetApproxBase, l_cellSizeBase;
-  K::FT l_angleBound, l_reRatio;
-  std::cout << "Base Edge Size: ";
-  std::cin >> l_edgeLengthBase;
-  std::cout << "Base Facet Size: ";
-  std::cin >> l_facetSizeBase;
-  std::cout << "Base Facet Distance: ";
-  std::cin >> l_facetApproxBase;
-  std::cout << "Facet Angle: ";
-  std::cin >> l_angleBound;
-  std::cout << "Base Cell Size: ";
-  std::cin >> l_cellSizeBase;
-  std::cout << "Radius-Edge Ratio: ";
-  std::cin >> l_reRatio;
-
-  DepthSizingField l_edgeCrit( l_edgeLengthBase, l_layers, l_scales );
-  DepthSizingField l_facetCrit( l_facetSizeBase, l_layers, l_scales );
-  DepthSizingField l_cellCrit( l_cellSizeBase, l_layers, l_scales );
-  DepthSizingField l_approxCrit( l_facetApproxBase, l_layers, l_scales );
-
-  Mesh_criteria   l_criteria( CGAL::parameters::edge_size = l_edgeCrit,
-                              CGAL::parameters::facet_size = l_facetCrit,
-                              CGAL::parameters::facet_distance = l_approxCrit,
-                              CGAL::parameters::facet_angle = l_angleBound,
-                              CGAL::parameters::cell_size = l_cellCrit,
-                              CGAL::parameters::cell_radius_edge_ratio = l_reRatio );
+  // std::vector< K::FT > l_layers = {-500, -1000, -3000, -6000, -11000, -21000, -31000};
+  // std::vector< K::FT > l_scales = {1.000, 2.333, 4.222, 8.000, 8.111, 8.444, 10.000};
+  //
+  // K::FT l_edgeLengthBase, l_facetSizeBase, l_facetApproxBase, l_cellSizeBase;
+  // K::FT l_angleBound, l_reRatio;
+  // std::cout << "Base Edge Size: ";
+  // std::cin >> l_edgeLengthBase;
+  // std::cout << "Base Facet Size: ";
+  // std::cin >> l_facetSizeBase;
+  // std::cout << "Base Facet Distance: ";
+  // std::cin >> l_facetApproxBase;
+  // std::cout << "Facet Angle: ";
+  // std::cin >> l_angleBound;
+  // std::cout << "Base Cell Size: ";
+  // std::cin >> l_cellSizeBase;
+  // std::cout << "Radius-Edge Ratio: ";
+  // std::cin >> l_reRatio;
+  //
+  // DepthSizingField l_edgeCrit( l_edgeLengthBase, l_layers, l_scales );
+  // DepthSizingField l_facetCrit( l_facetSizeBase, l_layers, l_scales );
+  // DepthSizingField l_cellCrit( l_cellSizeBase, l_layers, l_scales );
+  // DepthSizingField l_approxCrit( l_facetApproxBase, l_layers, l_scales );
+  //
+  // Mesh_criteria   l_criteria( CGAL::parameters::edge_size = l_edgeCrit,
+  //                             CGAL::parameters::facet_size = l_facetCrit,
+  //                             CGAL::parameters::facet_distance = l_approxCrit,
+  //                             CGAL::parameters::facet_angle = l_angleBound,
+  //                             CGAL::parameters::cell_size = l_cellCrit,
+  //                             CGAL::parameters::cell_radius_edge_ratio = l_reRatio );
 
 
   // Mesh generation
@@ -148,10 +148,10 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Output
   EDGE_LOG_INFO << "writing surface mesh";
-  std::ofstream off_file("o_multImplDomains.off");
-  std::ofstream bdry_file("o_bdry.off");
+  std::ofstream off_file("o_parklandTopo.off");
+  // std::ofstream bdry_file("o_parklandBdry.off");
   c3t3.output_facets_in_complex_to_off( off_file );
-  c3t3.output_boundary_to_off( bdry_file );
+  // c3t3.output_boundary_to_off( bdry_file );
 
   EDGE_LOG_INFO << "thank you for using EDGEcut!";
 }

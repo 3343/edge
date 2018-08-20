@@ -2,12 +2,12 @@
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
-#include <CGAL/Implicit_to_labeling_function_wrapper.h>
-#include <CGAL/Labeled_mesh_domain_3.h>
-#include <CGAL/Mesh_domain_with_polyline_features_3.h>
+#include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygon_mesh_slicer.h>
+#include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <boost/optional/optional_io.hpp> // TODO Check if this is still needed
 
 #include "implicit_functions.h" // Definition of Function_wrapper
@@ -16,11 +16,8 @@ namespace edge_cut{
   namespace surf{
     // Typedefs for Domain
     typedef CGAL::Exact_predicates_inexact_constructions_kernel                 K;
-    typedef FT_to_point_function_wrapper<K::FT, K::Point_3>                     Function; //TODO Look into wrapping member functions
-    typedef CGAL::Implicit_multi_domain_to_labeling_function_wrapper<Function>  Function_wrapper;
-    typedef Function_wrapper::Function_vector                                   Function_vector;
-    typedef CGAL::Labeled_mesh_domain_3<Function_wrapper, K>                    Labeled_domain;
-    typedef CGAL::Mesh_domain_with_polyline_features_3<Labeled_domain>          Mesh_domain;
+    typedef CGAL::Mesh_polyhedron_3<K>::type                                    Polyhedron;
+    typedef CGAL::Polyhedral_mesh_domain_with_features_3<K>                     Mesh_domain;
 
     // Typedefs for Triangulation
     typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type                       Mesh_tria;
@@ -123,5 +120,12 @@ namespace edge_cut{
                                                 double      i_yMax,
                                                 double      i_zMin,
                                                 double      i_zMax         );
+
+    /**
+     * Creates a basic polyhedral model of the free surface boundaries of
+     * a three-dimensional box with topography.
+     **/
+    Polyhedron& makeFreeSurfBdry( Polyhedron& i_topo );
+
   }
 }

@@ -299,3 +299,37 @@ edge_cut::surf::build1DFeatures(  Surf_mesh&  i_topoSurface,
 
   return features;
 }
+
+
+edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron& io_freeSurfBdry )
+{
+  K::Point_3 p0, p1, p2, p3, p4, p5, p6, p7;
+  std::vector< K::Point_3 > l_points;
+
+  l_points.emplace_back( X_MIN, Y_MIN, Z_MIN );
+  l_points.emplace_back( X_MAX, Y_MIN, Z_MIN );
+  l_points.emplace_back( X_MIN, Y_MAX, Z_MIN );
+  l_points.emplace_back( X_MAX, Y_MAX, Z_MIN );
+  l_points.emplace_back( X_MIN, Y_MIN, Z_MAX );
+  l_points.emplace_back( X_MAX, Y_MIN, Z_MAX );
+  l_points.emplace_back( X_MIN, Y_MAX, Z_MAX );
+  l_points.emplace_back( X_MAX, Y_MAX, Z_MAX );
+
+  std::vector< std::vector< std::size_t > > l_polygons = {  { 0, 1, 2 },
+                                                            { 1, 2, 3 },
+                                                            { 0, 1, 4 },
+                                                            { 1, 4, 5 },
+                                                            { 1, 3, 5 },
+                                                            { 3, 5, 7 },
+                                                            { 0, 2, 4 },
+                                                            { 2, 4, 6 },
+                                                            { 2, 3, 6 },
+                                                            { 3, 6, 7 } };
+
+  CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(  l_points,
+                                                                l_polygons,
+                                                                io_freeSurfBdry );
+
+  return io_freeSurfBdry;
+}
