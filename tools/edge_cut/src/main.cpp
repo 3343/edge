@@ -67,30 +67,48 @@ int main( int i_argc, char *i_argv[] ) {
   topoStream.str( std::string() );
   topoStream.clear();
 
+
+  Poly_slicer   topoSlicer( topoSurface );
+  Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
+  std::list< Polyline_type > features;
+  K::Plane_3    yMinPlane  = K::Plane_3( 0, 1, 0, -1 * Y_MIN );
+  K::Plane_3    yMaxPlane  = K::Plane_3( 0, 1, 0, -1 * Y_MAX );
+  K::Plane_3    xMinPlane  = K::Plane_3( 1, 0, 0, -1 * X_MIN );
+  K::Plane_3    xMaxPlane  = K::Plane_3( 1, 0, 0, -1 * X_MAX );
+
+  yMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMinPlane );
+  yMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMaxPlane );
+  xMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, xMinPlane );
+  xMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, xMaxPlane );
+  edge_cut::surf::orderPolyline( yMinRidges, 0 );
+  edge_cut::surf::orderPolyline( yMaxRidges, 0 );
+  edge_cut::surf::orderPolyline( xMinRidges, 1 );
+  edge_cut::surf::orderPolyline( xMaxRidges, 1 );
+  features.push_back( yMinRidges );
+  features.push_back( yMaxRidges );
+  features.push_back( xMinRidges );
+  features.push_back( xMaxRidges );
+
+
   Polyhedron l_freeSurfBdry;
   edge_cut::surf::makeFreeSurfBdry( l_freeSurfBdry );
-  std::ofstream fsb("fsbdry.off");
-  fsb << l_freeSurfBdry;
-  fsb.close();
 
-  // Create a vector with only one element: the pointer to the polyhedron.
-  std::vector<Polyhedron*> poly_ptrs_vector(1, &topoSurface);
+  // The "re-meshing" form of make-mesh only works when the polyhedral domain
+  // is constructed from a vector of polyhedral surfaces (as far as I can tell )
+  std::vector< Polyhedron* > topoSurfVector(1, &topoSurface);
+  std::vector< Polyhedron* > fsbVector = { &l_freeSurfBdry };
+
 
   // Create a polyhedral domain, with only one polyhedron,
   // and no "bounding polyhedron", so the volumetric part of the domain will be
   // empty.
-  Mesh_domain l_domain(poly_ptrs_vector.begin(), poly_ptrs_vector.end());
+  Mesh_domain l_domain(topoSurfVector.begin(), topoSurfVector.end());
+  Mesh_domain fsbDomain( fsbVector.begin(), fsbVector.end() );
 
-  // Get sharp features
-  l_domain.detect_features(); //includes detection of borders
-
-  // Mesh criteria
-  Mesh_criteria l_criteria( CGAL::parameters::edge_size = 500,
-                            CGAL::parameters::facet_angle = 25,
-                            CGAL::parameters::facet_size = 300,
-                            CGAL::parameters::facet_distance = 100);
-
-
+  // Add features computed above
+  fsbDomain.add_features( features.begin(), features.end() );
+  l_domain.add_features( features.begin(), features.end() );
+  // l_domain.detect_features(); //includes detection of borders
 
   // Meshing Criteria
   //    Edge Size - Max distance between protecting balls in 1D feature preservation
@@ -106,35 +124,10 @@ int main( int i_argc, char *i_argv[] ) {
   //      has its center on the theoretical surface to be meshed. The center of the Surface
   //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
   //      is a poor approximation to the theoretical surface
-  // std::vector< K::FT > l_layers = {-500, -1000, -3000, -6000, -11000, -21000, -31000};
-  // std::vector< K::FT > l_scales = {1.000, 2.333, 4.222, 8.000, 8.111, 8.444, 10.000};
-  //
-  // K::FT l_edgeLengthBase, l_facetSizeBase, l_facetApproxBase, l_cellSizeBase;
-  // K::FT l_angleBound, l_reRatio;
-  // std::cout << "Base Edge Size: ";
-  // std::cin >> l_edgeLengthBase;
-  // std::cout << "Base Facet Size: ";
-  // std::cin >> l_facetSizeBase;
-  // std::cout << "Base Facet Distance: ";
-  // std::cin >> l_facetApproxBase;
-  // std::cout << "Facet Angle: ";
-  // std::cin >> l_angleBound;
-  // std::cout << "Base Cell Size: ";
-  // std::cin >> l_cellSizeBase;
-  // std::cout << "Radius-Edge Ratio: ";
-  // std::cin >> l_reRatio;
-  //
-  // DepthSizingField l_edgeCrit( l_edgeLengthBase, l_layers, l_scales );
-  // DepthSizingField l_facetCrit( l_facetSizeBase, l_layers, l_scales );
-  // DepthSizingField l_cellCrit( l_cellSizeBase, l_layers, l_scales );
-  // DepthSizingField l_approxCrit( l_facetApproxBase, l_layers, l_scales );
-  //
-  // Mesh_criteria   l_criteria( CGAL::parameters::edge_size = l_edgeCrit,
-  //                             CGAL::parameters::facet_size = l_facetCrit,
-  //                             CGAL::parameters::facet_distance = l_approxCrit,
-  //                             CGAL::parameters::facet_angle = l_angleBound,
-  //                             CGAL::parameters::cell_size = l_cellCrit,
-  //                             CGAL::parameters::cell_radius_edge_ratio = l_reRatio );
+  Mesh_criteria l_criteria( CGAL::parameters::edge_size = 100,
+                            CGAL::parameters::facet_angle = 25,
+                            CGAL::parameters::facet_size = 600,
+                            CGAL::parameters::facet_distance = 15);
 
 
   // Mesh generation
@@ -145,13 +138,19 @@ int main( int i_argc, char *i_argv[] ) {
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
+  C3t3 fsbComplex = CGAL::make_mesh_3<C3t3>( fsbDomain, l_criteria,
+                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+
 
   // Output
   EDGE_LOG_INFO << "writing surface mesh";
   std::ofstream off_file("o_parklandTopo.off");
-  // std::ofstream bdry_file("o_parklandBdry.off");
+  std::ofstream bdry_file("o_parklandBdry.off");
   c3t3.output_facets_in_complex_to_off( off_file );
-  // c3t3.output_boundary_to_off( bdry_file );
+  fsbComplex.output_boundary_to_off( bdry_file );
 
   EDGE_LOG_INFO << "thank you for using EDGEcut!";
 }

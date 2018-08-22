@@ -17,7 +17,8 @@ namespace edge_cut{
     // Typedefs for Domain
     typedef CGAL::Exact_predicates_inexact_constructions_kernel                 K;
     typedef CGAL::Mesh_polyhedron_3<K>::type                                    Polyhedron;
-    typedef CGAL::Polyhedral_mesh_domain_with_features_3<K>                     Mesh_domain;
+    typedef CGAL::Polyhedral_mesh_domain_with_features_3<K>                     Poly_domain;
+    typedef CGAL::Mesh_domain_with_polyline_features_3<Poly_domain>             Mesh_domain;
 
     // Typedefs for Triangulation
     typedef CGAL::Mesh_triangulation_3<Mesh_domain>::type                       Mesh_tria;
@@ -31,7 +32,7 @@ namespace edge_cut{
 
     // Typedefs for 1D Features
     typedef CGAL::Surface_mesh<K::Point_3>                                      Surf_mesh;
-    typedef CGAL::Polygon_mesh_slicer<Surf_mesh, K>                             Poly_slicer;
+    typedef CGAL::Polygon_mesh_slicer<Polyhedron, K>                            Poly_slicer;
     typedef std::vector<K::Point_3>                                             Polyline_type;
     typedef std::list< Polyline_type >                                          Polylines;
     typedef std::vector< std::size_t >                                          Polygon;
@@ -113,13 +114,13 @@ namespace edge_cut{
      * @param i_xMax Maximum z coordinate of bounding box
      * @return Collection of 1D features
      **/
-    std::list< Polyline_type > build1DFeatures( Surf_mesh&  i_topoSurface,
-                                                double      i_xMin,
-                                                double      i_xMax,
-                                                double      i_yMin,
-                                                double      i_yMax,
-                                                double      i_zMin,
-                                                double      i_zMax         );
+    // std::list< Polyline_type > build1DFeatures( Surf_mesh&  i_topoSurface,
+    //                                             double      i_xMin,
+    //                                             double      i_xMax,
+    //                                             double      i_yMin,
+    //                                             double      i_yMax,
+    //                                             double      i_zMin,
+    //                                             double      i_zMax         );
 
     /**
      * Creates a basic polyhedral model of the free surface boundaries of
