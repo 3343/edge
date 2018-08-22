@@ -72,7 +72,7 @@ l_veCrds = l_mesh.veCrds()
 logging.info('querying mesh for element to vertex adjacency')
 
 # get vertices adjacent to the element
-l_elVe =  l_mesh.enAd(2, 0)
+l_elVe =  l_mesh.enAd(l_mesh.m_nDis, 0)
 
 # reshape the array according to the number of vertices per element
 if( l_mesh.m_nDis == 2 ):
