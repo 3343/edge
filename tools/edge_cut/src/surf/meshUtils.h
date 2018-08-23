@@ -127,6 +127,7 @@ namespace edge_cut{
      * a three-dimensional box with topography.
      **/
     Polyhedron& makeFreeSurfBdry( Polyhedron& i_topo );
-
+    Polyhedron& trimFSB(  Polyhedron const & i_topo,
+                          Polyhedron       & io_fsb ); 
   }
 }

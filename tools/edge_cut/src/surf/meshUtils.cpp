@@ -333,3 +333,97 @@ edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron& io_fre
 
   return io_freeSurfBdry;
 }
+
+edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
+                                                      Polyhedron       & io_fsb )
+{
+  typedef Polyhedron::Vertex_const_handle       Vertex_const;
+  typedef Polyhedron::Vertex_handle             Vertex;
+  typedef Polyhedron::Vertex_iterator           VertexIt;
+  typedef Polyhedron::Halfedge_handle           Halfedge;
+  typedef Polyhedron::Halfedge_const_handle     Halfedge_const;
+  // typedef Polyhedron::Facet_const_handle        Facet;
+  typedef Polyhedron::Halfedge_const_iterator   HalfedgeIt;
+
+  Vertex l_vertFsb, l_vertPrevFsb;
+  Vertex_const l_vertTopo;
+
+  // Get a handle to a vertex/halfedge pair on the border of the topo mesh
+  // This is where we will start our cut of the surface
+  std::cout << "a" << std::endl;
+  HalfedgeIt l_borderIt = i_topo.border_halfedges_begin();
+  std::cout << "b" << std::endl;
+  std::cout << i_topo.size_of_border_halfedges() << std::endl;
+  l_vertTopo = l_borderIt->vertex();
+
+  std::cout << "Finding first matching point in FSB mesh" << std::endl;
+  // Get a handle within the fsb mesh to the same vertex
+  VertexIt l_vIt = io_fsb.vertices_begin();
+  while( l_vIt->point() != l_vertTopo->point() ) l_vIt++;
+  l_vertFsb = l_vIt;
+
+  std::cout << "Finding second matching point in FSB mesh" << std::endl;
+  // Get a handle within fsb mesh to the "previous" border edge when circulating the edge of topography
+  l_vIt = io_fsb.vertices_begin();
+  Vertex_const l_vertPrevTopo;
+  auto l_edge = l_vertTopo->vertex_begin();
+  while( !l_edge->is_border_edge() ){ l_edge++; }
+  l_vertPrevTopo = l_edge->prev()->vertex();
+  //   if( l_edge.is_border_edge )
+  //     l_vertPrevTopo = l_edge.prev().vertex();
+  // }
+  while( l_vIt->point() != l_vertPrevTopo->point() ) l_vIt++;
+  l_vertPrevFsb = l_vIt;
+
+
+  // Get the first halfedge on FSB, incident to vertTopo, and ABOVE the topography
+  bool orderedPos;
+  Halfedge l_h, l_hNext;
+  auto l_edgeCirc = l_vertFsb->vertex_begin();
+  while( l_edgeCirc->prev()->vertex()->point() != l_vertPrevFsb->point() ) l_edgeCirc++;
+  Halfedge l_rootHalfedge = l_edgeCirc;
+  if( l_rootHalfedge->next()->vertex()->point().z() > l_rootHalfedge->opposite()->next()->vertex()->point().z() ){
+    orderedPos = true;
+    l_h = l_rootHalfedge;
+  } else {
+    orderedPos = false;
+    l_h = l_rootHalfedge->opposite();
+  }
+
+  std::cout << "Beginning Trim" << std::endl;
+  // For each topography border halfedge, delete all adjacent facets on the fsb mesh
+  // which are adjacent to the halfedge and above the topography
+  Halfedge_const l_startHalfedge = l_borderIt;
+  Halfedge_const l_borderHalfedge = l_startHalfedge;
+  Halfedge_const l_nextBorderHalfedge;
+  do {
+    std::cout << "Vertex: " << l_borderHalfedge->vertex()->point() << std::endl;
+    // Compute the next halfedge on the border of the topography
+    auto l_borderEdgeCirc = l_borderHalfedge->vertex()->vertex_begin();
+    while( ! l_borderEdgeCirc->next()->is_border_edge() ){ l_borderEdgeCirc++; }
+    l_nextBorderHalfedge = l_borderEdgeCirc->next();
+    // for( auto const & l_edge : l_borderHalfedge->vertex()->vertex_begin() ){
+    //   if( l_edge->next()->is_border_edge )
+    //     l_nextBorderHalfedge = l_edge->next();
+    // }
+
+    // // Must compare point data because vertices belong to different meshes
+    while( l_h->next()->vertex()->point() != l_nextBorderHalfedge->vertex()->point() ){
+      if( orderedPos )
+        l_hNext = l_h->next()->opposite();
+      else
+        l_hNext = l_h->prev()->opposite();
+
+      io_fsb.erase_facet( l_h );
+      l_h = l_hNext;
+    }
+    if( orderedPos )
+      l_h = l_h->next();
+    else
+      l_h = l_h->prev();
+
+    l_borderHalfedge = l_nextBorderHalfedge;
+  } while ( l_borderHalfedge != l_startHalfedge );
+
+  return io_fsb;
+}

@@ -21,7 +21,7 @@
  * Meshing of topographic data.
  **/
 
-#include "Topo.h" 
+#include "Topo.h"
 #include "io/logging.hpp"
 
 #include <fstream>

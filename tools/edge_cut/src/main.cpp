@@ -66,7 +66,11 @@ int main( int i_argc, char *i_argv[] ) {
   }
   topoStream.str( std::string() );
   topoStream.clear();
-
+  std::cout << "Is empty: " << topoSurface.is_empty() << std::endl;
+  std::cout << "Is closed: " << topoSurface.is_closed() << std::endl;
+  std::cout << "Is pure triangle: " << topoSurface.is_pure_triangle() << std::endl;
+  std::cout << "Num verts: " << topoSurface.size_of_vertices() << std::endl;
+  std::cout << "Num edges: " << topoSurface.size_of_halfedges() << std::endl;
 
   Poly_slicer   topoSlicer( topoSurface );
   Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
@@ -132,7 +136,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Mesh generation
   // NOTE the optimizers have more options than specified here
-  C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(  l_domain, l_criteria,
+  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>(  l_domain, l_criteria,
                 CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
@@ -144,13 +148,30 @@ int main( int i_argc, char *i_argv[] ) {
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
+  EDGE_LOG_INFO << "trimming free surface boundary mesh";
+  std::stringstream tempFsbStream, tempTopoStream;
+  Polyhedron fsbPoly, topoPoly;
+  fsbComplex.output_facets_in_complex_to_off( tempFsbStream );
+  tempFsbStream >> fsbPoly;
+  tempFsbStream.str( std::string() );
+  topoComplex.output_facets_in_complex_to_off( tempTopoStream );
+  std::cout << "topoComplexPoly char count = " << tempTopoStream.gcount() << std::endl;
+  tempTopoStream >> topoPoly;
+  tempTopoStream.str( std::string() );
+  topoPoly.normalize_border();
+
+  std::cout << topoSurface.size_of_border_halfedges() << " " << topoPoly.size_of_border_halfedges() << std::endl;
+  edge_cut::surf::trimFSB( topoPoly, fsbPoly );
+
+
 
   // Output
   EDGE_LOG_INFO << "writing surface mesh";
-  std::ofstream off_file("o_parklandTopo.off");
-  std::ofstream bdry_file("o_parklandBdry.off");
-  c3t3.output_facets_in_complex_to_off( off_file );
-  fsbComplex.output_boundary_to_off( bdry_file );
+  std::ofstream off_file("o_parkfieldTopo.off");
+  std::ofstream bdry_file("o_parkfieldBdry.off");
+  topoComplex.output_facets_in_complex_to_off( off_file );
+  // fsbComplex.output_boundary_to_off( bdry_file );
+  bdry_file << fsbPoly;
 
   EDGE_LOG_INFO << "thank you for using EDGEcut!";
 }
