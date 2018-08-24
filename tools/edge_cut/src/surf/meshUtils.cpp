@@ -1,4 +1,4 @@
-
+#include <CGAL/IO/OFF_reader.h>  // We get linker error if this included in header. TODO
 #include "surf/meshUtils.h"
 
 edge_cut::surf::K::FT
@@ -334,6 +334,30 @@ edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron& io_fre
   return io_freeSurfBdry;
 }
 
+
+void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
+                                        Polyhedron        & polyhedron )
+{
+  std::stringstream sstream;
+  std::vector<K::Point_3> points;
+  std::vector< std::vector<std::size_t> > polygons;
+
+  CGAL::internal::output_facets_in_complex_to_off<C3t3>( c3t3, sstream );
+
+  if (!CGAL::read_OFF( sstream, points, polygons))
+  {
+    std::cerr << "c3t3ToPolyhedron: " << std::endl;
+    std::cerr << "Error parsing the OFF file " << std::endl;
+    return;
+  }
+  CGAL::Polygon_mesh_processing::orient_polygon_soup( points, polygons );
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( points, polygons, polyhedron );
+  polyhedron.normalize_border();
+
+  return;
+}
+
+
 edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
                                                       Polyhedron       & io_fsb )
 {
@@ -344,6 +368,7 @@ edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
   typedef Polyhedron::Halfedge_const_handle     Halfedge_const;
   // typedef Polyhedron::Facet_const_handle        Facet;
   typedef Polyhedron::Halfedge_const_iterator   HalfedgeIt;
+  typedef Polyhedron::Point                     Point;
 
   Vertex l_vertFsb, l_vertPrevFsb;
   Vertex_const l_vertTopo;
@@ -382,6 +407,9 @@ edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
   auto l_edgeCirc = l_vertFsb->vertex_begin();
   while( l_edgeCirc->prev()->vertex()->point() != l_vertPrevFsb->point() ) l_edgeCirc++;
   Halfedge l_rootHalfedge = l_edgeCirc;
+
+  // TODO WARNING Need better test here: this could potentially fail to find
+  // the "above" component if topography is steep
   if( l_rootHalfedge->next()->vertex()->point().z() > l_rootHalfedge->opposite()->next()->vertex()->point().z() ){
     orderedPos = true;
     l_h = l_rootHalfedge;
@@ -390,31 +418,38 @@ edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
     l_h = l_rootHalfedge->opposite();
   }
 
-  std::cout << "Beginning Trim" << std::endl;
+  // std::cout << "Beginning Trim" << std::endl;
   // For each topography border halfedge, delete all adjacent facets on the fsb mesh
   // which are adjacent to the halfedge and above the topography
-  Halfedge_const l_startHalfedge = l_borderIt;
-  Halfedge_const l_borderHalfedge = l_startHalfedge;
+  Halfedge_const l_borderHalfedge = l_borderIt;
   Halfedge_const l_nextBorderHalfedge;
+  Point l_startPoint = l_borderHalfedge->vertex()->point();  //TODO using points here in case halfedge handles get invalidated/changed
   do {
-    std::cout << "Vertex: " << l_borderHalfedge->vertex()->point() << std::endl;
+    // std::cout << "Vertex: " << l_borderHalfedge->vertex()->point() << std::endl;
     // Compute the next halfedge on the border of the topography
     auto l_borderEdgeCirc = l_borderHalfedge->vertex()->vertex_begin();
     while( ! l_borderEdgeCirc->next()->is_border_edge() ){ l_borderEdgeCirc++; }
     l_nextBorderHalfedge = l_borderEdgeCirc->next();
+
+    // std::cout << "Next Vertex: " << l_nextBorderHalfedge->vertex()->point() << std::endl;
     // for( auto const & l_edge : l_borderHalfedge->vertex()->vertex_begin() ){
     //   if( l_edge->next()->is_border_edge )
     //     l_nextBorderHalfedge = l_edge->next();
     // }
 
     // // Must compare point data because vertices belong to different meshes
+
     while( l_h->next()->vertex()->point() != l_nextBorderHalfedge->vertex()->point() ){
+      // If halfedge is a border halfedge, then there are no more facets to delete TODO
+      if ( l_h->is_border() ) break;
+      
       if( orderedPos )
         l_hNext = l_h->next()->opposite();
       else
         l_hNext = l_h->prev()->opposite();
 
       io_fsb.erase_facet( l_h );
+
       l_h = l_hNext;
     }
     if( orderedPos )
@@ -423,7 +458,20 @@ edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
       l_h = l_h->prev();
 
     l_borderHalfedge = l_nextBorderHalfedge;
-  } while ( l_borderHalfedge != l_startHalfedge );
+    std::cout << "leaving loop iter" << std::endl;
+  } while ( l_borderHalfedge->vertex()->point() != l_startPoint );
+
+  // Iterate over all non-border halfedges for the one with the highest elevation
+  // This halfedge will be on the "upper" connected component
+  Halfedge l_hMax = io_fsb.halfedges_begin();
+  io_fsb.normalize_border();
+  for ( auto l_it = io_fsb.halfedges_begin(); l_it != io_fsb.border_halfedges_begin(); l_it++ ) {
+    if ( l_it->vertex()->point().z() > l_hMax->vertex()->point().z() )
+      l_hMax = l_it;
+  }
+
+  io_fsb.erase_connected_component( l_hMax );
+  io_fsb.normalize_border();
 
   return io_fsb;
 }

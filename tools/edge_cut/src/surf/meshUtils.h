@@ -8,7 +8,9 @@
 #include <CGAL/Polygon_mesh_slicer.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
+#include <CGAL/internal/Mesh_3/Boundary_of_subdomain_of_complex_3_in_triangulation_3_to_off.h>
 #include <boost/optional/optional_io.hpp> // TODO Check if this is still needed
+
 
 #include "implicit_functions.h" // Definition of Function_wrapper
 
@@ -128,6 +130,111 @@ namespace edge_cut{
      **/
     Polyhedron& makeFreeSurfBdry( Polyhedron& i_topo );
     Polyhedron& trimFSB(  Polyhedron const & i_topo,
-                          Polyhedron       & io_fsb ); 
+                          Polyhedron       & io_fsb );
+    void c3t3ToPolyhedron( C3t3 const & c3t3, Polyhedron & polyhedron );
+
+
+
+    // template perameter "Triangulation" must be model of CGAL::Triangulation_2
+    template< class Triangulation >
+    std::ostream & writeTria2ToOff( Triangulation& tr, std::ostream & os ) {
+      typedef typename Triangulation::Vertex_handle                Vertex_handle;
+      typedef typename Triangulation::Finite_vertices_iterator     Vertex_iterator;
+      typedef typename Triangulation::Finite_faces_iterator        Face_iterator;
+
+      os << "OFF" << std::endl;
+
+      // outputs the number of vertices and faces
+      std::size_t num_verts = tr.number_of_vertices();
+      std::size_t num_faces = tr.number_of_faces();
+      std::size_t num_edges = 0;                          //Assumption
+
+      os << num_verts << " " << num_faces << " " << num_edges << std::endl;
+
+      // write the vertices
+      std::map<Vertex_handle, std::size_t> index_of_vertex;
+
+      std::size_t v_idx = 0;
+      for( Vertex_iterator it = tr.finite_vertices_begin(); it != tr.finite_vertices_end(); ++it, ++v_idx )
+      {
+          os << *it << std::endl;
+          index_of_vertex[it] = v_idx;
+      }
+      CGAL_assertion( v_idx == num_verts );
+
+      // write the vertex indices of each full_cell
+      std::size_t f_idx = 0;
+      for( Face_iterator it = tr.finite_faces_begin(); it != tr.finite_faces_end(); ++it, ++f_idx )
+      {
+          os << 3;
+          for( int j = 0; j < 3; ++j )
+          {
+            os << ' ' << index_of_vertex[ it->vertex(j) ];
+          }
+          os << std::endl;
+      }
+      CGAL_assertion( f_idx == num_faces );
+
+      return os;
+    }
+
+
+
+    // template perameter "Triangulation" must be model of CGAL::Triangulation_3
+    template< class Triangulation >
+    std::ostream & writeTria3ToOff( Triangulation& tr, std::ostream & os ) {
+      typedef typename Triangulation::Vertex_handle                Vertex_handle;
+      typedef typename Triangulation::Finite_vertices_iterator     Vertex_iterator;
+      typedef typename Triangulation::Finite_facets_iterator        Face_iterator;
+
+      os << "OFF" << std::endl;
+
+      // outputs the number of vertices and faces
+      std::size_t num_verts = tr.number_of_vertices();
+      std::size_t num_faces = tr.number_of_finite_facets();
+      std::size_t num_edges = 0;                          //Assumption
+
+      os << num_verts << " " << num_faces << " " << num_edges << std::endl;
+
+      // write the vertices
+      std::map<Vertex_handle, std::size_t> index_of_vertex;
+
+      std::size_t v_idx = 0;
+      for( Vertex_iterator it = tr.finite_vertices_begin(); it != tr.finite_vertices_end(); ++it, ++v_idx )
+      {
+          os << it->point().x() << ' '
+             << it->point().y() << ' '
+             << it->point().z() << std::endl;
+          std::cout << it->point().x() << ' '
+                    << it->point().y() << ' '
+                    << it->point().z() << std::endl; // TODO
+          index_of_vertex[it] = v_idx;
+      }
+      CGAL_assertion( v_idx == num_verts );
+
+      // write the vertex indices of each full_cell
+      std::size_t f_idx = 0;
+      for( Face_iterator it = tr.finite_facets_begin(); it != tr.finite_facets_end(); ++it, ++f_idx )
+      {
+          os << 3;
+          // it is a (Cell_handle, int) pair, where the cell_handle points to
+          // cell incident to the facet, and the int is the local index (relative
+          // to the cell) for the vertex not on the facet
+          // Hence it->second is the only vertex on the cell which is not on the facet
+          for( int j = 0; j < 4; ++j )
+          {
+            // it->first is a handle to the cell that contains the facet
+            if ( j != it->second ){
+              os << ' ' << index_of_vertex[ it->first->vertex(j) ];
+              std::cout << ' ' << index_of_vertex[ it->first->vertex(j) ]; //  TODO
+            }
+          }
+          os << std::endl;
+          std::cout << std::endl; // TODO
+      }
+      CGAL_assertion( f_idx == num_faces );
+      std::cout << "End writeTria3ToOff" << std::endl; //TODO
+      return os;
+    }
   }
 }

@@ -32,6 +32,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "surf/Topo.h"
 #include "implicit_functions.h"
 
+
 using namespace edge_cut::surf;
 
 int main( int i_argc, char *i_argv[] ) {
@@ -58,19 +59,17 @@ int main( int i_argc, char *i_argv[] ) {
   // shart fault/topography interface
   std::stringstream   topoStream;
   Polyhedron          topoSurface;
-  g_topo.writeTriaToOff( topoStream );
+  writeTria2ToOff< edge_cut::surf::Triangulation >( g_topo.m_delTria, topoStream );
   if (!topoStream || !(topoStream >> topoSurface) || topoSurface.is_empty()
              || !CGAL::is_triangle_mesh(topoSurface)) {
     std::cerr << "Input stream for topography triangulation is not valid." << std::endl;
     return 1;
   }
-  topoStream.str( std::string() );
-  topoStream.clear();
-  std::cout << "Is empty: " << topoSurface.is_empty() << std::endl;
-  std::cout << "Is closed: " << topoSurface.is_closed() << std::endl;
-  std::cout << "Is pure triangle: " << topoSurface.is_pure_triangle() << std::endl;
-  std::cout << "Num verts: " << topoSurface.size_of_vertices() << std::endl;
-  std::cout << "Num edges: " << topoSurface.size_of_halfedges() << std::endl;
+  // std::cout << topoStream.str() << std::endl;
+  // topoStream.str( std::string() );
+  // topoStream.clear();
+  // std::cout << topoSurface.size_of_border_halfedges() << std::endl;
+  // std::cout << topoSurface.size_of_halfedges() << std::endl;
 
   Poly_slicer   topoSlicer( topoSurface );
   Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
@@ -128,10 +127,10 @@ int main( int i_argc, char *i_argv[] ) {
   //      has its center on the theoretical surface to be meshed. The center of the Surface
   //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
   //      is a poor approximation to the theoretical surface
-  Mesh_criteria l_criteria( CGAL::parameters::edge_size = 100,
+  Mesh_criteria l_criteria( CGAL::parameters::edge_size = 800,
                             CGAL::parameters::facet_angle = 25,
                             CGAL::parameters::facet_size = 600,
-                            CGAL::parameters::facet_distance = 15);
+                            CGAL::parameters::facet_distance = 100);
 
 
   // Mesh generation
@@ -149,18 +148,49 @@ int main( int i_argc, char *i_argv[] ) {
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
   EDGE_LOG_INFO << "trimming free surface boundary mesh";
-  std::stringstream tempFsbStream, tempTopoStream;
   Polyhedron fsbPoly, topoPoly;
-  fsbComplex.output_facets_in_complex_to_off( tempFsbStream );
-  tempFsbStream >> fsbPoly;
-  tempFsbStream.str( std::string() );
-  topoComplex.output_facets_in_complex_to_off( tempTopoStream );
-  std::cout << "topoComplexPoly char count = " << tempTopoStream.gcount() << std::endl;
-  tempTopoStream >> topoPoly;
-  tempTopoStream.str( std::string() );
-  topoPoly.normalize_border();
+  edge_cut::surf::c3t3ToPolyhedron( topoComplex, topoPoly );
+  edge_cut::surf::c3t3ToPolyhedron( fsbComplex, fsbPoly );
 
-  std::cout << topoSurface.size_of_border_halfedges() << " " << topoPoly.size_of_border_halfedges() << std::endl;
+  // fsbComplex.output_facets_in_complex_to_off( tempFsbStream );
+  // tempFsbStream >> fsbPoly;
+  // tempFsbStream.str( std::string() );
+
+
+  // if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+  //   CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+
+
+  // CGAL::export_triangulation_3_to_off<  C3t3::Triangulation::Geom_traits,
+  //                                       C3t3::Triangulation::Triangulation_data_structure >(  tempTopoStream,
+  //                                                                                             topoComplex.triangulation(),
+  //                                                                                             true );
+  // writeTria3ToOff< C3t3::Triangulation >( topoComplex.triangulation(), tempTopoStream );
+
+
+  // // std::cout << "topoComplexPoly char count = " << tempTopoStream.gcount() << std::endl;
+  // if( !tempTopoStream ) std::cout << "somethings wrong..." << std::endl;
+  // std::cout << "is bad before: " << tempTopoStream.bad() << std::endl;
+  // CGAL::scan_OFF( tempTopoStream, topoPoly, true);
+  // // tempTopoStream >> topoPoly;
+  // std::cout << "is bad after: " << tempTopoStream.bad() << std::endl;
+  // std::cout << tempTopoStream.str();
+  // // tempTopoStream.str( std::string() );
+
+  std::cout << "Is empty: " << topoPoly.is_empty() << std::endl;
+  std::cout << "Is closed: " << topoPoly.is_closed() << std::endl;
+  std::cout << "Is pure triangle: " << topoPoly.is_pure_triangle() << std::endl;
+  std::cout << "Num verts: " << topoPoly.size_of_vertices() << std::endl;
+  std::cout << "Num edges: " << topoPoly.size_of_halfedges() << std::endl;
+  std::cout << "Num halfedges: " << topoPoly.size_of_border_halfedges() << std::endl;
+
+  std::cout << "Is empty: " << fsbPoly.is_empty() << std::endl;
+  std::cout << "Is closed: " << fsbPoly.is_closed() << std::endl;
+  std::cout << "Is pure triangle: " << fsbPoly.is_pure_triangle() << std::endl;
+  std::cout << "Num verts: " << fsbPoly.size_of_vertices() << std::endl;
+  std::cout << "Num edges: " << fsbPoly.size_of_halfedges() << std::endl;
+  std::cout << "Num halfedges: " << fsbPoly.size_of_border_halfedges() << std::endl;
+
   edge_cut::surf::trimFSB( topoPoly, fsbPoly );
 
 
@@ -169,9 +199,10 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "writing surface mesh";
   std::ofstream off_file("o_parkfieldTopo.off");
   std::ofstream bdry_file("o_parkfieldBdry.off");
+  std::ofstream trim_file("o_parkfieldBdry_trimmed.off" );
+  trim_file << fsbPoly;
   topoComplex.output_facets_in_complex_to_off( off_file );
   // fsbComplex.output_boundary_to_off( bdry_file );
-  bdry_file << fsbPoly;
 
   EDGE_LOG_INFO << "thank you for using EDGEcut!";
 }
