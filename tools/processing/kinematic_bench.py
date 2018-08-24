@@ -187,7 +187,7 @@ def writeSrs( i_nDims, i_outFile, i_srs ):
   l_flush = 0;
   for l_su in i_srs:
     l_rootGroup['sliprates1'][l_first:l_first+len(l_su)] = l_su
-    if( i_nDims > 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
+    #if( i_nDims > 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
     l_first = l_first + len(l_su)
 
     # flush periodically
