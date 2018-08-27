@@ -30,7 +30,7 @@
 INITIALIZE_EASYLOGGINGPP
 #include "surf/meshUtils.h"
 #include "surf/Topo.h"
-#include "implicit_functions.h"
+// #include "implicit_functions.h"
 
 
 using namespace edge_cut::surf;
@@ -53,31 +53,40 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "";
   EDGE_LOG_INFO << "ready to go..";
 
+  const double l_xMin =  -24950;
+  const double l_xMax =   24950;
+  const double l_yMin =  -24950;
+  const double l_yMax =   24950;
+  const double l_zMin =  -10000;
+  const double l_zMax =   80000;
 
-  // Compute the 1D Features we want to preserve
-  // This removes "rounded edges" at the boundary of the domain and creates a
-  // shart fault/topography interface
+
+  EDGE_LOG_INFO << "Constructing Delaunay triangulation for topography...";
+  const std::string l_topoFile = "./data/topo_alex-100.xyz";
+  edge_cut::surf::Topo l_topo( l_topoFile, l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax );
+
+  EDGE_LOG_INFO << "Constructing polyhedral surface model of topography...";
   std::stringstream   topoStream;
   Polyhedron          topoSurface;
-  writeTria2ToOff< edge_cut::surf::Triangulation >( g_topo.m_delTria, topoStream );
+  l_topo.writeTriaToOff( topoStream );
   if (!topoStream || !(topoStream >> topoSurface) || topoSurface.is_empty()
-             || !CGAL::is_triangle_mesh(topoSurface)) {
+             || !CGAL::is_triangle_mesh( topoSurface ) ) {
     std::cerr << "Input stream for topography triangulation is not valid." << std::endl;
     return 1;
   }
-  // std::cout << topoStream.str() << std::endl;
-  // topoStream.str( std::string() );
-  // topoStream.clear();
-  // std::cout << topoSurface.size_of_border_halfedges() << std::endl;
-  // std::cout << topoSurface.size_of_halfedges() << std::endl;
 
+  EDGE_LOG_INFO << "Constructing polyhedral surface model of domain boundary...";
+  Polyhedron l_bdryPoly;
+  edge_cut::surf::makeFreeSurfBdry( l_bdryPoly, l_topo );
+
+  EDGE_LOG_INFO << "Computing topography-boundary intersection...";
   Poly_slicer   topoSlicer( topoSurface );
   Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
   std::list< Polyline_type > features;
-  K::Plane_3    yMinPlane  = K::Plane_3( 0, 1, 0, -1 * Y_MIN );
-  K::Plane_3    yMaxPlane  = K::Plane_3( 0, 1, 0, -1 * Y_MAX );
-  K::Plane_3    xMinPlane  = K::Plane_3( 1, 0, 0, -1 * X_MIN );
-  K::Plane_3    xMaxPlane  = K::Plane_3( 1, 0, 0, -1 * X_MAX );
+  K::Plane_3    yMinPlane  = K::Plane_3( 0, 1, 0, -1 * l_yMin );
+  K::Plane_3    yMaxPlane  = K::Plane_3( 0, 1, 0, -1 * l_yMax );
+  K::Plane_3    xMinPlane  = K::Plane_3( 1, 0, 0, -1 * l_xMin );
+  K::Plane_3    xMaxPlane  = K::Plane_3( 1, 0, 0, -1 * l_xMax );
 
   yMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMinPlane );
   yMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMaxPlane );
@@ -93,25 +102,22 @@ int main( int i_argc, char *i_argv[] ) {
   features.push_back( xMaxRidges );
 
 
-  Polyhedron l_freeSurfBdry;
-  edge_cut::surf::makeFreeSurfBdry( l_freeSurfBdry );
-
+  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
   // The "re-meshing" form of make-mesh only works when the polyhedral domain
   // is constructed from a vector of polyhedral surfaces (as far as I can tell )
   std::vector< Polyhedron* > topoSurfVector(1, &topoSurface);
-  std::vector< Polyhedron* > fsbVector = { &l_freeSurfBdry };
-
+  std::vector< Polyhedron* > l_bdryVector = { &l_bdryPoly };
 
   // Create a polyhedral domain, with only one polyhedron,
   // and no "bounding polyhedron", so the volumetric part of the domain will be
   // empty.
-  Mesh_domain l_domain(topoSurfVector.begin(), topoSurfVector.end());
-  Mesh_domain fsbDomain( fsbVector.begin(), fsbVector.end() );
+  Mesh_domain l_domain( topoSurfVector.begin(), topoSurfVector.end() );
+  Mesh_domain l_bdryDomain( l_bdryVector.begin(), l_bdryVector.end() );
 
   // Add features computed above
-  fsbDomain.add_features( features.begin(), features.end() );
+  l_bdryDomain.add_features( features.begin(), features.end() );
   l_domain.add_features( features.begin(), features.end() );
-  // l_domain.detect_features(); //includes detection of borders
+  l_domain.detect_features(); //includes detection of borders
 
   // Meshing Criteria
   //    Edge Size - Max distance between protecting balls in 1D feature preservation
@@ -121,88 +127,70 @@ int main( int i_argc, char *i_argv[] ) {
   //    Cell Size - Tetrahedral circumradius
   //    Cell Radius/Edge Ratio - Max ratio of circumradius to shortest edge (mesh quality parameter) [ MUST BE >= 2 ]
   //
-  // WARNING the mesher cannot detect and remove "slivers" - optimizers must be
-  //         used to remove them and improve mesh quality
+  // NOTE the mesher cannot detect and remove "slivers" - optimizers must be
+  //      used to remove them and improve mesh quality
   // NOTE A "Surface Delaunay Ball" is the 3D ball circumscribing a triangle surface facet which also
   //      has its center on the theoretical surface to be meshed. The center of the Surface
   //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
   //      is a poor approximation to the theoretical surface
-  Mesh_criteria l_criteria( CGAL::parameters::edge_size = 800,
-                            CGAL::parameters::facet_angle = 25,
-                            CGAL::parameters::facet_size = 600,
-                            CGAL::parameters::facet_distance = 100);
+  K::FT l_scale = 10;
+  K::Point_3 l_center = CGAL::ORIGIN;
+  K::FT l_innerRefineRad = 15000;
+  K::FT l_outerRefineRad = 24000;
 
+  K::FT l_edgeLengthBase = 100;
+  K::FT l_facetSizeBase = 60;
+  K::FT l_facetApproxBase = 20;
+  K::FT l_angleBound = 25;
+
+
+  // NOTE meshes must share common edge refinement criteria in order for borders
+  //      to coincide. (recall edge criteria only affects specified 1D features)
+  SizingField l_edgeCrit( l_edgeLengthBase, l_scale, l_center, l_innerRefineRad, l_outerRefineRad );
+
+  SizingField l_topoFacetCrit( l_facetSizeBase, l_scale, l_center, l_innerRefineRad, l_outerRefineRad );
+  SizingField l_bdryFacetCrit( l_facetSizeBase, l_scale, l_center, 0, 0 );
+  SizingField l_topoApproxCrit( l_facetApproxBase, l_scale, l_center, l_innerRefineRad, l_outerRefineRad );
+  SizingField l_bdryApproxCrit( l_facetApproxBase, l_scale, l_center, 0, 0 );
+
+  Mesh_criteria   l_topoCriteria( CGAL::parameters::edge_size = l_edgeCrit,
+                                  CGAL::parameters::facet_size = l_topoFacetCrit,
+                                  CGAL::parameters::facet_distance = l_topoApproxCrit,
+                                  CGAL::parameters::facet_angle = l_angleBound         );
+  Mesh_criteria   l_bdryCriteria( CGAL::parameters::edge_size = l_edgeCrit,
+                                  CGAL::parameters::facet_size = l_bdryFacetCrit,
+                                  CGAL::parameters::facet_distance = l_bdryApproxCrit,
+                                  CGAL::parameters::facet_angle = l_angleBound         );
 
   // Mesh generation
   // NOTE the optimizers have more options than specified here
-  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>(  l_domain, l_criteria,
+  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>(  l_domain, l_topoCriteria,
+                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+  C3t3 bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain, l_bdryCriteria,
                 CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
-  C3t3 fsbComplex = CGAL::make_mesh_3<C3t3>( fsbDomain, l_criteria,
-                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
-  EDGE_LOG_INFO << "trimming free surface boundary mesh";
-  Polyhedron fsbPoly, topoPoly;
+  EDGE_LOG_INFO << "Trimming boundary mesh...";
+  Polyhedron l_bdryPolyTrimmed, topoPoly;
   edge_cut::surf::c3t3ToPolyhedron( topoComplex, topoPoly );
-  edge_cut::surf::c3t3ToPolyhedron( fsbComplex, fsbPoly );
-
-  // fsbComplex.output_facets_in_complex_to_off( tempFsbStream );
-  // tempFsbStream >> fsbPoly;
-  // tempFsbStream.str( std::string() );
-
-
-  // if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
-  //   CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
-
-
-  // CGAL::export_triangulation_3_to_off<  C3t3::Triangulation::Geom_traits,
-  //                                       C3t3::Triangulation::Triangulation_data_structure >(  tempTopoStream,
-  //                                                                                             topoComplex.triangulation(),
-  //                                                                                             true );
-  // writeTria3ToOff< C3t3::Triangulation >( topoComplex.triangulation(), tempTopoStream );
-
-
-  // // std::cout << "topoComplexPoly char count = " << tempTopoStream.gcount() << std::endl;
-  // if( !tempTopoStream ) std::cout << "somethings wrong..." << std::endl;
-  // std::cout << "is bad before: " << tempTopoStream.bad() << std::endl;
-  // CGAL::scan_OFF( tempTopoStream, topoPoly, true);
-  // // tempTopoStream >> topoPoly;
-  // std::cout << "is bad after: " << tempTopoStream.bad() << std::endl;
-  // std::cout << tempTopoStream.str();
-  // // tempTopoStream.str( std::string() );
-
-  std::cout << "Is empty: " << topoPoly.is_empty() << std::endl;
-  std::cout << "Is closed: " << topoPoly.is_closed() << std::endl;
-  std::cout << "Is pure triangle: " << topoPoly.is_pure_triangle() << std::endl;
-  std::cout << "Num verts: " << topoPoly.size_of_vertices() << std::endl;
-  std::cout << "Num edges: " << topoPoly.size_of_halfedges() << std::endl;
-  std::cout << "Num halfedges: " << topoPoly.size_of_border_halfedges() << std::endl;
-
-  std::cout << "Is empty: " << fsbPoly.is_empty() << std::endl;
-  std::cout << "Is closed: " << fsbPoly.is_closed() << std::endl;
-  std::cout << "Is pure triangle: " << fsbPoly.is_pure_triangle() << std::endl;
-  std::cout << "Num verts: " << fsbPoly.size_of_vertices() << std::endl;
-  std::cout << "Num edges: " << fsbPoly.size_of_halfedges() << std::endl;
-  std::cout << "Num halfedges: " << fsbPoly.size_of_border_halfedges() << std::endl;
-
-  edge_cut::surf::trimFSB( topoPoly, fsbPoly );
+  edge_cut::surf::c3t3ToPolyhedron( bdryComplex, l_bdryPolyTrimmed );
+  edge_cut::surf::trimFSB( topoPoly, l_bdryPolyTrimmed );
 
 
 
   // Output
-  EDGE_LOG_INFO << "writing surface mesh";
+  EDGE_LOG_INFO << "Writing meshes...";
   std::ofstream off_file("o_parkfieldTopo.off");
   std::ofstream bdry_file("o_parkfieldBdry.off");
-  std::ofstream trim_file("o_parkfieldBdry_trimmed.off" );
-  trim_file << fsbPoly;
+  bdry_file << l_bdryPolyTrimmed;
   topoComplex.output_facets_in_complex_to_off( off_file );
-  // fsbComplex.output_boundary_to_off( bdry_file );
+  EDGE_LOG_INFO << "Done.";
 
-  EDGE_LOG_INFO << "thank you for using EDGEcut!";
+  EDGE_LOG_INFO << "Thank you for using EDGEcut!";
 }

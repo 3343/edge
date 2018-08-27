@@ -52,19 +52,23 @@ namespace edge_cut{
      * ----------------- layers[2]
      *       ...
      **/
-    struct DepthSizingField {
+    struct SizingField {
       typedef K::FT FT;
       typedef K::Point_3 Point_3;
       typedef Mesh_domain::Index Index;
 
-      FT                m_baseValue;
-      std::vector< FT > m_layers;
-      std::vector< FT > m_scales;
+      FT                m_innerVal;
+      FT                m_scale;
+      Point_3           m_center;
+      FT                m_innerRad;
+      FT                m_outerRad;
 
-      DepthSizingField( FT i_baseValue, std::vector< FT > i_layers, std::vector< FT > i_scales ) :
-        m_baseValue( i_baseValue ),
-        m_layers( i_layers ),
-        m_scales( i_scales )
+      SizingField( FT i_innerVal, FT i_scale, Point_3 i_center, FT i_innerRad, FT i_outerRad ) :
+        m_innerVal( i_innerVal ),
+        m_scale( i_scale ),
+        m_center( i_center ),
+        m_innerRad( i_innerRad ),
+        m_outerRad( i_outerRad )
       { }
 
       FT operator()(const Point_3& p, const int, const Index&) const;
@@ -128,13 +132,17 @@ namespace edge_cut{
      * Creates a basic polyhedral model of the free surface boundaries of
      * a three-dimensional box with topography.
      **/
-    Polyhedron& makeFreeSurfBdry( Polyhedron& i_topo );
-    Polyhedron& trimFSB(  Polyhedron const & i_topo,
-                          Polyhedron       & io_fsb );
-    void c3t3ToPolyhedron( C3t3 const & c3t3, Polyhedron & polyhedron );
+    Polyhedron& makeFreeSurfBdry ( Polyhedron        & io_bdry,
+                                   Topo        const & i_topo  );
+
+    Polyhedron& trimFSB (          Polyhedron const & i_topo,
+                                   Polyhedron       & io_fsb );
+
+    void c3t3ToPolyhedron(         C3t3       const & c3t3,
+                                   Polyhedron       & polyhedron );
 
 
-
+    // TODO Currently unneeded, should be removed
     // template perameter "Triangulation" must be model of CGAL::Triangulation_2
     template< class Triangulation >
     std::ostream & writeTria2ToOff( Triangulation& tr, std::ostream & os ) {

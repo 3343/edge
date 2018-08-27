@@ -53,14 +53,10 @@ namespace edge_cut {
 
 class edge_cut::surf::Topo {
 public:
+    // Bounding box of region
+    const double m_xMin, m_xMax, m_yMin, m_yMax, m_zMin, m_zMax;
+
     // 2.5D delaunay triangulation of the topographic data
-    // CGAL::Triangulation_hierarchy_2<
-    //   CGAL::Delaunay_triangulation_2 <
-    //     CGAL::Projection_traits_xz_3 <
-    //       CGAL::Cartesian<double>
-    //     >
-    //   >
-    // > m_delTria;
     Triangulation m_delTria;
 
     /*
@@ -76,7 +72,13 @@ public:
      *
      * @param i_topoFile location of the topographic data.
      **/
-    Topo( std::string const & i_topoFile );
+    Topo( std::string const & i_topoFile,
+          double              i_xMin,
+          double              i_xMax,
+          double              i_yMin,
+          double              i_yMax,
+          double              i_zMin,
+          double              i_zMax      );
 
     /**
      * Computes the signed z-distance between a point and the triangulation
@@ -124,7 +126,7 @@ public:
      * @param i_os ostream to be written to
      * @return the ostream after writing
      **/
-    // std::ostream & writeTriaToOff( std::ostream & os ) const;
+    std::ostream & writeTriaToOff( std::ostream & os ) const;
 };
 
 #endif

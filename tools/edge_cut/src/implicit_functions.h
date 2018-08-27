@@ -4,7 +4,7 @@
 #include "surf/Topo.h"
 
 // TODO Incorporate global variables into a class
-// NOTE These global variables are defined in "implicit_functions.h"
+// NOTE These global variables are defined in "implicit_functions.cpp"
 extern const double X_MIN, X_MAX, Y_MIN, Y_MAX, Z_MIN, Z_MAX, X0, Y0, F_ANGLE;
 extern const std::string TOPO_FILE;
 extern edge_cut::surf::Topo g_topo;

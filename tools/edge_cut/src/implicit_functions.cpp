@@ -1,16 +1,14 @@
 #include "implicit_functions.h"
 
-const double X_MIN =  -29950;
-const double X_MAX =   29950;
-const double Y_MIN =  -29950;
-const double Y_MAX =   29950;
+const double X_MIN =  -24950;
+const double X_MAX =   24950;
+const double Y_MIN =  -24950;
+const double Y_MAX =   24950;
 const double Z_MIN =  -10000;
-const double Z_MAX =   10000;
+const double Z_MAX =   80000;
 const double X0    =  335000;
 const double Y0    = 3775000;
 const double F_ANGLE = 0;
-const std::string TOPO_FILE = "./data/topo-parkfield-60.xyz";
-edge_cut::surf::Topo g_topo( TOPO_FILE );
 
 
 double belowTopo( const double i_x,

@@ -1,21 +1,22 @@
 #include <CGAL/IO/OFF_reader.h>  // We get linker error if this included in header. TODO
 #include "surf/meshUtils.h"
+#include "io/logging.hpp"
 
+// TODO check out gmsh approach to linear scaled fields
 edge_cut::surf::K::FT
-edge_cut::surf::DepthSizingField::operator()( const Point_3& p, const int, const Index& ) const
+edge_cut::surf::SizingField::operator()( const Point_3& p, const int, const Index& ) const
 {
+  FT l_distance = std::sqrt( std::pow( p.x()-m_center.x(), 2 ) + std::pow( p.y()-m_center.y(), 2 ) ); // TODO change to 2D distance
   // Check if point is above first layer
-  if ( p.z() > m_layers[0] )
-    return m_baseValue;
-
-  // Test whether point is above increasingly deep layers
-  for ( std::size_t l_layer = 1; l_layer < m_layers.size(); l_layer++ ) {
-    if ( p.z() > m_layers[ l_layer ] )
-      return m_baseValue * m_scales[ l_layer - 1 ];
+  if ( l_distance < m_innerRad )
+    return m_innerVal;
+  else if ( l_distance >= m_outerRad )
+    return m_scale * m_innerVal;
+  else {
+    // Control should never reach here if inner and outer radii are equal
+    assert( m_outerRad != m_innerRad );
+    return ( 1 + ( l_distance - m_innerRad ) * ( m_scale - 1) / ( m_outerRad - m_innerRad ) ) * m_innerVal;
   }
-
-  // Point must be below deepest layer
-  return m_baseValue * m_scales[ m_layers.size() - 1 ];
 }
 
 
@@ -301,19 +302,20 @@ edge_cut::surf::orderPolyline( Polyline_type & i_p, unsigned int i_n ) {
 // }
 
 
-edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron& io_freeSurfBdry )
+edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron        & io_bdry,
+                                                              Topo        const & i_topo  )
 {
   K::Point_3 p0, p1, p2, p3, p4, p5, p6, p7;
   std::vector< K::Point_3 > l_points;
 
-  l_points.emplace_back( X_MIN, Y_MIN, Z_MIN );
-  l_points.emplace_back( X_MAX, Y_MIN, Z_MIN );
-  l_points.emplace_back( X_MIN, Y_MAX, Z_MIN );
-  l_points.emplace_back( X_MAX, Y_MAX, Z_MIN );
-  l_points.emplace_back( X_MIN, Y_MIN, Z_MAX );
-  l_points.emplace_back( X_MAX, Y_MIN, Z_MAX );
-  l_points.emplace_back( X_MIN, Y_MAX, Z_MAX );
-  l_points.emplace_back( X_MAX, Y_MAX, Z_MAX );
+  l_points.emplace_back( i_topo.m_xMin, i_topo.m_yMin, i_topo.m_zMin );
+  l_points.emplace_back( i_topo.m_xMax, i_topo.m_yMin, i_topo.m_zMin );
+  l_points.emplace_back( i_topo.m_xMin, i_topo.m_yMax, i_topo.m_zMin );
+  l_points.emplace_back( i_topo.m_xMax, i_topo.m_yMax, i_topo.m_zMin );
+  l_points.emplace_back( i_topo.m_xMin, i_topo.m_yMin, i_topo.m_zMax );
+  l_points.emplace_back( i_topo.m_xMax, i_topo.m_yMin, i_topo.m_zMax );
+  l_points.emplace_back( i_topo.m_xMin, i_topo.m_yMax, i_topo.m_zMax );
+  l_points.emplace_back( i_topo.m_xMax, i_topo.m_yMax, i_topo.m_zMax );
 
   std::vector< std::vector< std::size_t > > l_polygons = {  { 0, 1, 2 },
                                                             { 1, 2, 3 },
@@ -329,12 +331,14 @@ edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron& io_fre
   CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(  l_points,
                                                                 l_polygons,
-                                                                io_freeSurfBdry );
+                                                                io_bdry      );
+  io_bdry.normalize_border();
 
-  return io_freeSurfBdry;
+  return io_bdry;
 }
 
-
+// TODO WARNING will not work if there are not at least two facets above
+// the topography on the free surface boundary
 void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
                                         Polyhedron        & polyhedron )
 {
@@ -342,7 +346,7 @@ void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
   std::vector<K::Point_3> points;
   std::vector< std::vector<std::size_t> > polygons;
 
-  CGAL::internal::output_facets_in_complex_to_off<C3t3>( c3t3, sstream );
+  CGAL::internal::output_facets_in_complex_to_off<C3t3>( c3t3, sstream ); // TODO change to c3t3 member function
 
   if (!CGAL::read_OFF( sstream, points, polygons))
   {
@@ -361,43 +365,55 @@ void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
 edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
                                                       Polyhedron       & io_fsb )
 {
+  // Const types are used for the (unchanged) topo mesh
   typedef Polyhedron::Vertex_const_handle       Vertex_const;
+  typedef Polyhedron::Halfedge_const_handle     Halfedge_const;
+
+  // Non-const types are for the boundary mesh
   typedef Polyhedron::Vertex_handle             Vertex;
   typedef Polyhedron::Vertex_iterator           VertexIt;
   typedef Polyhedron::Halfedge_handle           Halfedge;
-  typedef Polyhedron::Halfedge_const_handle     Halfedge_const;
-  // typedef Polyhedron::Facet_const_handle        Facet;
   typedef Polyhedron::Halfedge_const_iterator   HalfedgeIt;
+
+  // We cannot compare vertices and halfedges on two different polyhedral meshes,
+  // because they will always have different connectivity information.
+  // The Point type has no connectivity data, so it can be used to compare
+  // vertices on two different meshes.
   typedef Polyhedron::Point                     Point;
+
 
   Vertex l_vertFsb, l_vertPrevFsb;
   Vertex_const l_vertTopo;
 
   // Get a handle to a vertex/halfedge pair on the border of the topo mesh
   // This is where we will start our cut of the surface
-  std::cout << "a" << std::endl;
+  io_fsb.normalize_border();
+  if ( !i_topo.normalized_border_is_valid() ) {
+    EDGE_LOG_INFO << "Attempted to trim border mesh that was not normalized - mesh will not be trimmed";
+    return io_fsb;
+  }
   HalfedgeIt l_borderIt = i_topo.border_halfedges_begin();
-  std::cout << "b" << std::endl;
-  std::cout << i_topo.size_of_border_halfedges() << std::endl;
   l_vertTopo = l_borderIt->vertex();
 
-  std::cout << "Finding first matching point in FSB mesh" << std::endl;
   // Get a handle within the fsb mesh to the same vertex
   VertexIt l_vIt = io_fsb.vertices_begin();
-  while( l_vIt->point() != l_vertTopo->point() ) l_vIt++;
+  while( l_vIt->point() != l_vertTopo->point() ) {
+    l_vIt++;
+    if ( l_vIt == io_fsb.vertices_end() ) {
+      EDGE_LOG_INFO << "Could not find coincident vertex between topography and border mesh - mesh will not be trimmed";
+      return io_fsb;
+    }
+  }
   l_vertFsb = l_vIt;
 
-  std::cout << "Finding second matching point in FSB mesh" << std::endl;
-  // Get a handle within fsb mesh to the "previous" border edge when circulating the edge of topography
+  // Get a handle within fsb mesh to the "previous" border vertex when circulating the edge of topography
   l_vIt = io_fsb.vertices_begin();
   Vertex_const l_vertPrevTopo;
   auto l_edge = l_vertTopo->vertex_begin();
   while( !l_edge->is_border_edge() ){ l_edge++; }
   l_vertPrevTopo = l_edge->prev()->vertex();
-  //   if( l_edge.is_border_edge )
-  //     l_vertPrevTopo = l_edge.prev().vertex();
-  // }
-  while( l_vIt->point() != l_vertPrevTopo->point() ) l_vIt++;
+
+  while( l_vIt->point() != l_vertPrevTopo->point() ) { l_vIt++; }
   l_vertPrevFsb = l_vIt;
 
 
@@ -418,53 +434,43 @@ edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
     l_h = l_rootHalfedge->opposite();
   }
 
-  // std::cout << "Beginning Trim" << std::endl;
-  // For each topography border halfedge, delete all adjacent facets on the fsb mesh
-  // which are adjacent to the halfedge and above the topography
+  // For each topography vertex, delete all adjacent facets on the fsb mesh
+  // which are adjacent to the vertex and above the topography
   Halfedge_const l_borderHalfedge = l_borderIt;
   Halfedge_const l_nextBorderHalfedge;
   Point l_startPoint = l_borderHalfedge->vertex()->point();  //TODO using points here in case halfedge handles get invalidated/changed
   do {
-    // std::cout << "Vertex: " << l_borderHalfedge->vertex()->point() << std::endl;
     // Compute the next halfedge on the border of the topography
     auto l_borderEdgeCirc = l_borderHalfedge->vertex()->vertex_begin();
     while( ! l_borderEdgeCirc->next()->is_border_edge() ){ l_borderEdgeCirc++; }
     l_nextBorderHalfedge = l_borderEdgeCirc->next();
 
-    // std::cout << "Next Vertex: " << l_nextBorderHalfedge->vertex()->point() << std::endl;
-    // for( auto const & l_edge : l_borderHalfedge->vertex()->vertex_begin() ){
-    //   if( l_edge->next()->is_border_edge )
-    //     l_nextBorderHalfedge = l_edge->next();
-    // }
-
-    // // Must compare point data because vertices belong to different meshes
-
+    // Erase all but the last facet adjacent to the vertex which are above topography
+    // The last facet is also adjacent to the next border vertex, and will be
+    // deleted at the start of the next loop
     while( l_h->next()->vertex()->point() != l_nextBorderHalfedge->vertex()->point() ){
+
       // If halfedge is a border halfedge, then there are no more facets to delete TODO
       if ( l_h->is_border() ) break;
-      
-      if( orderedPos )
-        l_hNext = l_h->next()->opposite();
-      else
-        l_hNext = l_h->prev()->opposite();
+
+      if( orderedPos )  l_hNext = l_h->next()->opposite();
+      else              l_hNext = l_h->prev()->opposite();
 
       io_fsb.erase_facet( l_h );
-
       l_h = l_hNext;
     }
-    if( orderedPos )
-      l_h = l_h->next();
-    else
-      l_h = l_h->prev();
+
+    if( orderedPos ) l_h = l_h->next();
+    else             l_h = l_h->prev();
 
     l_borderHalfedge = l_nextBorderHalfedge;
-    std::cout << "leaving loop iter" << std::endl;
   } while ( l_borderHalfedge->vertex()->point() != l_startPoint );
 
   // Iterate over all non-border halfedges for the one with the highest elevation
   // This halfedge will be on the "upper" connected component
-  Halfedge l_hMax = io_fsb.halfedges_begin();
+  // TODO this assumes that the trim splits the mesh into two components
   io_fsb.normalize_border();
+  Halfedge l_hMax = io_fsb.halfedges_begin();
   for ( auto l_it = io_fsb.halfedges_begin(); l_it != io_fsb.border_halfedges_begin(); l_it++ ) {
     if ( l_it->vertex()->point().z() > l_hMax->vertex()->point().z() )
       l_hMax = l_it;

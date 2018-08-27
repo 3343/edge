@@ -41,7 +41,14 @@ void edge_cut::surf::Topo::computeDelaunay( std::string const & i_topoFile ) {
   EDGE_LOG_INFO << "    #faces:    " << m_delTria.number_of_faces();
 }
 
-edge_cut::surf::Topo::Topo( std::string const & i_topoFile ) {
+edge_cut::surf::Topo::Topo( std::string const & i_topoFile, double i_xMin, double i_xMax, double i_yMin, double i_yMax, double i_zMin, double i_zMax ) :
+  m_xMin( i_xMin ),
+  m_xMax( i_xMax ),
+  m_yMin( i_yMin ),
+  m_yMax( i_yMax ),
+  m_zMin( i_zMin ),
+  m_zMax( i_zMax )
+{
   computeDelaunay( i_topoFile );
 }
 
@@ -163,4 +170,45 @@ unsigned short edge_cut::surf::Topo::interSeg( TopoPoint const & i_segPt1,
 
   // return number of intersections
   return l_interCount;
+}
+
+std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
+  typedef typename Triangulation::Vertex_handle                Vertex_handle;
+  typedef typename Triangulation::Finite_vertices_iterator     Vertex_iterator;
+  typedef typename Triangulation::Finite_faces_iterator        Face_iterator;
+
+  os << "OFF" << std::endl;
+
+  // outputs the number of vertices and faces
+  std::size_t num_verts = m_delTria.number_of_vertices();
+  std::size_t num_faces = m_delTria.number_of_faces();
+  std::size_t num_edges = 0;                          //Assumption
+
+  os << num_verts << " " << num_faces << " " << num_edges << std::endl;
+
+  // write the vertices
+  std::map<Vertex_handle, std::size_t> index_of_vertex;
+
+  std::size_t v_idx = 0;
+  for( Vertex_iterator it = m_delTria.finite_vertices_begin(); it != m_delTria.finite_vertices_end(); ++it, ++v_idx )
+  {
+      os << *it << std::endl;
+      index_of_vertex[it] = v_idx;
+  }
+  CGAL_assertion( v_idx == num_verts );
+
+  // write the vertex indices of each full_cell
+  std::size_t f_idx = 0;
+  for( Face_iterator it = m_delTria.finite_faces_begin(); it != m_delTria.finite_faces_end(); ++it, ++f_idx )
+  {
+      os << 3;
+      for( int j = 0; j < 3; ++j )
+      {
+        os << ' ' << index_of_vertex[ it->vertex(j) ];
+      }
+      os << std::endl;
+  }
+  CGAL_assertion( f_idx == num_faces );
+
+  return os;
 }
