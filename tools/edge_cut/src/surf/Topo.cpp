@@ -26,20 +26,6 @@
 
 #include <fstream>
 
-void edge_cut::surf::Topo::computeDelaunay( std::string const & i_topoFile ) {
-  // parse the points
-  TopoPoint l_pt;
-
-  std::ifstream l_ptFile( i_topoFile, std::ios::in );
-
-  while ( l_ptFile >> l_pt ) {
-    m_delTria.insert( l_pt );
-  }
-
-  EDGE_LOG_INFO << "  computed delaunay triangulation:";
-  EDGE_LOG_INFO << "    #vertices: " << m_delTria.number_of_vertices();
-  EDGE_LOG_INFO << "    #faces:    " << m_delTria.number_of_faces();
-}
 
 edge_cut::surf::Topo::Topo( std::string const & i_topoFile, double i_xMin, double i_xMax, double i_yMin, double i_yMax, double i_zMin, double i_zMax ) :
   m_xMin( i_xMin ),
@@ -49,13 +35,26 @@ edge_cut::surf::Topo::Topo( std::string const & i_topoFile, double i_xMin, doubl
   m_zMin( i_zMin ),
   m_zMax( i_zMax )
 {
-  computeDelaunay( i_topoFile );
+  std::ifstream l_ptFile( i_topoFile, std::ios::in );
+  std::istream_iterator< TopoPoint > l_fileBegin( l_ptFile );
+  std::istream_iterator< TopoPoint > l_fileEnd;
+
+  m_delTria = new Triangulation( l_fileBegin, l_fileEnd );
+
+  EDGE_LOG_INFO << "  computed delaunay triangulation:";
+  EDGE_LOG_INFO << "    #vertices: " << m_delTria->number_of_vertices();
+  EDGE_LOG_INFO << "    #faces:    " << m_delTria->number_of_faces();
+}
+
+edge_cut::surf::Topo::~Topo()
+{
+  delete m_delTria;
 }
 
 double edge_cut::surf::Topo::topoDisp( TopoPoint const & i_pt ) const {
   double l_zTopoDisp = 1;
 
-  Triangulation::Face_handle l_faceHa = m_delTria.locate( i_pt );
+  Triangulation::Face_handle l_faceHa = m_delTria->locate( i_pt );
 
   // return if no face qualifies
   if( l_faceHa == NULL ) {
@@ -104,7 +103,7 @@ bool edge_cut::surf::Topo::interRay( TopoPoint const & i_pt,
   Triangulation::Face_handle l_faceHa;
 
   // get the possible 2D face
-  l_faceHa = m_delTria.locate( i_pt );
+  l_faceHa = m_delTria->locate( i_pt );
 
   // return if no face qualifies
   if( l_faceHa == NULL ) return false;
@@ -137,7 +136,7 @@ unsigned short edge_cut::surf::Topo::interSeg( TopoPoint const & i_segPt1,
   CGAL::Segment_3< K > l_seg( i_segPt1, i_segPt2 );
 
   // get intersections in 2D
-  Triangulation::Line_face_circulator l_lineWalk = m_delTria.line_walk( i_segPt1, i_segPt2 ), l_lineWalkDone(l_lineWalk);
+  Triangulation::Line_face_circulator l_lineWalk = m_delTria->line_walk( i_segPt1, i_segPt2 ), l_lineWalkDone(l_lineWalk);
 
   unsigned int l_interCount = 0;
 
@@ -180,8 +179,8 @@ std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
   os << "OFF" << std::endl;
 
   // outputs the number of vertices and faces
-  std::size_t num_verts = m_delTria.number_of_vertices();
-  std::size_t num_faces = m_delTria.number_of_faces();
+  std::size_t num_verts = m_delTria->number_of_vertices();
+  std::size_t num_faces = m_delTria->number_of_faces();
   std::size_t num_edges = 0;                          //Assumption
 
   os << num_verts << " " << num_faces << " " << num_edges << std::endl;
@@ -190,7 +189,7 @@ std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
   std::map<Vertex_handle, std::size_t> index_of_vertex;
 
   std::size_t v_idx = 0;
-  for( Vertex_iterator it = m_delTria.finite_vertices_begin(); it != m_delTria.finite_vertices_end(); ++it, ++v_idx )
+  for( Vertex_iterator it = m_delTria->finite_vertices_begin(); it != m_delTria->finite_vertices_end(); ++it, ++v_idx )
   {
       os << *it << std::endl;
       index_of_vertex[it] = v_idx;
@@ -199,7 +198,7 @@ std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
 
   // write the vertex indices of each full_cell
   std::size_t f_idx = 0;
-  for( Face_iterator it = m_delTria.finite_faces_begin(); it != m_delTria.finite_faces_end(); ++it, ++f_idx )
+  for( Face_iterator it = m_delTria->finite_faces_begin(); it != m_delTria->finite_faces_end(); ++it, ++f_idx )
   {
       os << 3;
       for( int j = 0; j < 3; ++j )

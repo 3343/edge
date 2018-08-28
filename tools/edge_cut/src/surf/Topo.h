@@ -57,18 +57,11 @@ public:
     const double m_xMin, m_xMax, m_yMin, m_yMax, m_zMin, m_zMax;
 
     // 2.5D delaunay triangulation of the topographic data
-    Triangulation m_delTria;
+    Triangulation* m_delTria;
 
-    /*
-     * Computes the 2.5D delaynay triangulation from the given topographic data.
-     *
-     * @param i_topoFile location of the topographic data.
-     */
-    void computeDelaunay( std::string const & i_topoFile );
 
-  public:
     /**
-     * Constructor: Derives the delaunay triangulation of the topo data.
+     * Constructor: Computes the 2.5D Delaunay triangulation from the given topographic data.
      *
      * @param i_topoFile location of the topographic data.
      **/
@@ -79,6 +72,15 @@ public:
           double              i_yMax,
           double              i_zMin,
           double              i_zMax      );
+
+    /**
+     * Destructor: Deletes memory allocated to Delaunay Triangulation
+     **/
+    ~Topo();
+
+    // Delete copy constructor and copy assignment
+    Topo( const Topo& ) = delete;
+    Topo& operator=( const Topo& ) = delete;
 
     /**
      * Computes the signed z-distance between a point and the triangulation

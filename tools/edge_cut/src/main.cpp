@@ -62,7 +62,7 @@ int main( int i_argc, char *i_argv[] ) {
 
 
   EDGE_LOG_INFO << "Constructing Delaunay triangulation for topography...";
-  const std::string l_topoFile = "./data/topo_alex-100.xyz";
+  const std::string l_topoFile = "./data/topo_alex-20.xyz";
   edge_cut::surf::Topo l_topo( l_topoFile, l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax );
 
   EDGE_LOG_INFO << "Constructing polyhedral surface model of topography...";
@@ -74,6 +74,7 @@ int main( int i_argc, char *i_argv[] ) {
     std::cerr << "Input stream for topography triangulation is not valid." << std::endl;
     return 1;
   }
+  topoStream.str( std::string() );
 
   EDGE_LOG_INFO << "Constructing polyhedral surface model of domain boundary...";
   Polyhedron l_bdryPoly;
@@ -136,11 +137,11 @@ int main( int i_argc, char *i_argv[] ) {
   K::FT l_scale = 10;
   K::Point_3 l_center = CGAL::ORIGIN;
   K::FT l_innerRefineRad = 15000;
-  K::FT l_outerRefineRad = 24000;
+  K::FT l_outerRefineRad = 17500;
 
   K::FT l_edgeLengthBase = 100;
   K::FT l_facetSizeBase = 60;
-  K::FT l_facetApproxBase = 20;
+  K::FT l_facetApproxBase = 80;
   K::FT l_angleBound = 25;
 
 
