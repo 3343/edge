@@ -28,6 +28,7 @@
 
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
+#include "../../../submodules/pugixml/src/pugixml.hpp"
 #include "surf/meshUtils.h"
 #include "surf/Topo.h"
 #include "surf/BdryTrimmer.h"
@@ -54,72 +55,39 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "";
   EDGE_LOG_INFO << "ready to go..";
 
-  const double l_xMin =  -24950;
-  const double l_xMax =   24950;
-  const double l_yMin =  -24950;
-  const double l_yMax =   24950;
-  const double l_zMin =  -10000;
-  const double l_zMax =   80000;
+  pugi::xml_document doc;
+  if (!doc.load_file("data/parkfield.xml")) return -1;
 
-  EDGE_LOG_INFO << "Constructing Delaunay triangulation for topography...";
-  const std::string l_topoFile = "./data/topo_alex-100.xyz";
-  edge_cut::surf::Topo l_topo( l_topoFile, l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax );
+  const double l_xMin = std::stod( doc.child("bbox").child("xMin").child_value() );
+  const double l_xMax = std::stod( doc.child("bbox").child("xMax").child_value() );
+  const double l_yMin = std::stod( doc.child("bbox").child("yMin").child_value() );
+  const double l_yMax = std::stod( doc.child("bbox").child("yMax").child_value() );
+  const double l_zMin = std::stod( doc.child("bbox").child("zMin").child_value() );
+  const double l_zMax = std::stod( doc.child("bbox").child("zMax").child_value() );
+  const std::string l_topoFile = doc.child("topofile").child_value();
 
-  EDGE_LOG_INFO << "Constructing polyhedral surface model of topography...";
-  std::stringstream   topoStream;
-  Polyhedron          topoSurface;
-  l_topo.writeTriaToOff( topoStream );
-  if (!topoStream || !(topoStream >> topoSurface) || topoSurface.is_empty()
-             || !CGAL::is_triangle_mesh( topoSurface ) ) {
-    std::cerr << "Input stream for topography triangulation is not valid." << std::endl;
-    return 1;
-  }
-  topoStream.str( std::string() );
+  double const l_bBox[] = { l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax };
 
-  EDGE_LOG_INFO << "Constructing polyhedral surface model of domain boundary...";
-  Polyhedron l_bdryPoly;
-  edge_cut::surf::makeFreeSurfBdry( l_bdryPoly, l_topo );
+  // Create polyhedral meshes of topography (with whatever sampling we were provided),
+  // and of domain boundary
+  Polyhedron l_topoPoly, l_bdryPoly;
+  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_topoFile );
+  edge_cut::surf::makeFreeSurfBdry( l_bdryPoly, l_bBox );
 
-  EDGE_LOG_INFO << "Computing topography-boundary intersection...";
-  Poly_slicer   topoSlicer( topoSurface );
-  Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
-  std::list< Polyline_type > features;
-  K::Plane_3    yMinPlane  = K::Plane_3( 0, 1, 0, -1 * l_yMin );
-  K::Plane_3    yMaxPlane  = K::Plane_3( 0, 1, 0, -1 * l_yMax );
-  K::Plane_3    xMinPlane  = K::Plane_3( 1, 0, 0, -1 * l_xMin );
-  K::Plane_3    xMaxPlane  = K::Plane_3( 1, 0, 0, -1 * l_xMax );
-
-  yMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMinPlane );
-  yMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMaxPlane );
-  xMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, xMinPlane );
-  xMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, xMaxPlane );
-  edge_cut::surf::orderPolyline( yMinRidges, 0 );
-  edge_cut::surf::orderPolyline( yMaxRidges, 0 );
-  edge_cut::surf::orderPolyline( xMinRidges, 1 );
-  edge_cut::surf::orderPolyline( xMaxRidges, 1 );
-  features.push_back( yMinRidges );
-  features.push_back( yMaxRidges );
-  features.push_back( xMinRidges );
-  features.push_back( xMaxRidges );
-
-
-  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
+  // Create polyhedral domains for re-meshing
   // The "re-meshing" form of make-mesh only works when the polyhedral domain
   // is constructed from a vector of polyhedral surfaces (as far as I can tell )
-  std::vector< Polyhedron* > topoSurfVector(1, &topoSurface);
-  std::vector< Polyhedron* > l_bdryVector = { &l_bdryPoly };
-
-  // Create a polyhedral domain, with only one polyhedron,
-  // and no "bounding polyhedron", so the volumetric part of the domain will be
-  // empty.
-  Mesh_domain l_domain( topoSurfVector.begin(), topoSurfVector.end() );
+  std::vector< Polyhedron* > l_topoVector( 1, &l_topoPoly );
+  std::vector< Polyhedron* > l_bdryVector( 1, &l_bdryPoly );
+  Mesh_domain l_topoDomain( l_topoVector.begin(), l_topoVector.end() );
   Mesh_domain l_bdryDomain( l_bdryVector.begin(), l_bdryVector.end() );
 
-  // Add features computed above
-  l_bdryDomain.add_features( features.begin(), features.end() );
-  l_bdryDomain.detect_features();
-  l_domain.add_features( features.begin(), features.end() );
-  l_domain.detect_features(); //includes detection of borders
+  // Preserve the intersection between topography and boundary meshes.
+  // This ensures that the two meshes coincide on their boundaries.
+  std::list< Polyline_type > l_intersectFeatures = edge_cut::surf::getIntersectionFeatures( l_topoPoly, l_bBox );
+  l_bdryDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
+  l_topoDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
+
 
   // Meshing Criteria
   //    Edge Size - Max distance between protecting balls in 1D feature preservation
@@ -140,11 +108,10 @@ int main( int i_argc, char *i_argv[] ) {
   K::FT l_innerRefineRad = 10000;
   K::FT l_outerRefineRad = 17500;
 
-  K::FT l_edgeLengthBase = 100;
-  K::FT l_facetSizeBase = 60;
-  K::FT l_facetApproxBase = 80;
-  K::FT l_angleBound = 25;
-
+  K::FT l_edgeLengthBase  = std::stod( doc.child("refine").child("edge").child_value() );
+  K::FT l_facetSizeBase   = std::stod( doc.child("refine").child("facet").child_value() );
+  K::FT l_facetApproxBase = std::stod( doc.child("refine").child("approx").child_value() );
+  K::FT l_angleBound      = std::stod( doc.child("refine").child("angle").child_value() );
 
   // NOTE meshes must share common edge refinement criteria in order for borders
   //      to coincide. (recall edge criteria only affects specified 1D features)
@@ -164,9 +131,11 @@ int main( int i_argc, char *i_argv[] ) {
                                   CGAL::parameters::facet_distance = l_bdryApproxCrit,
                                   CGAL::parameters::facet_angle = l_angleBound         );
 
+
   // Mesh generation
   // NOTE the optimizers have more options than specified here
-  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>(  l_domain, l_topoCriteria,
+  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
+  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>(  l_topoDomain, l_topoCriteria,
                 CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
@@ -178,27 +147,26 @@ int main( int i_argc, char *i_argv[] ) {
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
 
+  // Trim bits of boundary mesh which extend above topography
   EDGE_LOG_INFO << "Trimming boundary mesh...";
-  Polyhedron l_bdryPolyTrimmed, topoPoly;
-  edge_cut::surf::c3t3ToPolyhedron( topoComplex, topoPoly );
-  edge_cut::surf::c3t3ToPolyhedron( bdryComplex, l_bdryPolyTrimmed );
-  edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyTrimmed, topoPoly );
+  Polyhedron l_topoPolyMeshed, l_bdryPolyMeshed;
+  edge_cut::surf::c3t3ToPolyhedron( topoComplex, l_topoPolyMeshed );
+  edge_cut::surf::c3t3ToPolyhedron( bdryComplex, l_bdryPolyMeshed );
+  edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyMeshed, l_topoPolyMeshed );
 
   if ( !l_trimmer.trim() ) {
     EDGE_LOG_INFO << "Error: Unable to trim boundary mesh.";
     return 1;
   }
 
-  // edge_cut::surf::trimFSB( topoPoly, l_bdryPolyTrimmed );
-
-
 
   // Output
   EDGE_LOG_INFO << "Writing meshes...";
-  std::ofstream off_file("o_parkfieldTopo.off");
+  std::ofstream topo_file("o_parkfieldTopo.off");
   std::ofstream bdry_file("o_parkfieldBdry.off");
-  bdry_file << l_bdryPolyTrimmed;
-  topoComplex.output_facets_in_complex_to_off( off_file );
+
+  bdry_file << l_bdryPolyMeshed;
+  topoComplex.output_facets_in_complex_to_off( topo_file );
   EDGE_LOG_INFO << "Done.";
 
   EDGE_LOG_INFO << "Thank you for using EDGEcut!";

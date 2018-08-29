@@ -24,6 +24,7 @@
 Import('env')
 
 l_sources = [ 'surf/Topo.cpp',
+              '../../../../submodules/pugixml/src/pugixml.cpp',
               # 'implicit_functions.cpp',
               'surf/meshUtils.cpp'      ]
 

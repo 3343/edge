@@ -53,9 +53,6 @@ namespace edge_cut {
 
 class edge_cut::surf::Topo {
 public:
-    // Bounding box of region
-    const double m_xMin, m_xMax, m_yMin, m_yMax, m_zMin, m_zMax;
-
     // 2.5D delaunay triangulation of the topographic data
     Triangulation* m_delTria;
 
@@ -65,13 +62,7 @@ public:
      *
      * @param i_topoFile location of the topographic data.
      **/
-    Topo( std::string const & i_topoFile,
-          double              i_xMin,
-          double              i_xMax,
-          double              i_yMin,
-          double              i_yMax,
-          double              i_zMin,
-          double              i_zMax      );
+    Topo( std::string const & i_topoFile );
 
     /**
      * Destructor: Deletes memory allocated to Delaunay Triangulation

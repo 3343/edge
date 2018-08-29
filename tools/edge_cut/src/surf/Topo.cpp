@@ -27,13 +27,7 @@
 #include <fstream>
 
 
-edge_cut::surf::Topo::Topo( std::string const & i_topoFile, double i_xMin, double i_xMax, double i_yMin, double i_yMax, double i_zMin, double i_zMax ) :
-  m_xMin( i_xMin ),
-  m_xMax( i_xMax ),
-  m_yMin( i_yMin ),
-  m_yMax( i_yMax ),
-  m_zMin( i_zMin ),
-  m_zMax( i_zMax )
+edge_cut::surf::Topo::Topo( std::string const & i_topoFile )
 {
   std::ifstream l_ptFile( i_topoFile, std::ios::in );
   std::istream_iterator< TopoPoint > l_fileBegin( l_ptFile );
