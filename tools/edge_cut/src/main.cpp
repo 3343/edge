@@ -23,13 +23,14 @@
 
 // CGAL mesher debug flags:
 #define CGAL_MESH_3_PROFILING 1           // Output basic size and time duration statistics for mesher
-#define CGAL_MESH_3_VERBOSE 1             // Show progress of meshing routine, print extra mesh quality statistics from optimizer
+// #define CGAL_MESH_3_VERBOSE 1             // Show progress of meshing routine, print extra mesh quality statistics from optimizer
 // #define CGAL_MESH_3_PROTECTION_DEBUG 1    // Very verbose output of routine preserving 1D features
 
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
 #include "surf/meshUtils.h"
 #include "surf/Topo.h"
+#include "surf/BdryTrimmer.h"
 // #include "implicit_functions.h"
 
 
@@ -60,9 +61,8 @@ int main( int i_argc, char *i_argv[] ) {
   const double l_zMin =  -10000;
   const double l_zMax =   80000;
 
-
   EDGE_LOG_INFO << "Constructing Delaunay triangulation for topography...";
-  const std::string l_topoFile = "./data/topo_alex-20.xyz";
+  const std::string l_topoFile = "./data/topo_alex-100.xyz";
   edge_cut::surf::Topo l_topo( l_topoFile, l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax );
 
   EDGE_LOG_INFO << "Constructing polyhedral surface model of topography...";
@@ -117,6 +117,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Add features computed above
   l_bdryDomain.add_features( features.begin(), features.end() );
+  l_bdryDomain.detect_features();
   l_domain.add_features( features.begin(), features.end() );
   l_domain.detect_features(); //includes detection of borders
 
@@ -136,7 +137,7 @@ int main( int i_argc, char *i_argv[] ) {
   //      is a poor approximation to the theoretical surface
   K::FT l_scale = 10;
   K::Point_3 l_center = CGAL::ORIGIN;
-  K::FT l_innerRefineRad = 15000;
+  K::FT l_innerRefineRad = 10000;
   K::FT l_outerRefineRad = 17500;
 
   K::FT l_edgeLengthBase = 100;
@@ -181,7 +182,14 @@ int main( int i_argc, char *i_argv[] ) {
   Polyhedron l_bdryPolyTrimmed, topoPoly;
   edge_cut::surf::c3t3ToPolyhedron( topoComplex, topoPoly );
   edge_cut::surf::c3t3ToPolyhedron( bdryComplex, l_bdryPolyTrimmed );
-  edge_cut::surf::trimFSB( topoPoly, l_bdryPolyTrimmed );
+  edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyTrimmed, topoPoly );
+
+  if ( !l_trimmer.trim() ) {
+    EDGE_LOG_INFO << "Error: Unable to trim boundary mesh.";
+    return 1;
+  }
+
+  // edge_cut::surf::trimFSB( topoPoly, l_bdryPolyTrimmed );
 
 
 
