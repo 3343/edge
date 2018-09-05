@@ -1,3 +1,26 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author David Lenz (dlenz AT ucsd.edu)
+ *
+ * @section LICENSE
+ * Copyright (c) 2018, Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Utilities for managing mesh data structures in edge_cut
+ **/
+
 #include <CGAL/IO/OFF_reader.h>  // We get linker error if this included in header. TODO
 #include "surf/meshUtils.h"
 #include "io/logging.hpp"
@@ -6,8 +29,8 @@
 edge_cut::surf::K::FT
 edge_cut::surf::SizingField::operator()( const Point_3& p, const int, const Index& ) const
 {
-  FT l_distance = std::sqrt( std::pow( p.x()-m_center.x(), 2 ) + std::pow( p.y()-m_center.y(), 2 ) ); // TODO change to 2D distance
-  // Check if point is above first layer
+  FT l_distance = std::sqrt( std::pow( p.x()-m_center.x(), 2 ) + std::pow( p.y()-m_center.y(), 2 ) );
+
   if ( l_distance < m_innerRad )
     return m_innerVal;
   else if ( l_distance >= m_outerRad )
@@ -26,13 +49,11 @@ edge_cut::surf::topoIntersect( Poly_slicer& i_slicer, K::Plane_3 i_plane ) {
   Polyline_type ridges;
 
   i_slicer( i_plane, std::back_inserter( polylines ) );
-  std::cout << "The plane " << i_plane.a() << "x + " << i_plane.b() << "y + "
-            << i_plane.c() << "z = " << -1*i_plane.d() << " intersects the topography at "
-            << polylines.size() << " polylines." << std::endl;
+
   if( polylines.size() == 1 ) {
     ridges = *(polylines.begin());
   } else {
-    std::cout << "Error: Polyline slicer did not return precisely one intersection!" << std::endl;
+    EDGE_LOG_INFO << "Error: Polyline slicer did not return precisely one intersection!";
   }
   return ridges;
 }
@@ -44,7 +65,7 @@ edge_cut::surf::checkMonotonic( Polyline_type & i_p, unsigned int i_n, bool i_in
     std::cout << "Error: Index out of bounds in checkMonotonic" << std::endl;
     return false;
   }
-  for ( std::size_t l_idx = 1; l_idx < i_p.size(); l_idx++ ) {
+  for ( std::size_t l_idx = 1; l_idx < i_p.size(); l_idx++ ) { // TODO use vert->point()[i] for better code logic
     if ( i_inc ) {    // Check monotonically increasing
       if ( i_n == 0 )
       {
@@ -339,8 +360,7 @@ edge_cut::surf::Polyhedron& edge_cut::surf::makeFreeSurfBdry( Polyhedron        
   return io_bdry;
 }
 
-// TODO WARNING will not work if there are not at least two facets above
-// the topography on the free surface boundary
+
 void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
                                         Polyhedron        & polyhedron )
 {
@@ -348,7 +368,7 @@ void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
   std::vector<K::Point_3> points;
   std::vector< std::vector<std::size_t> > polygons;
 
-  CGAL::internal::output_facets_in_complex_to_off<C3t3>( c3t3, sstream ); // TODO change to c3t3 member function
+  c3t3.output_facets_in_complex_to_off( sstream );
 
   if (!CGAL::read_OFF( sstream, points, polygons))
   {
@@ -361,127 +381,6 @@ void edge_cut::surf::c3t3ToPolyhedron(  C3t3        const & c3t3,
   polyhedron.normalize_border();
 
   return;
-}
-
-
-edge_cut::surf::Polyhedron& edge_cut::surf::trimFSB(  Polyhedron const & i_topo,
-                                                      Polyhedron       & io_fsb )
-{
-  // Const types are used for the (unchanged) topo mesh
-  typedef Polyhedron::Vertex_const_handle       Vertex_const;
-  typedef Polyhedron::Halfedge_const_handle     Halfedge_const;
-
-  // Non-const types are for the boundary mesh
-  typedef Polyhedron::Vertex_handle             Vertex;
-  typedef Polyhedron::Vertex_iterator           VertexIt;
-  typedef Polyhedron::Halfedge_handle           Halfedge;
-  typedef Polyhedron::Halfedge_const_iterator   HalfedgeIt;
-
-  // We cannot compare vertices and halfedges on two different polyhedral meshes,
-  // because they will always have different connectivity information.
-  // The Point type has no connectivity data, so it can be used to compare
-  // vertices on two different meshes.
-  typedef Polyhedron::Point                     Point;
-
-
-  Vertex l_vertFsb, l_vertPrevFsb;
-  Vertex_const l_vertTopo;
-
-  // Get a handle to a vertex/halfedge pair on the border of the topo mesh
-  // This is where we will start our cut of the surface
-  io_fsb.normalize_border();
-  if ( !i_topo.normalized_border_is_valid() ) {
-    EDGE_LOG_INFO << "Attempted to trim border mesh that was not normalized - mesh will not be trimmed";
-    return io_fsb;
-  }
-  HalfedgeIt l_borderIt = i_topo.border_halfedges_begin();
-  l_vertTopo = l_borderIt->vertex();
-
-  // Get a handle within the fsb mesh to the same vertex
-  VertexIt l_vIt = io_fsb.vertices_begin();
-  while( l_vIt->point() != l_vertTopo->point() ) {
-    l_vIt++;
-    if ( l_vIt == io_fsb.vertices_end() ) {
-      EDGE_LOG_INFO << "Could not find coincident vertex between topography and border mesh - mesh will not be trimmed";
-      return io_fsb;
-    }
-  }
-  l_vertFsb = l_vIt;
-
-  // Get a handle within fsb mesh to the "previous" border vertex when circulating the edge of topography
-  l_vIt = io_fsb.vertices_begin();
-  Vertex_const l_vertPrevTopo;
-  auto l_edge = l_vertTopo->vertex_begin();
-  while( !l_edge->is_border_edge() ){ l_edge++; }
-  l_vertPrevTopo = l_edge->prev()->vertex();
-
-  while( l_vIt->point() != l_vertPrevTopo->point() ) { l_vIt++; }
-  l_vertPrevFsb = l_vIt;
-
-
-  // Get the first halfedge on FSB, incident to vertTopo, and ABOVE the topography
-  bool orderedPos;
-  Halfedge l_h, l_hNext;
-  auto l_edgeCirc = l_vertFsb->vertex_begin();
-  while( l_edgeCirc->prev()->vertex()->point() != l_vertPrevFsb->point() ) l_edgeCirc++;
-  Halfedge l_rootHalfedge = l_edgeCirc;
-
-  // TODO WARNING Need better test here: this could potentially fail to find
-  // the "above" component if topography is steep
-  if( l_rootHalfedge->next()->vertex()->point().z() > l_rootHalfedge->opposite()->next()->vertex()->point().z() ){
-    orderedPos = true;
-    l_h = l_rootHalfedge;
-  } else {
-    orderedPos = false;
-    l_h = l_rootHalfedge->opposite();
-  }
-
-  // For each topography vertex, delete all adjacent facets on the fsb mesh
-  // which are adjacent to the vertex and above the topography
-  Halfedge_const l_borderHalfedge = l_borderIt;
-  Halfedge_const l_nextBorderHalfedge;
-  Point l_startPoint = l_borderHalfedge->vertex()->point();  //TODO using points here in case halfedge handles get invalidated/changed
-  do {
-    // Compute the next halfedge on the border of the topography
-    auto l_borderEdgeCirc = l_borderHalfedge->vertex()->vertex_begin();
-    while( ! l_borderEdgeCirc->next()->is_border_edge() ){ l_borderEdgeCirc++; }
-    l_nextBorderHalfedge = l_borderEdgeCirc->next();
-
-    // Erase all but the last facet adjacent to the vertex which are above topography
-    // The last facet is also adjacent to the next border vertex, and will be
-    // deleted at the start of the next loop
-    while( l_h->next()->vertex()->point() != l_nextBorderHalfedge->vertex()->point() ){
-
-      // If halfedge is a border halfedge, then there are no more facets to delete TODO
-      if ( l_h->is_border() ) break;
-
-      if( orderedPos )  l_hNext = l_h->next()->opposite();
-      else              l_hNext = l_h->prev()->opposite();
-
-      io_fsb.erase_facet( l_h );
-      l_h = l_hNext;
-    }
-
-    if( orderedPos ) l_h = l_h->next();
-    else             l_h = l_h->prev();
-
-    l_borderHalfedge = l_nextBorderHalfedge;
-  } while ( l_borderHalfedge->vertex()->point() != l_startPoint );
-
-  // Iterate over all non-border halfedges for the one with the highest elevation
-  // This halfedge will be on the "upper" connected component
-  // TODO this assumes that the trim splits the mesh into two components
-  io_fsb.normalize_border();
-  Halfedge l_hMax = io_fsb.halfedges_begin();
-  for ( auto l_it = io_fsb.halfedges_begin(); l_it != io_fsb.border_halfedges_begin(); l_it++ ) {
-    if ( l_it->vertex()->point().z() > l_hMax->vertex()->point().z() )
-      l_hMax = l_it;
-  }
-
-  io_fsb.erase_connected_component( l_hMax );
-  io_fsb.normalize_border();
-
-  return io_fsb;
 }
 
 
@@ -513,6 +412,7 @@ edge_cut::surf::getIntersectionFeatures( const Polyhedron& i_topoSurface, double
 
   return features;
 }
+
 
 edge_cut::surf::Polyhedron&
 edge_cut::surf::topoPolyMeshFromXYZ( Polyhedron& io_topoPolyMesh, std::string const & i_topoFile )

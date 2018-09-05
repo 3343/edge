@@ -22,11 +22,19 @@
  **/
 
 template< class Polyhedron >
-edge_cut::surf::BdryTrimmer<Polyhedron>::BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo ) : m_bdry(i_bdry), m_topo(i_topo), m_isValid(true)
+edge_cut::surf::BdryTrimmer<Polyhedron>::BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo ) : m_bdry(i_bdry), m_topo(i_topo)
 {
-  // TODO add sanity checks on polyhedra: non empty, non closed, has border edges, etc
-  m_topo.normalize_border();
   m_bdry.normalize_border();
+
+  assert( !m_topo.is_empty() );
+  assert( !m_topo.is_closed() );
+  assert( m_topo.is_pure_triangle() );
+  assert( m_topo.normalized_border_is_valid() );
+
+  assert( !m_bdry.is_empty() );
+  assert( !m_bdry.is_closed() );
+  assert( m_bdry.is_pure_triangle() );
+  assert( m_bdry.normalized_border_is_valid() );
 }
 
 template< class Polyhedron >
@@ -54,16 +62,20 @@ typename edge_cut::surf::BdryTrimmer<Polyhedron>::Vertex
 edge_cut::surf::BdryTrimmer<Polyhedron>::getBdryVertex( Vertex_const i_v )
 {
   VertexIt l_vIt = m_bdry.vertices_begin();
-  while( l_vIt->point() != i_v->point() ) {
-    l_vIt++;
-    if ( l_vIt == m_bdry.vertices_end() ) {
-      EDGE_LOG_INFO << "Could not find coincident vertex between topography and border mesh - mesh will not be trimmed";
-      EDGE_LOG_INFO << "Missing point: " << i_v->point();
-
-      m_isValid = false;
-      return l_vIt;
-    }
+  for ( ;
+        l_vIt != m_bdry.vertices_end();
+        l_vIt++ )
+  {
+    if ( l_vIt->point() == i_v->point() ) break;
   }
+
+  if ( l_vIt == m_bdry.vertices_end() )
+  {
+    EDGE_LOG_INFO << "Could not find coincident vertex between topography and border mesh - mesh will not be trimmed";
+    EDGE_LOG_INFO << "Missing point: " << i_v->point();
+    assert( l_vIt != m_bdry.vertices_end() );
+  }
+
   return l_vIt;
 }
 
@@ -80,6 +92,10 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::getBdryHalfedge( Vertex_const i_v1, Ver
   return l_edge;
 }
 
+// Checks the relative orientation of the two meshes. Given a halfedge on the
+// boundary mesh which also represents an edge on the topography mesh,
+// determines whether that halfedge belongs to the face above the topography or
+// below.
 template< class Polyhedron >
 bool
 edge_cut::surf::BdryTrimmer<Polyhedron>::isPosOriented( Halfedge l_halfedge )
@@ -116,7 +132,40 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::isPosOriented( Halfedge l_halfedge )
 }
 
 template< class Polyhedron >
-bool
+void
+edge_cut::surf::BdryTrimmer<Polyhedron>::deleteConnCompsExcept( Face i_rep )
+{
+  typedef typename boost::graph_traits<Polyhedron>::face_descriptor face_descriptor;
+  typedef typename boost::graph_traits<Polyhedron>::vertex_descriptor vert_descriptor;
+
+  std::map<face_descriptor, std::size_t> fi_map;
+  std::map<vert_descriptor, std::size_t> vi_map;
+  std::size_t fid = 0;
+  std::size_t vid = 0;
+  BOOST_FOREACH(face_descriptor f, faces(m_bdry))
+  {
+    fi_map[f]=fid++;
+  }
+  BOOST_FOREACH(vert_descriptor v, vertices(m_bdry))
+  {
+    vi_map[v]=vid++;
+  }
+
+  std::vector< Face > l_ccsToKeep( 1, i_rep );
+  CGAL::Polygon_mesh_processing::keep_connected_components( m_bdry,
+                                                            l_ccsToKeep,
+                                                            CGAL::parameters::
+                                                              face_index_map( boost::make_assoc_property_map( fi_map )).
+                                                              vertex_index_map( boost::make_assoc_property_map( vi_map )) );
+
+  m_bdry.normalize_border();
+
+  return;
+}
+
+
+template< class Polyhedron >
+void
 edge_cut::surf::BdryTrimmer<Polyhedron>::trim()
 {
   Vertex_const l_topoVert = m_topo.border_halfedges_begin()->vertex();
@@ -126,46 +175,42 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::trim()
   Halfedge l_rootHalfedge, l_h, l_hNext;
   l_rootHalfedge = getBdryHalfedge( l_topoBaseVert, l_topoVert );
 
-  bool l_posOriented = isPosOriented( l_rootHalfedge );
+  // We require that the two meshes have a fixed (arbitrarily chosen) relative
+  // orientation with each other. In particular, we require that if the border
+  // of the topography mesh is traversed in order (as defined by getNextTopoVert),
+  // then the corresponding halfedges on the boundary mesh which span subsequent
+  // vertices will lie above the topography. See isPosOriented() for more info.
+  if( !isPosOriented( l_rootHalfedge ) ) {
+    m_bdry.inside_out();
+    l_rootHalfedge = getBdryHalfedge( l_topoBaseVert, l_topoVert );
+    assert( isPosOriented( l_rootHalfedge ) );
+  }
 
-  if ( l_posOriented )  l_h = l_rootHalfedge;
-  else                  l_h = l_rootHalfedge->opposite();
+  // Get a representative face for the region below the topography
+  // We will use this when deleting connected components later.
+  Face l_ccRep = l_rootHalfedge->opposite()->face();
+
+  l_h = l_rootHalfedge;
 
   Vertex_const l_startVert = l_topoVert;
-  do {
+  do { // TODO WARNING handle case where there are no facets above topography
     l_topoVertNext = getNextTopoVert( l_topoVert );
 
     while ( l_h->next()->vertex()->point() != l_topoVertNext->point() ) {
       if ( l_h->is_border() ) break;
 
-      if ( l_posOriented )  l_hNext = l_h->next()->opposite();
-      else                  l_hNext = l_h->prev()->opposite();
-
+      l_hNext = l_h->next()->opposite();
       m_bdry.erase_facet( l_h );
 
       l_h = l_hNext;
     }
 
-    if ( l_posOriented )  l_h = l_h->next();
-    else                  l_h = l_h->prev();
+    l_h = l_h->next();
 
     l_topoVert = l_topoVertNext;
   } while ( l_topoVert->point() != l_startVert->point() );
 
+  deleteConnCompsExcept( l_ccRep );
 
-  // Iterate over all non-border halfedges for the one with the highest elevation
-  // This halfedge will be on the "upper" connected component
-  // TODO WARNING this assumes that the trim splits the mesh into two components
-  // TODO add PMP check that there is more than one CC
-  m_bdry.normalize_border();
-  Halfedge l_hMax = m_bdry.halfedges_begin();
-  for ( auto l_it = m_bdry.halfedges_begin(); l_it != m_bdry.border_halfedges_begin(); l_it++ ) {
-    if ( l_it->vertex()->point().z() > l_hMax->vertex()->point().z() )
-      l_hMax = l_it;
-  }
-
-  m_bdry.erase_connected_component( l_hMax );
-  m_bdry.normalize_border();
-
-  return m_isValid;
+  return;
 }

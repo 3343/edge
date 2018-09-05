@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,10 +30,7 @@
 INITIALIZE_EASYLOGGINGPP
 #include "../../../submodules/pugixml/src/pugixml.hpp"
 #include "surf/meshUtils.h"
-#include "surf/Topo.h"
 #include "surf/BdryTrimmer.h"
-// #include "implicit_functions.h"
-
 
 using namespace edge_cut::surf;
 
@@ -58,12 +55,12 @@ int main( int i_argc, char *i_argv[] ) {
   pugi::xml_document doc;
   if (!doc.load_file("data/parkfield.xml")) return -1;
 
-  const double l_xMin = std::stod( doc.child("bbox").child("xMin").child_value() );
-  const double l_xMax = std::stod( doc.child("bbox").child("xMax").child_value() );
-  const double l_yMin = std::stod( doc.child("bbox").child("yMin").child_value() );
-  const double l_yMax = std::stod( doc.child("bbox").child("yMax").child_value() );
-  const double l_zMin = std::stod( doc.child("bbox").child("zMin").child_value() );
-  const double l_zMax = std::stod( doc.child("bbox").child("zMax").child_value() );
+  const double l_xMin = std::stod( doc.child("bbox").child_value("xMin") );
+  const double l_xMax = std::stod( doc.child("bbox").child_value("xMax") );
+  const double l_yMin = std::stod( doc.child("bbox").child_value("yMin") );
+  const double l_yMax = std::stod( doc.child("bbox").child_value("yMax") );
+  const double l_zMin = std::stod( doc.child("bbox").child_value("zMin") );
+  const double l_zMax = std::stod( doc.child("bbox").child_value("zMax") );
   const std::string l_topoFile = doc.child("topofile").child_value();
 
   double const l_bBox[] = { l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax };
@@ -103,15 +100,17 @@ int main( int i_argc, char *i_argv[] ) {
   //      has its center on the theoretical surface to be meshed. The center of the Surface
   //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
   //      is a poor approximation to the theoretical surface
-  K::FT l_scale = 10;
-  K::Point_3 l_center = CGAL::ORIGIN;
-  K::FT l_innerRefineRad = 10000;
-  K::FT l_outerRefineRad = 17500;
+  K::FT l_scale = std::stod( doc.child("region").child_value("scale") );
+  K::FT l_innerRefineRad = std::stod( doc.child("region").child_value("innerRad") );
+  K::FT l_outerRefineRad = std::stod( doc.child("region").child_value("outerRad") );
+  K::Point_3 l_center = K::Point_3( std::stod( doc.child("region").child("center").child_value("x") ),
+                                    std::stod( doc.child("region").child("center").child_value("x") ),
+                                    std::stod( doc.child("region").child("center").child_value("x") ) );
 
-  K::FT l_edgeLengthBase  = std::stod( doc.child("refine").child("edge").child_value() );
-  K::FT l_facetSizeBase   = std::stod( doc.child("refine").child("facet").child_value() );
-  K::FT l_facetApproxBase = std::stod( doc.child("refine").child("approx").child_value() );
-  K::FT l_angleBound      = std::stod( doc.child("refine").child("angle").child_value() );
+  K::FT l_edgeLengthBase  = std::stod( doc.child("refine").child_value("edge") );
+  K::FT l_facetSizeBase   = std::stod( doc.child("refine").child_value("facet") );
+  K::FT l_facetApproxBase = std::stod( doc.child("refine").child_value("approx") );
+  K::FT l_angleBound      = std::stod( doc.child("refine").child_value("angle") );
 
   // NOTE meshes must share common edge refinement criteria in order for borders
   //      to coincide. (recall edge criteria only affects specified 1D features)
@@ -146,7 +145,6 @@ int main( int i_argc, char *i_argv[] ) {
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
-
   // Trim bits of boundary mesh which extend above topography
   EDGE_LOG_INFO << "Trimming boundary mesh...";
   Polyhedron l_topoPolyMeshed, l_bdryPolyMeshed;
@@ -154,10 +152,7 @@ int main( int i_argc, char *i_argv[] ) {
   edge_cut::surf::c3t3ToPolyhedron( bdryComplex, l_bdryPolyMeshed );
   edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyMeshed, l_topoPolyMeshed );
 
-  if ( !l_trimmer.trim() ) {
-    EDGE_LOG_INFO << "Error: Unable to trim boundary mesh.";
-    return 1;
-  }
+  l_trimmer.trim();
 
 
   // Output

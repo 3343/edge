@@ -45,6 +45,7 @@ public:
   typedef typename Polyhedron::Vertex_iterator           VertexIt;
   typedef typename Polyhedron::Halfedge_handle           Halfedge;
   typedef typename Polyhedron::Halfedge_const_iterator   HalfedgeIt;
+  typedef typename Polyhedron::Face_handle               Face;
 
   // We cannot compare vertices and halfedges on two different polyhedral meshes,
   // because they will always have different connectivity information.
@@ -54,7 +55,7 @@ public:
 
   BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo );
 
-  bool trim();
+  void trim();
 
 private:
   Vertex_const getPrevTopoVert( Vertex_const i_vertTopo );
@@ -67,12 +68,13 @@ private:
 
   bool isPosOriented( Halfedge l_halfedge );
 
+  void deleteConnCompsExcept( Face i_rep );
+
 public:
   Polyhedron& m_bdry;
 
 private:
-  Polyhedron& m_topo;
-  bool m_isValid;
+  const Polyhedron& m_topo;
 };
 
 #include "BdryTrimmer.inc"

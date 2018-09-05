@@ -1,3 +1,25 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author David Lenz (dlenz AT ucsd.edu)
+ *
+ * @section LICENSE
+ * Copyright (c) 2018, Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Utilities for managing mesh data structures in edge_cut
+ **/
 #ifndef MESH_UTILS_H_
 #define MESH_UTILS_H_
 
@@ -7,15 +29,16 @@
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/make_mesh_3.h>
-#include <CGAL/Surface_mesh.h>
+
 #include <CGAL/Polygon_mesh_slicer.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
-#include <CGAL/internal/Mesh_3/Boundary_of_subdomain_of_complex_3_in_triangulation_3_to_off.h>
-#include <boost/optional/optional_io.hpp> // TODO Check if this is still needed
+#include <CGAL/Polygon_mesh_processing/connected_components.h>
 
+#include <boost/foreach.hpp>
+#include <boost/property_map/property_map.hpp>
 
-#include "implicit_functions.h" // Definition of Function_wrapper
+#include "surf/Topo.h"
 
 namespace edge_cut{
   namespace surf{
@@ -36,25 +59,12 @@ namespace edge_cut{
     typedef Mesh_criteria::Cell_criteria                                        Cell_criteria;
 
     // Typedefs for 1D Features
-    typedef CGAL::Surface_mesh<K::Point_3>                                      Surf_mesh;
     typedef CGAL::Polygon_mesh_slicer<Polyhedron, K>                            Poly_slicer;
     typedef std::vector<K::Point_3>                                             Polyline_type;
     typedef std::list< Polyline_type >                                          Polylines;
     typedef std::vector< std::size_t >                                          Polygon;
 
 
-    /**
-     * Sizing field
-     * The vector of depth values, "m_layers," must be in decreasing order
-     *
-     *     baseValue
-     * ----------------- layers[0]
-     *     scales[0]
-     * ----------------- layers[1]
-     *     scales[1]
-     * ----------------- layers[2]
-     *       ...
-     **/
     struct SizingField {
       typedef K::FT FT;
       typedef K::Point_3 Point_3;
@@ -74,7 +84,7 @@ namespace edge_cut{
         m_outerRad( i_outerRad )
       { }
 
-      FT operator()(const Point_3& p, const int, const Index&) const;
+      FT operator()( const Point_3& p, const int, const Index& ) const;
     };
 
     /**
@@ -169,7 +179,7 @@ namespace edge_cut{
      * @param i_bBox array of doubles specifying the bounds in the x,y,z coordinates
      *
      * @return A list of polylines (AKA vectors of points) which contain all the
-     *         points on the boundary of the topography mesh (points may be
+     *         points on the boundary of the topography mesh (points may
                appear more than once)
      **/
     std::list< Polyline_type > getIntersectionFeatures( const Polyhedron& i_topoSurface, double const * i_bBox );
