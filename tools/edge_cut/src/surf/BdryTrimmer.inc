@@ -192,20 +192,43 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::trim()
 
   l_h = l_rootHalfedge;
 
+  bool l_vertDone = false;
   Vertex_const l_startVert = l_topoVert;
-  do { // TODO WARNING handle case where there are no facets above topography
+  do { // For each vertex on the border of topography
     l_topoVertNext = getNextTopoVert( l_topoVert );
 
-    while ( l_h->next()->vertex()->point() != l_topoVertNext->point() ) {
-      if ( l_h->is_border() ) break;
+    l_vertDone = false;
+    while ( !l_vertDone ) { // Remove each facet adjacent to vert which is above topo
 
-      l_hNext = l_h->next()->opposite();
-      m_bdry.erase_facet( l_h );
+      // Get halfedge handle to next adjacent face above topography, if there
+      // is one. Otherwise, get halfedge incident to topoVertNext
+      if ( l_h->next()->vertex()->point() == l_topoVertNext->point() ){
+        l_hNext = l_h->next();
+        l_vertDone = true;
+      }
+      else if ( !l_h->next_on_vertex()->is_border() ){
+        l_hNext = l_h->next_on_vertex();
+      }
+      else {
+        if ( l_h->next_on_vertex()->next()->vertex()->point() == l_topoVertNext->point() ) {
+          l_hNext = l_h->next_on_vertex()->next();
+          l_vertDone = true;
+        }
+        else if ( !l_h->next_on_vertex()->next_on_vertex()->is_border() ) {
+          l_hNext = l_h->next_on_vertex()->next_on_vertex();
+        }
+        else {
+          // This case should not be possible in my understanding
+          assert( false );
+        }
+      }
 
+      // Delete current facet above topography, if there is one
+      if ( !l_h->is_border() ) {
+        m_bdry.erase_facet( l_h );
+      }
       l_h = l_hNext;
     }
-
-    l_h = l_h->next();
 
     l_topoVert = l_topoVertNext;
   } while ( l_topoVert->point() != l_startVert->point() );
