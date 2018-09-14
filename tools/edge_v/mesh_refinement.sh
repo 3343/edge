@@ -129,38 +129,38 @@ OPTIND=1
 while getopts "hm:c:o:p:n:r:u:d:g:t:" opt; do
   case "$opt" in
     h)
-      show_help                         # Show help
+      show_help                            # Show help
       exit 0
       ;;
     m)
-      declare -g MODEL=$OPTARG          # Model name
+      declare -g MODEL=$OPTARG             # Model name
       ;;
     c)
-      CONFDIR=$OPTARG                   # Config directory (local)
+      CONFDIR="${OPTARG}/"                 # Config directory (local)
       ;;
     o)
-      MSHDIR=$OPTARG                    # msh directory (local)
+      MSHDIR="${OPTARG}/"                  # msh directory (local)
       ;;
     p)
-      MSHFILES=$OPTARG                  # Handling intermediate files
+      MSHFILES=$OPTARG                     # Handling intermediate files
       ;;
     n)
-      ITERATIONS=$OPTARG                # Number on iterations
+      ITERATIONS=$OPTARG                   # Number on iterations
       ;;
     r)
-      REMOTEMSH=$OPTARG                 # Remote mesh functionality
+      REMOTEMSH=$OPTARG                    # Remote mesh functionality
       ;;
     u)
-      declare -g USR=$OPTARG            # ssh login user name
+      declare -g USR=$OPTARG               # ssh login user name
       ;;
     d)
-      declare -g DOMAIN=$OPTARG         # Remote client domain name
+      declare -g DOMAIN=$OPTARG            # Remote client domain name
       ;;
     g)
-      declare -g REMOTEGMSH=$OPTARG     # gmsh path on remote client
+      declare -g REMOTEGMSH=$OPTARG        # gmsh path on remote client
       ;;
     t)
-      declare -g REMOTEMSHDIR=$OPTARG   # msh directory on remote client
+      declare -g REMOTEMSHDIR="${OPTARG}/" # msh directory on remote client
       ;;
     \?)
       show_help >&2
