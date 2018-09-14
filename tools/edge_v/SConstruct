@@ -1,0 +1,251 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#
+# @section LICENSE
+# Copyright (c) 2018, Regents of the University of California
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# EDGE-V's build file.
+##
+
+import os
+import warnings
+import SCons
+
+def adjustPath( i_var ):
+  '''Adjust the given variable by turning relative paths to absolute paths
+  
+  Arguments:
+    i_var {string} -- variable which is adjusted.
+  
+  Returns:
+    [string] -- adjusted variable
+  '''
+
+  l_var = i_var
+
+  # only adjust if not boolean
+  if( i_var != True and i_var != False ):
+    # relative path is input
+    if( i_var[0] != '/' ):
+      l_var = os.path.join( Dir( '#'+i_var ).abspath )
+
+  return l_var
+
+def simpleWarning(message, category, filename, lineno, file=None, line=None):
+    return '%s\n' % (message)
+warnings.formatwarning = simpleWarning
+
+# checkLibWithHeader with link flags
+def CheckLibWithHeaderFlags( io_context, i_lib, i_header='', i_lang='CXX', i_flagsBefore=[''], i_flagsAfter=[''], i_dynamic=False ):
+
+  l_lang, l_suffix, l_msg = SCons.Conftest._lang2suffix(i_lang)
+
+  l_msg = 'Checking for '+l_lang
+  if i_dynamic: l_msg=l_msg+' dynamic'
+  else:         l_msg=l_msg+' static'
+  l_msg = l_msg+' library '+i_lib+'..'
+  io_context.Message( l_msg )
+
+  # assemble source
+  l_srcFile = "int main(int i_argc, char **i_argv) { return 0; }"
+  if i_header != '':
+    l_srcFile = "#include <"+ i_header+">\n"+l_srcFile
+
+  # store old values
+  if 'LIBS' in io_context.env:
+    l_oldLibs = io_context.env['LIBS']
+  else:
+    l_oldLibs = []
+  if 'LINKFLAGS' in io_context.env:
+    l_oldBefore = io_context.env['LINKFLAGS']
+  else:
+    l_oldBefore = []
+  if '_LIBFLAGS' in io_context.env:
+    l_oldAfter = io_context.env['_LIBFLAGS']
+  else:
+    l_oldAfter = []
+
+  # add link flags
+  if i_dynamic:
+    io_context.env.AppendUnique( _LIBFLAGS = ['-l'+i_lib] )
+  else:
+    io_context.env.PrependUnique( LIBS = [i_lib] )
+
+  io_context.env.Prepend(  LINKFLAGS = i_flagsBefore     )
+  io_context.env.Append(  _LIBFLAGS  = i_flagsAfter      )
+
+  # test if it exists
+  l_result = io_context.TryLink( l_srcFile, l_suffix )
+  io_context.Result(l_result)
+
+  # fall back to previous settings
+  io_context.env['LIBS']      = l_oldLibs
+  io_context.env['LINKFLAGS'] = l_oldBefore
+  io_context.env['_LIBFLAGS'] = l_oldAfter
+
+  # set library
+  if l_result == 1:
+    if( i_dynamic == False ):
+      io_context.env.PrependUnique( LIBS = [i_lib] )
+    else:
+      # this is dirty: full support of static vs. dynamic linking in scons would be appreciated..
+      io_context.env.AppendUnique( _LIBFLAGS = ['-l'+i_lib] )
+
+  return l_result
+
+# configuration
+vars = Variables()
+
+# create environment
+env = Environment( variables = vars )
+
+# add command line arguments
+vars.AddVariables(
+  EnumVariable( 'mode',
+                'Compile modes, option \'san\' enables address and undefind sanitizers',
+                'release',
+                 allowed_values=('release', 'debug', 'release+san', 'debug+san' )
+              ),
+  PackageVariable( 'zlib',
+                   'enable zlib',
+                   'no' ),
+  PackageVariable( 'hdf5',
+                   'enable HDF5',
+                   'no' ),
+  PackageVariable( 'netcdf',
+                   'enable NetCDF',
+                   'no' ),
+  PackageVariable( 'moab',
+                   'Location of the MOAB-Installation.',
+                   'yes' ),
+  PackageVariable( 'ucvm',
+                   'Location of the UCVM-Installation.',
+                   'yes' ),
+  PathVariable( 'build_dir',
+                'location where the code is build',
+                'build',
+                PathVariable.PathIsDirCreate ),
+)
+
+# include environment
+env = Environment( variables = vars )
+
+# exit in the case of unknown variables
+if vars.UnknownVariables():
+  print "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys())
+  exit(1)
+
+# generate help message
+Help( vars.GenerateHelpText(env) )
+
+print "##########################################################################"
+print "##############   ##############            ###############  ##############"
+print "##############   ###############         ################   ##############"
+print "#####            #####       #####      ######                       #####"
+print "#####            #####        #####    #####                         #####"
+print "#############    #####         #####  #####                  #############"
+print "#############    #####         #####  #####      #########   #############"
+print "#####            #####         #####  #####      #########           #####"
+print "#####            #####        #####    #####        ######           #####"
+print "#####            #####       #####      #####       #####            #####"
+print "###############  ###############         ###############   ###############"
+print "###############  ##############           #############    ###############"
+print "#########################################################################V"
+
+# print welcome message
+print( 'Running build script of EDGE-V.' )
+
+# configuration
+conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHeaderFlags})
+
+# include environment
+env['ENV'] = os.environ
+
+# adjust path variables
+for l_va in [ 'zlib', 'hdf5', 'netcdf', 'moab', 'ucvm' ]:
+  env[l_va] = adjustPath( env[l_va] )
+
+# forward compiler
+if 'CC' in env['ENV'].keys():
+  env['CC'] = env['ENV']['CC']
+if 'CXX' in env['ENV'].keys():
+  env['CXX'] = env['ENV']['CXX']
+
+# use static linking for direct dependencies (if possible) and dynamic for the rest
+env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
+env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
+
+# forward flags
+if 'CFLAGS' in env['ENV'].keys():
+  env['CFLAGS'] = env['ENV']['CFLAGS']
+if 'CXXFLAGS' in env['ENV'].keys():
+  env['CXXFLAGS'] = env['ENV']['CXXFLAGS']
+if 'LIBS' in env['ENV'].keys():
+  env['LIBS'] = env['ENV']['LIBS']
+if 'LINKFLAGS' in env['ENV'].keys():
+  env['LINKFLAGS'] = env['ENV']['LINKFLAGS']
+
+# forward paths
+if 'CPLUS_INCLUDE_PATH' in env['ENV'].keys():
+  for l_incP in env['ENV']['CPLUS_INCLUDE_PATH'].split(':'):
+    if l_incP != '':
+      l_incP = adjustPath( l_incP )
+      env.AppendUnique( CPPPATH = [l_incP] )
+if 'LIBRARY_PATH' in env['ENV'].keys():
+  for l_libP in env['ENV']['LIBRARY_PATH'].split(':'):
+    if l_libP != '':
+      l_libP = adjustPath( l_libP )
+      env.AppendUnique( LIBPATH = [l_libP] )
+      env.AppendUnique( RPATH   = [l_libP] )
+
+# add current path to search path
+env.Append( CPPPATH = ['#', '#/src'] )
+
+# add default flags
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror"] )
+
+# set optimization mode
+if 'debug' in env['mode']:
+  env.Append( CXXFLAGS = ['-g','-O0'] )
+else:
+  env.Append( CXXFLAGS = ['-O2'] )
+# add sanitizers
+if 'san' in  env['mode']:
+  env.Append( CXXFLAGS =  ['-g', '-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
+  env.Append( LINKFLAGS = ['-g', '-fsanitize=address', '-fsanitize=undefined'] )
+
+# get source files
+VariantDir( env['build_dir']+'/src', 'src')
+VariantDir( env['build_dir']+'/submodules', 'submodules')
+
+env.sources = []
+
+Export('env')
+Export('conf')
+SConscript( env['build_dir']+'/submodules/SConscript' )
+Import('conf')
+Import('env')
+
+Export('env')
+SConscript( env['build_dir']+'/src/SConscript' )
+Import('env')
+
+# add a new line
+print ''
+
+# build EDGE-V
+env.Program( env['build_dir']+'/edge_v', source = env.sources )

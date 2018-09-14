@@ -1,0 +1,124 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (anbreuer AT ucsd.edu)
+#
+# @section LICENSE
+# Copyright (c) 2018, Regents of the University of California
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# Source files in the submodules.
+##
+import os
+import warnings
+import subprocess
+
+# get dir of scons script
+l_scriptDir = Dir('.').srcnode().abspath
+
+import os
+from sys import path
+
+Import('env')
+Import('conf')
+
+l_objects = []
+
+# enable libdl if available
+conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
+
+
+# enable gfortran if available
+conf.CheckLibWithHeaderFlags('gfortran', '', i_dynamic=True )
+
+
+# enable zlib if available
+if env['zlib'] != False:
+  if env['zlib'] != True:
+    env.AppendUnique( CPPPATH=[ env['zlib']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['zlib']+'/lib']     )
+  conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' )
+
+# enable HDF5 if available
+if env['hdf5'] != False:
+  if env['hdf5'] != True:
+    env.AppendUnique( CPPPATH=[ env['hdf5']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['hdf5']+'/lib']     )
+  conf.CheckLibWithHeaderFlags( 'hdf5' )
+  conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
+
+
+# enable NetCDF if available
+if env['netcdf'] != False:
+  if env['netcdf'] != True:
+    env.AppendUnique( CPPPATH=[ env['netcdf']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['netcdf']+'/lib']     )
+
+  if conf.CheckLibWithHeaderFlags( 'netcdf', 'netcdf.h' ):
+    env['netcdf'] = True
+  else:
+    env['netcdf'] = False
+
+# forward MOAB
+if env['moab'] != True:
+  env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
+  env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
+  env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
+
+if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
+  warnings.warn( 'Error: Could not find MOAB.' )
+  exit()
+
+# UCVM
+if env['ucvm'] != True:
+  # forward UCVM libs
+  env.AppendUnique( CPPPATH=[ env['ucvm']+'/lib/proj-4/include'] )
+  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/proj-4/lib']     )
+  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/euclid3/lib'] )
+  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/fftw/lib'] )
+
+  # forward CVMs
+  for l_mo in ['cencal', 'cvmh1510', 'cvms', 'cvms426', 'cvms5' ]:
+    env.AppendUnique( LIBPATH=[ env['ucvm']+'/model/' + l_mo + '/lib'] )
+
+  # forward UCVM
+  env.AppendUnique( CPPPATH=[ env['ucvm']+'/include'] )
+  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib']     )
+
+if not conf.CheckLibWithHeaderFlags( 'proj', '' ):
+  warnings.warn( 'Error: Could not find proj.' )
+  exit()
+
+if not conf.CheckLibWithHeaderFlags( 'etree', '' ):
+  warnings.warn( 'Error: Could not find etree.' )
+  exit()
+
+if not conf.CheckLibWithHeaderFlags( 'fftw3', '' ):
+  warnings.warn( 'Error: Could not find fftw3.' )
+  exit()
+
+# add models
+for l_mo in [ 'cencalvm',     # USGS Bay Area
+              'geo', 'vxapi', # CVM-H
+              'cvmsi',        # CVM-S4.26.M01
+              'cvms5',        # CVM-S4.26
+              'cvms' ]:       # CVM-S4
+  conf.CheckLibWithHeaderFlags( l_mo, '' )
+
+if not conf.CheckLibWithHeaderFlags( 'ucvm', '' ):
+  warnings.warn( 'Error: Could not find UCVM.' )
+  exit()
+
+Export('conf')
+Export('env')
