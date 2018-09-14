@@ -1,9 +1,7 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Junyi Qiu (juq005 AT ucsd.edu)
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
- * @author David Lenz (dlenz AT ucsd.edu)
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
@@ -24,221 +22,166 @@
  * This is the main file of EDGE-V.
  **/
 
-#include "Rules.h"
 #include "vm_utility.h"
-#include "FaultModel.h"
+#include "Config.h"
+#include "Rules.h"
 
 int main( int i_argc, char **i_argv ) {
+  // check input arguments
   if( i_argc != 3 ) {
     std::cerr << "Usage: " << i_argv[0] << " -f config_file.log" << std::endl;
-    exit( EXIT_FAILURE );
+    return EXIT_FAILURE;
   } else if( (i_argv == nullptr) || (i_argv[1][0] != '-') || (i_argv[1][1] != 'f') ) {
     std::cerr << "Usage: " << i_argv[0] << " -f config_file.log" << std::endl;
-    exit( EXIT_FAILURE );
+    return EXIT_FAILURE;
   }
 
-  //! Start time
-  clock_t l_te = clock();
+  // start time
+  clock_t l_tp = clock();
 
+  // parse config
   std::string l_configFile = std::string( i_argv[2] );
-  edge_v::io::Config l_aCfg( l_configFile );
-  edge_v::vm::Utility::ucvmInit( l_aCfg );
+  edge_v::io::Config l_posCfg( l_configFile );
+  edge_v::vm::Utility::ucvmInit( l_posCfg );
 
+  // MOAB mesh interface
   moab_mesh l_msh;
-  edge_v::vm::Utility::meshInit( l_msh, l_aCfg );
+  edge_v::vm::Utility::meshInit( l_msh, l_posCfg );
 
-  //! Phase-1: Nodes
-  edge_v::vm::Utility::vmodel l_vModelNodes;
-  edge_v::vm::Utility::vmNodeInit( l_vModelNodes, l_msh );
+  // UCVM interface
+  ucvm_point_t *l_ucvmPts = new ucvm_point_t[l_msh.m_numNodes];
+  ucvm_data_t *l_ucvmData = new ucvm_data_t[ l_msh.m_numNodes];
 
-  ucvm_point_t *l_ucvmPoints  = new ucvm_point_t[l_msh.m_numNodes];
-  ucvm_data_t *l_ucvmProps    = new ucvm_data_t[ l_msh.m_numNodes];
+  // MOAB variables
+  moab::EntityID                    l_elmtId,   l_nodeId;
+  moab::EntityHandle                l_elmtHndl, l_nodeHndl;
+  moab::ErrorCode                   l_rval;
+  std::vector< moab::EntityHandle > l_vertices;
 
-  edge_v::vm::Utility::worker_reg l_wrkRg;
-  edge_v::vm::Utility::workerInit( l_wrkRg,
-                                   l_msh.m_numNodes,
-                                   l_aCfg.m_projMesh,
-                                   l_aCfg.m_projVel );
+  // for all nodes in mesh, populate ucvm points with coords
+  for( int_v l_nid = 0; l_nid < l_msh.m_numNodes; l_nid++ ) {
+    l_nodeId  = l_nid + 1;
 
-  moab::EntityID      l_pEntId;
-  moab::EntityHandle  l_pHandle;
-  moab::ErrorCode     l_rval;
-
-  // annotate with fault values
-  faultAntn( l_aCfg, l_msh );
-
-  int_v l_pid;
-  const int_v l_pOfs = l_wrkRg.m_workerTid * l_wrkRg.m_workSize;
-
-  for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
-    l_pEntId  = l_pid + l_pOfs + 1;
-    l_rval    = l_msh.m_intf->handle_from_id( moab::MBVERTEX, l_pEntId, l_pHandle );
+    // get node handle from its id
+    l_rval    = l_msh.m_intf->handle_from_id( moab::MBVERTEX, l_nodeId, l_nodeHndl );
     assert( l_rval == moab::MB_SUCCESS );
 
-    l_rval    = l_msh.m_intf->get_coords( &l_pHandle, 1,
-                                          l_ucvmPoints[l_pid+l_pOfs].coord );
+    // get coordinates of node and populate in ucvm pts
+    l_rval    = l_msh.m_intf->get_coords( &l_nodeHndl, 1, l_ucvmPts[l_nid].coord );
     assert( l_rval == moab::MB_SUCCESS );
 
     // apply trafo
     double l_tmp[3] = {0,0,0};
     for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
       for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
-        l_tmp[l_d1] += l_aCfg.m_trafo[l_d1][l_d2] * l_ucvmPoints[l_pid+l_pOfs].coord[l_d2];
+        l_tmp[l_d1] += l_posCfg.m_trafo[l_d1][l_d2] * l_ucvmPts[l_nid].coord[l_d2];
     for( unsigned short l_di = 0; l_di < 3; l_di++ )
-      l_ucvmPoints[l_pid+l_pOfs].coord[l_di] = l_tmp[l_di];
+      l_ucvmPts[l_nid].coord[l_di] = l_tmp[l_di];
   }
 
-  //! Proj4 Transform: UTM->Long,Lat,Elv
-  double *l_xPtr  = &(l_ucvmPoints[l_pOfs].coord[0]);
-  double *l_yPtr  = &(l_ucvmPoints[l_pOfs].coord[1]);
-  double *l_zPtr  = &(l_ucvmPoints[l_pOfs].coord[2]);
-  int l_pntOfs    = sizeof( ucvm_point_t ) / sizeof( double );
-  pj_transform( l_wrkRg.m_pjUtm, l_wrkRg.m_pjGeo, l_wrkRg.m_numPrvt, l_pntOfs,
+  // proj.4 projections
+  projPJ l_pjSrc  = pj_init_plus( l_posCfg.m_projMesh.c_str() );
+  projPJ l_pjDest = pj_init_plus( l_posCfg.m_projVel.c_str()  );
+
+  // proj.4 trafo: UTM -> long,lat,elev
+  double *l_xPtr  = &(l_ucvmPts[0].coord[0]);
+  double *l_yPtr  = &(l_ucvmPts[0].coord[1]);
+  double *l_zPtr  = &(l_ucvmPts[0].coord[2]);
+  int l_pntOffset = sizeof( ucvm_point_t ) / sizeof( double );
+  pj_transform( l_pjSrc, l_pjDest, l_msh.m_numNodes, l_pntOffset,
                 l_xPtr, l_yPtr, l_zPtr );
 
-  // apply rad to deg
-  for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
-    l_ucvmPoints[l_pid+l_pOfs].coord[0] *= RAD_TO_DEG;
-    l_ucvmPoints[l_pid+l_pOfs].coord[1] *= RAD_TO_DEG;
+  // apply Rad to Degree
+  for( int_v l_nid = 0; l_nid < l_msh.m_numNodes; l_nid++ ) {
+    l_ucvmPts[l_nid].coord[0] *= RAD_TO_DEG;
+    l_ucvmPts[l_nid].coord[1] *= RAD_TO_DEG;
   }
 
-  //! UCVM Query
   clock_t l_c = clock();
 
+  // UCVM Query on ucvm points to get ucvm data
   std::cout << "UCVM Query... ";
   std::cout.flush();
 
-  int l_ucvmStatus = ucvm_query( l_msh.m_numNodes, l_ucvmPoints, l_ucvmProps );
-  if( l_ucvmStatus != 0 ) {
-    std::cout << "Failed." << std::endl;
-    std::cerr << "Warning: cannot complete UCVM query, won't annotate velocities." << std::endl;
+  int l_ucvmStatus  = ucvm_query( l_msh.m_numNodes, l_ucvmPts, l_ucvmData );
+  if( l_ucvmStatus ) {
+    std::cout << "Failed!" << std::endl;
+    std::cerr << "Error: cannot complete UCVM query." << std::endl;
   }
-  else {
-    l_c = clock() - l_c;
-    std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
 
-    ucvm_prop_t *l_propPtr;
+  std::cout << "Done! ";
+  l_c = clock() - l_c;
+  std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
 
-    //! Move to VM Nodes Array
-    for( l_pid = 0; l_pid < l_wrkRg.m_numPrvt; l_pid++ ) {
-      switch( l_aCfg.m_ucvmType ) {
-        case 0:   //! Crustal
-          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].crust);
-          break;
-        case 1:   //! Geotechnical layer
-          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].gtl);
-          break;
-        case 2:   //! Combination
-          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].cmb);
-          break;
-        default:
-          l_propPtr = &(l_ucvmProps[l_pid+l_pOfs].cmb);
-      }
+  // pos model
+  edge_v::vm::Utility::posModel l_posModel;
+  edge_v::vm::Utility::posInit( l_posModel, l_msh );
 
-      if(    l_propPtr->vp  <= 0
-          || l_propPtr->vs  <= 0
-          || l_propPtr->rho <= 0  ) {
-        std::cerr << "invalid values returned from UCVM, aborting" << std::endl;
-        std::cerr << "vp: " << l_propPtr->vp << std::endl;
-        std::cerr << "vs: " << l_propPtr->vs << std::endl;
-        std::cerr << "rho: " << l_propPtr->rho << std::endl;
-        std::cerr << "x: " << l_ucvmPoints[l_pid+l_pOfs].coord[0] << std::endl;
-        std::cerr << "y: " << l_ucvmPoints[l_pid+l_pOfs].coord[1] << std::endl;
-        std::cerr << "z: " << l_ucvmPoints[l_pid+l_pOfs].coord[2] << std::endl;
-        assert( false );
-      }
+  ucvm_prop_t *l_propPtr;   //! UCVM prop pointer
 
-      l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[0] = l_propPtr->vp;
-      l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[1] = l_propPtr->vs;
-      l_vModelNodes.m_vmList[l_pid+l_pOfs].m_data[2] = l_propPtr->rho;
-    }
+  for( int_v l_eid = 0; l_eid < l_msh.m_numElmts; l_eid++ ) {
+    // glement id starts index at 1
+    l_elmtId  = l_eid + 1;
 
-    delete[] l_ucvmPoints;
-    delete[] l_ucvmProps;
+    // get element handle from id
+    if( ELMTTYPE == 3 )
+      l_rval  = l_msh.m_intf->handle_from_id( moab::MBTRI, l_elmtId, l_elmtHndl );
+    else if( ELMTTYPE == 4 )
+      l_rval  = l_msh.m_intf->handle_from_id( moab::MBTET, l_elmtId, l_elmtHndl );
+    assert( l_rval == moab::MB_SUCCESS );
+    l_vertices.clear();
 
-    edge_v::vm::Utility::writeVMNodes( l_vModelNodes, l_aCfg, l_msh );
+    // get handles to vertices of element
+    l_rval  = l_msh.m_intf->get_adjacencies( &l_elmtHndl, 1, 0, false, l_vertices );
+    assert( l_rval == moab::MB_SUCCESS );
+    assert( l_vertices.size() == ELMTTYPE );
 
-    //! Phase-2: Elements
-    edge_v::vm::Utility::vmodel l_vModelElmts;
-    edge_v::vm::Utility::vmElmtInit( l_vModelElmts, l_msh );
+    for( unsigned int l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
+      // each vertex corresponds to a node, get node id from handle
+      l_nodeId    = l_msh.m_intf->id_from_handle( l_vertices[l_vid] );
+      int_v l_nid = l_nodeId - 1;   //! Node index starts from 0
 
-    edge_v::vm::Utility::workerInit( l_wrkRg,
-                                      l_msh.m_numElmts,
-                                     l_aCfg.m_projMesh,
-                                     l_aCfg.m_projVel );
-
-    edge_v::vm::Utility::vmodel * const l_pVModelNodes = &l_vModelNodes;
-
-    moab::EntityID                    l_eEntId;
-    moab::EntityHandle                l_eHandle;
-    std::vector< moab::EntityHandle > l_eVertices;
-
-    const int_v l_eOfs = l_wrkRg.m_workerTid * l_wrkRg.m_workSize;
-    unsigned int l_pIdx;
-
-    for( int_v l_eid = 0; l_eid < l_wrkRg.m_numPrvt; l_eid++ ) {
-      l_eEntId  = l_eid + l_eOfs + 1;
-      l_rval    = l_msh.m_intf->handle_from_id( moab::MBTET, l_eEntId, l_eHandle );
+      // get coordinates of node and repopulate ucvm pts
+      l_rval    = l_msh.m_intf->get_coords( &l_vertices[l_vid], 1,
+                                             l_ucvmPts[l_nid].coord );
       assert( l_rval == moab::MB_SUCCESS );
-      l_eVertices.clear();
 
-      l_rval = l_msh.m_intf->get_adjacencies( &l_eHandle, 1, 0, false, l_eVertices );
-      assert( l_rval == moab::MB_SUCCESS );
-      assert( l_eVertices.size() == ELMTTYPE );
+      // store x,y,z coordinates
+      l_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_x = l_ucvmPts[l_nid].coord[0];
+      l_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_y = l_ucvmPts[l_nid].coord[1];
+      l_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_z = l_ucvmPts[l_nid].coord[2];
 
-      real l_vp  = 0.0;
-      real l_vs  = 0.0;
-      real l_rho = 0.0;
+      // cmb: combination crustal+gtl
+      l_propPtr = &(l_ucvmData[l_nid].cmb);
+      real l_vp  = l_propPtr->vp;
+      real l_vs  = l_propPtr->vs;
+      real l_rho = l_propPtr->rho;
 
-      for( int_v l_vId = 0; l_vId < 4; l_vId++ ) {
-        moab::EntityID l_pEntId = l_msh.m_intf->id_from_handle( l_eVertices[l_vId] );
-        l_pIdx = l_pEntId - 1;
-
-        l_vp  += l_pVModelNodes->m_vmList[l_pIdx].m_data[0];
-        l_vs  += l_pVModelNodes->m_vmList[l_pIdx].m_data[1];
-        l_rho += l_pVModelNodes->m_vmList[l_pIdx].m_data[2];
-      }
-
-      l_vp  /= 4.0;
-      l_vs  /= 4.0;
-      l_rho /= 4.0;
-
-      edge_v::vel::Rules::apply( l_aCfg.m_velRule,
+      edge_v::vel::Rules::apply( l_posCfg.m_velRule,
                                  l_vp,
                                  l_vs,
                                  l_rho );
 
-      real l_lam, l_mu;
-      edge_v::vm::Utility::lamePar( l_vp,
-                                    l_vs,
-                                    l_rho,
-                                    l_lam,
-                                    l_mu );
+      // rescale elmt-size according to no. of elmts required per wavelength
+      if( l_posCfg.m_elmtsPerWave > 0.0 )
+        l_vs /= l_posCfg.m_elmtsPerWave;
 
-      l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[0] = l_lam;
-      l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[1] = l_mu;
-      l_vModelElmts.m_vmList[l_eid+l_eOfs].m_data[2] = l_rho;
-    } //! Tet Elements Loop Over
-
-    edge_v::vm::Utility::vmNodeFinalize( l_vModelNodes );
-
-    edge_v::vm::Utility::writeVMElmts( l_vModelElmts, l_aCfg, l_msh );
-
-    edge_v::vm::Utility::writeVMTags(  l_vModelElmts, l_aCfg, l_msh );
-
-    edge_v::vm::Utility::vmElmtFinalize( l_vModelElmts );
+      l_posModel.m_posList[l_eid].m_vs[l_vid] = l_vs;
+    }
   }
 
-  if( l_ucvmStatus != 0 ) {
-    std::cout << "writing mesh " <<  l_aCfg.m_h5mFn << std::endl;
-    l_msh.m_intf->write_mesh( l_aCfg.m_h5mFn.c_str() );
-  }
+  // write pos file
+  edge_v::vm::Utility::writePos( l_posModel, l_posCfg, l_msh );
 
-  edge_v::vm::Utility::meshFinalize( l_msh );
+  edge_v::vm::Utility::posFinalize( l_posModel );
 
-  //! Finish time
-  l_te = clock() - l_te;
-  std::cout << "Time taken: " << (float) l_te / CLOCKS_PER_SEC << "s\n";
+  // free memory
+  delete[] l_ucvmPts;
+  delete[] l_ucvmData;
+
+  // finish time
+  l_tp = clock() - l_tp;
+  std::cout << "Time taken: " << (float) l_tp / CLOCKS_PER_SEC << "s\n";
 
   return EXIT_SUCCESS;
 }
