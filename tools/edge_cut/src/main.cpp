@@ -23,7 +23,7 @@
 
 // CGAL mesher debug flags:
 #define CGAL_MESH_3_PROFILING 1           // Output basic size and time duration statistics for mesher
-// #define CGAL_MESH_3_VERBOSE 1             // Show progress of meshing routine, print extra mesh quality statistics from optimizer
+#define CGAL_MESH_3_VERBOSE 1             // Show progress of meshing routine, print extra mesh quality statistics from optimizer
 // #define CGAL_MESH_3_PROTECTION_DEBUG 1    // Very verbose output of routine preserving 1D features
 
 #include "io/logging.hpp"
@@ -31,10 +31,22 @@ INITIALIZE_EASYLOGGINGPP
 #include "../../../submodules/pugixml/src/pugixml.hpp"
 #include "surf/meshUtils.h"
 #include "surf/BdryTrimmer.h"
+#include <gperftools/heap-profiler.h>
 
 using namespace edge_cut::surf;
 
 int main( int i_argc, char *i_argv[] ) {
+  std::string l_xmlPath = "";
+  if ( i_argc > 2 ) {
+    EDGE_LOG_INFO << "Encountered more than one command line option -- exiting";
+    return -1;
+  }  else if ( i_argc == 1 ) {
+    EDGE_LOG_INFO << "Missing command line option (xml config path) -- exiting";
+    return -1;
+  } else {
+    l_xmlPath = i_argv[1];
+  }
+
 
   EDGE_LOG_INFO << "##########################################################################";
   EDGE_LOG_INFO << "##############   ##############            ###############  ##############";
@@ -53,7 +65,7 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "ready to go..";
 
   pugi::xml_document doc;
-  if (!doc.load_file("data/parkfield.xml")) return -1;
+  if (!doc.load_file( l_xmlPath.c_str() )) return -1;
 
   const double l_xMin = std::stod( doc.child("bbox").child_value("xMin") );
   const double l_xMax = std::stod( doc.child("bbox").child_value("xMax") );
