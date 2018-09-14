@@ -4,6 +4,7 @@
  * @author Junyi Qiu (juq005 AT ucsd.edu)
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  * @author David Lenz (dlenz AT ucsd.edu)
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
  * Copyright (c) 2017-2018, Regents of the University of California
@@ -20,11 +21,14 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * This file contains the utility routines of Edge-V.
+ * This file contains the utility routines of EDGE-V.
  **/
 
-#include <fstream>
+#ifdef PP_USE_OMP
 #include <omp.h>
+#endif
+
+#include <fstream>
 #include <sstream>
 #include <moab/Core.hpp>
 
@@ -170,8 +174,13 @@ int edge_v::vm::Utility::workerInit(       worker_reg  &i_wrkRg,
                                      const int_v       &i_totalNum,
                                      const std::string &i_projMesh,
                                      const std::string &i_projVel   ) {
-  int_v l_tid                 = omp_get_thread_num();
-  int_v l_numThrds            = omp_get_num_threads();
+#ifdef PP_USE_OMP
+  int_v l_tid      = omp_get_thread_num();
+  int_v l_numThrds = omp_get_num_threads();
+#else
+  int_v l_tid = 0;
+  int_v l_numThrds = 1;
+#endif
   i_wrkRg.m_workerTid         = l_tid;
 
   int_v l_workSize            = (i_totalNum + l_numThrds - 1) / l_numThrds;
