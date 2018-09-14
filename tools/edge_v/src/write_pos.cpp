@@ -164,8 +164,8 @@ int main( int i_argc, char **i_argv ) {
                                  l_rho );
 
       //! Rescale elmt-size according to no. of elmts required per wavelength
-      if( l_posCfg.m_elmtsPerWave > 1.0 )
-        l_vs  /= l_posCfg.m_elmtsPerWave;
+      if( l_posCfg.m_elmtsPerWave > 0.0 )
+        l_vs /= l_posCfg.m_elmtsPerWave;
 
       l_posModel.m_posList[l_eid].m_vs[l_vid] = l_vs;
     }
