@@ -56,10 +56,6 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
 
   m_antnCfgFn     = i_pathToFile;
 
-  m_minVp         = 0.0;
-  m_minVs         = 0.0;
-  m_minVs2        = 0.0;
-  m_maxVpVsRatio  = 0.0;
   m_elmtsPerWave  = 0.0;
 
   for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ ) {
@@ -112,10 +108,6 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
     }
     else if( l_varName.compare( "ucvm_type"        ) == 0 ) m_ucvmType     = atoi( l_varValue.c_str() );
     else if( l_varName.compare( "vel_rule"         ) == 0 ) m_velRule      = l_varValue;
-    else if( l_varName.compare( "min_vp"           ) == 0 ) m_minVp        = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "min_vs"           ) == 0 ) m_minVs        = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "min_vs2"          ) == 0 ) m_minVs2       = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "max_vp_vs_ratio"  ) == 0 ) m_maxVpVsRatio = atof( l_varValue.c_str() );
     else if( l_varName.compare( "elmts_per_wave"   ) == 0 ) m_elmtsPerWave = atof( l_varValue.c_str() );
     else if( l_varName.compare( "trafo_x"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[0] );
     else if( l_varName.compare( "trafo_y"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[1] );

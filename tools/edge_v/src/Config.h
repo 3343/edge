@@ -63,10 +63,6 @@ class edge_v::io::Config {
     int                        m_ucvmType;
 
     std::string                m_velRule;
-    real                       m_minVp;
-    real                       m_minVs;
-    real                       m_minVs2;
-    real                       m_maxVpVsRatio;
     real                       m_elmtsPerWave;
 
     std::string                m_meshFn;
