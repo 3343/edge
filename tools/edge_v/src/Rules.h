@@ -43,9 +43,9 @@ class edge_v::vel::Rules {
      * @param io_vs s-wave velocity.
      * @param io_rho density.
      */
-    static void tpv34( double &io_vp,
-                       double &io_vs,
-                       double &io_rho );
+    static void tpv34( float &io_vp,
+                       float &io_vs,
+                       float &io_rho );
 
   public:
     /**
@@ -57,9 +57,9 @@ class edge_v::vel::Rules {
      * @param io_rho density.
      */
     static void apply( std::string &i_rule,
-                       double      &io_vp,
-                       double      &io_vs,
-                       double      &io_rho );
+                       float       &io_vp,
+                       float       &io_vs,
+                       float       &io_rho );
 };
 
 #endif

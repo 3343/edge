@@ -23,9 +23,9 @@
 #include "Rules.h"
 #include <cassert>
 
-void edge_v::vel::Rules::tpv34( double &io_vp,
-                                double &io_vs,
-                                double &io_rho ) {
+void edge_v::vel::Rules::tpv34( float &io_vp,
+                                float &io_vs,
+                                float &io_rho ) {
   // check for valid input
   assert( io_vp  > 0 );
   assert( io_vs  > 0 );
@@ -39,9 +39,9 @@ void edge_v::vel::Rules::tpv34( double &io_vp,
 }
 
 void edge_v::vel::Rules::apply( std::string &i_rule,
-                                double      &io_vp,
-                                double      &io_vs,
-                                double      &io_rho ) {
+                                float       &io_vp,
+                                float       &io_vs,
+                                float       &io_rho ) {
   if( i_rule == "tpv34" ) {
     tpv34( io_vp,
            io_vs,
