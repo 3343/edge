@@ -116,23 +116,6 @@ class edge_v::vm::Utility {
     static int writeVMTags(        vmodel    &,
                       const io::Config  &,
                       const moab_mesh & );
-
-    // *** pos related ***
-    typedef struct pos_datum {
-      xyz_point_t m_xyzPts[ELMTTYPE];
-      real        m_vs[ELMTTYPE];
-    } pos_datum;
-
-    typedef struct posModel {
-      pos_datum *m_posList;
-    } posModel;
-
-    static int posInit(       posModel  &,
-                       const moab_mesh & );
-    static int posFinalize( posModel & );
-    static int writePos( const posModel  &,
-                         const io::Config  &,
-                         const moab_mesh & );
 };
 
 #endif

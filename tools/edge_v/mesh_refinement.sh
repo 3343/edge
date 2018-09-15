@@ -182,17 +182,17 @@ then
   exit 1
 fi
 
-# Export write_pos directory (./bin) to PATH if not set
-if ! command -v "write_pos" > /dev/null
+# Export edge_v directory (./bin) to PATH if not set
+if ! command -v "edge_v" > /dev/null
 then
-  printf "Trying to export write_pos to PATH automatically... "
-  if [ -d "bin" ] && [ -f "bin/write_pos" ]
+  printf "Trying to export edge_v to PATH automatically... "
+  if [ -d "bin" ] && [ -f "build/edge_v" ]
   then
     printf -v posPath "export PATH=$shPath/bin:$PATH"
     $posPath
     printf "Done!\n"
   else
-    printf "unable to locate!\nPlease export write_pos directory (typically ./bin) to PATH and retry.\n"
+    printf "unable to locate!\nPlease export edge_v directory (typically ./build) to PATH and retry.\n"
     exit 1
   fi
 fi
@@ -255,7 +255,7 @@ do
   # more refined mesh than previous iteration (using pos as background mesh)
   printf -v posLog '%s.log' "$posFile"
   printf "Generating pos...\n"
-  write_pos -f $confFileIt 2>&1 | tee $posLog
+  edge_v -f $confFileIt 2>&1 | tee $posLog
 
   # Generate intermediate meshes
   printf "\nGenerating intermediate ($iter) mesh...\n"
@@ -309,7 +309,7 @@ printf -v mshLog '%s_refined.log' "$mshFile"
 # Final refined pos file
 printf -v posLog '%s_refined.log' "$posFile"
 printf "\nGenerating pos...\n"
-write_pos -f $confFileRe 2>&1 | tee $posLog
+edge_v -f $confFileRe 2>&1 | tee $posLog
 
 # Final mesh-refinement
 printf '\nGenerating final (refined) mesh...\n'

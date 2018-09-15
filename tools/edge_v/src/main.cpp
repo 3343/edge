@@ -25,14 +25,15 @@
 #include "vm_utility.h"
 #include "Config.h"
 #include "Rules.h"
+#include "io/GmshView.hpp"
 
 int main( int i_argc, char **i_argv ) {
   // check input arguments
   if( i_argc != 3 ) {
-    std::cerr << "Usage: " << i_argv[0] << " -f config_file.log" << std::endl;
+    std::cerr << "Usage: " << i_argv[0] << " -f edge_v.conf" << std::endl;
     return EXIT_FAILURE;
   } else if( (i_argv == nullptr) || (i_argv[1][0] != '-') || (i_argv[1][1] != 'f') ) {
-    std::cerr << "Usage: " << i_argv[0] << " -f config_file.log" << std::endl;
+    std::cerr << "Usage: " << i_argv[0] << " -f edge_v.conf" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -41,47 +42,57 @@ int main( int i_argc, char **i_argv ) {
 
   // parse config
   std::string l_configFile = std::string( i_argv[2] );
-  edge_v::io::Config l_posCfg( l_configFile );
-  edge_v::vm::Utility::ucvmInit( l_posCfg );
+  edge_v::io::Config l_config( l_configFile );
+  edge_v::vm::Utility::ucvmInit( l_config );
 
   // MOAB mesh interface
   moab_mesh l_msh;
-  edge_v::vm::Utility::meshInit( l_msh, l_posCfg );
+  edge_v::vm::Utility::meshInit( l_msh, l_config );
 
   // UCVM interface
   ucvm_point_t *l_ucvmPts = new ucvm_point_t[l_msh.m_numNodes];
   ucvm_data_t *l_ucvmData = new ucvm_data_t[ l_msh.m_numNodes];
 
-  // MOAB variables
-  moab::EntityID                    l_elmtId,   l_nodeId;
-  moab::EntityHandle                l_elmtHndl, l_nodeHndl;
-  moab::ErrorCode                   l_rval;
+  // MOAB error code
+  moab::ErrorCode l_rval;
+
+  // get the vertices in the mesh
   std::vector< moab::EntityHandle > l_vertices;
+  l_rval = l_msh.m_intf->get_entities_by_dimension( 0, 0, l_vertices );
+  assert( l_rval == moab::MB_SUCCESS );
 
-  // for all nodes in mesh, populate ucvm points with coords
-  for( int_v l_nid = 0; l_nid < l_msh.m_numNodes; l_nid++ ) {
-    l_nodeId  = l_nid + 1;
+  // get the coordinates of the vertices
+  double (*l_veCrds)[3] = new double[l_vertices.size()][3];
+  l_rval = l_msh.m_intf->get_coords( &l_vertices[0],
+                                      l_vertices.size(),
+                                      l_veCrds[0] );
+  assert( l_rval == moab::MB_SUCCESS );
 
-    // get node handle from its id
-    l_rval    = l_msh.m_intf->handle_from_id( moab::MBVERTEX, l_nodeId, l_nodeHndl );
-    assert( l_rval == moab::MB_SUCCESS );
+  // get mapping from tets to nodes
+  std::vector< moab::EntityHandle > l_elCo;
+  l_rval = l_msh.m_intf->get_connectivity_by_type( moab::MBTET,
+                                                   l_elCo );
+  assert( l_rval == moab::MB_SUCCESS );
 
-    // get coordinates of node and populate in ucvm pts
-    l_rval    = l_msh.m_intf->get_coords( &l_nodeHndl, 1, l_ucvmPts[l_nid].coord );
-    assert( l_rval == moab::MB_SUCCESS );
+  std::vector< moab::EntityID > l_elVe;
+  l_elVe.resize( l_elCo.size() );
+  for( std::size_t l_ve = 0; l_ve < l_elCo.size(); l_ve++ )
+    l_elVe[l_ve] = l_msh.m_intf->id_from_handle( l_elCo[l_ve] ) - 1;
 
+  // for all vertices in mesh, populate ucvm points with coords
+  for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
     // apply trafo
     double l_tmp[3] = {0,0,0};
     for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
       for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
-        l_tmp[l_d1] += l_posCfg.m_trafo[l_d1][l_d2] * l_ucvmPts[l_nid].coord[l_d2];
+        l_tmp[l_d1] += l_config.m_trafo[l_d1][l_d2] * l_veCrds[l_ve][l_d2];
     for( unsigned short l_di = 0; l_di < 3; l_di++ )
-      l_ucvmPts[l_nid].coord[l_di] = l_tmp[l_di];
+      l_ucvmPts[l_ve].coord[l_di] = l_tmp[l_di];
   }
 
   // proj.4 projections
-  projPJ l_pjSrc  = pj_init_plus( l_posCfg.m_projMesh.c_str() );
-  projPJ l_pjDest = pj_init_plus( l_posCfg.m_projVel.c_str()  );
+  projPJ l_pjSrc  = pj_init_plus( l_config.m_projMesh.c_str() );
+  projPJ l_pjDest = pj_init_plus( l_config.m_projVel.c_str()  );
 
   // proj.4 trafo: UTM -> long,lat,elev
   double *l_xPtr  = &(l_ucvmPts[0].coord[0]);
@@ -91,7 +102,7 @@ int main( int i_argc, char **i_argv ) {
   pj_transform( l_pjSrc, l_pjDest, l_msh.m_numNodes, l_pntOffset,
                 l_xPtr, l_yPtr, l_zPtr );
 
-  // apply Rad to Degree
+  // apply rad to degree
   for( int_v l_nid = 0; l_nid < l_msh.m_numNodes; l_nid++ ) {
     l_ucvmPts[l_nid].coord[0] *= RAD_TO_DEG;
     l_ucvmPts[l_nid].coord[1] *= RAD_TO_DEG;
@@ -113,71 +124,54 @@ int main( int i_argc, char **i_argv ) {
   l_c = clock() - l_c;
   std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
 
-  // pos model
-  edge_v::vm::Utility::posModel l_posModel;
-  edge_v::vm::Utility::posInit( l_posModel, l_msh );
+  // get velocity model
+  float (*l_vps)  = new float[ l_vertices.size() ];
+  float (*l_vss)  = new float[ l_vertices.size() ];
+  float (*l_rhos) = new float[ l_vertices.size() ];
 
-  ucvm_prop_t *l_propPtr;   //! UCVM prop pointer
+  for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
+    // cmb: combination crustal+gtl
+    ucvm_prop_t *l_propPtr = &(l_ucvmData[l_ve].cmb);
 
-  for( int_v l_eid = 0; l_eid < l_msh.m_numElmts; l_eid++ ) {
-    // glement id starts index at 1
-    l_elmtId  = l_eid + 1;
+    l_vps[l_ve] = l_propPtr->vp;
+    l_vss[l_ve] = l_propPtr->vs;
+    l_rhos[l_ve] = l_propPtr->rho;
 
-    // get element handle from id
-    if( ELMTTYPE == 3 )
-      l_rval  = l_msh.m_intf->handle_from_id( moab::MBTRI, l_elmtId, l_elmtHndl );
-    else if( ELMTTYPE == 4 )
-      l_rval  = l_msh.m_intf->handle_from_id( moab::MBTET, l_elmtId, l_elmtHndl );
-    assert( l_rval == moab::MB_SUCCESS );
-    l_vertices.clear();
-
-    // get handles to vertices of element
-    l_rval  = l_msh.m_intf->get_adjacencies( &l_elmtHndl, 1, 0, false, l_vertices );
-    assert( l_rval == moab::MB_SUCCESS );
-    assert( l_vertices.size() == ELMTTYPE );
-
-    for( unsigned int l_vid = 0; l_vid < ELMTTYPE; l_vid++ ) {
-      // each vertex corresponds to a node, get node id from handle
-      l_nodeId    = l_msh.m_intf->id_from_handle( l_vertices[l_vid] );
-      int_v l_nid = l_nodeId - 1;   //! Node index starts from 0
-
-      // get coordinates of node and repopulate ucvm pts
-      l_rval    = l_msh.m_intf->get_coords( &l_vertices[l_vid], 1,
-                                             l_ucvmPts[l_nid].coord );
-      assert( l_rval == moab::MB_SUCCESS );
-
-      // store x,y,z coordinates
-      l_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_x = l_ucvmPts[l_nid].coord[0];
-      l_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_y = l_ucvmPts[l_nid].coord[1];
-      l_posModel.m_posList[l_eid].m_xyzPts[l_vid].m_z = l_ucvmPts[l_nid].coord[2];
-
-      // cmb: combination crustal+gtl
-      l_propPtr = &(l_ucvmData[l_nid].cmb);
-      real l_vp  = l_propPtr->vp;
-      real l_vs  = l_propPtr->vs;
-      real l_rho = l_propPtr->rho;
-
-      edge_v::vel::Rules::apply( l_posCfg.m_velRule,
-                                 l_vp,
-                                 l_vs,
-                                 l_rho );
-
-      // rescale elmt-size according to no. of elmts required per wavelength
-      if( l_posCfg.m_elmtsPerWave > 0.0 )
-        l_vs /= l_posCfg.m_elmtsPerWave;
-
-      l_posModel.m_posList[l_eid].m_vs[l_vid] = l_vs;
-    }
+    edge_v::vel::Rules::apply( l_config.m_velRule,
+                               l_vps[l_ve],
+                               l_vss[l_ve],
+                               l_rhos[l_ve] );
   }
 
-  // write pos file
-  edge_v::vm::Utility::writePos( l_posModel, l_posCfg, l_msh );
+  // assemble characteristic lengths, if necessary
+  if( l_config.m_posFn != "" ) {
+    // assemble characteristic lengths
+    float (*l_cls)  = new float[ l_vertices.size() ];
 
-  edge_v::vm::Utility::posFinalize( l_posModel );
+    // scale vs to get char lengths
+    float l_sca = float(1.0) / l_config.m_elmtsPerWave;
+    for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
+      l_cls[l_ve] = l_vss[l_ve] * l_sca;
+    }
+
+    // write to disk
+    edge_v::io::GmshView::write(  l_config.m_posFn,
+                                  "tet4",
+                                  l_elVe.size()/4,
+                                 &l_elVe[0],
+                                  l_veCrds,
+                                  l_cls );
+
+    delete[] l_cls;
+  }
 
   // free memory
+  delete[] l_veCrds;
   delete[] l_ucvmPts;
   delete[] l_ucvmData;
+  delete[] l_vps;
+  delete[] l_vss;
+  delete[] l_rhos;
 
   // finish time
   l_tp = clock() - l_tp;
