@@ -26,11 +26,6 @@
 void edge_v::vel::Rules::tpv34( float &io_vp,
                                 float &io_vs,
                                 float &io_rho ) {
-  // check for valid input
-  assert( io_vp  > 0 );
-  assert( io_vs  > 0 );
-  assert( io_rho > 0 );
-
   if( io_vp <= 2984.0 || io_vs <= 1400.0 ) {
     io_vp =  2984;
     io_vs =  1400;
@@ -38,13 +33,51 @@ void edge_v::vel::Rules::tpv34( float &io_vp,
   }
 }
 
+void edge_v::vel::Rules::highf2018( float &io_vp,
+                                    float &io_vs,
+                                    float &io_rho ) {
+  // limit vs to 500 m/s
+  if( io_vs < 500 ) {
+    //  derive vp/vs ratio
+    float l_sca = io_vp / io_vs;
+    // adjust velocities
+    io_vs = 500;
+    io_vp = 500*l_sca;
+  }
+
+  // limit vp to 1500 m/s
+  if( io_vp < 1500 )
+    io_vp = 1500;
+
+  // limit vp/vs ratio to 3
+  float l_sca = io_vp / io_vs;
+  if( l_sca > 3 ) {
+    io_vp = 3*io_vs;
+  }
+
+  // adjust lambda
+  l_sca = io_vp / io_vs;
+  if( l_sca < float(1.45) )
+    io_vp = float(1.45) * io_vs;
+}
+
 void edge_v::vel::Rules::apply( std::string &i_rule,
                                 float       &io_vp,
                                 float       &io_vs,
                                 float       &io_rho ) {
+  // check for valid input
+  assert( io_vp  > 0 );
+  assert( io_vs  > 0 );
+  assert( io_rho > 0 );
+
   if( i_rule == "tpv34" ) {
     tpv34( io_vp,
            io_vs,
            io_rho );
+  }
+  else if( i_rule == "highf2018" ) {
+    highf2018( io_vp,
+               io_vs,
+               io_rho );
   }
 }

@@ -47,6 +47,17 @@ class edge_v::vel::Rules {
                        float &io_vs,
                        float &io_rho );
 
+    /**
+     * @brief Rules for the 2018 High-F activities as done by RWG.
+     *
+     * @param io_vp p-wave velocity.
+     * @param io_vs s-wave velocity.
+     * @param io_rho density.
+     */
+    static void highf2018( float &io_vp,
+                           float &io_vs,
+                           float &io_rho );
+
   public:
     /**
      * @brief Applies the velocity rule.
