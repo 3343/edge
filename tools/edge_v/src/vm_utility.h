@@ -84,12 +84,6 @@ class edge_v::vm::Utility {
                            const std::string &i_projMesh,
                            const std::string &i_projVel  );
 
-    // *** Mesh Module ***
-    static int meshInit( moab_mesh &,
-                  io::Config & );
-    static int meshFinalize( moab_mesh & );
-
-
     // *** Velocity Model Module ***
     typedef struct vm_datum {
       real m_data[3];

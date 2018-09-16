@@ -25,6 +25,7 @@
 #include "vm_utility.h"
 #include "Config.h"
 #include "Rules.h"
+#include "io/Moab.h"
 #include "io/GmshView.hpp"
 
 int main( int i_argc, char **i_argv ) {
@@ -45,42 +46,38 @@ int main( int i_argc, char **i_argv ) {
   edge_v::io::Config l_config( l_configFile );
   edge_v::vm::Utility::ucvmInit( l_config );
 
-  // MOAB mesh interface
-  moab_mesh l_msh;
-  edge_v::vm::Utility::meshInit( l_msh, l_config );
+  // init MOAB mesh interface
+  std::cout << "reading mesh: " << l_config.m_meshFn << std::endl;
+  edge_v::io::Moab< int > l_moab( l_config.m_meshFn );
+
+  // get number of entities
+  int l_nEns[4];
+  for( unsigned short l_di = 0; l_di < 4; l_di++ )
+    l_nEns[l_di] = l_moab.nEnsByDis( l_di );
+
+  std::cout << "entities by number of dimensions: " << std::endl << "  ";
+  for( unsigned short l_di = 0; l_di < 4; l_di++ ) {
+    std::cout << l_di << ": " << l_nEns[l_di];
+    if( l_di < 3 ) std::cout << ", ";
+  }
+  std::cout << std::endl;
 
   // UCVM interface
-  ucvm_point_t *l_ucvmPts = new ucvm_point_t[l_msh.m_numNodes];
-  ucvm_data_t *l_ucvmData = new ucvm_data_t[ l_msh.m_numNodes];
-
-  // MOAB error code
-  moab::ErrorCode l_rval;
-
-  // get the vertices in the mesh
-  std::vector< moab::EntityHandle > l_vertices;
-  l_rval = l_msh.m_intf->get_entities_by_dimension( 0, 0, l_vertices );
-  assert( l_rval == moab::MB_SUCCESS );
+  ucvm_point_t *l_ucvmPts = new ucvm_point_t[l_nEns[0]];
+  ucvm_data_t *l_ucvmData = new ucvm_data_t[ l_nEns[0]];
 
   // get the coordinates of the vertices
-  double (*l_veCrds)[3] = new double[l_vertices.size()][3];
-  l_rval = l_msh.m_intf->get_coords( &l_vertices[0],
-                                      l_vertices.size(),
-                                      l_veCrds[0] );
-  assert( l_rval == moab::MB_SUCCESS );
+  double (*l_veCrds)[3] = new double[ l_nEns[0] ][3];
+  l_moab.getVeCrds( l_veCrds );
 
-  // get mapping from tets to nodes
-  std::vector< moab::EntityHandle > l_elCo;
-  l_rval = l_msh.m_intf->get_connectivity_by_type( moab::MBTET,
-                                                   l_elCo );
-  assert( l_rval == moab::MB_SUCCESS );
-
-  std::vector< moab::EntityID > l_elVe;
-  l_elVe.resize( l_elCo.size() );
-  for( std::size_t l_ve = 0; l_ve < l_elCo.size(); l_ve++ )
-    l_elVe[l_ve] = l_msh.m_intf->id_from_handle( l_elCo[l_ve] ) - 1;
+  // get connectivity
+  std::vector< int > l_elVe;
+  l_elVe.resize( l_nEns[3]*4 );
+  l_moab.getEnVe( "tet4",
+                  &l_elVe[0] );
 
   // for all vertices in mesh, populate ucvm points with coords
-  for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
+  for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
     // apply trafo
     double l_tmp[3] = {0,0,0};
     for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
@@ -99,11 +96,11 @@ int main( int i_argc, char **i_argv ) {
   double *l_yPtr  = &(l_ucvmPts[0].coord[1]);
   double *l_zPtr  = &(l_ucvmPts[0].coord[2]);
   int l_pntOffset = sizeof( ucvm_point_t ) / sizeof( double );
-  pj_transform( l_pjSrc, l_pjDest, l_msh.m_numNodes, l_pntOffset,
+  pj_transform( l_pjSrc, l_pjDest, l_nEns[0], l_pntOffset,
                 l_xPtr, l_yPtr, l_zPtr );
 
   // apply rad to degree
-  for( int_v l_nid = 0; l_nid < l_msh.m_numNodes; l_nid++ ) {
+  for( int_v l_nid = 0; l_nid < l_nEns[0]; l_nid++ ) {
     l_ucvmPts[l_nid].coord[0] *= RAD_TO_DEG;
     l_ucvmPts[l_nid].coord[1] *= RAD_TO_DEG;
   }
@@ -114,7 +111,7 @@ int main( int i_argc, char **i_argv ) {
   std::cout << "UCVM Query... ";
   std::cout.flush();
 
-  int l_ucvmStatus  = ucvm_query( l_msh.m_numNodes, l_ucvmPts, l_ucvmData );
+  int l_ucvmStatus  = ucvm_query( l_nEns[0], l_ucvmPts, l_ucvmData );
   if( l_ucvmStatus ) {
     std::cout << "Failed!" << std::endl;
     std::cerr << "Error: cannot complete UCVM query." << std::endl;
@@ -125,11 +122,11 @@ int main( int i_argc, char **i_argv ) {
   std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
 
   // get velocity model
-  float (*l_vps)  = new float[ l_vertices.size() ];
-  float (*l_vss)  = new float[ l_vertices.size() ];
-  float (*l_rhos) = new float[ l_vertices.size() ];
+  float (*l_vps)  = new float[ l_nEns[0] ];
+  float (*l_vss)  = new float[ l_nEns[0] ];
+  float (*l_rhos) = new float[ l_nEns[0] ];
 
-  for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
+  for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
     // get pointer to use properties
     ucvm_prop_t *l_propPtr;
     if( l_config.m_ucvmType == "gtl" )
@@ -154,11 +151,11 @@ int main( int i_argc, char **i_argv ) {
   // assemble characteristic lengths, if necessary
   if( l_config.m_posFn != "" ) {
     // assemble characteristic lengths
-    float (*l_cls)  = new float[ l_vertices.size() ];
+    float (*l_cls)  = new float[ l_nEns[0] ];
 
     // scale vs to get char lengths
     float l_sca = float(1.0) / l_config.m_elmtsPerWave;
-    for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
+    for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
       l_cls[l_ve] = l_vss[l_ve] * l_sca;
     }
 
