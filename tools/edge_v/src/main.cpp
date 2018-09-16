@@ -130,13 +130,21 @@ int main( int i_argc, char **i_argv ) {
   float (*l_rhos) = new float[ l_vertices.size() ];
 
   for( std::size_t l_ve = 0; l_ve < l_vertices.size(); l_ve++ ) {
-    // cmb: combination crustal+gtl
-    ucvm_prop_t *l_propPtr = &(l_ucvmData[l_ve].cmb);
+    // get pointer to use properties
+    ucvm_prop_t *l_propPtr;
+    if( l_config.m_ucvmType == "gtl" )
+      l_propPtr = &(l_ucvmData[l_ve].gtl);
+    else if( l_config.m_ucvmType == "crust" )
+      l_propPtr = &(l_ucvmData[l_ve].crust);
+    else
+      l_propPtr = &(l_ucvmData[l_ve].cmb);
 
+    // store velocities
     l_vps[l_ve] = l_propPtr->vp;
     l_vss[l_ve] = l_propPtr->vs;
     l_rhos[l_ve] = l_propPtr->rho;
 
+    // massage velocities according to given rule
     edge_v::vel::Rules::apply( l_config.m_velRule,
                                l_vps[l_ve],
                                l_vss[l_ve],
