@@ -68,10 +68,6 @@ int main( int i_argc, char **i_argv ) {
   }
   std::cout << std::endl;
 
-  // UCVM interface
-  ucvm_point_t *l_ucvmPts = new ucvm_point_t[l_nEns[0]];
-  ucvm_data_t *l_ucvmData = new ucvm_data_t[ l_nEns[0]];
-
   // get the coordinates of the vertices
   double (*l_veCrds)[3] = new double[ l_nEns[0] ][3];
   l_moab.getVeCrds( l_veCrds );
@@ -86,7 +82,6 @@ int main( int i_argc, char **i_argv ) {
   float (*l_vps)  = new float[ l_nEns[0] ];
   float (*l_vss)  = new float[ l_nEns[0] ];
   float (*l_rhos) = new float[ l_nEns[0] ];
-
 
   // get velocities from UCVM
   l_ucvm.getVels( l_nEns[0],
@@ -109,7 +104,7 @@ int main( int i_argc, char **i_argv ) {
                                l_rhos[l_ve] );
   }
 
-  // assemble characteristic lengths, if necessary
+  // assemble characteristic lengths and store GMSH view, if requested
   if( l_config.m_posFn != "" ) {
     // assemble characteristic lengths
     float (*l_cls)  = new float[ l_nEns[0] ];
@@ -131,10 +126,70 @@ int main( int i_argc, char **i_argv ) {
     delete[] l_cls;
   }
 
+  // assemble Lame parameters and store annotated mesh, if requested
+  if( l_config.m_annoFn != "" ) {
+    // compute vertex Lame parameters
+    float (*l_lams)  = new float[ l_nEns[0] ];
+    float (*l_mus)  = new float[ l_nEns[0] ];
+
+    for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
+      l_mus[l_ve]   = l_vss[l_ve] * l_vss[l_ve] * l_rhos[l_ve];
+      l_lams[l_ve]  = l_vps[l_ve] * l_vps[l_ve] * l_rhos[l_ve];
+      l_lams[l_ve] -= float(2) * l_mus[l_ve];
+    }
+
+    // derive element parameters
+    double (*l_elLams) = new double[ l_nEns[3] ];
+    double (*l_elMus)  = new double[ l_nEns[3] ];
+    double (*l_elRhos) = new double[ l_nEns[3] ];
+
+    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
+      // init
+      l_elLams[l_el] = 0;
+      l_elMus[l_el] = 0;
+      l_elRhos[l_el] = 0;
+
+      // add contribution of vertices
+      for( int l_ve = 0; l_ve < 4; l_ve++ ) {
+        int l_veId = l_elVe[l_el*4 + l_ve];
+
+        l_elLams[l_el] += l_lams[l_veId];
+        l_elMus[l_el] += l_mus[l_veId];
+        l_elRhos[l_el] += l_rhos[l_veId];
+      }
+
+      // average
+      l_elLams[l_el] *= 0.25;
+      l_elMus[l_el] *= 0.25;
+      l_elRhos[l_el] *= 0.25;
+    }
+
+    // store data in MOAB
+    l_moab.setEnData( "tet4",
+                      "LAMBDA",
+                      l_elLams );
+
+    l_moab.setEnData( "tet4",
+                      "MU",
+                      l_elMus );
+
+    l_moab.setEnData( "tet4",
+                      "RHO",
+                      l_elRhos );
+
+    std::cout << "writing annotated mesh: " << l_config.m_annoFn << std::endl;
+    l_moab.writeMesh( l_config.m_annoFn );
+
+    delete[] l_lams;
+    delete[] l_mus;
+
+    delete[] l_elLams;
+    delete[] l_elMus;
+    delete[] l_elRhos;
+  }
+
   // free memory
   delete[] l_veCrds;
-  delete[] l_ucvmPts;
-  delete[] l_ucvmData;
   delete[] l_vps;
   delete[] l_vss;
   delete[] l_rhos;

@@ -46,6 +46,25 @@ class edge_v::io::Moab {
     //! moab interface
     moab::Interface *m_moab;
 
+    /**
+     * @brief Converts the given type to a native MOAB type.
+     *
+     * @param i_str type as string.
+     * @return moab type.
+     */
+    moab::EntityType strToTy( std::string const &i_str ) {
+      moab::EntityType l_ty;
+      if( i_str == "tria3" ) {
+        l_ty = moab::MBTRI;
+      }
+      else if( i_str  == "tet4" ) {
+        l_ty = moab::MBTET;
+      }
+      else assert( false );
+
+      return l_ty;
+    }
+
   public:
     /**
      * @brief Constructs a new Moab object.
@@ -108,15 +127,9 @@ class edge_v::io::Moab {
      * @param i_enTy entity type, either tet4 or tria3.
      * @param o_enVe will be set vertex ids (starting at 0) adjacent to the entities.
      */
-    void getEnVe( std::string  i_enTy,
-                  TL_T_GID    *o_enVe ) {
-      moab::EntityType l_ty;
-      if( i_enTy == "tria3" ) {
-        l_ty = moab::MBTRI;
-      }
-      else if( i_enTy  == "tet4" ) {
-        l_ty = moab::MBTET;
-      }
+    void getEnVe( std::string const &i_enTy,
+                  TL_T_GID          *o_enVe ) {
+      moab::EntityType l_ty = strToTy( i_enTy );
 
       // get mapping from entities to vertices
       std::vector< moab::EntityHandle > l_enCo;
@@ -128,6 +141,52 @@ class edge_v::io::Moab {
       for( std::size_t l_ve = 0; l_ve < l_enCo.size(); l_ve++ ) {
         o_enVe[l_ve] = m_moab->id_from_handle( l_enCo[l_ve] ) - 1;
       }
+    }
+
+    /**
+     * @brief Sets the given data in MOAB (as native double).
+     *
+     * @param i_enTy entity type to which this data belongs.
+     * @param i_tagName tag name.
+     * @param i_data data, which will be stored.
+     */
+    void setEnData( std::string const &i_enTy,
+                    std::string const &i_tagName,
+                    double            *i_data ) {
+      moab::EntityType l_ty = strToTy( i_enTy );
+
+      // get the entities by type
+      std::vector< moab::EntityHandle > l_ens;
+      moab::ErrorCode l_err = m_moab->get_entities_by_type( 0,
+                                                            l_ty,
+                                                            l_ens );
+      assert( l_err == moab::MB_SUCCESS );
+
+      // create the tag
+      moab::Tag l_tag;
+      l_err = m_moab->tag_get_handle( i_tagName.c_str(),
+                                      1,
+                                      moab::MB_TYPE_DOUBLE,
+                                      l_tag,
+                                      moab::MB_TAG_CREAT|moab::MB_TAG_DENSE );
+      assert( l_err == moab::MB_SUCCESS );
+
+      // store the data
+      l_err = m_moab->tag_set_data( l_tag,
+                                    &l_ens[0],
+                                    l_ens.size(),
+                                    i_data );
+      assert( l_err == moab::MB_SUCCESS );
+    }
+
+    /**
+     * @brief Writes the database to the given file.
+     *
+     * @param i_pathToMesh path to the mesh.
+     */
+    void writeMesh( std::string &i_pathToMesh ) {
+      moab::ErrorCode l_err = m_moab->write_file( i_pathToMesh.c_str() );
+      assert( l_err == moab::MB_SUCCESS );
     }
 };
 

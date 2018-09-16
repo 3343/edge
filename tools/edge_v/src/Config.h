@@ -77,9 +77,7 @@ class edge_v::io::Config {
 
     int                        m_tetRefinement;
     std::vector< std::string > m_faultInputFns;
-    std::string                m_vmNodeFn;
-    std::string                m_vmElmtFn;
-    std::string                m_h5mFn;
+    std::string                m_annoFn;
     std::string                m_posFn;
 
     unsigned int               m_parallelMode;

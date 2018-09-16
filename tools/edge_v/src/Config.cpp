@@ -107,9 +107,7 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
     else if( l_varName.compare( "proj_mesh"        ) == 0 ) m_projMesh      = l_varValue;
     else if( l_varName.compare( "proj_vel"         ) == 0 ) m_projVel       = l_varValue;
     else if( l_varName.compare( "mesh_file"        ) == 0 ) m_meshFn        = l_varValue;
-    else if( l_varName.compare( "node_vm_file"     ) == 0 ) m_vmNodeFn      = l_varValue;
-    else if( l_varName.compare( "elmt_vm_file"     ) == 0 ) m_vmElmtFn      = l_varValue;
-    else if( l_varName.compare( "h5m_file"         ) == 0 ) m_h5mFn         = l_varValue;
+    else if( l_varName.compare( "anno_file"        ) == 0 ) m_annoFn        = l_varValue;
     else if( l_varName.compare( "pos_file"         ) == 0 ) m_posFn         = l_varValue;
     else if( l_varName.compare( "fault_input_file" ) == 0 ) m_faultInputFns.push_back( l_varValue );
     else if( l_varName.compare( "tet_refinement"   ) == 0 ) m_tetRefinement = std::stoi( l_varValue );
