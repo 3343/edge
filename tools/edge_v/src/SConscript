@@ -24,8 +24,7 @@
 Import('env')
 l_sources = [ 'io/Config.cpp',
               'FaultModel.cpp',
-              'FaultRegion.cpp',
-              'Rules.cpp' ]
+              'FaultRegion.cpp' ]
 
 for l_src in l_sources:
   env.sources.append( env.Object( l_src ) )

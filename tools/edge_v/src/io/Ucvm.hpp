@@ -86,17 +86,19 @@ class edge_v::io::Ucvm {
      * @param o_rhos will be set to densities of the points.
      *
      * @paramt TL_T_ID integral type of the ids. 
+     * @paramt TL_T_REAL floating point precision.
      */
-    template< typename TL_T_ID >
+    template< typename TL_T_ID,
+              typename TL_T_REAL >
     void getVels( TL_T_ID             i_nPts,
                   double      const   i_trafoSrc[3][3],
                   std::string const  &i_projSrc,
                   std::string const  &i_projDes,
                   std::string const  &i_ucvmType,
                   double            (*i_pts)[3],
-                  float              *o_vps,
-                  float              *o_vss,
-                  float              *o_rhos ) {
+                  TL_T_REAL          *o_vps,
+                  TL_T_REAL          *o_vss,
+                  TL_T_REAL          *o_rhos ) {
       // allocate memory for UCVM points and data
       ucvm_point_t *l_ucvmPts  = new ucvm_point_t[ i_nPts ];
       ucvm_data_t  *l_ucvmData = new ucvm_data_t[  i_nPts ];

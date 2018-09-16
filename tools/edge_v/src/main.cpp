@@ -78,41 +78,40 @@ int main( int i_argc, char **i_argv ) {
   l_moab.getEnVe( "tet4",
                   &l_elVe[0] );
 
-  // get velocity model
-  float (*l_vps)  = new float[ l_nEns[0] ];
-  float (*l_vss)  = new float[ l_nEns[0] ];
-  float (*l_rhos) = new float[ l_nEns[0] ];
-
-  // get velocities from UCVM
-  l_ucvm.getVels( l_nEns[0],
-                  l_config.m_trafo,
-                  l_config.m_projMesh,
-                  l_config.m_projVel,
-                  l_config.m_ucvmType,
-                  l_veCrds,
-                  l_vps,
-                  l_vss,
-                  l_rhos );
-
-
-  // apply velocity rules
-  for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-    // massage velocities according to given rule
-    edge_v::vel::Rules::apply( l_config.m_velRule,
-                               l_vps[l_ve],
-                               l_vss[l_ve],
-                               l_rhos[l_ve] );
-  }
-
-  // assemble characteristic lengths and store GMSH view, if requested
+  // assemble characteristic lengths and store Gmsh view, if requested
   if( l_config.m_posFn != "" ) {
+    // get velocity model
+    float (*l_veVps)  = new float[ l_nEns[0] ];
+    float (*l_veVss)  = new float[ l_nEns[0] ];
+    float (*l_veRhos) = new float[ l_nEns[0] ];
+
+    // get velocities from UCVM
+    l_ucvm.getVels( l_nEns[0],
+                    l_config.m_trafo,
+                    l_config.m_projMesh,
+                    l_config.m_projVel,
+                    l_config.m_ucvmType,
+                    l_veCrds,
+                    l_veVps,
+                    l_veVss,
+                    l_veRhos );
+
+    // apply velocity rules
+    for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
+      // massage velocities according to given rule
+      edge_v::vel::Rules::apply( l_config.m_velRule,
+                                 l_veVps[l_ve],
+                                 l_veVss[l_ve],
+                                 l_veRhos[l_ve] );
+    }
+
     // assemble characteristic lengths
     float (*l_cls)  = new float[ l_nEns[0] ];
 
     // scale vs to get char lengths
     float l_sca = float(1.0) / l_config.m_elmtsPerWave;
     for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-      l_cls[l_ve] = l_vss[l_ve] * l_sca;
+      l_cls[l_ve] = l_veVss[l_ve] * l_sca;
     }
 
     // write to disk
@@ -123,45 +122,64 @@ int main( int i_argc, char **i_argv ) {
                                   l_veCrds,
                                   l_cls );
 
+    // free memory
     delete[] l_cls;
+    delete[] l_veVps;
+    delete[] l_veVss;
+    delete[] l_veRhos;
   }
 
-  // assemble Lame parameters and store annotated mesh, if requested
+  // assemble elements' Lame parameters and store annotated mesh, if requested
   if( l_config.m_annoFn != "" ) {
-    // compute vertex Lame parameters
-    float (*l_lams)  = new float[ l_nEns[0] ];
-    float (*l_mus)  = new float[ l_nEns[0] ];
+    std::cout << "annotating mesh with velocity model" << std::endl;
 
-    for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-      l_mus[l_ve]   = l_vss[l_ve] * l_vss[l_ve] * l_rhos[l_ve];
-      l_lams[l_ve]  = l_vps[l_ve] * l_vps[l_ve] * l_rhos[l_ve];
-      l_lams[l_ve] -= float(2) * l_mus[l_ve];
+    // barycenters
+    double (* l_elBars)[3] = new double[ l_nEns[3] ][3];
+
+    // compute bary centers
+    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
+      for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+        l_elBars[l_el][l_di] = 0;
+        for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
+          int l_veId = l_elVe[l_el*4+l_ve];
+          l_elBars[l_el][l_di] += l_veCrds[l_veId][l_di];
+        }
+        l_elBars[l_el][l_di] *= 0.25;
+      }
     }
 
-    // derive element parameters
-    double (*l_elLams) = new double[ l_nEns[3] ];
-    double (*l_elMus)  = new double[ l_nEns[3] ];
+    // query UCVM for velocity model at barycenters
+    double (*l_elVps) = new double[ l_nEns[3] ];
+    double (*l_elVss) = new double[ l_nEns[3] ];
     double (*l_elRhos) = new double[ l_nEns[3] ];
 
+    l_ucvm.getVels( l_nEns[3],
+                    l_config.m_trafo,
+                    l_config.m_projMesh,
+                    l_config.m_projVel,
+                    l_config.m_ucvmType,
+                    l_elBars,
+                    l_elVps,
+                    l_elVss,
+                    l_elRhos );
+
+    // apply velocity rules
     for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
-      // init
-      l_elLams[l_el] = 0;
-      l_elMus[l_el] = 0;
-      l_elRhos[l_el] = 0;
+      // massage velocities according to given rule
+      edge_v::vel::Rules::apply( l_config.m_velRule,
+                                 l_elVps[l_el],
+                                 l_elVss[l_el],
+                                 l_elRhos[l_el] );
+    }
 
-      // add contribution of vertices
-      for( int l_ve = 0; l_ve < 4; l_ve++ ) {
-        int l_veId = l_elVe[l_el*4 + l_ve];
+    // derive elements' Lame parameters
+    double (*l_elLams) = new double[ l_nEns[3] ];
+    double (*l_elMus)  = new double[ l_nEns[3] ];
 
-        l_elLams[l_el] += l_lams[l_veId];
-        l_elMus[l_el] += l_mus[l_veId];
-        l_elRhos[l_el] += l_rhos[l_veId];
-      }
-
-      // average
-      l_elLams[l_el] *= 0.25;
-      l_elMus[l_el] *= 0.25;
-      l_elRhos[l_el] *= 0.25;
+    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
+      l_elMus[l_el] = l_elVss[l_el] * l_elVss[l_el] * l_elRhos[l_el];
+      l_elLams[l_el] = l_elVps[l_el] * l_elVps[l_el] * l_elRhos[l_el];
+      l_elLams[l_el] -= 2.0 * l_elMus[l_el];
     }
 
     // store data in MOAB
@@ -180,9 +198,8 @@ int main( int i_argc, char **i_argv ) {
     std::cout << "writing annotated mesh: " << l_config.m_annoFn << std::endl;
     l_moab.writeMesh( l_config.m_annoFn );
 
-    delete[] l_lams;
-    delete[] l_mus;
-
+    // free memory
+    delete[] l_elBars;
     delete[] l_elLams;
     delete[] l_elMus;
     delete[] l_elRhos;
@@ -190,9 +207,6 @@ int main( int i_argc, char **i_argv ) {
 
   // free memory
   delete[] l_veCrds;
-  delete[] l_vps;
-  delete[] l_vss;
-  delete[] l_rhos;
 
   // finish time
   l_tp = clock() - l_tp;
