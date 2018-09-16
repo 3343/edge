@@ -95,30 +95,22 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
     std::string l_varName   = l_lineBuf.substr( l_i, l_j - l_i );
     std::string l_varValue  = l_lineBuf.substr( l_j + 1 );
 
-    if( l_varName.compare( "ucvm_config" ) == 0 )
-      m_ucvmCfgFn     = l_varValue;
-    else if( l_varName.compare( "ucvm_model_list" ) == 0 )
-      m_ucvmModelList = l_varValue;
-    else if( l_varName.compare( "ucvm_cmode" ) == 0 ) {
-      if( l_varValue.compare( "UCVM_COORD_GEO_DEPTH" ) == 0 )
-        m_ucvmCmode   = UCVM_COORD_GEO_DEPTH;
-      else if( l_varValue.compare( "UCVM_COORD_GEO_ELEV" ) == 0 )
-        m_ucvmCmode   = UCVM_COORD_GEO_ELEV;
-      else std::cerr << "unknown UCVM_COORD_GEO mode";
-    }
-    else if( l_varName.compare( "ucvm_type"        ) == 0 ) m_ucvmType     = l_varValue;
-    else if( l_varName.compare( "vel_rule"         ) == 0 ) m_velRule      = l_varValue;
-    else if( l_varName.compare( "elmts_per_wave"   ) == 0 ) m_elmtsPerWave = atof( l_varValue.c_str() );
+    if(      l_varName.compare( "ucvm_config"      ) == 0 ) m_ucvmCfgFn     = l_varValue;
+    else if( l_varName.compare( "ucvm_model_list"  ) == 0 ) m_ucvmModelList = l_varValue;
+    else if( l_varName.compare( "ucvm_type"        ) == 0 ) m_ucvmType      = l_varValue;
+    else if( l_varName.compare( "ucvm_cmode"       ) == 0 ) m_ucvmCmode     = l_varValue;
+    else if( l_varName.compare( "vel_rule"         ) == 0 ) m_velRule       = l_varValue;
+    else if( l_varName.compare( "elmts_per_wave"   ) == 0 ) m_elmtsPerWave  = atof( l_varValue.c_str() );
     else if( l_varName.compare( "trafo_x"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[0] );
     else if( l_varName.compare( "trafo_y"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[1] );
     else if( l_varName.compare( "trafo_z"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[2] );
-    else if( l_varName.compare( "proj_mesh"        ) == 0 ) m_projMesh     = l_varValue;
-    else if( l_varName.compare( "proj_vel"         ) == 0 ) m_projVel      = l_varValue;
-    else if( l_varName.compare( "mesh_file"        ) == 0 ) m_meshFn       = l_varValue;
-    else if( l_varName.compare( "node_vm_file"     ) == 0 ) m_vmNodeFn     = l_varValue;
-    else if( l_varName.compare( "elmt_vm_file"     ) == 0 ) m_vmElmtFn     = l_varValue;
-    else if( l_varName.compare( "h5m_file"         ) == 0 ) m_h5mFn        = l_varValue;
-    else if( l_varName.compare( "pos_file"         ) == 0 ) m_posFn        = l_varValue;
+    else if( l_varName.compare( "proj_mesh"        ) == 0 ) m_projMesh      = l_varValue;
+    else if( l_varName.compare( "proj_vel"         ) == 0 ) m_projVel       = l_varValue;
+    else if( l_varName.compare( "mesh_file"        ) == 0 ) m_meshFn        = l_varValue;
+    else if( l_varName.compare( "node_vm_file"     ) == 0 ) m_vmNodeFn      = l_varValue;
+    else if( l_varName.compare( "elmt_vm_file"     ) == 0 ) m_vmElmtFn      = l_varValue;
+    else if( l_varName.compare( "h5m_file"         ) == 0 ) m_h5mFn         = l_varValue;
+    else if( l_varName.compare( "pos_file"         ) == 0 ) m_posFn         = l_varValue;
     else if( l_varName.compare( "fault_input_file" ) == 0 ) m_faultInputFns.push_back( l_varValue );
     else if( l_varName.compare( "tet_refinement"   ) == 0 ) m_tetRefinement = std::stoi( l_varValue );
     else std::cout << "\nUnknown setting (" << l_varName << "). Ignored." << std::endl;

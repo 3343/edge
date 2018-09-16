@@ -59,7 +59,7 @@ class edge_v::io::Config {
 
     std::string                m_ucvmCfgFn;
     std::string                m_ucvmModelList;
-    ucvm_ctype_t               m_ucvmCmode;
+    std::string                m_ucvmCmode;
     std::string                m_ucvmType;
 
     std::string                m_velRule;

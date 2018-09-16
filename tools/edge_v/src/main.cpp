@@ -22,10 +22,10 @@
  * This is the main file of EDGE-V.
  **/
 
-#include "vm_utility.h"
 #include "Config.h"
 #include "Rules.h"
 #include "io/Moab.hpp"
+#include "io/Ucvm.hpp"
 #include "io/GmshView.hpp"
 #include <iostream>
 
@@ -45,7 +45,12 @@ int main( int i_argc, char **i_argv ) {
   // parse config
   std::string l_configFile = std::string( i_argv[2] );
   edge_v::io::Config l_config( l_configFile );
-  edge_v::vm::Utility::ucvmInit( l_config );
+
+  // init UCVM
+  std::cout << "initializing UCVM" << std::endl;
+  edge_v::io::Ucvm l_ucvm( l_config.m_ucvmCfgFn,
+                           l_config.m_ucvmModelList,
+                           l_config.m_ucvmCmode );
 
   // init MOAB mesh interface
   std::cout << "reading mesh: " << l_config.m_meshFn << std::endl;
@@ -77,71 +82,26 @@ int main( int i_argc, char **i_argv ) {
   l_moab.getEnVe( "tet4",
                   &l_elVe[0] );
 
-  // for all vertices in mesh, populate ucvm points with coords
-  for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-    // apply trafo
-    double l_tmp[3] = {0,0,0};
-    for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
-      for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
-        l_tmp[l_d1] += l_config.m_trafo[l_d1][l_d2] * l_veCrds[l_ve][l_d2];
-    for( unsigned short l_di = 0; l_di < 3; l_di++ )
-      l_ucvmPts[l_ve].coord[l_di] = l_tmp[l_di];
-  }
-
-  // proj.4 projections
-  projPJ l_pjSrc  = pj_init_plus( l_config.m_projMesh.c_str() );
-  projPJ l_pjDest = pj_init_plus( l_config.m_projVel.c_str()  );
-
-  // proj.4 trafo: UTM -> long,lat,elev
-  double *l_xPtr  = &(l_ucvmPts[0].coord[0]);
-  double *l_yPtr  = &(l_ucvmPts[0].coord[1]);
-  double *l_zPtr  = &(l_ucvmPts[0].coord[2]);
-  int l_pntOffset = sizeof( ucvm_point_t ) / sizeof( double );
-  pj_transform( l_pjSrc, l_pjDest, l_nEns[0], l_pntOffset,
-                l_xPtr, l_yPtr, l_zPtr );
-
-  // apply rad to degree
-  for( int_v l_nid = 0; l_nid < l_nEns[0]; l_nid++ ) {
-    l_ucvmPts[l_nid].coord[0] *= RAD_TO_DEG;
-    l_ucvmPts[l_nid].coord[1] *= RAD_TO_DEG;
-  }
-
-  clock_t l_c = clock();
-
-  // UCVM Query on ucvm points to get ucvm data
-  std::cout << "UCVM Query... ";
-  std::cout.flush();
-
-  int l_ucvmStatus  = ucvm_query( l_nEns[0], l_ucvmPts, l_ucvmData );
-  if( l_ucvmStatus ) {
-    std::cout << "Failed!" << std::endl;
-    std::cerr << "Error: cannot complete UCVM query." << std::endl;
-  }
-
-  std::cout << "Done! ";
-  l_c = clock() - l_c;
-  std::cout << "(" << (float) l_c / CLOCKS_PER_SEC << "s)" << std::endl;
-
   // get velocity model
   float (*l_vps)  = new float[ l_nEns[0] ];
   float (*l_vss)  = new float[ l_nEns[0] ];
   float (*l_rhos) = new float[ l_nEns[0] ];
 
+
+  // get velocities from UCVM
+  l_ucvm.getVels( l_nEns[0],
+                  l_config.m_trafo,
+                  l_config.m_projMesh,
+                  l_config.m_projVel,
+                  l_config.m_ucvmType,
+                  l_veCrds,
+                  l_vps,
+                  l_vss,
+                  l_rhos );
+
+
+  // apply velocity rules
   for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-    // get pointer to use properties
-    ucvm_prop_t *l_propPtr;
-    if( l_config.m_ucvmType == "gtl" )
-      l_propPtr = &(l_ucvmData[l_ve].gtl);
-    else if( l_config.m_ucvmType == "crust" )
-      l_propPtr = &(l_ucvmData[l_ve].crust);
-    else
-      l_propPtr = &(l_ucvmData[l_ve].cmb);
-
-    // store velocities
-    l_vps[l_ve] = l_propPtr->vp;
-    l_vss[l_ve] = l_propPtr->vs;
-    l_rhos[l_ve] = l_propPtr->rho;
-
     // massage velocities according to given rule
     edge_v::vel::Rules::apply( l_config.m_velRule,
                                l_vps[l_ve],

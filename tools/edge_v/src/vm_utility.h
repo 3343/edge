@@ -65,51 +65,6 @@ class edge_v::vm::Utility {
                          double  i_rho,
                          double &o_lam,
                          double &o_mu );
-
-    static int ucvmInit( const io::Config & );
-
-    // *** Parallel Module ***
-    typedef struct worker_reg {
-      int_v   m_workerTid;
-
-      projPJ  m_pjUtm;
-      projPJ  m_pjGeo;
-
-      int_v   m_workSize;
-      int_v   m_numPrvt;
-    } worker_reg;
-
-    static int workerInit(       worker_reg  &,
-                           const int_v       &,
-                           const std::string &i_projMesh,
-                           const std::string &i_projVel  );
-
-    // *** Velocity Model Module ***
-    typedef struct vm_datum {
-      real m_data[3];
-    } vm_datum;
-
-    typedef struct vmodel {
-      vm_datum *m_vmList;
-    } vmodel;
-
-    static int vmNodeInit(       vmodel    &,
-                    const moab_mesh & );
-    static int vmElmtInit(       vmodel    &,
-                    const moab_mesh & );
-
-    static int vmNodeFinalize( vmodel & );
-    static int vmElmtFinalize( vmodel & );
-
-    static int writeVMNodes(       vmodel    &,
-                      const io::Config  &,
-                      const moab_mesh & );
-    static int writeVMElmts(       vmodel    &,
-                      const io::Config  &,
-                      const moab_mesh & );
-    static int writeVMTags(        vmodel    &,
-                      const io::Config  &,
-                      const moab_mesh & );
 };
 
 #endif
