@@ -20,12 +20,12 @@
  * @section DESCRIPTION
  * Interface to MOAB.
  **/
-#ifndef EDGEV_IO_MOAB_H
-#define EDGEV_IO_MOAB_H
+#ifndef EDGEV_IO_MOAB_HPP
+#define EDGEV_IO_MOAB_HPP
 
 #include <moab/Interface.hpp>
 #include <moab/Core.hpp>
-
+#include <cassert>
 #include <string>
 
 namespace edge_v {

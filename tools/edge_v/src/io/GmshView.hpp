@@ -24,6 +24,7 @@
 #ifndef EDGEV_IO_GMSHVIEW_HPP
 #define EDGEV_IO_GMSHVIEW_HPP
 
+#include <iostream>
 #include <string>
 #include <fstream>
 #include <sstream>

@@ -25,8 +25,9 @@
 #include "vm_utility.h"
 #include "Config.h"
 #include "Rules.h"
-#include "io/Moab.h"
+#include "io/Moab.hpp"
 #include "io/GmshView.hpp"
+#include <iostream>
 
 int main( int i_argc, char **i_argv ) {
   // check input arguments
