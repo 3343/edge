@@ -22,7 +22,7 @@
  * This is the main file of EDGE-V.
  **/
 
-#include "Config.h"
+#include "io/Config.h"
 #include "Rules.h"
 #include "io/Moab.hpp"
 #include "io/Ucvm.hpp"

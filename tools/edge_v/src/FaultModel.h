@@ -28,7 +28,7 @@
 #include <vector>
 #include "moab/Interface.hpp"
 #include "constants.h"
-#include "Config.h"
+#include "io/Config.h"
 #include "Geometry.h"
 
 namespace edge_v {

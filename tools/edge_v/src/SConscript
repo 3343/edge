@@ -22,7 +22,7 @@
 ##
 
 Import('env')
-l_sources = [ 'Config.cpp',
+l_sources = [ 'io/Config.cpp',
               'FaultModel.cpp',
               'FaultRegion.cpp',
               'Rules.cpp' ]
