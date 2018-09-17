@@ -28,6 +28,7 @@
 #include "io/Ucvm.hpp"
 #include "io/GmshView.hpp"
 #include <iostream>
+#include <cmath>
 
 int main( int i_argc, char **i_argv ) {
   // check input arguments
@@ -109,8 +110,32 @@ int main( int i_argc, char **i_argv ) {
     float (*l_cls)  = new float[ l_nEns[0] ];
 
     // scale vs to get char lengths
-    float l_sca = float(1.0) / l_config.m_elmtsPerWave;
     for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
+      // determine the vertices xy-distance to the center of refinement
+      float l_dist = 0;
+      for( unsigned short l_di = 0; l_di < 2; l_di++ ) {
+        float l_sub = l_veCrds[l_ve][l_di] - l_config.m_refCenter[l_di];
+        l_dist += l_sub*l_sub;
+      }
+      l_dist = std::sqrt(l_dist);
+
+      // derive the respective scaling of the characteristic length
+      float l_sca = std::numeric_limits< float >::max();
+      if( l_dist < l_config.m_refRadii[0] ) {
+        l_sca = l_config.m_refCls[0];
+      }
+      else if( l_dist < l_config.m_refRadii[1] ) {
+        float l_clDif = l_config.m_refCls[1] - l_config.m_refCls[0];
+        float l_radDif = l_config.m_refRadii[1] - l_config.m_refRadii[0];
+
+        l_sca  = l_config.m_refCls[0];
+        l_sca += l_clDif * (l_dist - l_config.m_refRadii[0]) / l_radDif;
+      }
+      else {
+        l_sca = l_config.m_refCls[1];
+      }
+
+
       l_cls[l_ve] = l_veVss[l_ve] * l_sca;
     }
 

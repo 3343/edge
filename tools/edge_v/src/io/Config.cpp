@@ -28,35 +28,10 @@
 #include <fstream>
 #include <cassert>
 
-void edge_v::io::Config::vecStringToDouble( char         i_sep,
-                                            std::string &i_string,
-                                            double*      o_val ) {
-  std::string l_right = i_string;
-
-  unsigned short l_pos = 0;
-  while( l_right.size() > 0 ) {
-    std::size_t l_split = l_right.find_first_of(i_sep);
-    if( l_split < l_right.size() ) {
-      std::string l_left =  l_right.substr( 0, l_split );
-                  l_right = l_right.substr( l_split+1  );
-
-      o_val[l_pos] = atof(l_left.c_str());
-
-      l_pos++;
-    }
-    else {
-      o_val[l_pos] = atof(l_right.c_str());
-      break;
-    }
-  }
-}
-
 edge_v::io::Config::Config( const std::string &i_pathToFile ) {
   clock_t l_t = clock();
 
   m_antnCfgFn     = i_pathToFile;
-
-  m_elmtsPerWave  = 0.0;
 
   for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ ) {
     for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
@@ -64,8 +39,6 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
 
     m_trafo[l_d1][l_d1] = 1.0;
   }
-
-  m_tetRefinement = 0;
 
   std::cout << "Reading Config File: " << i_pathToFile << "... " << std::flush;
 
@@ -95,21 +68,23 @@ edge_v::io::Config::Config( const std::string &i_pathToFile ) {
     std::string l_varName   = l_lineBuf.substr( l_i, l_j - l_i );
     std::string l_varValue  = l_lineBuf.substr( l_j + 1 );
 
-    if(      l_varName.compare( "ucvm_config"      ) == 0 ) m_ucvmCfgFn     = l_varValue;
-    else if( l_varName.compare( "ucvm_model_list"  ) == 0 ) m_ucvmModelList = l_varValue;
-    else if( l_varName.compare( "ucvm_type"        ) == 0 ) m_ucvmType      = l_varValue;
-    else if( l_varName.compare( "ucvm_cmode"       ) == 0 ) m_ucvmCmode     = l_varValue;
-    else if( l_varName.compare( "vel_rule"         ) == 0 ) m_velRule       = l_varValue;
-    else if( l_varName.compare( "elmts_per_wave"   ) == 0 ) m_elmtsPerWave  = atof( l_varValue.c_str() );
-    else if( l_varName.compare( "trafo_x"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[0] );
-    else if( l_varName.compare( "trafo_y"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[1] );
-    else if( l_varName.compare( "trafo_z"          ) == 0 ) vecStringToDouble( ' ',  l_varValue, m_trafo[2] );
-    else if( l_varName.compare( "proj_mesh"        ) == 0 ) m_projMesh      = l_varValue;
-    else if( l_varName.compare( "proj_vel"         ) == 0 ) m_projVel       = l_varValue;
-    else if( l_varName.compare( "mesh_file"        ) == 0 ) m_meshFn        = l_varValue;
-    else if( l_varName.compare( "anno_file"        ) == 0 ) m_annoFn        = l_varValue;
-    else if( l_varName.compare( "pos_file"         ) == 0 ) m_posFn         = l_varValue;
-    else if( l_varName.compare( "fault_input_file" ) == 0 ) m_faultInputFns.push_back( l_varValue );
+    if(      l_varName.compare( "ucvm_config"                ) == 0 ) m_ucvmCfgFn     = l_varValue;
+    else if( l_varName.compare( "ucvm_model_list"            ) == 0 ) m_ucvmModelList = l_varValue;
+    else if( l_varName.compare( "ucvm_cmode"                 ) == 0 ) m_ucvmCmode     = l_varValue;
+    else if( l_varName.compare( "ucvm_type"                  ) == 0 ) m_ucvmType      = l_varValue;
+    else if( l_varName.compare( "proj_mesh"                  ) == 0 ) m_projMesh      = l_varValue;
+    else if( l_varName.compare( "proj_vel"                   ) == 0 ) m_projVel       = l_varValue;
+    else if( l_varName.compare( "vel_rule"                   ) == 0 ) m_velRule       = l_varValue;
+    else if( l_varName.compare( "trafo_x"                    ) == 0 ) vecStringToReal( ' ', l_varValue, m_trafo[0] );
+    else if( l_varName.compare( "trafo_y"                    ) == 0 ) vecStringToReal( ' ', l_varValue, m_trafo[1] );
+    else if( l_varName.compare( "trafo_z"                    ) == 0 ) vecStringToReal( ' ', l_varValue, m_trafo[2] );
+    else if( l_varName.compare( "refinement_center_xy"       ) == 0 ) vecStringToReal( ' ', l_varValue, m_refCenter );
+    else if( l_varName.compare( "refinement_radii_xy"        ) == 0 ) vecStringToReal( ' ', l_varValue, m_refRadii );
+    else if( l_varName.compare( "refinement_relative_cls" ) == 0 ) vecStringToReal( ' ', l_varValue, m_refCls );
+    else if( l_varName.compare( "mesh_file"                  ) == 0 ) m_meshFn        = l_varValue;
+    else if( l_varName.compare( "anno_file"                  ) == 0 ) m_annoFn        = l_varValue;
+    else if( l_varName.compare( "pos_file"                   ) == 0 ) m_posFn         = l_varValue;
+    else if( l_varName.compare( "fault_input_file"           ) == 0 ) m_faultInputFns.push_back( l_varValue );
     else if( l_varName.compare( "tet_refinement"   ) == 0 ) m_tetRefinement = std::stoi( l_varValue );
     else std::cout << "\nUnknown setting (" << l_varName << "). Ignored." << std::endl;
   }

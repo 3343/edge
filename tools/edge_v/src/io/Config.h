@@ -44,15 +44,37 @@ namespace edge_v {
  */
 class edge_v::io::Config {
   /**
-   * @brief Converts the given string vector to a double array.
+   * @brief Converts the given string vector to a real array.
    *
    * @param i_sep seperator of the string vector.
    * @param i_string string, which is converted.
    * @param o_val will be set to converted vector.
+   *
+   * @paramt TL_T_REAL floating point type.
    */
-  void vecStringToDouble( char         i_sep,
-                          std::string &i_string,
-                          double*      o_val );
+  template< typename TL_T_REAL >
+  void vecStringToReal( char         i_sep,
+                        std::string &i_string,
+                        TL_T_REAL*   o_val ) {
+    std::string l_right = i_string;
+
+    unsigned short l_pos = 0;
+    while( l_right.size() > 0 ) {
+      std::size_t l_split = l_right.find_first_of(i_sep);
+      if( l_split < l_right.size() ) {
+        std::string l_left =  l_right.substr( 0, l_split );
+                    l_right = l_right.substr( l_split+1  );
+
+        o_val[l_pos] = atof(l_left.c_str());
+
+        l_pos++;
+      }
+      else {
+        o_val[l_pos] = atof(l_right.c_str());
+        break;
+      }
+    }
+  }
 
   public:
     std::string                m_antnCfgFn;
@@ -63,9 +85,16 @@ class edge_v::io::Config {
     std::string                m_ucvmType;
 
     std::string                m_velRule;
-    real                       m_elmtsPerWave;
-
     std::string                m_meshFn;
+
+    //! center of the refinement in the xy-plane
+    float                      m_refCenter[2] = {0, 0};
+
+    //! inner radius and out radius for the linear transition between the two char lengths
+    float                      m_refRadii[2] = {0, std::numeric_limits<float>::max() };
+
+    //! characteristic lengths, 0: inside the inner radius, 1: outside the outer radius
+    float                      m_refCls[2] = {1, 1};
 
     //! trafo, applied to the nodes before querying the UCVM
     real                       m_trafo[3][3];
@@ -75,13 +104,11 @@ class edge_v::io::Config {
     //! projection of the velocity model
     std::string                m_projVel;
 
-    int                        m_tetRefinement;
     std::vector< std::string > m_faultInputFns;
     std::string                m_annoFn;
     std::string                m_posFn;
 
-    unsigned int               m_parallelMode;
-    unsigned int               m_numWorker;
+    int                        m_tetRefinement = 0;
 
     /**
      * @brief Initializes the configuration.
