@@ -78,33 +78,33 @@ int main( int i_argc, char **i_argv ) {
   l_moab.getEnVe( "tet4",
                   &l_elVe[0] );
 
+  // get velocity model
+  float (*l_veVps)  = new float[ l_nEns[0] ];
+  float (*l_veVss)  = new float[ l_nEns[0] ];
+  float (*l_veRhos) = new float[ l_nEns[0] ];
+
+  // get velocities from UCVM
+  l_ucvm.getVels( l_nEns[0],
+                  l_config.m_trafo,
+                  l_config.m_projMesh,
+                  l_config.m_projVel,
+                  l_config.m_ucvmType,
+                  l_veCrds,
+                  l_veVps,
+                  l_veVss,
+                  l_veRhos );
+
+  // apply velocity rules to vertices
+  for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
+    // massage velocities according to given rule
+    edge_v::vel::Rules::apply( l_config.m_velRule,
+                              l_veVps[l_ve],
+                              l_veVss[l_ve],
+                              l_veRhos[l_ve] );
+  }
+
   // assemble characteristic lengths and store Gmsh view, if requested
   if( l_config.m_posFn != "" ) {
-    // get velocity model
-    float (*l_veVps)  = new float[ l_nEns[0] ];
-    float (*l_veVss)  = new float[ l_nEns[0] ];
-    float (*l_veRhos) = new float[ l_nEns[0] ];
-
-    // get velocities from UCVM
-    l_ucvm.getVels( l_nEns[0],
-                    l_config.m_trafo,
-                    l_config.m_projMesh,
-                    l_config.m_projVel,
-                    l_config.m_ucvmType,
-                    l_veCrds,
-                    l_veVps,
-                    l_veVss,
-                    l_veRhos );
-
-    // apply velocity rules
-    for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-      // massage velocities according to given rule
-      edge_v::vel::Rules::apply( l_config.m_velRule,
-                                 l_veVps[l_ve],
-                                 l_veVss[l_ve],
-                                 l_veRhos[l_ve] );
-    }
-
     // assemble characteristic lengths
     float (*l_cls)  = new float[ l_nEns[0] ];
 
@@ -124,9 +124,6 @@ int main( int i_argc, char **i_argv ) {
 
     // free memory
     delete[] l_cls;
-    delete[] l_veVps;
-    delete[] l_veVss;
-    delete[] l_veRhos;
   }
 
   // assemble elements' Lame parameters and store annotated mesh, if requested
@@ -149,21 +146,26 @@ int main( int i_argc, char **i_argv ) {
     }
 
     // query UCVM for velocity model at barycenters
-    double (*l_elVps) = new double[ l_nEns[3] ];
-    double (*l_elVss) = new double[ l_nEns[3] ];
+    double (*l_elVps)  = new double[ l_nEns[3] ];
+    double (*l_elVss)  = new double[ l_nEns[3] ];
     double (*l_elRhos) = new double[ l_nEns[3] ];
 
-    l_ucvm.getVels( l_nEns[3],
-                    l_config.m_trafo,
-                    l_config.m_projMesh,
-                    l_config.m_projVel,
-                    l_config.m_ucvmType,
-                    l_elBars,
-                    l_elVps,
-                    l_elVss,
-                    l_elRhos );
+    // compute average velocity parameters
+    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
+      l_elVps[l_el] = 0;
+      l_elVss[l_el] = 0;
+      l_elRhos[l_el] = 0;
 
-    // apply velocity rules
+      for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
+        int l_veId = l_elVe[l_el*4+l_ve];
+
+      l_elVps[l_el]  += 0.25 * l_veVps[l_veId];
+      l_elVss[l_el]  += 0.25 * l_veVss[l_veId];
+      l_elRhos[l_el] += 0.25 * l_veRhos[l_veId];
+      }
+    }
+
+    // reapply velocity rules (averaging might lead to violations)
     for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
       // massage velocities according to given rule
       edge_v::vel::Rules::apply( l_config.m_velRule,
@@ -207,6 +209,9 @@ int main( int i_argc, char **i_argv ) {
 
   // free memory
   delete[] l_veCrds;
+  delete[] l_veVps;
+  delete[] l_veVss;
+  delete[] l_veRhos;
 
   // finish time
   l_tp = clock() - l_tp;
