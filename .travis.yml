@@ -675,13 +675,13 @@ script:
 
   # 3D elastics
   ## hex8r, unstructured, fv, cfr=1,2,4
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=1 cfr=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=2 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=1 cfr=2 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then scons xml=cont/elastic/plane_waves/hex8r.xml order=1 cfr=4 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
   ## hex8r, regular order=2, cfr=4
