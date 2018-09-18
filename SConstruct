@@ -154,7 +154,7 @@ vars.AddVariables(
                  allowed_values=('1', '2', '3', '4', '5', '6', '7', '8', '9')
               ),
   EnumVariable( 'mode',
-                'compile modes, option \'san\' enables address and undefind sanitizers',
+                'compile modes, option \'san\' enables address and undefined behavior sanitizers',
                 'release',
                  allowed_values=('release', 'debug', 'release+san', 'debug+san' )
               ),
