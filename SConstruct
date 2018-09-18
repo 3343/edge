@@ -160,7 +160,7 @@ vars.AddVariables(
               ),
   EnumVariable( 'arch',
                 'architecture to compile for',
-                'host',
+                'snb',
                  allowed_values=('host', 'snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
