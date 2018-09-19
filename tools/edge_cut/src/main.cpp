@@ -36,6 +36,7 @@ INITIALIZE_EASYLOGGINGPP
 using namespace edge_cut::surf;
 
 int main( int i_argc, char *i_argv[] ) {
+  // Check for valid arguments
   std::string l_xmlPath = "";
   if ( i_argc > 2 ) {
     EDGE_LOG_INFO << "Encountered more than one command line option -- exiting";
@@ -45,6 +46,13 @@ int main( int i_argc, char *i_argv[] ) {
     return -1;
   } else {
     l_xmlPath = i_argv[1];
+  }
+
+  // Check for valid config
+  pugi::xml_document doc;
+  if (!doc.load_file( l_xmlPath.c_str() )) {
+    EDGE_LOG_INFO << "Could not open xml config file -- exiting";
+    return -1;
   }
 
 
@@ -63,9 +71,6 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "#######################################################################cut";
   EDGE_LOG_INFO << "";
   EDGE_LOG_INFO << "ready to go..";
-
-  pugi::xml_document doc;
-  if (!doc.load_file( l_xmlPath.c_str() )) return -1;
 
   const double l_xMin = std::stod( doc.child("bbox").child_value("xMin") );
   const double l_xMax = std::stod( doc.child("bbox").child_value("xMax") );
@@ -142,7 +147,6 @@ int main( int i_argc, char *i_argv[] ) {
                                   CGAL::parameters::facet_distance = l_bdryApproxCrit,
                                   CGAL::parameters::facet_angle = l_angleBound         );
 
-
   // Mesh generation
   // NOTE the optimizers have more options than specified here
   EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
@@ -151,6 +155,7 @@ int main( int i_argc, char *i_argv[] ) {
                 CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+
   C3t3 bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain, l_bdryCriteria,
                 CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
                 CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
@@ -165,7 +170,6 @@ int main( int i_argc, char *i_argv[] ) {
   edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyMeshed, l_topoPolyMeshed );
 
   l_trimmer.trim();
-
 
   // Output
   EDGE_LOG_INFO << "Writing meshes...";
