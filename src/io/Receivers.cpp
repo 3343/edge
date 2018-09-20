@@ -180,6 +180,9 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
 
   // touch output
   if( i_nRecvs > 0 ) touchOutput( i_outDir );
+
+  // free memory
+  delete[] l_deIds;
 }
 
 void edge::io::Receivers::touchOutput( const std::string &i_outDir ) {
