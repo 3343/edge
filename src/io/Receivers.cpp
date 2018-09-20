@@ -22,6 +22,7 @@
  **/
 #include "parallel/Mpi.h"
 #include "Receivers.h"
+#include "data/SparseEntities.hpp"
 #include "FileSystem.hpp"
 #include "linalg/Geom.hpp"
 #include "dg/Basis.h"
@@ -84,7 +85,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
                                 const real_mesh     (*i_recvCrds)[3],
                                       double          i_freq,
                                 const t_enLayout     &i_enLayout,
-                                const int_el        (*i_enVe),
+                                const int_el         *i_enVe,
                                 const t_vertexChars  *i_veChars,
                                       unsigned int    i_bufferSize,
                                       double          i_time ) {
@@ -95,66 +96,15 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
 
   unsigned short l_nVe = C_ENT[i_enType].N_VERTICES;
 
-  // entity ids of the receivers and the minimum distances
-  std::vector< int_el >    l_enIds;
-  std::vector< real_mesh > l_minDist;
-  // init invalid
-  for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-    l_enIds.push_back( std::numeric_limits< int_el >::max() );
-    l_minDist.push_back( std::numeric_limits< double >::max() );
-  }
-
-  // iterate over the receivers
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-  for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-    // first considered entity
-    int_el l_first = 0;
-
-    // iterate over the time groups
-    for( int_tg l_tg = 0; l_tg < i_enLayout.timeGroups.size(); l_tg++ ) {
-      int_el l_size  = i_enLayout.timeGroups[l_tg].nEntsOwn;
-
-      // iterate over the owned entities
-      for( int_el l_en = l_first; l_en < l_first+l_size; l_en++ ) {
-        // buffer entity ves
-        EDGE_CHECK_LE( l_nVe, 8 );
-        real_mesh l_tmpVe[ 3*8 ];
-        for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
-          int_el l_veId = i_enVe[l_en*l_nVe+l_ve];
-
-          for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-            l_tmpVe[l_di*l_nVe + l_ve] = i_veChars[l_veId].coords[l_di];
-          }
-        }
-
-        // compute distance (projected if not inside)
-        real_mesh l_tmpCrds[3];
-        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-          l_tmpCrds[l_di] = i_recvCrds[l_re][l_di];
-        }
-        edge::linalg::Geom::closestPoint( i_enType,
-                                          l_tmpVe,
-                                          l_tmpCrds );
-        real_mesh l_dist = edge::linalg::GeomT< 3 >::norm( l_tmpCrds, i_recvCrds[l_re] );
-
-        // save if this is a new minimum
-        if( l_dist < l_minDist[l_re] ) {
-          l_enIds[l_re] = l_en;
-          l_minDist[l_re] = l_dist;
-        }
-      }
-      l_first += i_enLayout.timeGroups[l_tg].nEntsOwn +
-                 i_enLayout.timeGroups[l_tg].nEntsNotOwn;
-    }
-  }
-
-  // derive receivers, which are our responsibility
-  std::vector< unsigned short > l_recvOwn( i_nRecvs );
-  parallel::Mpi::min( i_nRecvs,
-                      l_minDist.data(),
-                      l_recvOwn.data() );
+  // derive the dense ids of the receivers
+  int_el *l_deIds = new int_el[i_nRecvs];
+  edge::data::SparseEntities::ptToEn( i_enType,
+                                      int_el(i_nRecvs),
+                                      i_recvCrds,
+                                      i_enLayout,
+                                      i_enVe,
+                                      i_veChars,
+                                      l_deIds );
 
   // add the receivers
   int_el l_first = 0;
@@ -166,7 +116,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
       // iterate over the receivers
       for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
         // only continue if the receiver is owned and matches the element
-        if( l_en == l_enIds[l_re] && l_recvOwn[l_re] == 1 ) {
+        if( l_en == l_deIds[l_re] ) {
           // get the vertices of the entity
           real_mesh l_tmpVe[ 3 * 8];
           for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {

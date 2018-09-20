@@ -1122,3 +1122,59 @@ TEST_CASE( "SparseEnts: Propagate sparse information to adjacent entities.", "[p
   REQUIRE( l_en1Chars2[3].spType == 1 );
   REQUIRE( l_en1Chars2[4].spType == 3 );
 }
+
+TEST_CASE( "Sparse Ents: Derivation of dense ids from Cartesian points", "[ptToMesh][SparseEnts]") {
+  t_enLayout l_elLayout;
+
+  l_elLayout.timeGroups.resize( 2 );
+  l_elLayout.timeGroups[0].nEntsOwn    = 2;
+  l_elLayout.timeGroups[0].nEntsNotOwn = 1;
+  l_elLayout.timeGroups[1].nEntsOwn    = 3;
+  l_elLayout.timeGroups[1].nEntsNotOwn = 4;
+
+  // setup receiver coordinates
+  real_mesh l_recvCrds[6][3] = { { -1.00, -1.00, -2.00 }, // not part of the "domain"
+                                 {  0.15,  0.15,  0.15 }, // inside a tet
+                                 {  0.00,  0.05,  0.00 }, // hits an edge
+                                 {  0.00,  0.00,  0.00 }, // vertex
+                                 {  2.00,  0.00,  0.00 }, // outside
+                                 {  0.20,  0.10,  0.05 }  // inside
+                               };
+
+  t_vertexChars l_veChars[8] = { {{0.0, 0.0, 0.0}, 0}, // reference tet as dummy tet
+                                 {{1.0, 0.0, 0.0}, 0},
+                                 {{0.0, 1.0, 0.0}, 0},
+                                 {{0.0, 0.0, 1.0}, 0}, 
+                                 {{0.0, 0.0, 8.0}, 0}, // shifted ref-tet
+                                 {{1.0, 0.0, 8.0}, 0},
+                                 {{0.0, 1.0, 8.0}, 0},
+                                 {{0.0, 1.0, 9.0}, 0} };
+
+  // setup tets
+  int_el l_enVe[10][4] = { {4,5,6,7}, // tg 1
+                           {4,5,6,7},
+                           {0,0,0,0},
+                           {4,5,6,7}, // tg 2
+                           {0,1,2,3},
+                           {0,1,2,3},
+                           {0,1,2,3}, // ghost tg 2
+                           {4,5,6,7},
+                           {4,5,6,7},
+                           {0,1,2,3} };
+
+  // For plotting in Mathematica, you can use:
+  //  Graphics3D[ {{Opacity[.3], Tetrahedron[]}, {PointSize[0.1], Point[{0.15, 0.15, 0.15}] }}, Axes -> True ]
+
+  // dense ids
+  int l_de[6];
+
+  edge::data::SparseEntities::ptToEn( TET4,
+                                      6,
+                                      l_recvCrds,
+                                      l_elLayout,
+                                      l_enVe[0],
+                                      l_veChars,
+                                      l_de );
+
+  REQUIRE( l_de[0] == 4 );
+}
