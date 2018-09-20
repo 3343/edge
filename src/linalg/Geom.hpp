@@ -887,8 +887,14 @@ class edge::linalg::GeomTs< 2 > {
     template< typename TL_T_REAL >
     static TL_T_REAL angle( TL_T_REAL const i_v0[2],
                             TL_T_REAL const i_v1[2] ) {
-      TL_T_REAL l_an = atan2(i_v1[1], i_v1[0]) - atan2(i_v0[1], i_v0[0]);
-      if( l_an < 0 ) l_an += 2*M_PI;
+      // derive angle in degree
+      TL_T_REAL l_an  = wykobi::robust_cartesian_angle( i_v1[0], i_v1[1] );
+                l_an -= wykobi::robust_cartesian_angle( i_v0[0], i_v0[1] );
+      if( l_an < 0 ) l_an += TL_T_REAL( 360 );
+
+      // scale to radians
+      TL_T_REAL l_sca = (2.0*M_PI) / 360.0;
+      l_an *= l_sca;
 
       return l_an;
     }
