@@ -346,6 +346,10 @@ edge::io::Config::Config( std::string i_xmlPath ):
     if( l_crx < N_CRUNS ) m_initValsExprStrs[l_crx] = l_id.text().as_string();
     l_crx++;
   }
+  // init to zero if nothing is given
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    if( m_initValsExprStrs[l_cr] == "" ) m_initValsExprStrs[l_cr] = "q := 0; // set automatically, adjust config if required";
+  }
 
   // read parameters shared among setups
   m_endTime = l_setups.child("end_time").text().as_double();
@@ -414,6 +418,10 @@ edge::io::Config::Config( std::string i_xmlPath ):
   for( pugi::xml_node l_id = l_refVals.first_child(); l_id; l_id = l_id.next_sibling() ) {
     if( l_crx < N_CRUNS ) m_refValsExprStrs[l_crx] = l_id.text().as_string();
     l_crx++;
+  }
+  // init to zero if nothing is given
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    if( m_refValsExprStrs[l_cr] == "" ) m_refValsExprStrs[l_cr] = "q := 0; // set automatically, adjust config if required";
   }
 
   m_errorNormsType = l_output.child("error_norms").child("type").text().as_string();
