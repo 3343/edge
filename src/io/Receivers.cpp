@@ -94,6 +94,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
   m_buffSize = i_bufferSize;
   m_nQts = N_QUANTITIES;
 
+  // number of vertices
   unsigned short l_nVe = C_ENT[i_enType].N_VERTICES;
 
   // derive the dense ids of the receivers
