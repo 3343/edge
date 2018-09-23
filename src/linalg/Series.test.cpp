@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -49,161 +49,161 @@ TEST_CASE( "Series: Integrate", "[ts][integrate]" ) {
   double l_re[8];
 
   // all points, dt=1.0
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 0.0,
-                                                 4.0,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        0.0,
+                                        4.0,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(1.1) );
   }
 
   // all points, dt=0.1
-  edge::elastic::linalg::Series< 8 >::integrate( 0.1,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 0.0,
-                                                 4.0,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 0.1,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        0.0,
+                                        4.0,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx( (1.1)*0.1) );
   }
 
   // all points, except first
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 1.0,
-                                                 4.0,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        1.0,
+                                        4.0,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(0.25) );
   }
 
   // all points, except last
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 0.0,
-                                                 3.0,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        0.0,
+                                        3.0,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
    REQUIRE( l_re[l_se] == Approx(1.15) );
   }
 
   // only middle points
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 1.0,
-                                                 3.0,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        1.0,
+                                        3.0,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(0.3) );
   }
 
   // only first interval
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 0.0,
-                                                 1.0,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        0.0,
+                                        1.0,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(0.85) );
   }
 
   // subinterval in 2nd interval
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 0.2,
-                                                 1.3,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        0.2,
+                                        1.3,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(1.0285) );
   }
 
   // subinterval in 2nd interval, scaled
-  edge::elastic::linalg::Series< 8 >::integrate( 0.1,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 0.02,
-                                                 0.13,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 0.1,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        0.02,
+                                        0.13,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(0.10285) );
   }
 
   // start before series
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                -0.5,
-                                                 1.3,
-                                                 l_re );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        -0.5,
+                                        1.3,
+                                        l_re );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(1.1425) );
   }
 
   // start and end before series
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                -7.0,
-                                                -3.0,
-                                                 l_re,
-                                                 0.5 );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        -7.0,
+                                        -3.0,
+                                        l_re,
+                                        0.5 );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(2.0) );
   }
 
   // start before series
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 1.0,
-                                                 5,
-                                                 l_vals,
-                                                 3.9,
-                                                 8.0,
-                                                 l_re,
-                                                 0.1 );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        1.0,
+                                        5,
+                                        l_vals,
+                                        3.9,
+                                        8.0,
+                                        l_re,
+                                        0.1 );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(0.2485) );
   }
 
   // start and end after series
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 6.0,
-                                                 9.0,
-                                                 l_re,
-                                                 0.1 );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        6.0,
+                                        9.0,
+                                        l_re,
+                                        0.1 );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(0.3) );
   }
 
   // start before end end after series
-  edge::elastic::linalg::Series< 8 >::integrate( 1.0,
-                                                 0.0,
-                                                 5,
-                                                 l_vals,
-                                                 -5.0,
-                                                  9.0,
-                                                 l_re,
-                                                 0.3 );
+  edge::linalg::Series< 8 >::integrate( 1.0,
+                                        0.0,
+                                        5,
+                                        l_vals,
+                                        -5.0,
+                                        9.0,
+                                        l_re,
+                                        0.3 );
   for( unsigned short l_se = 0; l_se < 8; l_se++ ) {
     REQUIRE( l_re[l_se] == Approx(4.1) );
   }

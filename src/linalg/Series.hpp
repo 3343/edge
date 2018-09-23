@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,18 +21,15 @@
  * Operations on series.
  **/
 
-#ifndef SERIES_HPP
-#define SERIES_HPP
+#ifndef EDGE_LINALG_SERIES_HPP
+#define EDGE_LINALG_SERIES_HPP
 
 #include "constants.hpp"
 
 namespace edge {
-  namespace elastic {
-    // TODO: linalg is not the correct name space. rename?
-    namespace linalg {
-       template< unsigned short TL_N_SERIES >
-      class Series;
-    }
+  namespace linalg {
+      template< unsigned short TL_N_SERIES >
+    class Series;
   }
 }
 
@@ -43,7 +40,7 @@ namespace edge {
  * @paramt TL_N_TS number of series considered. Only the values are assumed to be different, not the meta-data.
  **/
 template< unsigned short TL_N_SERIES >
-class edge::elastic::linalg::Series {
+class edge::linalg::Series {
   // private:
   public:
     /**
