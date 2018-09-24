@@ -31,7 +31,7 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 scons
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 git
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 libxml2-utils
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 python-pip python3-pip
-sudo apt-get install -qq -o=Dpkg::Use-Pty=0 openmpi-bin
+sudo apt-get install -qq -o=Dpkg::Use-Pty=0 openmpi-bin libopenmpi-dev
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 cppcheck
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gmsh
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 gcc
