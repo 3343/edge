@@ -152,7 +152,7 @@ Include:
     do
       if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
 
-      CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=no moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+      CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
       cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr1_hsw_xsmm_omp
     done
 
@@ -163,7 +163,7 @@ Include:
 
       for cfr in 1 16
       do
-        CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=no moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+        CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
         cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_avx512_xsmm_omp
       done
     done
