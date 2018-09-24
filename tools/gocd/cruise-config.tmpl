@@ -454,7 +454,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --enable-all-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=no --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
+                <arg>CXXFLAGS="-fPIC" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --enable-all-static=yes --with-pic=yes --disable-fortran --enable-tools --with-zlib=$(pwd)/../../libs/zlib --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=no --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
