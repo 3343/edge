@@ -2319,7 +2319,7 @@
               <!-- edge_opt: link benchmarks -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>ln -s .../edge_opt/bench .</arg>
+                <arg>ln -s ../edge_opt/bench .</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
@@ -2649,6 +2649,29 @@
                 <arg>git lfs pull origin master -I bench/seismic/wp/hsp1a/*.nc</arg>
                 <runif status="passed" />
               </exec>
+
+              <!-- edge_opt: Gaussian-Hill Canyon 2D -->
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/ghcan_2d/meshes/ghcan_2d_5000_200.msh</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/ghcan_2d/configs</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/ghcan_2d/source</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge_opt">
+                <arg>-c</arg>
+                <arg>git lfs pull origin master -I bench/seismic/wp/ghcan_2d/runs/5000_acoustic/ghcan_2d_acoustic_recvs_5000_200.tar.bz2</arg>
+                <runif status="passed" />
+              </exec>
+
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
                 <arg>ln -s ../edge_opt/bench .</arg>
