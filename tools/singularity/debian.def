@@ -122,17 +122,6 @@ Include:
   make install -j ${N_BUILD_PROC} > /dev/null
   cd ..
 
-  ##########
-  # NetCDF #
-  ##########
-  wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz -O netcdf.tar.gz
-  mkdir netcdf
-  tar -xzf netcdf.tar.gz -C netcdf --strip-components=1
-  cd netcdf
-  ./configure --enable-shared=no --disable-dap --prefix=/usr/local > /dev/null 2> /dev/null
-  make install -j ${N_BUILD_PROC} > /dev/null
-  cd ..
-
   ########
   # EDGE #
   ########
@@ -152,7 +141,7 @@ Include:
   cd submodules/moab
   LANG=C autoreconf -fi
   # sequential
-  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=yes --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
   make install -j ${N_BUILD_PROC} > /dev/null
   cd ../..
 
@@ -163,7 +152,7 @@ Include:
     do
       if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
 
-      CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+      CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=no moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
       cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr1_hsw_xsmm_omp
     done
 
@@ -174,7 +163,7 @@ Include:
 
       for cfr in 1 16
       do
-        CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+        CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes netcdf=no moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
         cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_avx512_xsmm_omp
       done
     done
@@ -197,7 +186,7 @@ Include:
        - elastic wave equations
        - orders 1-5
        - regular (runtime generated) and unstructured meshes (MOAB)
-       - NetCDF/HDF5 support
+       - HDF5 support
        - non-fused simulations (1 concurrent run) only
        - single precision arithmetic (32bit)
        - parallelization: LIBXSMM (SIMD), OpenMP (multicore)
