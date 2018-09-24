@@ -29,7 +29,7 @@
 ##
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "debian/jessie64"
+  config.vm.box = "debian/contrib-stretch64"
 
   config.vm.provider "virtualbox" do |vb|
     # 2GB of memory required for compilation
@@ -53,6 +53,7 @@ Vagrant.configure("2") do |config|
     # install Singularity
     git clone https://github.com/singularityware/singularity.git
     cd singularity
+    git checkout 2.6.0
     ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
     make > /dev/null
