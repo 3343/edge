@@ -136,7 +136,7 @@ vars.AddVariables(
   EnumVariable( 'cfr',
                 'concurrent forward runs',
                 '16',
-                 allowed_values=( '1', '4', '8', '16' )
+                 allowed_values=( '1', '2', '4', '8', '16' )
               ),
   EnumVariable( 'equations',
                 'equations solved',
