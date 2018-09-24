@@ -33,7 +33,7 @@
     TEMPLATE_CLOUD_0_IP
     TEMPLATE_CLOUD_0_UUID
 -->
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="108">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="113">
   <server artifactsdir="artifacts" purgeStart="80.0" purgeUpto="100.0" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
     <security>
       <!-- Authentification -->
@@ -401,7 +401,7 @@
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact artifactOrigin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
                 <arg>wget ${HDF5_LINK} -O hdf5.tar.gz</arg>
@@ -450,8 +450,8 @@
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
-              <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
+              <fetchartifact artifactOrigin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact artifactOrigin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
               <exec command="/bin/bash">
                 <arg>-c</arg>
                 <arg>wget ${NETCDF_LINK} -O netcdf.tar.gz</arg>
@@ -495,9 +495,9 @@
         <jobs>
           <job name="build">
             <tasks>
-              <fetchartifact origin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
-              <fetchartifact origin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
-              <fetchartifact origin="gocd" stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
+              <fetchartifact artifactOrigin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
+              <fetchartifact artifactOrigin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
+              <fetchartifact artifactOrigin="gocd" stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
                 <arg>autoreconf -fi</arg>
@@ -543,11 +543,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- edge_opt: pointers only -->
               <exec command="/bin/bash">
@@ -2303,11 +2303,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- edge_opt: pointers -->
               <exec command="/bin/bash">
@@ -2493,7 +2493,7 @@
         <jobs>
           <job name="advection">
             <tasks>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_line" srcdir="xml" dest="adv_line">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="adv_line" srcdir="xml" dest="adv_line">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2508,7 +2508,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_quad4r" srcdir="xml" dest="adv_quad4r">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="adv_quad4r" srcdir="xml" dest="adv_quad4r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2523,7 +2523,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="adv_hex8r" srcdir="xml" dest="adv_hex8r">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="adv_hex8r" srcdir="xml" dest="adv_hex8r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2545,7 +2545,7 @@
           </job>
           <job name="elastic">
             <tasks>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_quad4r" srcdir="xml" dest="elastic_quad4r">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="elastic_quad4r" srcdir="xml" dest="elastic_quad4r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2560,7 +2560,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_hex8r" srcdir="xml" dest="elastic_hex8r">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="elastic_hex8r" srcdir="xml" dest="elastic_hex8r">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2575,7 +2575,7 @@
                 <arg>1</arg>
                 <runif status="passed" />
               </exec>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="elastic_tet4_reg" srcdir="xml" dest="elastic_tet4_reg">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="elastic_tet4_reg" srcdir="xml" dest="elastic_tet4_reg">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="python">
@@ -2611,11 +2611,11 @@
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
-              <fetchartifact origin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
+              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- adjust rights -->
               <exec command="/bin/bash" workingdir="edge">
@@ -2872,7 +2872,7 @@
               </variable>
             </environmentvariables>
             <tasks>
-              <fetchartifact origin="gocd" pipeline="" stage="build_run" job="HSP1a_tet4_reg_omp" srcdir="recvs" dest="HSP1a_tet4_reg_omp">
+              <fetchartifact artifactOrigin="gocd" pipeline="" stage="build_run" job="HSP1a_tet4_reg_omp" srcdir="recvs" dest="HSP1a_tet4_reg_omp">
                 <runif status="passed" />
               </fetchartifact>
               <exec command="/bin/bash">
