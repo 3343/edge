@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2016-2017, Regents of the University of California
+# Copyright (c) 2016-2018, Regents of the University of California
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,6 +20,16 @@
 # @section DESCRIPTION
 # Suppressions for valgrind.
 ##
+
+{
+   GLIBC
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   ...
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_*
+}
 
 {
    MOAB, HDF5: Unitialized values
@@ -64,10 +74,19 @@
    Memcheck:Leak
    match-leak-kinds: definite
    ...
-   fun:event_base_loop
-   fun:progress_engine
+   fun:*event_base_loop
+   ...
    fun:start_thread
    fun:clone
+}
+
+{
+   hwloc_topology
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   ...
+   fun:hwloc_topology_*
 }
 
 {
@@ -76,10 +95,6 @@
    match-leak-kinds: definite
    fun:malloc
    ...
-   fun:patcher_query
-   fun:opal_memory_base_open
-   fun:mca_base_framework_open
-   fun:opal_init
    fun:orte_init
 }
 
@@ -96,6 +111,7 @@
 {
    PMPI_Init_Leak
    Memcheck:Leak
+   match-leak-kinds: definite
    ...
    fun:ompi_mpi_init
    fun:PMPI_Init_thread
