@@ -440,56 +440,6 @@
         </jobs>
       </stage>
 
-      <!-- NetCDF -->
-      <stage name="netcdf" fetchMaterials="false">
-        <environmentvariables>
-          <variable name="NETCDF_LINK">
-            <value>ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz</value>
-          </variable>
-        </environmentvariables>
-        <jobs>
-          <job name="build">
-            <tasks>
-              <fetchartifact artifactOrigin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
-              <fetchartifact artifactOrigin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
-              <exec command="/bin/bash">
-                <arg>-c</arg>
-                <arg>wget ${NETCDF_LINK} -O netcdf.tar.gz</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash">
-                <arg>-c</arg>
-                <arg>mkdir netcdf; tar -xzf netcdf.tar.gz -C netcdf --strip-components=1</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="netcdf/">
-                <arg>-c</arg>
-                <arg>LDFLAGS="-fPIC" CFLAGS="-fPIC" LIBS="-ldl" HDF5DIR=$(pwd)/../libs/hdf5_seq ZLIBDIR=$(pwd)/../libs/zlib CPPFLAGS="-I${HDF5DIR}/include -I${ZLIBDIR}/include" LDFLAGS="-L${HDF5DIR}/lib -L${ZLIBDIR}/lib" ./configure --enable-shared=no --disable-dap --prefix=$(pwd)/netcdf_seq</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="netcdf/">
-                <arg>-c</arg>
-                <arg>make -j ${N_BUILD_PROC}</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="netcdf/">
-                <arg>-c</arg>
-                <arg>make install</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="netcdf/netcdf_seq/lib">
-                <arg>-c</arg>
-                <arg>rm *.la; rm -r pkgconfig</arg>
-                <runif status="passed" />
-              </exec>
-            </tasks>
-            <artifacts>
-              <artifact type="build" src="netcdf/netcdf_seq" />
-            </artifacts>
-          </job>
-        </jobs>
-      </stage>
-
       <!-- MOAB -->
       <stage name="moab" fetchMaterials="false">
         <jobs>
@@ -497,7 +447,6 @@
             <tasks>
               <fetchartifact artifactOrigin="gocd" stage="zlib" job="build" srcdir="zlib" dest="libs"/>
               <fetchartifact artifactOrigin="gocd" stage="hdf5" job="build" srcdir="hdf5_seq" dest="libs"/>
-              <fetchartifact artifactOrigin="gocd" stage="netcdf" job="build" srcdir="netcdf_seq" dest="libs"/>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
                 <arg>autoreconf -fi</arg>
@@ -505,7 +454,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=$(pwd)/../../libs/netcdf_seq --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
+                <arg>ZLIBDIR=$(pwd)/../../libs/zlib LIBS="${ZLIBDIR}/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --with-zlib=${ZLIBDIR} --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=no --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
@@ -546,7 +495,6 @@
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- edge_opt: pointers only -->
@@ -578,15 +526,12 @@
            **************************** -->
       <stage name="sanity_seq" fetchMaterials="false">
         <environmentvariables>
-          <!-- zlib, HDF5, NetCDF, and MOAB -->
+          <!-- zlib, HDF5, and MOAB -->
           <variable name="EDGE_ZLIB">
               <value>libs/zlib</value>
           </variable>
           <variable name="EDGE_HDF5">
               <value>libs/hdf5_seq</value>
-          </variable>
-          <variable name="EDGE_NETCDF">
-              <value>libs/netcdf_seq</value>
           </variable>
           <variable name="EDGE_MOAB">
               <value>libs/moab_seq</value>
@@ -984,7 +929,7 @@
               <!-- debugger, o=1,2 cfr=4 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=1 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=1 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -994,7 +939,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=2 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=2 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1006,7 +951,7 @@
               <!-- release, o=1,..5, cfr=1 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1016,7 +961,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1026,7 +971,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1036,7 +981,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1046,7 +991,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=1 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1058,7 +1003,7 @@
               <!-- release, o=1,..5, cfr=8 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1068,7 +1013,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1078,7 +1023,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1088,7 +1033,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -1098,7 +1043,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=8 mode=${EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} moab=${EDGE_MOAB} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2306,7 +2251,6 @@
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- edge_opt: pointers -->
@@ -2614,13 +2558,12 @@
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="standalone" job="build_xsmm" srcdir="libxsmm"    dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="zlib"       job="build"      srcdir="zlib"       dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="hdf5"       job="build"      srcdir="hdf5_seq"   dest="edge/libs"/>
-              <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="netcdf"     job="build"      srcdir="netcdf_seq" dest="edge/libs"/>
               <fetchartifact artifactOrigin="gocd" pipeline="deps_#{toolchain}" stage="moab"       job="build"      srcdir="moab_seq"   dest="edge/libs"/>
 
               <!-- adjust rights -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>chmod +x libs/hdf5_seq/bin/* libs/netcdf_seq/bin/* libs/moab_seq/bin/*</arg>
+                <arg>chmod +x libs/hdf5_seq/bin/* libs/moab_seq/bin/*</arg>
                 <runif status="passed" />
               </exec>
 
@@ -2709,15 +2652,12 @@
               <variable name="EDGE_ELEMENT_TYPE">
                   <value>tet4</value>
               </variable>
-              <!-- zlib, HDF5, and NetCDF -->
+              <!-- zlib, HDF5 -->
               <variable name="EDGE_ZLIB">
                   <value>libs/zlib</value>
               </variable>
               <variable name="EDGE_HDF5">
                   <value>libs/hdf5_seq</value>
-              </variable>
-              <variable name="EDGE_NETCDF">
-                  <value>libs/netcdf_seq</value>
               </variable>
               <variable name="BENCH_RECVS">
                   <value>hsp1a_reg_recvs_64</value>
@@ -2742,7 +2682,7 @@
               <!-- o=1,..4, cfr=1 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2758,7 +2698,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2774,7 +2714,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2790,7 +2730,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=4 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=4 element_type=${EDGE_ELEMENT_TYPE} cfr=1 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2807,7 +2747,7 @@
               <!-- o=1,..3, cfr=4 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=1 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2823,7 +2763,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=2 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -2839,7 +2779,7 @@
 
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} netcdf=${EDGE_NETCDF} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_OMP} scons xml=${EDGE_CONFIG} order=3 element_type=${EDGE_ELEMENT_TYPE} cfr=4 precision=32 parallel=omp mode=#{EDGE_MODE_RELEASE} arch=${EDGE_ARCH_RELEASE} xsmm=#{EDGE_XSMM} zlib=${EDGE_ZLIB} hdf5=${EDGE_HDF5} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
