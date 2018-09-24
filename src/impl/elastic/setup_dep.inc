@@ -27,7 +27,9 @@
 #include "impl/elastic/solvers/AderDg.hpp"
 #include "impl/elastic/setups/MmKernels.hpp"
 #include "impl/elastic/solvers/common.hpp"
+#ifdef PP_HAS_HDF5
 #include "impl/elastic/setups/PointSources.hpp"
+#endif
 
 // rupture boundaries
 #include "impl/elastic/solvers/InternalBoundary.hpp"
