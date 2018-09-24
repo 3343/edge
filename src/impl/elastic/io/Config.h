@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Runtime configuration of elastics.
  **/
-#ifndef ELASTIC_CONFIG_H
-#define ELASTIC_CONFIG_H
+#ifndef EDGE_SEISMIC_CONFIG_H
+#define EDGE_SEISMIC_CONFIG_H
 
 #include "constants.hpp"
 #include <vector>
@@ -45,8 +45,8 @@ class edge::elastic::io::Config {
     void print();
 
   public:
-    //! files holding kinematic source descriptions
-    std::vector< std::string > m_kinSrcs;
+    //! files holding point source descriptions
+    std::vector< std::string > m_ptSrcs;
 
     //! domains of the velocity model
     std::vector< linalg::Domain< real_mesh, N_DIM, edge::linalg::HalfSpace > > m_velDoms;

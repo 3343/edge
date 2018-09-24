@@ -88,7 +88,7 @@ if env['tests']:
              'linalg/HalfSpace.test.cpp',
              'linalg/Domain.test.cpp',
              'linalg/Series.test.cpp',
-#             'setups/InitialDofs.test.cpp',
+             'setups/InitialDofs.test.cpp',
              'io/Config.test.cpp',
              'io/Receivers.test.cpp',
              'io/InternalBoundary.test.cpp',
@@ -106,13 +106,10 @@ if env['tests']:
                        'impl/elastic/solvers/common.test.cpp',
                        'impl/elastic/setups/RuptureInit.test.cpp',
 #                       'impl/elastic/solvers/InternalBoundary.test.cpp',
-                       'impl/elastic/solvers/FrictionLaws.test.cpp',
-                       'impl/elastic/setups/KinematicsInit.test.cpp' ]
+                       'impl/elastic/solvers/FrictionLaws.test.cpp' ]
 
-  if env['netcdf'] != False:
-    l_tests = l_tests + ['impl/elastic/io/Nrf.test.cpp' ]
-    if 'elastic' in env['equations']:
-      l_tests = l_tests + ['impl/elastic/solvers/Kinematics.test.cpp']
+    if env['hdf5'] != False:
+      'impl/elastic/setups/PointSources.test.cpp'
 
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )

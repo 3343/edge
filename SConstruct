@@ -192,9 +192,6 @@ vars.AddVariables(
   PackageVariable( 'hdf5',
                    'enable HDF5',
                    'no' ),
-  PackageVariable( 'netcdf',
-                   'enable NetCDF',
-                   'no' ),
   PackageVariable( 'moab',
                    'Enables the use of MOAB (The Mesh-Oriented datABase) and thus support for unstructured meshes if set. Otherwise regular meshes are used.',
                    'no' ),
@@ -246,7 +243,7 @@ conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHea
 env['ENV'] = os.environ
 
 # adjust path variables
-for l_va in [ 'xsmm', 'zlib', 'hdf5', 'netcdf', 'moab' ]:
+for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler

@@ -18,7 +18,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Scheduling for elastics with rupture physics or kinematic sources.
+ * Scheduling for elastics with rupture physics or point sources.
  **/
 
 /*
@@ -141,10 +141,10 @@ if( m_cflow[ 7] == 1 && m_mpi.finRecvs(0, l_ex[0]) ) m_cflow[7] = 2;
 if( m_cflow[ 8] == 1 && m_mpi.finSends(0, l_ad[0]) ) m_cflow[8] = 2;
 
 
-// compute kinematic sources, inner-elements
+// compute point sources, inner-elements
 if( m_cflow[ 9] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 9) ) m_cflow[9] = 2;
 
-// compute kinematic sources, send-elements
+// compute point sources, send-elements
 if( m_cflow[10] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 10) ) m_cflow[10] = 2;
 
 
@@ -228,20 +228,20 @@ if( m_cflow[4] == 2 && m_cflow[6] == 2 && m_cflow[8] == 0 ) {
   m_recvsSf.flushIf();
 }
 
-// compute neighboring, inner done: compute kinematic sources inner
+// compute neighboring, inner done: compute point sources inner
 if( m_cflow[5] == 2 && m_cflow[9] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 9);
   m_cflow[9] = 1;
 }
 
-// compute neighboring, inner done: compute kinematic sources inner
+// compute neighboring, inner done: compute point sources inner
 if( m_cflow[6] == 2 && m_cflow[10] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 10);
   m_cflow[10] = 1;
 }
 
 //   compute rupture, inner + compute rupture, send/recv
-// + compute kinematic, inner + compute kinematic, send
+// + compute point sorces, inner + compute point sources, send
 // + MPI-recv candidate admissibility done:
 //     compute limit+, send
 if(    m_cflow[3] == 2 && m_cflow[4] == 2
@@ -266,7 +266,7 @@ if(    m_cflow[3] == 2 && m_cflow[4] == 2
   m_cflow[17] = 0;
 }
 
-// compute rupture, inner + compute rupture, send/recv + compute kinematic, inner + compute kinematic, send done: compute limit+, inner
+// compute rupture, inner + compute rupture, send/recv + compute point sources, inner + compute point sources, send done: compute limit+, inner
 if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[9] == 2 && m_cflow[10] == 2 && m_cflow[11] == 0 ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 11);
   m_cflow[11] = 1;

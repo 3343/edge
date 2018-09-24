@@ -44,13 +44,13 @@ void edge::elastic::io::Config::print() {
     }
   }
 
-  // print info about kinematic sources terms
-  if( m_kinSrcs.size() > 0 ) {
-    EDGE_LOG_INFO << "    there are " << m_kinSrcs.size() << " kinematic source files in your config:";
-    for( unsigned short l_ki = 0; l_ki < m_kinSrcs.size(); l_ki++ )
-      EDGE_LOG_INFO << "      #" << l_ki << ": " << m_kinSrcs[l_ki];
-#ifndef PP_HAS_NETCDF
-    EDGE_LOG_FATAL << "netCDF is required for kinematic sources descriptions and not supported by your build.";
+  // print info about point source descriptions
+  if( m_ptSrcs.size() > 0 ) {
+    EDGE_LOG_INFO << "    there are " << m_ptSrcs.size() << " point source files in your config:";
+    for( unsigned short l_ki = 0; l_ki < m_ptSrcs.size(); l_ki++ )
+      EDGE_LOG_INFO << "      #" << l_ki << ": " << m_ptSrcs[l_ki];
+#ifndef PP_HAS_HDF5
+    EDGE_LOG_FATAL << "HDF5 is required for point sources descriptions and not supported by your build.";
 #endif
   }
 
@@ -93,12 +93,12 @@ edge::elastic::io::Config::Config( const pugi::xml_document &i_xml ) {
   pugi::xml_node l_setups = i_xml.child("edge").child("cfr").child("setups");
 
   /*
-   * read kinematic source info if available
+   * read point source info if available
    */
-  for( pugi::xml_node l_ki = l_setups.child("kinematic_sources").child("file");
-       l_ki;
-       l_ki = l_ki.next_sibling("file") ) {
-    m_kinSrcs.push_back( l_ki.text().as_string() );
+  for( pugi::xml_node l_pt = l_setups.child("point_sources").child("file");
+       l_pt;
+       l_pt = l_pt.next_sibling("file") ) {
+    m_ptSrcs.push_back( l_pt.text().as_string() );
   }
 
   /*

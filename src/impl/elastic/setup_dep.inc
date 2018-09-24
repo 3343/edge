@@ -27,15 +27,12 @@
 #include "impl/elastic/solvers/AderDg.hpp"
 #include "impl/elastic/setups/MmKernels.hpp"
 #include "impl/elastic/solvers/common.hpp"
-#ifdef PP_HAS_NETCDF
-#include "impl/elastic/io/Nrf.h"
-#endif
+#include "impl/elastic/setups/PointSources.hpp"
 
 // rupture boundaries
 #include "impl/elastic/solvers/InternalBoundary.hpp"
 #include "sc/ibnd/Memory.hpp"
 #include "sc/ibnd/Init.hpp"
-#include "impl/elastic/setups/KinematicsInit.hpp"
 #include "impl/elastic/setups/RuptureInit.hpp"
 #include "io/InternalBoundary.hpp"
 

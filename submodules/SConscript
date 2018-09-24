@@ -74,21 +74,8 @@ if env['hdf5'] != False:
   if env['hdf5'] != True:
     env.AppendUnique( CPPPATH=[ env['hdf5']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['hdf5']+'/lib']     )
-  conf.CheckLibWithHeaderFlags( 'hdf5' )
-  conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
-
-
-# enable NetCDF if available
-if env['netcdf'] != False:
-  if env['netcdf'] != True:
-    env.AppendUnique( CPPPATH=[ env['netcdf']+'/include'] )
-    env.AppendUnique( LIBPATH=[ env['netcdf']+'/lib']     )
-
-  if conf.CheckLibWithHeaderFlags( 'netcdf', 'netcdf.h' ):
-    env.AppendUnique( CPPDEFINES = ['PP_HAS_NETCDF'] )
-    env['netcdf'] = True
-  else:
-    env['netcdf'] = False
+  if conf.CheckLibWithHeaderFlags( 'hdf5' ) and conf.CheckLibWithHeaderFlags( 'hdf5_hl' ) and conf.CheckLibWithHeaderFlags( 'hdf5_cpp' ):
+    env.AppendUnique( CPPDEFINES = ['PP_HAS_HDF5'] )
 
 # forward MOAB
 if env['moab'] != False:

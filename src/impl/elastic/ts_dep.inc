@@ -23,5 +23,3 @@
 
 #include "impl/elastic/solvers/AderDg.hpp"
 #include "sc/Boundary.hpp"
-
-#include "solvers/Kinematics.hpp"

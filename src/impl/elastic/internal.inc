@@ -30,20 +30,16 @@ struct setupChars {
 };
 typedef setupChars t_globalPrivate1;
 
-/*
- * Source terms
- */
-// maximum number of independent sources if given by the number of fused runs
-#define PP_N_GLOBAL_SHARED_3 PP_N_CRUNS
-typedef edge::elastic::solvers::t_Kinematics< N_DIM,
-                                              N_ELEMENT_MODES,
-                                              1,
-                                              real_base,
-                                              int_el > t_globalShared3;
-
-// positions of first point source associated to the sparse source elements
-#define PP_N_GLOBAL_SHARED_4 1
-typedef int_el (*t_globalShared4)[N_CRUNS];
+// point sources
+#ifdef PP_HAS_HDF5
+#include "impl/elastic/setups/PointSources.hpp"
+#define PP_N_GLOBAL_SHARED_3 1
+typedef edge::seismic::setups::PointSources< real_base,
+                                             int_el,
+                                             T_SDISC.ELEMENT,
+                                             ORDER,
+                                             N_CRUNS > t_globalShared3;
+#endif
 
 /*
  * Rupture physics

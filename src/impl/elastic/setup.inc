@@ -279,45 +279,27 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
 }
 PP_INSTR_REG_END(dofsMat)
 
-// setup kinematic sources sources
-if( l_elasticConf.m_kinSrcs.size() > 0 ) {
-  PP_INSTR_REG_DEF(kin)
-  PP_INSTR_REG_BEG(kin,"kin_srcs")
-#ifdef PP_HAS_NETCDF
-  EDGE_LOG_INFO << "  initializing kinematic sources";
-  // setup reader
-  edge::elastic::io::Nrf< N_DIM> l_srcReader;
-  for( unsigned short l_ki = 0; l_ki < l_elasticConf.m_kinSrcs.size(); l_ki++ ) {
-    l_srcReader.init( l_elasticConf.m_kinSrcs[l_ki] );
-  }
-  // print info of kinematic src descriptions
-  std::vector< std::string > l_srcInfo = l_srcReader.toString();
-  for( unsigned short l_ki = 0; l_ki < l_srcInfo.size(); l_ki++ ) {
-    EDGE_LOG_INFO << "    " << l_srcInfo[l_ki];
-  }
-
-  // init sources
-  edge::elastic::setups::KinematicsInit<
-    int_el,
-    real_mesh,
-    real_base,
-    T_SDISC.ELEMENT,
-    ORDER,
-    N_CRUNS,
-    1 >::solvers(  l_enLayouts[2],
-                   l_internal.m_connect.elVe,
-                   t_spTypeElastic::SOURCE,
-                   l_internal.m_vertexChars,
-                  &l_gIdsEl[0],
-                   l_srcReader,
-                   l_internal.m_globalShared1[0].mat.massI,
-                   l_internal.m_elementShared1[0],
-                   l_internal.m_elementChars,
-                   l_dynMem,
-                   l_internal.m_globalShared4[0],
-                   l_internal.m_globalShared3 );
+// setup point sources
+if( l_elasticConf.m_ptSrcs.size() > 0 ) {
+  PP_INSTR_REG_DEF(ptsrcs)
+  PP_INSTR_REG_BEG(ptsrcs,"pt_srcs")
+#ifdef PP_HAS_HDF5
+  EDGE_LOG_INFO << "  initializing point sources";
+  bool l_psInit = l_internal.m_globalShared3[0].init( l_elasticConf.m_ptSrcs.data(),
+                                                      &l_gIdsEl[0],
+                                                      t_spTypeElastic::SOURCE,
+                                                      l_enLayouts[2],
+                                                      l_internal.m_connect.elVe,
+                                                      l_internal.m_vertexChars,
+                                                      l_internal.m_globalShared1[0].mat.massI,
+                                                      l_internal.m_elementChars,
+                                                      l_dynMem );
+  if( l_psInit ) { EDGE_LOG_INFO << "  point sources have been initialized";                   }
+  else {           EDGE_LOG_INFO << "  failed initializing the point sources, continuing w/o"; }
+#else
+  EDGE_LOG_INFO << "  no HDF5 support, skipping point source initialization";
 #endif
-  PP_INSTR_REG_END(kin)
+  PP_INSTR_REG_END(ptsrcs)
 }
 
 // get layout of sparse source elements
@@ -829,7 +811,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups.size() + l_tg,
                       3, l_spType+2, l_internal.m_elementChars );
 
-    // kinematic sources inner-elements
+    // point sources inner-elements
     l_shared.regWrkRgn( l_tg,
                         3,
                         l_tg * N_ENTRIES_CONTROL_FLOW + 9,
@@ -837,7 +819,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                         l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
                         l_tg );
 
-    // kinematic sources send-elements
+    // point sources send-elements
     l_shared.regWrkRgn( l_tg,
                         3,
                         l_tg * N_ENTRIES_CONTROL_FLOW + 10,

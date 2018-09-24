@@ -120,19 +120,14 @@ else if( i_step == 2 ) {
           );
 }
 else if( i_step == 3 ) {
-  // apply kinematic sources
-  edge::elastic::solvers::Kinematics< T_SDISC.ELEMENT,
-                                      N_QUANTITIES,
-                                      ORDER,
-                                      N_CRUNS,
-                                      1 >::applyDirac(              i_first,
-                                                                    i_size,
-                                                       (real_base) (m_covSimTime),
-                                                       (real_base) (m_covSimTime+m_dT),
-                                                                    m_internal.m_globalShared4[0],
-                                                                    m_internal.m_globalShared3,
-                                                                    m_internal.m_elementModePrivate1 );
-
+#ifdef PP_HAS_HDF5
+  // apply point sources
+  m_internal.m_globalShared3[0].apply( i_first,
+                                       i_size,
+                          (real_base) (m_covSimTime),
+                          (real_base) (m_covSimTime+m_dT),
+                                       m_internal.m_elementModePrivate1 );
+#endif
 }
 else if( i_step == 4 ) {
   // reset counters in first step since sync
