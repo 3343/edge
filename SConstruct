@@ -136,7 +136,7 @@ vars.AddVariables(
   EnumVariable( 'cfr',
                 'concurrent forward runs',
                 '16',
-                 allowed_values=( '1', '2', '4', '8', '12', '16' )
+                 allowed_values=( '1', '4', '8', '16' )
               ),
   EnumVariable( 'equations',
                 'equations solved',
@@ -161,7 +161,7 @@ vars.AddVariables(
   EnumVariable( 'arch',
                 'architecture to compile for',
                 'snb',
-                 allowed_values=('host', 'snb', 'hsw', 'knl', 'skx', 'avx512')
+                 allowed_values=('snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
@@ -315,6 +315,39 @@ if( env['xsmm'] ):
     warnings.warn( '  Warning: LIBXSMM not supported for fused simulations and arch != (snb, hsw, knl, skx or avx512), continuing without' )
     env['xsmm'] = False
 
+  # disable libxsmm, if the number of fused simulations does not match the target-architecture
+  if( env['cfr'] != 1 ):
+    # Sandy Bridge
+    if( env['arch'] == 'snb' ):
+      if( env['precision'] == '32' and env['cfr'] != '8' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 32-bit precision and Sandy Bridge (snb)' )
+      elif( env['precision'] == '64' and env['cfr'] != '4' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 64-bit precision and Sandy Bridge (snb)' )
+    # Haswell
+    elif( env['arch'] == 'hsw' ):
+      if( env['precision'] == '32' and env['cfr'] != '8' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 32-bit precision and Haswell (hsw)' )
+      elif( env['precision'] == '64' and env['cfr'] != '4' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 64-bit precision and Haswell (hsw)' )
+    # Knights Landing
+    elif( env['arch'] == 'knl' ):
+      if( env['precision'] == '32' and env['cfr'] != '16' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 32-bit precision and Knights Landing (knl)' )
+      elif( env['precision'] == '64' and env['cfr'] != '8' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 64-bit precision and Knights Landing (knl)' )
+    # Skylake
+    elif( env['arch'] == 'skx' ):
+      if( env['precision'] == '32' and env['cfr'] != '16' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 16 fused simulations for 32-bit precision and Skylake (skx)' )
+      elif( env['precision'] == '64' and env['cfr'] != '8' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and Skylake (skx)' )
+    # AVX-512
+    elif( env['arch'] == 'avx512' ):
+      if( env['precision'] == '32' and env['cfr'] != '16' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 16 fused simulations for 32-bit precision and AVX-512 (avx512)' )
+      elif( env['precision'] == '64' and env['cfr'] != '8' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and AVX-512 (avx512)' )
+
 # forward number of forward runs to compiler
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 
@@ -324,11 +357,6 @@ if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
   env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
 
 # set architecture and alignment
-if env['arch'] == 'host':
-  if compilers == 'intel':
-    env.Append( CPPFLAGS = ['-xHost'] )
-  elif compilers == 'gnu':
-    env.Append( CPPFLAGS = ['-march=native'] )
 if env['arch'] == 'snb':
   env.Append( CPPFLAGS = ['-mavx'] )
 elif env['arch'] == 'hsw':
