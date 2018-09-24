@@ -316,7 +316,7 @@ if( env['xsmm'] ):
     env['xsmm'] = False
 
   # disable libxsmm, if the number of fused simulations does not match the target-architecture
-  if( env['cfr'] != 1 ):
+  if( env['cfr'] != '1' ):
     # Sandy Bridge
     if( env['arch'] == 'snb' ):
       if( env['precision'] == '32' and env['cfr'] != '8' ):
