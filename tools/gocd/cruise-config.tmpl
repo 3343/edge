@@ -2745,16 +2745,16 @@
             <value>16</value>
         </variable>
         <variable name="MPI_EXEC">
-            <value>mpiexec -n 8</value>
+            <value>mpiexec -n 4</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>host</value>
@@ -2795,16 +2795,16 @@
             <value>16</value>
         </variable>
         <variable name="MPI_EXEC">
-            <value>mpiexec -n 8</value>
+            <value>mpiexec -n 4</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>host</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>host</value>
@@ -2851,10 +2851,10 @@
             <value>host</value>
         </variable>
         <variable name="DEBUGGER">
-            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="DEBUGGER_MPI_OMP">
-            <value>valgrind --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
+            <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
             <value>host</value>
