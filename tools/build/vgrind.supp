@@ -105,7 +105,6 @@
    fun:ompi_mpi_init
    fun:PMPI_Init_thread
    fun:*edge*parallel*Mpi*start*
-   fun:main
 }
 
 {
@@ -116,7 +115,6 @@
    fun:ompi_mpi_init
    fun:PMPI_Init_thread
    fun:*edge*parallel*Mpi*start*
-   fun:main
 }
 
 {
@@ -126,5 +124,4 @@
    fun:orte_finalize
    fun:ompi_mpi_finalize
    fun:*edge*parallel*Mpi*
-   fun:main
 }
