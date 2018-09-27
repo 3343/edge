@@ -336,10 +336,10 @@ if( env['xsmm'] ):
     # Knights Landing
     elif( env['arch'] == 'knl' ):
       if( env['precision'] == '32' and env['cfr'] != '16' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 32-bit precision and Knights Landing (knl)' )
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 16 fused simulations for 32-bit precision and Knights Landing (knl)' )
         env['xsmm'] = False
       elif( env['precision'] == '64' and env['cfr'] != '8' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 64-bit precision and Knights Landing (knl)' )
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and Knights Landing (knl)' )
         env['xsmm'] = False
     # Skylake
     elif( env['arch'] == 'skx' ):
