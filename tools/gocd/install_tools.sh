@@ -37,7 +37,6 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gmsh
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gcc
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gfortran
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libiomp5 libiomp-dev
-sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y valgrind
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y software-properties-common
 
 # install clang
