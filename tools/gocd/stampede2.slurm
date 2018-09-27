@@ -33,6 +33,9 @@
 module load gcc/7.1.0
 module load tacc-singularity/2.5.2
 
+# clean temp directory
+rm -rf /tmp/gocd
+
 # start the agents
 for agent in 0 1 2 3
 do
