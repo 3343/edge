@@ -36,7 +36,6 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y cppcheck
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gmsh
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gcc
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gfortran
-sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y clang
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libiomp5 libiomp-dev
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y valgrind
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y software-properties-common
@@ -47,6 +46,8 @@ sudo echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" >
 sudo wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
 sudo apt-get update
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y clang-7 lldb-7 lld-7
+sudo ln -s /usr/bin/clang-7   /usr/bin/clang
+sudo ln -s /usr/bin/clang++-7 /usr/bin/clang++
 
 # install valgrind
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 libc6-dbg
