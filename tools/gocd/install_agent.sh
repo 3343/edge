@@ -56,11 +56,6 @@ then
   exit 1
 fi
 
-# install system-level dependencies
-sudo apt-get -qq install curl
-sudo apt-get -qq install gnupg
-sudo apt-get -qq install apt-transport-https
-
 # add GoCD packages and key
 sudo echo "deb https://download.gocd.org /" > /etc/apt/sources.list.d/gocd.list
 curl -s https://download.gocd.org/GOCD-GPG-KEY.asc | sudo apt-key add -
