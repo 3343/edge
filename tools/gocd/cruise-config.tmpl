@@ -454,7 +454,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
                 <arg>-c</arg>
-                <arg>CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" LIBS="$(pwd)/../../libs/zlib/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --with-pic=yes --disable-fortran --enable-tools --with-zlib=$(pwd)/../../libs/zlib --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=no --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
+                <arg>CXXFLAGS="-fPIC" LIBS="$(pwd)/../../libs/zlib/lib/libz.a" CC=${CC_SEQ} CXX=${CXX_SEQ} ./configure --disable-debug --disable-optimize --enable-shared=no --enable-static=yes --with-pic=yes --disable-fortran --enable-tools --with-zlib=$(pwd)/../../libs/zlib --with-hdf5=$(pwd)/../../libs/hdf5_seq --with-netcdf=no --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-pnetcdf=no --with-metis=no --prefix=$(pwd)/moab_seq</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="submodules/moab/">
@@ -488,7 +488,7 @@
       <!-- ****************************
            * Dependencies *
            **************************** -->
-      <stage name="deps" cleanWorkingDir="true">
+      <stage name="deps">
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
             <tasks>
@@ -2113,7 +2113,7 @@
       <!-- ****************
            * Dependencies *
            **************** -->
-      <stage name="deps" cleanWorkingDir="true">
+      <stage name="deps">
         <approval type="manual" />
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
@@ -2420,7 +2420,7 @@
       <!-- ****************************
            * Dependencies *
            **************************** -->
-      <stage name="deps" cleanWorkingDir="true">
+      <stage name="deps">
         <approval type="manual" />
         <jobs>
           <job name="prep_exec" runOnAllAgents="true">
@@ -2672,7 +2672,7 @@
       <!-- ****************************************
            * Stage: Analysis of benchmark results *
            **************************************** -->
-      <stage name="analyze" fetchMaterials="true" cleanWorkingDir="true">
+      <stage name="analyze" fetchMaterials="true">
         <jobs>
           <!-- HSP1a benchmark -->
           <job name="HSP1a">
