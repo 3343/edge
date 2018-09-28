@@ -458,10 +458,7 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=8 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then ./build/edge -x cont/advection/sine/line.xml; fi;
 
-  ## valgrind, debug, cfr 2, orders 1-2
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=1 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/line.xml; fi;
-
+  ## valgrind, debug, cfr 2, orders 2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then scons xml=cont/advection/sine/line.xml order=2 cfr=2 mode=debug -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "advection" ] && [ "${T_ELEMENTS}" = "line" ]; then valgrind --leak-check=full --error-exitcode=1 --suppressions=tools/build/vgrind.supp ./build/edge -x cont/advection/sine/line.xml; fi;
 
