@@ -2747,7 +2747,7 @@
             <value>16</value>
         </variable>
         <variable name="MPI_EXEC">
-            <value>mpiexec -n 4</value>
+            <value>mpiexec --oversubscribe -n 4</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>hsw</value>
@@ -2797,7 +2797,7 @@
             <value>16</value>
         </variable>
         <variable name="MPI_EXEC">
-            <value>mpiexec -n 4</value>
+            <value>mpiexec --oversubscribe -n 4</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
             <value>hsw</value>
@@ -2898,7 +2898,7 @@
             <value>64</value>
         </variable>
         <variable name="MPI_EXEC">
-            <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec -n 8</value>
+            <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec --oversubscribe -n 8</value>
         </variable>
         <variable name="KMP_AFFINITY">
             <value>norespect,granularity=fine,compact,1,2</value>
