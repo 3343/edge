@@ -100,14 +100,16 @@
             <value>debug</value>
         </variable>
         <variable name="EDGE_MODE_RELEASE">
-            <value>release+san</value>
+            <value>release</value>
         </variable>
+<!-- should run with realease+san on systems with /proc/sys/vm/overcommit_memory == 2
         <variable name="LSAN_OPTIONS">
             <value>suppressions=tools/build/asan_leak.supp</value>
         </variable>
         <variable name="ASAN_OPTIONS">
           <value>fast_unwind_on_malloc=0</value>
         </variable>
+-->
         <variable name="EDGE_EXEC">
             <value>./build/edge</value>
         </variable>
