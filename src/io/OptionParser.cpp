@@ -24,6 +24,7 @@
 #include "OptionParser.h"
 #include <vector>
 #include "logging.h"
+#include "parallel/global.h"
 
 edge::io::OptionParser::OptionParser( int i_argc, char ** i_argv ) {
   /*
@@ -67,7 +68,7 @@ edge::io::OptionParser::OptionParser( int i_argc, char ** i_argv ) {
 
   // exit for help or no options
   if( l_options[HELP] || i_argc == 0 || l_parse.optionsCount() == 0 ) {
-    option::printUsage( std::cout, l_usage);
+    if( parallel::g_rank == 0 ) option::printUsage( std::cout, l_usage);
     exit( EXIT_SUCCESS );
   }
 

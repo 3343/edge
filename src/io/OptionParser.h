@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Parser for command line options.
  **/
 
-#ifndef OPTION_PARSER_H_
-#define OPTION_PARSER_H_
+#ifndef EDGE_IO_OPTION_PARSER_H_
+#define EDGE_IO_OPTION_PARSER_H_
 
 #include <string>
 
@@ -33,7 +33,7 @@
 #include <submodules/include/optionparser.h>
 #pragma GCC diagnostic pop
 
-#include <io/logging.h>
+#include "logging.h"
 
 namespace edge {
   namespace io {
