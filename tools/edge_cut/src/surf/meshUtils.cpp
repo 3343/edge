@@ -25,20 +25,19 @@
 #include "surf/meshUtils.h"
 #include "io/logging.hpp"
 
-// TODO check out gmsh approach to linear scaled fields
 edge_cut::surf::K::FT
 edge_cut::surf::SizingField::operator()( const Point_3& p, const int, const Index& ) const
 {
   FT l_distance = std::sqrt( std::pow( p.x()-m_center.x(), 2 ) + std::pow( p.y()-m_center.y(), 2 ) );
 
-  if ( l_distance < m_innerRad )
+  if ( l_distance <= m_innerRad )
     return m_innerVal;
   else if ( l_distance >= m_outerRad )
     return m_scale * m_innerVal;
   else {
     // Control should never reach here if inner and outer radii are equal
     assert( m_outerRad != m_innerRad );
-    return ( 1 + ( l_distance - m_innerRad ) * ( m_scale - 1) / ( m_outerRad - m_innerRad ) ) * m_innerVal;
+    return ( 1 + ( l_distance - m_innerRad ) * ( m_scale - 1) / ( m_outerRad - m_innerRad ) ) * m_innerVal; //TODO remove division
   }
 }
 

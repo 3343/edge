@@ -21,17 +21,17 @@
  * This is the main file of EDGEcut.
  **/
 
-// CGAL mesher debug flags:
-#define CGAL_MESH_3_PROFILING 1           // Output basic size and time duration statistics for mesher
-#define CGAL_MESH_3_VERBOSE 1             // Show progress of meshing routine, print extra mesh quality statistics from optimizer
-// #define CGAL_MESH_3_PROTECTION_DEBUG 1    // Very verbose output of routine preserving 1D features
+// Debug options
+// #include <gperftools/heap-profiler.h>      // For memory profiling
+// #define CGAL_MESH_3_PROFILING 1            // Output basic size and time duration statistics for mesher
+// #define CGAL_MESH_3_VERBOSE 1              // Show progress of meshing routine, print extra mesh quality statistics from optimizer
+// #define CGAL_MESH_3_PROTECTION_DEBUG 1     // Very verbose output of routine preserving 1D features
 
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
 #include "../../../submodules/pugixml/src/pugixml.hpp"
 #include "surf/meshUtils.h"
 #include "surf/BdryTrimmer.h"
-#include <gperftools/heap-profiler.h>
 
 using namespace edge_cut::surf;
 
@@ -78,14 +78,16 @@ int main( int i_argc, char *i_argv[] ) {
   const double l_yMax = std::stod( doc.child("bbox").child_value("yMax") );
   const double l_zMin = std::stod( doc.child("bbox").child_value("zMin") );
   const double l_zMax = std::stod( doc.child("bbox").child_value("zMax") );
-  const std::string l_topoFile = doc.child("topofile").child_value();
+  const std::string l_topoIn  = doc.child("io").child_value("topo_in");
+  const std::string l_topoOut = doc.child("io").child_value("topo_out");
+  const std::string l_bdryOut = doc.child("io").child_value("bdry_out");
 
   double const l_bBox[] = { l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax };
 
   // Create polyhedral meshes of topography (with whatever sampling we were provided),
   // and of domain boundary
   Polyhedron l_topoPoly, l_bdryPoly;
-  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_topoFile );
+  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_topoIn );
   edge_cut::surf::makeFreeSurfBdry( l_bdryPoly, l_bBox );
 
   // Create polyhedral domains for re-meshing
@@ -176,8 +178,8 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Output
   EDGE_LOG_INFO << "Writing meshes...";
-  std::ofstream topo_file("o_parkfieldTopo.off");
-  std::ofstream bdry_file("o_parkfieldBdry.off");
+  std::ofstream topo_file( l_topoOut );
+  std::ofstream bdry_file( l_bdryOut );
 
   bdry_file << l_bdryPolyMeshed;
   topoComplex.output_facets_in_complex_to_off( topo_file );

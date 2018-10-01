@@ -33,8 +33,6 @@
 #include <CGAL/Projection_traits_xy_3.h>
 #include <CGAL/Triangulation_hierarchy_2.h>
 
-#include "constants.hpp"
-
 namespace edge_cut {
   namespace surf {
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
@@ -51,6 +49,8 @@ namespace edge_cut {
     class Topo;
   }
 }
+
+const unsigned short C_MAX_SURF_INTER = 10;
 
 class edge_cut::surf::Topo {
 public:
