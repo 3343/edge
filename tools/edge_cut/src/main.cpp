@@ -90,7 +90,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Create polyhedral domains for re-meshing
   // The "re-meshing" form of make-mesh only works when the polyhedral domain
-  // is constructed from a vector of polyhedral surfaces (as far as I can tell )
+  // is constructed from a vector of polyhedral surfaces (as far as I can tell)
   std::vector< Polyhedron* > l_topoVector( 1, &l_topoPoly );
   std::vector< Polyhedron* > l_bdryVector( 1, &l_bdryPoly );
   Mesh_domain l_topoDomain( l_topoVector.begin(), l_topoVector.end() );
@@ -102,6 +102,9 @@ int main( int i_argc, char *i_argv[] ) {
   l_bdryDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
   l_topoDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
 
+  // Free memory, a copy is stored in the Mesh_domain object (no move semantics in CGAL yet)
+  l_topoPoly.clear();
+  l_bdryPoly.clear();
 
   // Meshing Criteria
   //    Edge Size - Max distance between protecting balls in 1D feature preservation
@@ -179,6 +182,5 @@ int main( int i_argc, char *i_argv[] ) {
   bdry_file << l_bdryPolyMeshed;
   topoComplex.output_facets_in_complex_to_off( topo_file );
   EDGE_LOG_INFO << "Done.";
-
   EDGE_LOG_INFO << "Thank you for using EDGEcut!";
 }
