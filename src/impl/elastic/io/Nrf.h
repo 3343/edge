@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Reader for the NetCDF Rupture Format.
  **/
 
-#ifndef NRF_H
-#define NRF_H
+#ifndef EDGE_SEISMIC_NRF_H
+#define EDGE_SEISMIC_NRF_H
 
 #include <string> 
 #include <vector>
@@ -632,12 +632,11 @@ class edge::elastic::io::Nrf {
                  unsigned short  i_sd,
                  TL_T_REAL      *o_srs ) {
       std::size_t l_bId = bufferId( i_kId, i_ptSrcG );
-
       std::size_t l_first = m_nrf[i_kId]->srOff[l_bId][i_sd];
       std::size_t l_size  = m_nrf[i_kId]->srOff[l_bId+1][i_sd] - l_first;
 
       // check that the size matches the total number of samples
-      EDGE_CHECK_LE( l_size, m_nrf[i_kId]->nSplsG[i_sd] );
+      EDGE_CHECK_LE( l_first+l_size, m_nrf[i_kId]->nSplsG[i_sd] );
       for( std::size_t l_sr = 0; l_sr < l_size; l_sr++ )
         o_srs[l_sr] = m_nrf[i_kId]->sr[i_sd][l_sr+l_first];
     }

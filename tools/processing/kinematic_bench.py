@@ -66,7 +66,18 @@ def parseConfig( i_inFile ):
     l_dict['subfaults'] = l_dict['subfaults'] + [{}]
 
     for l_par in ['on', 'dt', 'dur', 'mu', 'a', 'm0', 'T']:
-      l_dict['subfaults'][-1][l_par] = float( l_subfault.find(l_par).text )
+      l_find = l_subfault.find(l_par)
+      if( l_find != None ):
+        l_dict['subfaults'][-1][l_par] = float( l_find.text )
+
+    # read type of moment-rate time history
+    if( l_subfault.find('mrth') != None ):
+      l_mrth = l_subfault.find('mrth').text
+    else:
+      if( l_nDims == 2 ): l_mrth = 'ricker'
+      else:               l_mrth = 'wp'
+    # store
+    l_dict['subfaults'][-1]['mrth'] = l_mrth
 
     l_dict['subfaults'][-1]['center'] = []
     l_center = l_subfault.find('center')
@@ -110,7 +121,7 @@ def createNcFile( i_inFile, i_outFile, i_nSrcStr, i_centerStr, i_subStr ):
                                      i_centerStr )
         l_outStr = l_outStr.replace( 'TEMPLATE_SUBFAULTS',
                                      i_subStr )
-        l_tmpFile.write( l_outStr )
+        l_tmpFile.write( str.encode( l_outStr ) )
 
       # jump to beginning
       l_tmpFile.seek(0)
@@ -143,7 +154,7 @@ def writeSrs( i_nDims, i_outFile, i_srs ):
                               datatype='u4',
                               dimensions=('sroffset', 'direction') )
 
-  # deterimine total size
+  # determine total size
   l_nSrs = 0
   for l_sr in i_srs: l_nSrs = l_nSrs + len(l_sr)
 
@@ -176,7 +187,7 @@ def writeSrs( i_nDims, i_outFile, i_srs ):
   l_flush = 0;
   for l_su in i_srs:
     l_rootGroup['sliprates1'][l_first:l_first+len(l_su)] = l_su
-    if( i_nDims > 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
+    #if( i_nDims > 2 ): l_rootGroup['sliprates2'][l_first:l_first+len(l_su)] = l_su
     l_first = l_first + len(l_su)
 
     # flush periodically
@@ -187,7 +198,7 @@ def writeSrs( i_nDims, i_outFile, i_srs ):
   # write offsets
   l_rootGroup['sroffsets'][0, :] = ( [ 0, 0, 0 ] if( i_nDims > 2 ) else [0, 0] )
   l_off = 0
-  for l_so in xrange( 0, len(i_srs) ):
+  for l_so in range( 0, len(i_srs) ):
     l_off = l_off + len(i_srs[l_so])
     l_rootGroup['sroffsets'][l_so+1, :] = ( [ l_off, 0, 0 ] if( i_nDims > 2 ) else [ l_off, l_off ] )
 
@@ -258,7 +269,81 @@ def wp( i_t1,
     l_sr.append( l_t * l_tsI * math.exp( -l_t * l_tI ) * i_M0 )
     l_t = l_t+i_dt
   return l_sr
-             
+
+##
+# Generates slip-rate samples for boxcar.
+#
+# @param i_t1 start time of the sampling.
+# @param i_t2 end time of the sampling (i_t2-i_t1 is the rise-time).
+# @param i_dt time step of the sampling.
+# @param i_m0 scaling used for the moment-rate time history
+# @return samples slip rates.
+##
+def boxcar( i_t1,
+            i_t2,
+            i_dt,
+            i_m0 ):
+  l_sr = []
+
+  # local time
+  l_t = i_t1
+  # intergral of boxcar is 1 + scale by moment
+  l_m0DivDur = i_m0 / (i_t2-i_t1)
+
+  while( l_t < i_t2 ):
+    l_sr.append( l_m0DivDur )
+    l_t = l_t+i_dt
+  return l_sr
+
+##
+# Generates slip-rate samples for the Can1 benchmark of the SISMOWINE benchmark suite.
+#
+# Moment rate time history (WolframAlpha):
+# in: derivative of exp( - ( w * ( t - T ) /y )^2 ) * cos( w * ( t - T) + v )
+# out: -((w (2 (t - T) w Cos[v + (t - T) w] + y^2 Sin[v + (t - T) w]))/(E^(((t - T)^2 w^2)/y^2) y^2))
+#
+# @param i_t1 start time of the sampling.
+# @param i_t2 end time of the sampling.
+# @param i_dt time step of the sampling.
+# @param i_M0 scaling used for the moment-rate time history.
+# @param i_w parameter omega: 2 * PI * f_Pin the analytical slip-rate function.
+# @param i_y parameter gamma in the analytical slip-rate function.
+# @param i_v parameter v in the analytical slip-rate function.
+# @param i_ts parameter t_S in the analytical slip-rate function.
+# @return samples slip rates.
+##
+def can1( i_t1,
+          i_t2,
+          i_dt,
+          i_M0=-1E18,
+          i_w = 2.0 * math.pi * 1.5,
+          i_y = 2.0,
+          i_v = math.pi * 0.5,
+          i_ts = 1.0 ):
+  # slip rate samples
+  l_sr = []
+
+  # local time
+  l_t = i_t1
+
+  # iterate over samples
+  while( l_t < i_t2 ):
+    # compute sample
+    l_sa = i_y**2 * math.sin( i_w * ( l_t - i_ts ) + i_v )
+    l_sa = l_sa +   2.0 * i_w * ( l_t - i_ts ) \
+                  * math.cos( i_w * ( l_t - i_ts ) + i_v )
+    l_sa = l_sa * -i_w * math.exp( - ( i_w**2 * ( l_t - i_ts )**2 ) / i_y**2 )
+    l_sa = l_sa / i_y**2
+
+    # scale
+    l_sa = l_sa * i_M0
+
+    # attach sample
+    l_sr.append( l_sa )
+    l_t = l_t + i_dt
+
+  # return slip rate samples
+  return l_sr
 
 # set up logger
 logging.basicConfig( level=logging.DEBUG,
@@ -297,6 +382,9 @@ The expected syntax is as follows:\n\
       <m0>-1E18</m0>\n\
       <!-- smoothing time T, used for the generation of the moment-rate time series -->\n\
       <T>0.1</T>\n\
+\n\
+      <!-- moment-rate time history, 2D: ricker (default); 3D: wp (default) or boxcar or can1 -->\n\
+      <mrth>wp</mrth>\n\
 \n\
       <!-- center of the subfault (x, y, z coordinates) -->\n\
       <center>\n\
@@ -395,17 +483,26 @@ l_srs = []
 # create slip rates
 l_nSrs = 0
 for l_sf in l_cfg['subfaults']:
-  l_t1 = 0.0
-  l_t2 = l_sf['dur']
-  l_dt = l_sf['dt']
-  l_t  = l_sf['T']
-  if l_nDims == 3:
+  if( l_sf['mrth'] == 'wp' ):
     l_sr = wp( 0.0,
                l_sf['dur'],
                l_sf['dt'],
                l_sf['T'],
                l_sf['m0'] )
-  else:
+
+  if( l_sf['mrth'] == 'boxcar' ):
+    l_sr = boxcar( l_sf['on'],
+                   l_sf['dur']+l_sf['on'],
+                   l_sf['dt'],
+                   l_sf['m0'] )
+
+  elif( l_sf['mrth'] == 'can1'):
+    l_sr = can1( l_sf['on'],
+                 l_sf['dur']-l_sf['on'],
+                 l_sf['dt'],
+                 l_sf['m0'] )
+
+  elif( l_sf['mrth'] == 'ricker' ):
     l_sr = ricker( l_sf['on'],
                    l_sf['dur']+l_sf['on'],
                    l_sf['dt'],

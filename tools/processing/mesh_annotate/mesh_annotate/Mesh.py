@@ -89,7 +89,7 @@ class Mesh:
     self.m_root = self.m_moab.get_root_set()
 
     # determine number of dimensions
-    for l_di in [3,2]:
+    for l_di in [2,3]:
       if( len(self.m_moab.get_entities_by_dimension( self.m_root, l_di )) > 0 ):
         self.m_nDis = l_di
 
