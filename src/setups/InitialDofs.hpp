@@ -199,11 +199,11 @@ class edge::setups::InitialDofs {
           // get quad-points
           std::vector< TL_T_REAL > l_pts[3], l_wes;
           qps( TL_O_SP+1,
-              l_el,
-              i_elVe,
-              i_veChars,
-              l_pts,
-              l_wes );
+               l_el,
+               i_elVe,
+               i_veChars,
+               l_pts,
+               l_wes );
           EDGE_CHECK( l_wes.size() == TL_N_QPS1 ); // check compability of work-around
 
           // solution at quad points
@@ -279,17 +279,17 @@ class edge::setups::InitialDofs {
               typename TL_T_VE_CHARS,
               typename TL_T_SV_CHARS,
               typename TL_T_EL_CHARS >
-    static void sc( TL_T_LID              i_first,
-                    TL_T_LID              i_size,
-                    TL_T_LID              i_liFirst,
-                    TL_T_SP               i_spType,
-                    std::string   const   i_exprStrs[TL_N_CRS],
-                    TL_T_LID      const (*i_elVe)[TL_N_VES],
-                    TL_T_LID      const (*i_scSv)[TL_N_VES],
-                    TL_T_VE_CHARS const  *i_veChars,
-                    TL_T_SV_CHARS const  *i_svChars,
-                    TL_T_EL_CHARS const  *i_elChars,
-                    TL_T_REAL           (*o_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
+    static void sc( TL_T_LID               i_first,
+                    TL_T_LID               i_size,
+                    TL_T_LID               i_liFirst,
+                    TL_T_SP                i_spType,
+                    std::string    const   i_exprStrs[TL_N_CRS],
+                    TL_T_LID       const (*i_elVe)[TL_N_VES],
+                    unsigned short const (*i_scSv)[TL_N_VES],
+                    TL_T_VE_CHARS  const  *i_veChars,
+                    TL_T_SV_CHARS  const  *i_svChars,
+                    TL_T_EL_CHARS  const  *i_elChars,
+                    TL_T_REAL            (*o_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
       // coordinates
       TL_T_REAL l_crds[TL_N_DIMS];
 

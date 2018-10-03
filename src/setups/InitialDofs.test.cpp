@@ -187,13 +187,13 @@ TEST_CASE( "Initial Dofs: sub-cells.", "[initialDofs][sc]" ) {
                           {4, 1},
                           {4, 5} };
 
-  short l_scSv1[7][2] = { { 1,2 },
-                          { 2,3 },
-                          { 3,4 },
-                          { 4,5 },
-                          { 5,6 },
-                          { 0,1 },
-                          { 6,7 } };
+  unsigned short l_scSv1[7][2] = { { 1,2 },
+                                   { 2,3 },
+                                   { 3,4 },
+                                   { 4,5 },
+                                   { 5,6 },
+                                   { 0,1 },
+                                   { 6,7 } };
 
   typedef struct {
     double coords[1];
@@ -443,9 +443,9 @@ TEST_CASE( "Initial Dofs: errors.", "[initialDofs][err]" ) {
                           {4, 1},
                           {4, 5} };
 
-  short l_scSv1[3][2] = { { 1,2 },
-                          { 0,1 },
-                          { 2,3 } };
+  unsigned short l_scSv1[3][2] = { { 1,2 },
+                                 { 0,1 },
+                                 { 2,3 } };
 
   typedef struct {
     double coords[1];
