@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,27 +20,25 @@
  * @section DESCRIPTION
  * Unit tests for evals through quadrature rules.
  **/
-
-// TODO: unit tests only valid for double-precision arithmetic since dg::Basis is not templatized.
-#if PP_PRECISION == 64
-
 #include <catch.hpp>
 #define private public
 #include "QuadratureEval.hpp"
 #undef private
 
-TEST_CASE( "Derivation of quad points and weights", "[quadratureEval][pts]" ) {
+// TODO: unit tests only valid for double-precision arithmetic since dg::Basis is not templatized.
+#if PP_PRECISION == 64
+TEST_CASE( "Derivation of face quad points and weights", "[quadratureEval][faces]" ) {
   double l_sum = 0;
 
   /*
    * quad4r, order2
    */
-  real_mesh l_quad4rPts1[8][2][2];
-  real_mesh l_quad4rWeights1[4];
-  real_mesh l_quad4rBasisEval1[8][2][4];
+  double l_quad4rPts1[8][2][2];
+  double l_quad4rWeights1[4];
+  double l_quad4rBasisEval1[8][2][4];
   edge::dg::QuadratureEval<QUAD4R, 2>::faces( l_quad4rPts1, l_quad4rWeights1, l_quad4rBasisEval1 );
   l_sum = 0;
-  for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( TET4, 2 ); l_qp++ ) {
+  for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( QUAD4R, 2 ); l_qp++ ) {
     l_sum += l_quad4rWeights1[l_qp];
   }
   REQUIRE( l_sum == Approx(1.0) );
@@ -68,9 +66,9 @@ TEST_CASE( "Derivation of quad points and weights", "[quadratureEval][pts]" ) {
   /*
    * hex8r, order 2
    */
-  real_mesh l_hex8rPts1[12][4][3];
-  real_mesh l_hex8rWeights1[4];
-  real_mesh l_hex8rBasisEval1[12][4][8];
+  double l_hex8rPts1[12][4][3];
+  double l_hex8rWeights1[4];
+  double l_hex8rBasisEval1[12][4][8];
   edge::dg::QuadratureEval<HEX8R, 2>::faces( l_hex8rPts1, l_hex8rWeights1, l_hex8rBasisEval1 );
   l_sum = 0;
   for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( TET4, 2 ); l_qp++ ) {
@@ -105,9 +103,9 @@ TEST_CASE( "Derivation of quad points and weights", "[quadratureEval][pts]" ) {
   /*
    * tet4, order 2
    */
-  real_mesh l_tet4Pts1[16][4][3];
-  real_mesh l_tet4Weights1[4];
-  real_mesh l_tet4BasisEval1[16][4][4];
+  double l_tet4Pts1[16][4][3];
+  double l_tet4Weights1[4];
+  double l_tet4BasisEval1[16][4][4];
 
   edge::dg::QuadratureEval<TET4, 2>::faces( l_tet4Pts1, l_tet4Weights1, l_tet4BasisEval1 );
   // check that the sum of the quad points gives the surface of the "reference face"
@@ -120,9 +118,9 @@ TEST_CASE( "Derivation of quad points and weights", "[quadratureEval][pts]" ) {
   /*
    * tet4, order 6
    */
-  real_mesh l_tet4Pts2[16][36][3];
-  real_mesh l_tet4Weights2[36];
-  real_mesh l_tet4BasisEval2[16][36][56];
+  double l_tet4Pts2[16][36][3];
+  double l_tet4Weights2[36];
+  double l_tet4BasisEval2[16][36][56];
 
   edge::dg::QuadratureEval<TET4, 6>::faces( l_tet4Pts2, l_tet4Weights2, l_tet4BasisEval2 );
   // check that the sum of the quad points gives the surface of the "reference face"
@@ -133,4 +131,84 @@ TEST_CASE( "Derivation of quad points and weights", "[quadratureEval][pts]" ) {
   REQUIRE( l_sum == Approx(0.5) );
 }
 
+TEST_CASE( "Derivation of element quad points and weights", "[quadratureEval][element]" ) {
+  double l_pts[4][2];
+  double l_wes[4];
+  double l_eva[4][4];
+
+  edge::dg::QuadratureEval< QUAD4R, 2 >::element( l_pts, l_wes, l_eva );
+
+  REQUIRE( l_pts[0][0] == Approx( (-0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[0][1] == Approx( (-0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_pts[1][0] == Approx( ( 0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[1][1] == Approx( (-0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_pts[2][0] == Approx( (-0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[2][1] == Approx( ( 0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_pts[3][0] == Approx( ( 0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[3][1] == Approx( ( 0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_wes[0] == Approx(0.25) );
+  REQUIRE( l_wes[1] == Approx(0.25) );
+  REQUIRE( l_wes[2] == Approx(0.25) );
+  REQUIRE( l_wes[3] == Approx(0.25) );
+
+  REQUIRE( l_eva[0][0] == Approx(1.0) );
+  REQUIRE( l_eva[1][0] == Approx(1.0) );
+  REQUIRE( l_eva[2][0] == Approx(1.0) );
+  REQUIRE( l_eva[3][0] == Approx(1.0) );
+
+  REQUIRE( l_eva[0][1] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[1][1] == Approx(  0.5773502691896257 ) );
+  REQUIRE( l_eva[2][1] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[3][1] == Approx(  0.5773502691896257 ) );
+
+  REQUIRE( l_eva[0][2] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[1][2] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[2][2] == Approx(  0.5773502691896257 ) );
+  REQUIRE( l_eva[3][2] == Approx(  0.5773502691896257 ) );
+
+
+  edge::dg::QuadratureEval< QUAD4R, 2 >::element( l_pts, l_wes, l_eva );
+
+  REQUIRE( l_pts[0][0] == Approx( (-0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[0][1] == Approx( (-0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_pts[1][0] == Approx( ( 0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[1][1] == Approx( (-0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_pts[2][0] == Approx( (-0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[2][1] == Approx( ( 0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_pts[3][0] == Approx( ( 0.5773502691896257+1)/2 ) );
+  REQUIRE( l_pts[3][1] == Approx( ( 0.5773502691896257+1)/2 ) );
+
+  REQUIRE( l_wes[0] == Approx(0.25) );
+  REQUIRE( l_wes[1] == Approx(0.25) );
+  REQUIRE( l_wes[2] == Approx(0.25) );
+  REQUIRE( l_wes[3] == Approx(0.25) );
+
+  REQUIRE( l_eva[0][0] == Approx(1.0) );
+  REQUIRE( l_eva[1][0] == Approx(1.0) );
+  REQUIRE( l_eva[2][0] == Approx(1.0) );
+  REQUIRE( l_eva[3][0] == Approx(1.0) );
+
+  REQUIRE( l_eva[0][1] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[1][1] == Approx(  0.5773502691896257 ) );
+  REQUIRE( l_eva[2][1] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[3][1] == Approx(  0.5773502691896257 ) );
+
+  REQUIRE( l_eva[0][2] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[1][2] == Approx( -0.5773502691896257 ) );
+  REQUIRE( l_eva[2][2] == Approx(  0.5773502691896257 ) );
+  REQUIRE( l_eva[3][2] == Approx(  0.5773502691896257 ) );
+
+
+  REQUIRE( l_eva[0][3] == Approx( -0.5773502691896257 * -0.5773502691896257 ) );
+  REQUIRE( l_eva[1][3] == Approx(  0.5773502691896257 * -0.5773502691896257 ) );
+  REQUIRE( l_eva[2][3] == Approx( -0.5773502691896257 *  0.5773502691896257 ) );
+  REQUIRE( l_eva[3][3] == Approx(  0.5773502691896257 *  0.5773502691896257 ) );
+}
 #endif
