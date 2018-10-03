@@ -451,7 +451,8 @@ class edge::seismic::setups::PointSources {
 
         // get source coordinates
         TL_T_LID l_ptId = i_srcIdsP[l_pt];
-        TL_T_REAL *l_ptCrds = l_ptsRaw[l_ptId];
+        TL_T_REAL l_ptCrds[TL_N_DIS];
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) l_ptCrds[l_di] = l_ptsRaw[l_ptId][l_di];
 
         // get coordinates of the source w.r.t. the element
         edge::linalg::Geom::closestPoint( TL_T_EL,
