@@ -23,8 +23,8 @@
 
 // Debug options
 // #include <gperftools/heap-profiler.h>      // For memory profiling
-// #define CGAL_MESH_3_PROFILING 1            // Output basic size and time duration statistics for mesher
-// #define CGAL_MESH_3_VERBOSE 1              // Show progress of meshing routine, print extra mesh quality statistics from optimizer
+#define CGAL_MESH_3_PROFILING 1            // Output basic size and time duration statistics for mesher
+#define CGAL_MESH_3_VERBOSE 1              // Show progress of meshing routine, print extra mesh quality statistics from optimizer
 // #define CGAL_MESH_3_PROTECTION_DEBUG 1     // Very verbose output of routine preserving 1D features
 
 #include "io/logging.hpp"
@@ -88,7 +88,7 @@ int main( int i_argc, char *i_argv[] ) {
   // and of domain boundary
   Polyhedron l_topoPoly, l_bdryPoly;
   edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_topoIn );
-  edge_cut::surf::makeFreeSurfBdry( l_bdryPoly, l_bBox );
+  edge_cut::surf::makeBdry( l_bdryPoly, l_bBox );
 
   // Create polyhedral domains for re-meshing
   // The "re-meshing" form of make-mesh only works when the polyhedral domain
@@ -123,8 +123,8 @@ int main( int i_argc, char *i_argv[] ) {
   //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
   //      is a poor approximation to the theoretical surface
   K::FT l_scale = std::stod( doc.child("region").child_value("scale") );
-  K::FT l_innerRefineRad = std::stod( doc.child("region").child_value("innerRad") );
-  K::FT l_outerRefineRad = std::stod( doc.child("region").child_value("outerRad") );
+  K::FT l_innerRefineRad = std::stod( doc.child("region").child_value("inner_rad") );
+  K::FT l_outerRefineRad = std::stod( doc.child("region").child_value("outer_rad") );
   K::Point_3 l_center = K::Point_3( std::stod( doc.child("region").child("center").child_value("x") ),
                                     std::stod( doc.child("region").child("center").child_value("x") ),
                                     std::stod( doc.child("region").child("center").child_value("x") ) );
@@ -155,17 +155,19 @@ int main( int i_argc, char *i_argv[] ) {
   // Mesh generation
   // NOTE the optimizers have more options than specified here
   EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
-  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>(  l_topoDomain, l_topoCriteria,
-                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
+                                              l_topoCriteria,
+                                              CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                                              CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                                              CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                                              CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
-  C3t3 bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain, l_bdryCriteria,
-                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+  C3t3 bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain,
+                                              l_bdryCriteria,
+                                              CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                                              CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                                              CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                                              CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
   // Trim bits of boundary mesh which extend above topography
   EDGE_LOG_INFO << "Trimming boundary mesh...";

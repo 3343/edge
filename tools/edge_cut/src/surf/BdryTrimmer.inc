@@ -22,7 +22,9 @@
  **/
 
 template< class Polyhedron >
-edge_cut::surf::BdryTrimmer<Polyhedron>::BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo ) : m_bdry(i_bdry), m_topo(i_topo)
+edge_cut::surf::BdryTrimmer<Polyhedron>::BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo ) :
+  m_bdry(i_bdry),
+  m_topo(i_topo)
 {
   m_bdry.normalize_border();
 

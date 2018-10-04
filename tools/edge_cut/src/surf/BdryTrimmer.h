@@ -24,7 +24,7 @@
 #ifndef BDRY_TRIMMER_H_
 #define BDRY_TRIMMER_H_
 
-#include "meshUtils.h"
+// #include "meshUtils.h"
 #include "io/logging.hpp"
 
 namespace edge_cut {
@@ -38,13 +38,11 @@ class edge_cut::surf::BdryTrimmer{
 public:
   // Const types are used for the (unchanged) topo mesh
   typedef typename Polyhedron::Vertex_const_handle       Vertex_const;
-  typedef typename Polyhedron::Halfedge_const_handle     Halfedge_const;
 
   // Non-const types are for the boundary mesh
   typedef typename Polyhedron::Vertex_handle             Vertex;
   typedef typename Polyhedron::Vertex_iterator           VertexIt;
   typedef typename Polyhedron::Halfedge_handle           Halfedge;
-  typedef typename Polyhedron::Halfedge_const_iterator   HalfedgeIt;
   typedef typename Polyhedron::Face_handle               Face;
 
   // We cannot compare vertices and halfedges on two different polyhedral meshes,
