@@ -21,8 +21,8 @@
  * Delete extraneous bits of mesh which extend above topographical surface
  **/
 
-#ifndef BDRY_TRIMMER_H_
-#define BDRY_TRIMMER_H_
+#ifndef EDGE_CUT_BDRY_TRIMMER_H_
+#define EDGE_CUT_BDRY_TRIMMER_H_
 
 #include "io/logging.hpp"
 

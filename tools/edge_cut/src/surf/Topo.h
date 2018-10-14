@@ -22,8 +22,8 @@
  * Meshing of topographic data.
  **/
 
-#ifndef TOPO_H_
-#define TOPO_H_
+#ifndef EDGE_CUT_TOPO_H_
+#define EDGE_CUT_TOPO_H_
 
 #include <string>
 

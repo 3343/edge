@@ -21,8 +21,8 @@
  * Logging interface.
  **/
 
-#ifndef LOGGING_HPP_
-#define LOGGING_HPP_
+#ifndef EDGE_CUT_LOGGING_HPP_
+#define EDGE_CUT_LOGGING_HPP_
 
 // enable thread-safety in omp-configs
 #ifdef PP_USE_OMP
