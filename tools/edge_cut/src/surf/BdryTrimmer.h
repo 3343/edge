@@ -24,7 +24,6 @@
 #ifndef BDRY_TRIMMER_H_
 #define BDRY_TRIMMER_H_
 
-// #include "meshUtils.h"
 #include "io/logging.hpp"
 
 namespace edge_cut {
