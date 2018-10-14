@@ -30,31 +30,15 @@
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
 #include "../../../submodules/pugixml/src/pugixml.hpp"
+#include "io/Config.h"
+#include "io/OptionParser.h"
 #include "surf/meshUtils.h"
 #include "surf/BdryTrimmer.h"
 
 using namespace edge_cut::surf;
 
 int main( int i_argc, char *i_argv[] ) {
-  // Check for valid arguments
-  std::string l_xmlPath = "";
-  if ( i_argc > 2 ) {
-    EDGE_LOG_INFO << "Encountered more than one command line option -- exiting";
-    return -1;
-  }  else if ( i_argc == 1 ) {
-    EDGE_LOG_INFO << "Missing command line option (xml config path) -- exiting";
-    return -1;
-  } else {
-    l_xmlPath = i_argv[1];
-  }
-
-  // Check for valid config
-  pugi::xml_document doc;
-  if (!doc.load_file( l_xmlPath.c_str() )) {
-    EDGE_LOG_INFO << "Could not open xml config file -- exiting";
-    return -1;
-  }
-
+  edge_cut::io::OptionParser l_options( i_argc, i_argv );
 
   EDGE_LOG_INFO << "##########################################################################";
   EDGE_LOG_INFO << "##############   ##############            ###############  ##############";
@@ -72,23 +56,14 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "";
   EDGE_LOG_INFO << "ready to go..";
 
-  const double l_xMin = std::stod( doc.child("bbox").child_value("xMin") );
-  const double l_xMax = std::stod( doc.child("bbox").child_value("xMax") );
-  const double l_yMin = std::stod( doc.child("bbox").child_value("yMin") );
-  const double l_yMax = std::stod( doc.child("bbox").child_value("yMax") );
-  const double l_zMin = std::stod( doc.child("bbox").child_value("zMin") );
-  const double l_zMax = std::stod( doc.child("bbox").child_value("zMax") );
-  const std::string l_topoIn  = doc.child("io").child_value("topo_in");
-  const std::string l_topoOut = doc.child("io").child_value("topo_out");
-  const std::string l_bdryOut = doc.child("io").child_value("bdry_out");
-
-  double const l_bBox[] = { l_xMin, l_xMax, l_yMin, l_yMax, l_zMin, l_zMax };
+  EDGE_LOG_INFO << "parsing xml config";
+  edge_cut::io::Config< K > l_config( l_options.m_xmlPath );
 
   // Create polyhedral meshes of topography (with whatever sampling we were provided),
   // and of domain boundary
   Polyhedron l_topoPoly, l_bdryPoly;
-  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_topoIn );
-  edge_cut::surf::makeBdry( l_bdryPoly, l_bBox );
+  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_config.m_topoIn );
+  edge_cut::surf::makeBdry( l_bdryPoly, l_config.m_bBox );
 
   // Create polyhedral domains for re-meshing
   // The "re-meshing" form of make-mesh only works when the polyhedral domain
@@ -100,7 +75,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Preserve the intersection between topography and boundary meshes.
   // This ensures that the two meshes coincide on their boundaries.
-  std::list< Polyline_type > l_intersectFeatures = edge_cut::surf::getIntersectionFeatures( l_topoPoly, l_bBox );
+  std::list< Polyline_type > l_intersectFeatures = edge_cut::surf::getIntersectionFeatures( l_topoPoly, l_config.m_bBox );
   l_bdryDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
   l_topoDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
 
@@ -108,52 +83,26 @@ int main( int i_argc, char *i_argv[] ) {
   l_topoPoly.clear();
   l_bdryPoly.clear();
 
-  // Meshing Criteria
-  //    Edge Size - Max distance between protecting balls in 1D feature preservation
-  //    Facet Size - Radius of Surface Delaunay ball
-  //    Facet Distance - Max distance between center for Surface Delaunay Ball and circumcenter of triangle face (surface approximation parameter)
-  //    Facet Angle - Max angle of a surface triangle face [ MUST BE <= 30 ]
-  //    Cell Size - Tetrahedral circumradius
-  //    Cell Radius/Edge Ratio - Max ratio of circumradius to shortest edge (mesh quality parameter) [ MUST BE >= 2 ]
-  //
-  // NOTE the mesher cannot detect and remove "slivers" - optimizers must be
-  //      used to remove them and improve mesh quality
-  // NOTE A "Surface Delaunay Ball" is the 3D ball circumscribing a triangle surface facet which also
-  //      has its center on the theoretical surface to be meshed. The center of the Surface
-  //      Delaunay Ball will not coincide with the triangle circumcenter when the surface mesh
-  //      is a poor approximation to the theoretical surface
-  K::FT l_scale = std::stod( doc.child("region").child_value("scale") );
-  K::FT l_innerRefineRad = std::stod( doc.child("region").child_value("inner_rad") );
-  K::FT l_outerRefineRad = std::stod( doc.child("region").child_value("outer_rad") );
-  K::Point_3 l_center = K::Point_3( std::stod( doc.child("region").child("center").child_value("x") ),
-                                    std::stod( doc.child("region").child("center").child_value("x") ),
-                                    std::stod( doc.child("region").child("center").child_value("x") ) );
-
-  K::FT l_edgeLengthBase  = std::stod( doc.child("refine").child_value("edge") );
-  K::FT l_facetSizeBase   = std::stod( doc.child("refine").child_value("facet") );
-  K::FT l_facetApproxBase = std::stod( doc.child("refine").child_value("approx") );
-  K::FT l_angleBound      = std::stod( doc.child("refine").child_value("angle") );
 
   // NOTE meshes must share common edge refinement criteria in order for borders
   //      to coincide. (recall edge criteria only affects specified 1D features)
-  SizingField l_edgeCrit( l_edgeLengthBase, l_scale, l_center, l_innerRefineRad, l_outerRefineRad );
+  SizingField l_edgeCrit( l_config.m_edgeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
 
-  SizingField l_topoFacetCrit( l_facetSizeBase, l_scale, l_center, l_innerRefineRad, l_outerRefineRad );
-  SizingField l_bdryFacetCrit( l_facetSizeBase, l_scale, l_center, 0, 0 );
-  SizingField l_topoApproxCrit( l_facetApproxBase, l_scale, l_center, l_innerRefineRad, l_outerRefineRad );
-  SizingField l_bdryApproxCrit( l_facetApproxBase, l_scale, l_center, 0, 0 );
+  SizingField l_topoFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
+  SizingField l_bdryFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, 0, 0 );
+  SizingField l_topoApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
+  SizingField l_bdryApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, 0, 0 );
 
   Mesh_criteria   l_topoCriteria( CGAL::parameters::edge_size = l_edgeCrit,
                                   CGAL::parameters::facet_size = l_topoFacetCrit,
                                   CGAL::parameters::facet_distance = l_topoApproxCrit,
-                                  CGAL::parameters::facet_angle = l_angleBound         );
+                                  CGAL::parameters::facet_angle = l_config.m_angleBound         );
   Mesh_criteria   l_bdryCriteria( CGAL::parameters::edge_size = l_edgeCrit,
                                   CGAL::parameters::facet_size = l_bdryFacetCrit,
                                   CGAL::parameters::facet_distance = l_bdryApproxCrit,
-                                  CGAL::parameters::facet_angle = l_angleBound         );
+                                  CGAL::parameters::facet_angle = l_config.m_angleBound         );
 
   // Mesh generation
-  // NOTE the optimizers have more options than specified here
   EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
   C3t3 topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
                                               l_topoCriteria,
@@ -180,8 +129,8 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Output
   EDGE_LOG_INFO << "Writing meshes...";
-  std::ofstream topo_file( l_topoOut );
-  std::ofstream bdry_file( l_bdryOut );
+  std::ofstream topo_file( l_config.m_topoOut );
+  std::ofstream bdry_file( l_config.m_bdryOut );
 
   bdry_file << l_bdryPolyMeshed;
   topoComplex.output_facets_in_complex_to_off( topo_file );
