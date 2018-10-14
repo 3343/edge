@@ -23,9 +23,6 @@
 
 // Debug options
 // #include <gperftools/heap-profiler.h>      // For memory profiling
-#define CGAL_MESH_3_PROFILING 1            // Output basic size and time duration statistics for mesher
-#define CGAL_MESH_3_VERBOSE 1              // Show progress of meshing routine, print extra mesh quality statistics from optimizer
-// #define CGAL_MESH_3_PROTECTION_DEBUG 1     // Very verbose output of routine preserving 1D features
 
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
