@@ -187,7 +187,7 @@ std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
       os << *it << std::endl;
       index_of_vertex[it] = v_idx;
   }
-  CGAL_assertion( v_idx == num_verts );
+  EDGE_CHECK_EQ( v_idx, num_verts );
 
   // write the vertex indices of each full_cell
   std::size_t f_idx = 0;
@@ -200,7 +200,7 @@ std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
       }
       os << std::endl;
   }
-  CGAL_assertion( f_idx == num_faces );
+  EDGE_CHECK_EQ( f_idx, num_faces );
 
   return os;
 }

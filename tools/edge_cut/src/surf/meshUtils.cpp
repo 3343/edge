@@ -38,7 +38,7 @@ edge_cut::surf::SizingField::operator()(  Point_3 const & p,
     return m_scale * m_innerVal;
   else {
     // Control should never reach here if inner and outer radii are equal
-    assert( m_outerRad != m_innerRad );
+    EDGE_CHECK_NE( m_outerRad, m_innerRad );
     return ( 1 + ( l_distance - m_innerRad ) * ( m_scale - 1) * m_widthInv ) * m_innerVal;
   }
 }

@@ -23,20 +23,20 @@
 
 template< class Polyhedron >
 edge_cut::surf::BdryTrimmer<Polyhedron>::BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo ) :
-  m_bdry(i_bdry),
-  m_topo(i_topo)
+  m_bdry( i_bdry ),
+  m_topo( i_topo )
 {
   m_bdry.normalize_border();
 
-  assert( !m_topo.is_empty() );
-  assert( !m_topo.is_closed() );
-  assert( m_topo.is_pure_triangle() );
-  assert( m_topo.normalized_border_is_valid() );
+  EDGE_CHECK( !m_topo.is_empty() );
+  EDGE_CHECK( !m_topo.is_closed() );
+  EDGE_CHECK( m_topo.is_pure_triangle() );
+  EDGE_CHECK( m_topo.normalized_border_is_valid() );
 
-  assert( !m_bdry.is_empty() );
-  assert( !m_bdry.is_closed() );
-  assert( m_bdry.is_pure_triangle() );
-  assert( m_bdry.normalized_border_is_valid() );
+  EDGE_CHECK( !m_bdry.is_empty() );
+  EDGE_CHECK( !m_bdry.is_closed() );
+  EDGE_CHECK( m_bdry.is_pure_triangle() );
+  EDGE_CHECK( m_bdry.normalized_border_is_valid() );
 }
 
 template< class Polyhedron >
@@ -186,7 +186,7 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::trim()
   if( !isPosOriented( l_rootHalfedge ) ) {
     m_bdry.inside_out();
     l_rootHalfedge = getBdryHalfedge( l_topoBaseVert, l_topoVert );
-    assert( isPosOriented( l_rootHalfedge ) );
+    EDGE_CHECK( isPosOriented( l_rootHalfedge ) );
   }
 
   // Get a representative face for the region below the topography
@@ -222,7 +222,7 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::trim()
         }
         else {
           // This case should not be possible in my understanding
-          assert( false );
+          EDGE_LOG_FATAL << "Unexpected adjacency conditions in BdryTrimmer";
         }
       }
 
