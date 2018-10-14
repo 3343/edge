@@ -53,9 +53,7 @@ double edge_cut::surf::Topo::topoDisp( TopoPoint const & i_pt ) const {
 
   // return if no face qualifies
   if( l_faceHa == NULL ) {
-    std::cout << "Error: Got NULL value when locating point on topography"
-              << std::endl;
-    return 0;
+    EDGE_LOG_FATAL << "Error: Got NULL value when locating point on topography";
   }
   // do the 3D intersection otherwise and check the side w.r.t. to the face
   else {

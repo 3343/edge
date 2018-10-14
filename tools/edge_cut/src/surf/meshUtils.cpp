@@ -57,7 +57,8 @@ edge_cut::surf::topoIntersect(  Poly_slicer & i_slicer,
     ridges = *(polylines.begin());
   }
   else {
-    EDGE_LOG_ERROR << "Error: Polyline slicer did not return precisely one intersection!";
+    EDGE_LOG_ERROR << "Polyline slicer did not return precisely one intersection!";
+    EDGE_LOG_FATAL << "  Computed " << polylines.size() << " intersections";
   }
   return ridges;
 }
@@ -69,8 +70,7 @@ edge_cut::surf::checkMonotonic( Polyline_type & i_p,
                                 bool            i_inc )
 {
   if ( i_n > 2 ) {
-    EDGE_LOG_ERROR << "checkMonotonic:";
-    EDGE_LOG_ERROR << "  Input index is greater than 2";
+    EDGE_LOG_FATAL << "checkMonotonic: Input index is greater than 2";
     return false;
   }
 
@@ -105,10 +105,10 @@ edge_cut::surf::orderPolyline(  Polyline_type & i_p,
   }
   // i_p is not monotonic in the (i_n+1)th coordinate, record an error
   else {
-    EDGE_LOG_ERROR << "orderPolyline:";
-    EDGE_LOG_ERROR << "  encountered a non-monotonic polyline - printing polyline:";
+    EDGE_LOG_ERROR << "orderPolyline: encountered a non-monotonic polyline - printing polyline:";
     for ( auto const & l_pt : i_p )
       EDGE_LOG_ERROR << "  " << l_pt;
+    EDGE_LOG_FATAL << "Cannot continue with unordered polyline features";
   }
 
   return;
@@ -218,16 +218,14 @@ edge_cut::surf::c3t3ToPolyhedron( C3t3        const & c3t3,
   c3t3.output_facets_in_complex_to_off( sstream );
 
   if (!CGAL::read_OFF( sstream, points, polygons)) {
-    EDGE_LOG_ERROR << "c3t3ToPolyhedron: " << std::endl;
-    EDGE_LOG_ERROR << "Error parsing the OFF stream " << std::endl;
+    EDGE_LOG_FATAL << "c3t3ToPolyhedron: Error parsing the OFF stream";
     return;
   }
 
   CGAL::Polygon_mesh_processing::orient_polygon_soup( points, polygons );
 
   if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( polygons ) ) {
-    EDGE_LOG_ERROR << "c3t3ToPolyhedron: " << std::endl;
-    EDGE_LOG_ERROR << "Polygon soup is not a polygon mesh" << std::endl;
+    EDGE_LOG_FATAL << "c3t3ToPolyhedron: Polygon soup is not a polygon mesh";
     return;
   }
 
@@ -253,16 +251,14 @@ edge_cut::surf::c3t3ToSurfMesh( C3t3      const & i_c3t3,
   i_c3t3.output_facets_in_complex_to_off( sstream );
 
   if (!CGAL::read_OFF( sstream, points, polygons)) {
-    EDGE_LOG_ERROR << "c3t3ToSurfMesh: " << std::endl;
-    EDGE_LOG_ERROR << "Error parsing the OFF stream " << std::endl;
+    EDGE_LOG_FATAL << "c3t3ToSurfMesh: Error parsing the OFF stream ";
     return;
   }
 
   CGAL::Polygon_mesh_processing::orient_polygon_soup( points, polygons );
 
   if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( polygons ) ) {
-    EDGE_LOG_ERROR << "c3t3ToSurfMesh: " << std::endl;
-    EDGE_LOG_ERROR << "Polygon soup is not a polygon mesh" << std::endl;
+    EDGE_LOG_FATAL << "c3t3ToSurfMesh: Polygon soup is not a polygon mesh";
     return;
   }
 
@@ -285,7 +281,7 @@ edge_cut::surf::topoPolyMeshFromXYZ(  Polyhedron& io_topoPolyMesh,
 
   if (!topoStream || !(topoStream >> io_topoPolyMesh) || io_topoPolyMesh.is_empty()
              || !CGAL::is_triangle_mesh( io_topoPolyMesh ) ) {
-    std::cerr << "Input stream for topography triangulation is not valid." << std::endl;
+    EDGE_LOG_FATAL << "Input stream for topography triangulation is not valid.";
   }
   topoStream.str( std::string() );
 

@@ -73,9 +73,10 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::getBdryVertex( Vertex_const i_v )
 
   if ( l_vIt == m_bdry.vertices_end() )
   {
-    EDGE_LOG_INFO << "Could not find coincident vertex between topography and border mesh - mesh will not be trimmed";
-    EDGE_LOG_INFO << "Missing point: " << i_v->point();
-    assert( l_vIt != m_bdry.vertices_end() );
+    EDGE_LOG_ERROR << "BdryTrimmer::getBdryVertex:";
+    EDGE_LOG_ERROR << "  Could not find coincident vertex between topography and border mesh - mesh will not be trimmed";
+    EDGE_LOG_ERROR << "  Missing point: " << i_v->point();
+    EDGE_LOG_FATAL << "Cannot continue without coincident vertex in BdryTrimmer";
   }
 
   return l_vIt;
