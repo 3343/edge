@@ -39,6 +39,7 @@
 #include <boost/foreach.hpp>
 #include <boost/property_map/property_map.hpp>
 
+#include "io/logging.hpp"
 #include "surf/Topo.h"
 
 namespace edge_cut{

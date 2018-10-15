@@ -23,7 +23,6 @@
 
 #include <CGAL/IO/OFF_reader.h>  // Must include here to avoid multiple defn errors (CGAL bug as of v4.13)
 #include "surf/meshUtils.h"
-#include "io/logging.hpp"
 
 edge_cut::surf::K::FT
 edge_cut::surf::SizingField::operator()(  Point_3 const & p,
@@ -121,7 +120,6 @@ edge_cut::surf::getIntersectionFeatures(  Polyhedron  const & i_topoSurface,
 {
   std::list< Polyline_type > features;
 
-  EDGE_LOG_INFO << "Computing topography-boundary intersection...";
   Poly_slicer   topoSlicer( i_topoSurface );
   Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
   K::Plane_3    yMinPlane  = K::Plane_3( 0, 1, 0, -1 * i_bBox[2] );
@@ -165,7 +163,6 @@ edge_cut::surf::Polyhedron&
 edge_cut::surf::makeBdry( Polyhedron        & io_bdry,
                           double      const * i_bBox  )
 {
-  EDGE_LOG_INFO << "Constructing polyhedral surface model of domain boundary...";
   if( !io_bdry.is_empty() )
     EDGE_LOG_WARNING << "Overwriting existing polyhedron in makeBdry";
   io_bdry.clear();
@@ -272,10 +269,8 @@ edge_cut::surf::Polyhedron&
 edge_cut::surf::topoPolyMeshFromXYZ(  Polyhedron& io_topoPolyMesh,
                                       std::string const & i_topoFile )
 {
-  EDGE_LOG_INFO << "Constructing Delaunay triangulation for topography...";
   edge_cut::surf::Topo l_topo( i_topoFile );
 
-  EDGE_LOG_INFO << "Constructing polyhedral surface model of topography...";
   std::stringstream   topoStream;
   l_topo.writeTriaToOff( topoStream );
 

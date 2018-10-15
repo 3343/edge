@@ -35,10 +35,6 @@ edge_cut::surf::Topo::Topo( std::string const & i_topoFile )
   std::istream_iterator< TopoPoint > l_fileEnd;
 
   m_delTria = new Triangulation( l_fileBegin, l_fileEnd );
-
-  EDGE_LOG_INFO << "  computed delaunay triangulation:";
-  EDGE_LOG_INFO << "    #vertices: " << m_delTria->number_of_vertices();
-  EDGE_LOG_INFO << "    #faces:    " << m_delTria->number_of_faces();
 }
 
 edge_cut::surf::Topo::~Topo()

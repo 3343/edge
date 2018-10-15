@@ -58,9 +58,19 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Create polyhedral meshes of topography (with whatever sampling we were provided),
   // and of domain boundary
+  EDGE_LOG_INFO << "Building initial polyhedral surfaces...";
   Polyhedron l_topoPoly, l_bdryPoly;
+
   edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_config.m_topoIn );
+  EDGE_LOG_INFO << "  Initial topography mesh:";
+  EDGE_LOG_INFO << "    #vertices: " << l_topoPoly.size_of_vertices();
+  EDGE_LOG_INFO << "    #faces:    " << l_topoPoly.size_of_facets();
+
   edge_cut::surf::makeBdry( l_bdryPoly, l_config.m_bBox );
+  EDGE_LOG_INFO << "  Initial boundary mesh:";
+  EDGE_LOG_INFO << "    #vertices: " << l_bdryPoly.size_of_vertices();
+  EDGE_LOG_INFO << "    #faces:    " << l_bdryPoly.size_of_facets();
+
 
   // Create polyhedral domains for re-meshing
   // The "re-meshing" form of make-mesh only works when the polyhedral domain
@@ -72,6 +82,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   // Preserve the intersection between topography and boundary meshes.
   // This ensures that the two meshes coincide on their boundaries.
+  EDGE_LOG_INFO << "Computing topography-boundary intersection...";
   std::list< Polyline_type > l_intersectFeatures = edge_cut::surf::getIntersectionFeatures( l_topoPoly, l_config.m_bBox );
   l_bdryDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
   l_topoDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
@@ -100,7 +111,7 @@ int main( int i_argc, char *i_argv[] ) {
                                   CGAL::parameters::facet_angle = l_config.m_angleBound         );
 
   // Mesh generation
-  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria";
+  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria...";
   C3t3 topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
                                               l_topoCriteria,
                                               CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
