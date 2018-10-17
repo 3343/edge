@@ -36,7 +36,7 @@ TEST_CASE( "Derivation of face quad points and weights", "[quadratureEval][faces
   double l_quad4rPts1[8][2][2];
   double l_quad4rWeights1[4];
   double l_quad4rBasisEval1[8][2][4];
-  edge::dg::QuadratureEval<QUAD4R, 2>::faces( l_quad4rPts1, l_quad4rWeights1, l_quad4rBasisEval1 );
+  edge::dg::QuadratureEval< QUAD4R, 2, 2 >::faces( l_quad4rPts1, l_quad4rWeights1, l_quad4rBasisEval1 );
   l_sum = 0;
   for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( QUAD4R, 2 ); l_qp++ ) {
     l_sum += l_quad4rWeights1[l_qp];
@@ -69,7 +69,7 @@ TEST_CASE( "Derivation of face quad points and weights", "[quadratureEval][faces
   double l_hex8rPts1[12][4][3];
   double l_hex8rWeights1[4];
   double l_hex8rBasisEval1[12][4][8];
-  edge::dg::QuadratureEval<HEX8R, 2>::faces( l_hex8rPts1, l_hex8rWeights1, l_hex8rBasisEval1 );
+  edge::dg::QuadratureEval< HEX8R, 2, 2 >::faces( l_hex8rPts1, l_hex8rWeights1, l_hex8rBasisEval1 );
   l_sum = 0;
   for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( TET4, 2 ); l_qp++ ) {
     l_sum += l_hex8rWeights1[l_qp];
@@ -107,7 +107,7 @@ TEST_CASE( "Derivation of face quad points and weights", "[quadratureEval][faces
   double l_tet4Weights1[4];
   double l_tet4BasisEval1[16][4][4];
 
-  edge::dg::QuadratureEval<TET4, 2>::faces( l_tet4Pts1, l_tet4Weights1, l_tet4BasisEval1 );
+  edge::dg::QuadratureEval< TET4, 2, 2>::faces( l_tet4Pts1, l_tet4Weights1, l_tet4BasisEval1 );
   // check that the sum of the quad points gives the surface of the "reference face"
   l_sum = 0;
   for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( TET4, 2 ); l_qp++ ) {
@@ -122,7 +122,7 @@ TEST_CASE( "Derivation of face quad points and weights", "[quadratureEval][faces
   double l_tet4Weights2[36];
   double l_tet4BasisEval2[16][36][56];
 
-  edge::dg::QuadratureEval<TET4, 6>::faces( l_tet4Pts2, l_tet4Weights2, l_tet4BasisEval2 );
+  edge::dg::QuadratureEval< TET4, 6, 6 >::faces( l_tet4Pts2, l_tet4Weights2, l_tet4BasisEval2 );
   // check that the sum of the quad points gives the surface of the "reference face"
   l_sum = 0;
   for( unsigned short l_qp = 0; l_qp < CE_N_FACE_QUAD_POINTS( TET4, 6 ); l_qp++ ) {
@@ -136,7 +136,7 @@ TEST_CASE( "Derivation of element quad points and weights", "[quadratureEval][el
   double l_wes[4];
   double l_eva[4][4];
 
-  edge::dg::QuadratureEval< QUAD4R, 2 >::element( l_pts, l_wes, l_eva );
+  edge::dg::QuadratureEval< QUAD4R, 2, 2 >::element( l_pts, l_wes, l_eva );
 
   REQUIRE( l_pts[0][0] == Approx( (-0.5773502691896257+1)/2 ) );
   REQUIRE( l_pts[0][1] == Approx( (-0.5773502691896257+1)/2 ) );
@@ -171,7 +171,7 @@ TEST_CASE( "Derivation of element quad points and weights", "[quadratureEval][el
   REQUIRE( l_eva[3][2] == Approx(  0.5773502691896257 ) );
 
 
-  edge::dg::QuadratureEval< QUAD4R, 2 >::element( l_pts, l_wes, l_eva );
+  edge::dg::QuadratureEval< QUAD4R, 2, 2 >::element( l_pts, l_wes, l_eva );
 
   REQUIRE( l_pts[0][0] == Approx( (-0.5773502691896257+1)/2 ) );
   REQUIRE( l_pts[0][1] == Approx( (-0.5773502691896257+1)/2 ) );

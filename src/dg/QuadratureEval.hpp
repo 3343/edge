@@ -32,21 +32,25 @@
 
 namespace edge {
   namespace dg {
-    template< unsigned short TL_O_SP >
+    template< unsigned short TL_O_SP,
+              unsigned short TL_O_QU >
     class QuadratureEvalBase;
 
     template< t_entityType   TL_T_EL,
               unsigned short TL_O_SP,
+              unsigned short TL_O_QU,
               unsigned short TL_N_CRS=1 >
     class QuadratureEval;
 
     template< unsigned short TL_O_SP,
+              unsigned short TL_O_QU,
               unsigned short TL_N_CRS >
-    class QuadratureEval< LINE, TL_O_SP, TL_N_CRS >;
+    class QuadratureEval< LINE, TL_O_SP, TL_O_QU, TL_N_CRS >;
   }
 }
 
-template< unsigned short TL_O_SP >
+template< unsigned short TL_O_SP,
+          unsigned short TL_O_QU >
 class edge::dg::QuadratureEvalBase {
   public:
     /**
@@ -60,7 +64,7 @@ class edge::dg::QuadratureEvalBase {
      **/
     template< typename TL_T_REAL_MESH, typename TL_T_REAL_COMP >
     static void line(  TL_T_REAL_MESH o_pts[ CE_N_ELEMENT_MODES( LINE, TL_O_SP ) ],
-                       TL_T_REAL_COMP o_weights[ CE_N_ELEMENT_MODES( LINE, TL_O_SP ) ] ) {
+                       TL_T_REAL_COMP o_weights[ CE_N_ELEMENT_MODES( LINE, TL_O_QU ) ] ) {
       // get 1D quadrature points and weights
       std::vector< TL_T_REAL_MESH > l_qps[3];
       std::vector< TL_T_REAL_COMP > l_weights;
@@ -70,9 +74,9 @@ class edge::dg::QuadratureEvalBase {
                                      C_REF_ELEMENT.VE.ENT[LINE],
                                      l_qps[0], l_qps[1], l_qps[2], l_weights );
 
-      EDGE_CHECK( l_weights.size() == CE_N_ELEMENT_MODES( LINE, TL_O_SP ) );
+      EDGE_CHECK( l_weights.size() == CE_N_ELEMENT_MODES( LINE, TL_O_QU ) );
 
-      for( unsigned short l_qp = 0; l_qp < CE_N_ELEMENT_MODES( LINE, TL_O_SP ); l_qp++ ) {
+      for( unsigned short l_qp = 0; l_qp < CE_N_ELEMENT_MODES( LINE, TL_O_QU ); l_qp++ ) {
          o_pts[l_qp] = l_qps[0][l_qp];
          o_weights[l_qp] = l_weights[l_qp];
       }
@@ -81,17 +85,18 @@ class edge::dg::QuadratureEvalBase {
 
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
+          unsigned short TL_O_QU,
           unsigned short TL_N_CRS >
-class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP > {
+class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP, TL_O_QU > {
   private:
     //! number of dimensions
     static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
     //! number of vertex options
     static const unsigned short TL_N_VE_OPTS = CE_N_FACE_VERTEX_OPTS(TL_T_EL);
     //! number of quadrature points per face
-    static const unsigned short TL_N_QPS_FA = CE_N_FACE_QUAD_POINTS( TL_T_EL, TL_O_SP );
+    static const unsigned short TL_N_QPS_FA = CE_N_FACE_QUAD_POINTS( TL_T_EL, TL_O_QU );
     //! number of quadrature points per element
-    static const unsigned short TL_N_QPS_EL = CE_N_QUAD_POINTS( TL_T_EL, TL_O_SP );
+    static const unsigned short TL_N_QPS_EL = CE_N_QUAD_POINTS( TL_T_EL, TL_O_QU );
     //! number of modes per element
     static const unsigned short TL_N_MDS_EL = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
@@ -141,7 +146,7 @@ class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP > {
       std::vector< TL_T_REAL_COMP > l_weights;
 
       dg::QuadraturePoints::getQpts( C_ENT[TL_T_EL].TYPE_FACES,
-                                     TL_O_SP,
+                                     TL_O_QU,
                                      C_REF_ELEMENT.VE.ENT[C_ENT[TL_T_EL].TYPE_FACES],
                                      l_faPtsChi[0], l_faPtsChi[1], l_faPtsChi[2], l_weights );
 
@@ -212,7 +217,7 @@ class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP > {
       std::vector< double > l_wes;
 
       dg::QuadraturePoints::getQpts( TL_T_EL,
-                                     TL_O_SP,
+                                     TL_O_QU,
                                      C_REF_ELEMENT.VE.ENT[TL_T_EL],
                                      l_pts[0], l_pts[1], l_pts[2],
                                      l_wes );
@@ -269,8 +274,9 @@ class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP > {
 };
 
 template< unsigned short TL_O_SP,
+          unsigned short TL_O_QU,
           unsigned short TL_N_CRS >
-class edge::dg::QuadratureEval< LINE, TL_O_SP, TL_N_CRS >: public QuadratureEvalBase<TL_O_SP> {
+class edge::dg::QuadratureEval< LINE, TL_O_SP, TL_O_QU, TL_N_CRS >: public QuadratureEvalBase< TL_O_SP, TL_O_QU > {
   public:
     /**
      * Dummy implementation for one-dimensional face quad points of the line element.

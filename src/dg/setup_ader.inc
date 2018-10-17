@@ -23,12 +23,12 @@
  * Setup for ADER-DG simulations.
  **/
 // set up quadrature points
-edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER>::line( l_internal.m_globalShared1[0].quadEval.ptsLine,
-                                                        l_internal.m_globalShared1[0].quadEval.weightsLine );
+edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER, ORDER>::line( l_internal.m_globalShared1[0].quadEval.ptsLine,
+                                                               l_internal.m_globalShared1[0].quadEval.weightsLine );
 
-edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER>::faces( l_internal.m_globalShared1[0].quadEval.ptsFaces,
-                                                         l_internal.m_globalShared1[0].quadEval.weightsFaces,
-                                                         l_internal.m_globalShared1[0].quadEval.basisFaces );
+edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER, ORDER>::faces( l_internal.m_globalShared1[0].quadEval.ptsFaces,
+                                                                l_internal.m_globalShared1[0].quadEval.weightsFaces,
+                                                                l_internal.m_globalShared1[0].quadEval.basisFaces );
 
 // get inverse mass matrix
 {
