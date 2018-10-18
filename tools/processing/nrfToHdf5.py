@@ -51,7 +51,7 @@ l_parser.add_argument( '-m', '--mu',
                        dest     = 'mu',
                        required = False,
                        type     = float,
-                       help     = 'Parameter mu, which is used if non-positive values are found in NRF.' )
+                       help     = 'Parameter mu, which is used if negative values are found in NRF.' )
 
 l_parser.add_argument( '-l', '--lambda',
                        dest     = 'lambda',
@@ -104,13 +104,13 @@ l_ncPtrs = l_ncDs.variables['sroffsets']
 
 assert( len(l_ncPtrs) == l_nPts + 1 )
 
-# story the pointers
+# store the pointers
 logging.info( 'storing time pointers' )
 l_timePointers = numpy.zeros( l_nPts+1, dtype='uint64' )
 for l_pt in range(l_nPts+1):
   l_timePointers[l_pt] = l_ncPtrs[l_pt][0]
 
-# read sliprate smaples
+# read sliprate samples
 logging.info( 'reading NetCDF sliprates' )
 l_ncSr = l_ncDs.variables['sliprates1']
 assert( len(l_ncSr) == l_timePointers[-1] )
@@ -148,7 +148,7 @@ for l_pt in range(l_nPts):
   l_A =  l_ncSf[l_pt][3]
   l_lam = float(l_args['lambda'])
   l_mu = l_ncSf[l_pt][2]
-  if( l_mu <= 0 ):
+  if( l_mu < 0 ):
     if( l_args['mu'] != None ):
       l_mu = l_args['mu']
     else:
@@ -163,16 +163,17 @@ for l_pt in range(l_nPts):
       if( l_d0 == 0 ):
         l_sds[l_d0][l_d1] = l_ncSf[l_pt][-1][l_d1]
       elif( l_d0 == 1 ):
-        l_sds[l_d0][l_d1] = l_ncSf[l_pt][-3 + 3 - l_nDis][l_d1]
+        l_sds[l_d0][l_d1] = l_ncSf[l_pt][-l_nDis][l_d1]
       elif( l_d0 == 2 ):
         l_sds[l_d0][l_d1] = l_ncSf[l_pt][-2][l_d1]
-        
       else:
-        l_sds[l_d0][l_d1] = l_ncSf[l_pt][-l_nDis + l_d0][l_d1]
+        assert( False )
 
-  # iterate over slip directions
-  for l_sd in range(l_nDis):
+  # iterate over slip directions (we only support one direction at the moment)
+  assert( len( l_ncDs.variables['sliprates2'] ) == 0 )
+  assert( ('sliprates3' not in l_ncDs.variables) or (len( l_ncDs.variables['sliprates3'] ) == 0 ) )
 
+  for l_sd in range(1):
     # scalar product with normal
     l_spN = 0
     for l_di in range(l_nDis):
@@ -183,23 +184,24 @@ for l_pt in range(l_nPts):
       l_scalings[l_pt][l_di] += l_A * l_lam * l_spN
 
     # normal stress
-    l_scalings[l_pt][l_di] += l_A * 2.0 * l_mu * l_sds[l_sd][l_di] * l_sds[0][l_di]
+    for l_di in range(l_nDis):
+      l_scalings[l_pt][l_di] += l_A * 2.0 * l_mu * l_sds[l_sd][l_di] * l_sds[0][l_di]
 
     # moment tensor indices
     l_mId = [ [0,1], [1,2], [0,2] ]
 
     # shear stresses
     if( l_nDis == 2 ):
-      l_nShear = 1
+      l_nSh = 1
     else:
-      l_nShear = 3
+      l_nSh = 3
 
-    for l_sh in range(l_nShear):
+    for l_sh in range(l_nSh):
       l_m1 = l_mId[l_sh][0]
       l_m2 = l_mId[l_sh][1]
 
-      l_scalings[l_pt][l_di] += l_A * l_mu * l_sds[l_sd][l_m1] * l_sds[0][l_m2] + \
-                                l_A * l_mu * l_sds[l_sd][l_m2] * l_sds[0][l_m1]
+      l_scalings[l_pt][l_nDis+l_sh] += l_A * l_mu * l_sds[l_sd][l_m1] * l_sds[0][l_m2] + \
+                                       l_A * l_mu * l_sds[l_sd][l_m2] * l_sds[0][l_m1]
 
 # write the HDF5
 logging.info( 'writing HDF5 output to ' + l_args['output_hdf5'] )
