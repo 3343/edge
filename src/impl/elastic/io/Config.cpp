@@ -101,6 +101,10 @@ edge::elastic::io::Config::Config( const pugi::xml_document &i_xml ) {
     m_ptSrcs.push_back( l_pt.text().as_string() );
   }
 
+  // check for a valid size
+  if( m_ptSrcs.size() > 0 && m_ptSrcs.size() != N_CRUNS )
+    EDGE_LOG_FATAL << m_ptSrcs.size() << " point source files are given in the config, not matching the " << N_CRUNS << " fused runs, aborting";
+
   /*
    * read velocity model, if available
    */
