@@ -173,7 +173,7 @@ for l_pt in range(l_nPts):
   assert( len( l_ncDs.variables['sliprates2'] ) == 0 )
   assert( ('sliprates3' not in l_ncDs.variables) or (len( l_ncDs.variables['sliprates3'] ) == 0 ) )
 
-  for l_sd in range(1):
+  for l_sd in [1]:
     # scalar product with normal
     l_spN = 0
     for l_di in range(l_nDis):
