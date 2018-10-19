@@ -270,6 +270,7 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
     REQUIRE( l_elChars[6].spType == 99 );
 
     for( unsigned short l_cr = 0; l_cr < 3; l_cr++ ) {
+      REQUIRE( l_pss.m_elSpPs != nullptr );
       REQUIRE( l_pss.m_elSpPs[0][l_cr] == 0 ); // src 0 + 3
       REQUIRE( l_pss.m_elSpPs[1][l_cr] == 2 ); // src 2
       REQUIRE( l_pss.m_elSpPs[2][l_cr] == 3 ); // src 1
