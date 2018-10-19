@@ -61,7 +61,6 @@ cd ..
 # install Git LFS
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y git-lfs
-sudo su go -c "git lfs install"
 
 # install python modules
 sudo pip -q install xmltodict matplotlib netCDF4

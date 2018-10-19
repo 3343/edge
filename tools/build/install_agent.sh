@@ -67,6 +67,7 @@ sudo apt-get -qq update
 sudo apt-get -qq install openjdk-8-jre > /dev/null
 
 sudo apt-get -qq install go-agent
+sudo su go -c "git lfs install"
 
 # add server key
 openssl s_client -showcerts -connect ${GOCD_SERVER} </dev/null 2>/dev/null|openssl x509 -outform PEM > /var/go/root-cert.pem
