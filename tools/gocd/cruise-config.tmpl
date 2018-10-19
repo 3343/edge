@@ -2188,7 +2188,7 @@
                        -r #{EDGE_CFR}                                                                       \
                        -c $(pwd)                                                                            \
                        -w adv_quad4r                                                                        \
-                       -o "1 2 3 4 5 6 7"                                                                   \
+                       -o "1 2 3 4 5"                                                                   \
                        -l "5 6 7 8 9 10 15 20 25 30 35 40 45 50 60 70 80 90 100 125 150"                    \
                        -d xml
                 </arg>
@@ -2240,7 +2240,7 @@
                        -r #{EDGE_CFR}                                                                       \
                        -c $(pwd)                                                                            \
                        -w elastic_quad4r                                                                    \
-                       -o "1 2 3 4 5 6 7"                                                                   \
+                       -o "1 2 3 4 5"                                                                   \
                        -l "5 6 7 8 9 10 15 20 25 30 35 40 45 50 60 70 80 90 100"                            \
                        -d xml
                 </arg>
@@ -2850,7 +2850,7 @@
             <value>mpiexec -n 8</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
-            <value>hsw</value>
+            <value>avx512</value>
         </variable>
         <variable name="DEBUGGER">
             <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
@@ -2859,7 +2859,7 @@
             <value>valgrind --gen-suppressions=all --suppressions=tools/build/vgrind.supp --leak-check=full --error-exitcode=1</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
-            <value>hsw</value>
+            <value>avx512</value>
         </variable>
       </environmentvariables>
       <agents>
