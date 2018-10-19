@@ -74,7 +74,7 @@ if env['hdf5'] != False:
   if env['hdf5'] != True:
     env.AppendUnique( CPPPATH=[ env['hdf5']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['hdf5']+'/lib']     )
-  if conf.CheckLibWithHeaderFlags( 'hdf5' ) and conf.CheckLibWithHeaderFlags( 'hdf5_hl' ) and conf.CheckLibWithHeaderFlags( 'hdf5_cpp' ):
+  if conf.CheckLibWithHeaderFlags( 'hdf5' ) and conf.CheckLibWithHeaderFlags( 'hdf5_hl' ):
     env.AppendUnique( CPPDEFINES = ['PP_HAS_HDF5'] )
 
 # forward MOAB

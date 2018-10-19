@@ -25,7 +25,7 @@
 #define EDGE_SEISMIC_SETUPS_POINT_SOURCES_HPP
 
 #include <string>
-#include "H5Cpp.h"
+#include "hdf5.h"
 #include "data/Dynamic.h"
 #include "data/SparseEntities.hpp"
 #include "mesh/common.hpp"
@@ -259,22 +259,41 @@ class edge::seismic::setups::PointSources {
                         std::vector< TL_T_LID >        & o_srcIds ) {
       PP_INSTR_FUN("get_ids")
 
+      // error code
+      herr_t l_h5Err;
+
       // open HDF5-file read-only
-      H5::H5File l_h5( i_path,
-                       H5F_ACC_RDONLY );
+      hid_t l_h5 = H5Fopen( i_path.c_str(),
+                            H5F_ACC_RDONLY,
+                            H5P_DEFAULT );
 
       // read the point data
-      H5::DataSet l_ptsDset   = l_h5.openDataSet( "points" );
-      EDGE_CHECK_EQ( l_ptsDset.getTypeClass(),   H5T_FLOAT );
-      H5::DataSpace l_ptsDsp   = l_ptsDset.getSpace();
-      EDGE_CHECK_EQ( l_ptsDsp.getSimpleExtentNdims(),   2 );
+      hid_t l_ptsDset = H5Dopen( l_h5,
+                                 "points",
+                                 H5P_DEFAULT );
+
+      // get the data type
+      hid_t l_ptsTy = H5Dget_type(l_ptsDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_ptsTy), H5T_FLOAT );
+
+      // get data space
+      hid_t  l_ptsDsp = H5Dget_space( l_ptsDset );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_ptsDsp ),   2 );
+
+      // check dims
       hsize_t l_ptsDis[2];
-      l_ptsDsp.getSimpleExtentDims( l_ptsDis );
+      H5Sget_simple_extent_dims( l_ptsDsp, l_ptsDis, NULL );
       EDGE_CHECK_EQ( l_ptsDis[1], TL_N_DIS );
 
       // read locations
       float (*l_ptsRaw)[TL_N_DIS] = new float[l_ptsDis[0]][TL_N_DIS];
-      l_ptsDset.read( l_ptsRaw, H5::PredType::NATIVE_FLOAT );
+      l_h5Err = H5Dread( l_ptsDset,
+                         H5T_NATIVE_FLOAT,
+                         H5S_ALL,
+                         H5S_ALL,
+                         H5P_DEFAULT,
+                         l_ptsRaw );
+      EDGE_CHECK_GE( l_h5Err, 0 );
 
       // convert to 3D double
       double (*l_ptsRaw3d)[3] = new double[l_ptsDis[0]][3];
@@ -312,6 +331,19 @@ class edge::seismic::setups::PointSources {
                l_ptIds.data(),
                o_srcIds,
                o_srcEls );
+
+      // close everything HDF5
+      l_h5Err = H5Sclose(l_ptsDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Tclose(l_ptsTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Dclose(l_ptsDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Fclose(l_h5);
+      EDGE_CHECK_GE( l_h5Err, 0 );
     }
 
     /**
@@ -417,17 +449,30 @@ class edge::seismic::setups::PointSources {
                                 TL_T_REAL               const    i_massI[TL_N_MDS],
                                 edge::data::Dynamic            & io_dynMem,
                                 t_ps                           & o_ps ) {
+      // error code
+      herr_t l_h5Err;
+
       // open HDF5-file read-only
-      H5::H5File l_h5( i_path,
-                       H5F_ACC_RDONLY );
+      hid_t l_h5 = H5Fopen( i_path.c_str(),
+                            H5F_ACC_RDONLY,
+                            H5P_DEFAULT );
 
       // read the point data
-      H5::DataSet l_ptsDset   = l_h5.openDataSet( "points" );
-      EDGE_CHECK_EQ( l_ptsDset.getTypeClass(),   H5T_FLOAT );
-      H5::DataSpace l_ptsDsp   = l_ptsDset.getSpace();
-      EDGE_CHECK_EQ( l_ptsDsp.getSimpleExtentNdims(),   2 );
+      hid_t l_ptsDset = H5Dopen( l_h5,
+                                 "points",
+                                 H5P_DEFAULT );
+
+      // check type
+      hid_t l_ptsTy = H5Dget_type(l_ptsDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_ptsTy), H5T_FLOAT );
+
+      // get points space
+      hid_t  l_ptsDsp = H5Dget_space( l_ptsDset );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_ptsDsp ),   2 );
+
+      // check dimensions
       hsize_t l_ptsDis[2];
-      l_ptsDsp.getSimpleExtentDims( l_ptsDis );
+      H5Sget_simple_extent_dims( l_ptsDsp, l_ptsDis, NULL );
       EDGE_CHECK_EQ( l_ptsDis[1], TL_N_DIS );
 
       // derive evaluated basis functions
@@ -435,7 +480,13 @@ class edge::seismic::setups::PointSources {
       o_ps.bEvals = (TL_T_REAL (*)[TL_N_MDS]) io_dynMem.allocate( l_bEvalsSize );
 
       float (*l_ptsRaw)[TL_N_DIS] = new float[l_ptsDis[0]][TL_N_DIS];
-      l_ptsDset.read( l_ptsRaw[0], H5::PredType::NATIVE_FLOAT );
+      l_h5Err = H5Dread( l_ptsDset,
+                         H5T_NATIVE_FLOAT,
+                         H5S_ALL,
+                         H5S_ALL,
+                         H5P_DEFAULT,
+                         l_ptsRaw );
+      EDGE_CHECK_GE( l_h5Err, 0 );
 
       // derive evaluated basis functions
 #ifdef PP_USE_OMP
@@ -497,6 +548,19 @@ class edge::seismic::setups::PointSources {
           o_ps.bEvals[l_pt][l_md] *= l_jacDet;
       }
       delete[] l_ptsRaw;
+
+      // close everything HDF5
+      l_h5Err = H5Sclose(l_ptsDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Tclose(l_ptsTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Dclose(l_ptsDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Fclose(l_h5);
+      EDGE_CHECK_GE( l_h5Err, 0 );
     }
 
     /**
@@ -533,49 +597,72 @@ class edge::seismic::setups::PointSources {
         o_ps.el[l_pt] = i_srcElsP[l_pt];
 
 
+      // error code
+      herr_t l_h5Err;
+
       // open HDF5-file read-only
-      H5::H5File l_h5( i_path,
-                       H5F_ACC_RDONLY );
+      hid_t l_h5 = H5Fopen( i_path.c_str(),
+                            H5F_ACC_RDONLY,
+                            H5P_DEFAULT );
 
       // read the data sets
-      H5::DataSet l_ptsDset   = l_h5.openDataSet( "points" );
-      H5::DataSet l_scasDset  = l_h5.openDataSet( "scalings" );
-      H5::DataSet l_tParsDset = l_h5.openDataSet( "time_parameters" );
-      H5::DataSet l_tPtrsDset = l_h5.openDataSet( "time_pointers" );
-      H5::DataSet l_tSrsDset  = l_h5.openDataSet( "time_series" );
+      hid_t l_ptsDset   = H5Dopen( l_h5,
+                                   "points",
+                                   H5P_DEFAULT );
+      hid_t l_scasDset  = H5Dopen( l_h5,
+                                   "scalings",
+                                   H5P_DEFAULT );
+      hid_t l_tParsDset = H5Dopen( l_h5,
+                                   "time_parameters",
+                                   H5P_DEFAULT );
+      hid_t l_tPtrsDset = H5Dopen( l_h5,
+                                   "time_pointers",
+                                   H5P_DEFAULT );
+      hid_t l_tSrsDset  = H5Dopen( l_h5,
+                                   "time_series",
+                                   H5P_DEFAULT );
 
       // check the data types
-      EDGE_CHECK_EQ( l_ptsDset.getTypeClass(),   H5T_FLOAT );
-      EDGE_CHECK_EQ( l_scasDset.getTypeClass(),  H5T_FLOAT );
-      EDGE_CHECK_EQ( l_tParsDset.getTypeClass(), H5T_FLOAT );
-      EDGE_CHECK_EQ( l_tPtrsDset.getTypeClass(), H5T_INTEGER );
-      EDGE_CHECK_EQ( l_tSrsDset.getTypeClass(),  H5T_FLOAT );
+      hid_t l_ptsTy = H5Dget_type(l_ptsDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_ptsTy), H5T_FLOAT );
+
+      hid_t l_scasTy = H5Dget_type(l_scasDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_scasTy), H5T_FLOAT );
+
+      hid_t l_tParsTy = H5Dget_type(l_tParsDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_tParsTy), H5T_FLOAT );
+
+      hid_t l_tPtrsTy = H5Dget_type(l_tPtrsDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_tPtrsTy), H5T_INTEGER );
+
+      hid_t l_tSrsTy = H5Dget_type(l_tSrsDset);
+      EDGE_CHECK_EQ( H5Tget_class(l_tSrsTy), H5T_FLOAT );
 
       // get the data spaces
-      H5::DataSpace l_ptsDsp   = l_ptsDset.getSpace();
-      H5::DataSpace l_scasDsp  = l_scasDset.getSpace();
-      H5::DataSpace l_tParsDsp = l_tParsDset.getSpace();
-      H5::DataSpace l_tPtrsDsp = l_tPtrsDset.getSpace();
-      H5::DataSpace l_tSrsDsp  = l_tSrsDset.getSpace();
+      hid_t l_ptsDsp   = H5Dget_space( l_ptsDset );
+      hid_t l_scasDsp  = H5Dget_space( l_scasDset );
+      hid_t l_tParsDsp = H5Dget_space( l_tParsDset );
+      hid_t l_tPtrsDsp = H5Dget_space( l_tPtrsDset );
+      hid_t l_tSrsDsp  = H5Dget_space( l_tSrsDset );
 
       // check the ranks
-      EDGE_CHECK_EQ( l_ptsDsp.getSimpleExtentNdims(),   2 );
-      EDGE_CHECK_EQ( l_scasDsp.getSimpleExtentNdims(),  2 );
-      EDGE_CHECK_EQ( l_tParsDsp.getSimpleExtentNdims(), 2 );
-      EDGE_CHECK_EQ( l_tPtrsDsp.getSimpleExtentNdims(), 1 );
-      EDGE_CHECK_EQ( l_tSrsDsp.getSimpleExtentNdims(),  1 );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_ptsDsp ),   2 );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_scasDsp ),  2 );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_tParsDsp ), 2 );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_tPtrsDsp ), 1 );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_tSrsDsp ),  1 );
 
       // get the dimensions
       hsize_t l_ptsDis[2];
-      l_ptsDsp.getSimpleExtentDims( l_ptsDis );
+      H5Sget_simple_extent_dims( l_ptsDsp, l_ptsDis, NULL );
       hsize_t l_scasDis[2];
-      l_scasDsp.getSimpleExtentDims( l_scasDis );
+      H5Sget_simple_extent_dims( l_scasDsp, l_scasDis, NULL );
       hsize_t l_tParsDis[2];
-      l_tParsDsp.getSimpleExtentDims( l_tParsDis );
+      H5Sget_simple_extent_dims( l_tParsDsp, l_tParsDis, NULL );
       hsize_t l_tPtrsDis;
-      l_tPtrsDsp.getSimpleExtentDims( &l_tPtrsDis );
+      H5Sget_simple_extent_dims( l_tPtrsDsp, &l_tPtrsDis, NULL );
       hsize_t l_tSrsDis;
-      l_tSrsDsp.getSimpleExtentDims( &l_tSrsDis );
+      H5Sget_simple_extent_dims( l_tSrsDsp, &l_tSrsDis, NULL );
 
       // check the known dimensions
       EDGE_CHECK_EQ( l_ptsDis[1], TL_N_DIS );
@@ -595,7 +682,13 @@ class edge::seismic::setups::PointSources {
       o_ps.dts = (TL_T_REAL*) io_dynMem.allocate( l_dtsSize );
 
       float (*l_tParsRaw)[2] = new float[l_tParsDis[0]][2];
-      l_tParsDset.read( l_tParsRaw[0], H5::PredType::NATIVE_FLOAT );
+      l_h5Err = H5Dread( l_tParsDset,
+                         H5T_NATIVE_FLOAT,
+                         H5S_ALL,
+                         H5S_ALL,
+                         H5P_DEFAULT,
+                         l_tParsRaw[0] );
+      EDGE_CHECK_GE( l_h5Err, 0 );
 
 #ifdef PP_USE_OMP
 #pragma omp parallel for
@@ -613,7 +706,13 @@ class edge::seismic::setups::PointSources {
       o_ps.scas = (TL_T_REAL (*)[TL_N_QTS_SRC]) io_dynMem.allocate( l_scasSize );
 
       float (*l_scasRaw)[TL_N_QTS_SRC] = new float[l_scasDis[0]][TL_N_QTS_SRC];
-      l_scasDset.read( l_scasRaw[0], H5::PredType::NATIVE_FLOAT );
+      l_h5Err = H5Dread( l_scasDset,
+                         H5T_NATIVE_FLOAT,
+                         H5S_ALL,
+                         H5S_ALL,
+                         H5P_DEFAULT,
+                         l_scasRaw[0] );
+      EDGE_CHECK_GE( l_h5Err, 0 );
 
 #ifdef PP_USE_OMP
 #pragma omp parallel for
@@ -632,7 +731,13 @@ class edge::seismic::setups::PointSources {
       o_ps.tsPtrs = (TL_T_LID *) io_dynMem.allocate( l_tsPtrsSize );
 
       uint64_t *l_tsPtsRaw = new uint64_t[l_tPtrsDis];
-      l_tPtrsDset.read( l_tsPtsRaw, H5::PredType::NATIVE_UINT64 );
+      l_h5Err = H5Dread( l_tPtrsDset,
+                         H5T_NATIVE_UINT64,
+                         H5S_ALL,
+                         H5S_ALL,
+                         H5P_DEFAULT,
+                         l_tsPtsRaw );
+      EDGE_CHECK_GE( l_h5Err, 0 );
 
       o_ps.tsPtrs[0] = 0;
       for( TL_T_LID l_pt = 0; l_pt < o_ps.nPts; l_pt++ ) {
@@ -647,7 +752,13 @@ class edge::seismic::setups::PointSources {
       o_ps.tss = (TL_T_REAL*) io_dynMem.allocate( l_tssSize );
 
       float *l_tssRaw = new float[l_tSrsDis];
-      l_tSrsDset.read( l_tssRaw, H5::PredType::NATIVE_FLOAT );
+      l_h5Err = H5Dread( l_tSrsDset,
+                         H5T_NATIVE_FLOAT,
+                         H5S_ALL,
+                         H5S_ALL,
+                         H5P_DEFAULT,
+                         l_tssRaw );
+      EDGE_CHECK_GE( l_h5Err, 0 );
 
 #ifdef PP_USE_OMP
 #pragma omp parallel for
@@ -671,6 +782,43 @@ class edge::seismic::setups::PointSources {
 
       delete[] l_tsPtsRaw;
       delete[] l_tssRaw;
+
+      // close everything HDF5
+      l_h5Err = H5Sclose(l_ptsDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Sclose(l_scasDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Sclose(l_tParsDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Sclose(l_tPtrsDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Sclose(l_tSrsDsp);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Tclose(l_ptsTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Tclose(l_scasTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Tclose(l_tParsTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Tclose(l_tPtrsTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Tclose(l_tSrsTy);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Dclose(l_ptsDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Dclose(l_scasDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Dclose(l_tParsDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Dclose(l_tPtrsDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+      l_h5Err = H5Dclose(l_tSrsDset);
+      EDGE_CHECK_GE( l_h5Err, 0 );
+
+      l_h5Err = H5Fclose(l_h5);
+      EDGE_CHECK_GE( l_h5Err, 0 );
     }
 
   public:

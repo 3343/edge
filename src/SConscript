@@ -109,7 +109,7 @@ if env['tests']:
                        'impl/elastic/solvers/FrictionLaws.test.cpp' ]
 
     if env['hdf5'] != False:
-      'impl/elastic/setups/PointSources.test.cpp'
+      l_tests = l_tests + ['impl/elastic/setups/PointSources.test.cpp']
 
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )
