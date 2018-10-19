@@ -961,7 +961,7 @@ class edge::seismic::setups::PointSources {
           // iterate over the point sources in this element
           for( TL_T_LID l_ps = m_elSpPs[l_el][l_cr]; l_ps < m_elSpPs[l_el+1][l_cr]; l_ps++ ) {
             // integrate the time series
-            TL_T_REAL l_int = std::numeric_limits< TL_T_REAL >::max();
+            TL_T_REAL l_int[1] = { std::numeric_limits< TL_T_REAL >::max() };
 
             TL_T_LID l_psFirst = m_psFused[l_cr].tsPtrs[l_ps];
             TL_T_LID l_psSize  = m_psFused[l_cr].tsPtrs[l_ps+1]-l_psFirst;
@@ -971,7 +971,7 @@ class edge::seismic::setups::PointSources {
                          (TL_T_REAL (*)[1]) m_psFused[l_cr].tss+l_psFirst,
                                             i_t1,
                                             i_t2,
-                                            &l_int,
+                                            l_int,
                                             (TL_T_REAL) 0.0 );
             
             // iterate over the quantities
@@ -980,7 +980,7 @@ class edge::seismic::setups::PointSources {
               TL_T_LID l_elDe = m_psFused[l_cr].el[l_ps];
 
               // derive scaling
-              TL_T_REAL l_sca = l_int * m_psFused[l_cr].scas[l_ps][l_qt];
+              TL_T_REAL l_sca = l_int[0] * m_psFused[l_cr].scas[l_ps][l_qt];
 
               // apply point source contribution
               for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
