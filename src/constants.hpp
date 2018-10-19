@@ -292,11 +292,19 @@ const struct {
   double SOLVER;
   double TIME; }
 TOL = {
+#if PP_PRECISION == 64
   0.000000001,
   0.000000001,
-  0.0000001,
-  0.0000001,
-  0.0000001
+  0.000000001,
+  0.000000001,
+  0.000000001
+#else
+  0.00001,
+  0.00001,
+  0.00001,
+  0.00001,
+  0.00001
+#endif
 };
 
 // spatial discretizations based on entities
