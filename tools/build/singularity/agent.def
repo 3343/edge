@@ -58,7 +58,7 @@ Include:
   git checkout develop
 
   # install tools
-  ./tools/gocd/install_tools.sh
+  ./tools/build/install_tools.sh
 
   # create Stampede mountpoints
   mkdir /home1

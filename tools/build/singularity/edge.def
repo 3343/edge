@@ -20,7 +20,7 @@
 # @section DESCRIPTION
 #
 # Debian bootstrap for EDGE and supporting software.
-# Build a container via: `sudo singularity build ./edge.simg ./debian.def`
+# Build a container via: `sudo singularity build ./edge.simg ./edge.def`
 ##
 BootStrap: debootstrap
 OSVersion: stretch
@@ -28,10 +28,14 @@ MirrorURL: http://ftp.us.debian.org/debian/
 Include:
 
 %post
+bash <<EOF
   bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_tools.sh)
+EOF
 
 %appinstall edge
+bash <<EOF
   bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_libs.sh)
+EOF
 
   EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
