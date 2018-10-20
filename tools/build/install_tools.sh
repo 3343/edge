@@ -67,8 +67,8 @@ wget http://mirrors.kernel.org/sourceware/valgrind/valgrind-3.13.0.tar.bz2
 tar -xjf valgrind-3.13.0.tar.bz2
 cd valgrind-3.13.0
 ./configure
-make
-sudo make install -j ${EDGE_N_BUILD_PROC} > /dev/null
+make -j ${EDGE_N_BUILD_PROC}
+sudo make install > /dev/null
 cd ..
 
 ###########
