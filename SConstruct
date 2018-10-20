@@ -381,7 +381,7 @@ elif env['arch'] == 'skx':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512bw', '-mavx512dq', '-mavx512vl'] )
   elif compilers=='intel':
     env.Append( CPPFLAGS = ['-xCORE-AVX512'] )
-elif env['arch'] == 'knl':
+elif env['arch'] == 'knl' or env['arch'] == 'knm':
   if compilers=='gnu':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512er', '-mavx512pf'] )
   elif compilers=='intel':
