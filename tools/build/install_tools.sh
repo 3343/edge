@@ -21,6 +21,15 @@
 # @section DESCRIPTION
 # Installs the tools used in CI/CD (tested for Debian 9.3, Ubuntu 16.04).
 ##
+EDGE_CURRENT_DIR=$(pwd)
+EDGE_TMP_DIR=$(mktemp -d)
+EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
+
+cd ${EDGE_TMP_DIR}
+
+###############
+# Basic Tools #
+###############
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y wget
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y m4
@@ -39,7 +48,9 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gfortran
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libiomp5 libiomp-dev
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y software-properties-common
 
-# install clang
+#########
+# Clang #
+#########
 sudo echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main"     >  /etc/apt/sources.list.d/clang.list
 sudo echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" >> /etc/apt/sources.list.d/clang.list
 sudo wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
@@ -48,24 +59,41 @@ sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y clang-7 lldb-7 lld-7
 sudo ln -s /usr/bin/clang-7   /usr/bin/clang
 sudo ln -s /usr/bin/clang++-7 /usr/bin/clang++
 
-# install valgrind
+############
+# Valgrind #
+############
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 libc6-dbg
 wget http://mirrors.kernel.org/sourceware/valgrind/valgrind-3.13.0.tar.bz2
 tar -xjf valgrind-3.13.0.tar.bz2
 cd valgrind-3.13.0
 ./configure
 make
-sudo make install
+sudo make install -j ${EDGE_N_BUILD_PROC} > /dev/null
 cd ..
 
-# install Git LFS
+###########
+# Git LFS #
+###########
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
 sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y git-lfs
 
-# install python modules
+##################
+# Python modules #
+##################
 sudo pip -q install xmltodict matplotlib netCDF4
 sudo pip3 -q install xmltodict matplotlib netCDF4
 
-# install Vagrant
+###########
+# Vagrant #
+###########
 wget https://releases.hashicorp.com/vagrant/2.1.2/vagrant_2.1.2_x86_64.deb -O vagrant.deb
 sudo dpkg -i vagrant.deb
+
+sudo apt-get clean
+
+############
+# Clean up #
+############
+sudo rm -rf ${EDGE_TMP_DIR}
+
+cd ${EDGE_CURRENT_DIR}

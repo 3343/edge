@@ -23,127 +23,17 @@
 # Build a container via: `sudo singularity build ./edge.simg ./debian.def`
 ##
 BootStrap: debootstrap
-OSVersion: jessie
+OSVersion: stretch
 MirrorURL: http://ftp.us.debian.org/debian/
 Include:
 
 %post
-  #####################
-  # Prepare build env #
-  #####################
-  echo "preparing build env"
-  echo "deb http://http.us.debian.org/debian testing main non-free contrib"     >>  /etc/apt/sources.list
-  echo "deb-src http://http.us.debian.org/debian testing main non-free contrib" >>  /etc/apt/sources.list
-  apt-get update -qq -o=Dpkg::Use-Pty=0
-
-  # silence frontend
-  export DEBIAN_FRONTEND=noninteractive
-
-  export INSTALL_DIR=/tmp/singularity_install_$(date +'%s')
-
-  export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
-
-  # move to tmp dir
-  mkdir ${INSTALL_DIR}
-  cd ${INSTALL_DIR}
-
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y wget
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y make
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y cmake
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y scons=2.3.1-2
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y am-utils
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y git
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y dh-autoreconf
-
-  #################
-  # gnu compilers #
-  #################
-  echo "installing gnu compilers"
-  echo "Package: gcc"           >  /etc/apt/preferences.d/gcc
-  echo "Pin: release a=testing" >> /etc/apt/preferences.d/gcc
-  echo "Pin-Priority: 100"      >> /etc/apt/preferences.d/gcc
-
-  apt-get install -t testing -qq -o=Dpkg::Use-Pty=0 -y g++-6
-
-  # set links
-  ln -f -s /usr/bin/g++-6      /usr/bin/g++
-  ln -f -s /usr/bin/gcc-6      /usr/bin/gcc
-
-  ###########
-  # OpenMPI #
-  ###########
-  #echo "installing openmpi"
-  #wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.4.tar.gz
-  #tar -xzf openmpi-1.10.4.tar.gz
-  #cd openmpi-1.10.4
-  #./configure --enable-static --disable-shared
-  #make install
-  #cd ..
-
-  ########
-  # Gmsh #
-  ########
-  #wget http://gmsh.info/src/gmsh-2.13.1-source.tgz
-  #tar -xzf gmsh-2.13.1-source.tgz
-  #cd gmsh-2.13.1-source
-  #cmake .
-  #make install
-  #cd ..
-
-  ############
-  # Clean up #
-  ############
-  apt-get clean
+  bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_tools.sh)
 
 %appinstall edge
-  export N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
+  bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_libs.sh)
 
-  ########
-  # zlib #
-  ########
-  wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz
-  mkdir zlib
-  tar -xzf zlib.tar.gz -C zlib --strip-components=1
-  cd zlib
-  ./configure --static --prefix=/usr/local > /dev/null
-  make install -j ${N_BUILD_PROC} > /dev/null
-  cd ..
-
-  ########
-  # HDF5 #
-  ########
-  wget https://www.hdfgroup.org/package/gzip/?wpdmdl=11810 -O hdf5.tar.gz
-  mkdir hdf5
-  tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
-  cd hdf5
-  ./configure --enable-shared=no --prefix=/usr/local > /dev/null 2> /dev/null
-  make install -j ${N_BUILD_PROC} > /dev/null
-  cd ..
-
-  ########
-  # EDGE #
-  ########
-  echo 'building edge'
-  git clone https://github.com/3343/edge.git
-  cd edge
-  git checkout develop
-  git submodule init
-  git submodule update
-
-  # build libxsmm
-  cd submodules/libxsmm
-  PREFIX=/usr/local make BLAS=0 install -j ${N_BUILD_PROC} > /dev/null
-  cd ../..
-
-  # build moab
-  cd submodules/moab
-  LANG=C autoreconf -fi
-  # sequential
-  CC=gcc CXX=g++ ./configure --disable-debug --enable-optimize --enable-shared=no --enable-static=yes --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
-  make install -j ${N_BUILD_PROC} > /dev/null
-  cd ../..
+  EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
   for order in 1 2 3 4 5
   do
@@ -152,7 +42,7 @@ Include:
     do
       if [ "${mesh_type}" = "reg" ]; then moab=no; else moab=yes; fi
 
-      CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+      CXX=mpiCC scons equations=elastic element_type=tet4 order=${order} cfr=1 arch=hsw precision=32 xsmm=yes zlib=yes hdf5=yes moab=${moab} parallel=omp -j ${EDGE_N_BUILD_PROC} > /dev/null
       cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr1_hsw_xsmm_omp
     done
 
@@ -163,7 +53,7 @@ Include:
 
       for cfr in 1 16
       do
-        CXX=g++ scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes moab=${moab} parallel=omp -j ${N_BUILD_PROC} > /dev/null
+        CXX=mpiCC scons equations=elastic element_type=tet4 order=${order} cfr=${cfr} arch=avx512 precision=32 xsmm=yes zlib=yes hdf5=yes moab=${moab} parallel=omp -j ${EDGE_N_BUILD_PROC} > /dev/null
         cp build/edge /bin/edge_elastic_${mesh_type}_o${order}_cfr${cfr}_avx512_xsmm_omp
       done
     done
