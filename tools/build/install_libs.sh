@@ -66,7 +66,7 @@ cd ../..
 # build moab
 cd submodules/moab
 LANG=C autoreconf -fi
-CC=mpicc CXX=mpiCC CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" ./configure --disable-debug --disable-optimize --enable-shared=no --enable-parallel --enable-static=yes --with-pic=yes  --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+CC=mpicc CXX=mpiCC CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" ./configure --disable-debug --disable-optimize --enable-shared=no --with-mpi --enable-static=yes --with-pic=yes  --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo make install
 cd ../..
