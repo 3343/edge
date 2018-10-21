@@ -42,6 +42,12 @@ EOF
 
   EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
+  git clone https://github.com/3343/edge.git
+  cd edge
+  git checkout develop
+  git submodule init
+  git submodule update
+
   for order in 1 2 3 4 5
   do
     # haswell
