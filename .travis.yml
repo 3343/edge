@@ -693,10 +693,10 @@ script:
   #
   # enforce fewer builds in boostrap to fit in limited windows of public Travis CI
   - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; fi
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5/for order in 1 2 3/g'     edge/tools/singularity/debian.def; fi
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for mesh_type in reg uns/for mesh_type in uns/g' edge/tools/singularity/debian.def; fi
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5/for order in 1 2 3/g'     edge/tools/build/singularity/edge.def; fi
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for mesh_type in reg uns/for mesh_type in uns/g' edge/tools/build/singularity/edge.def; fi
   # run bootstrap
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity build --sandbox /tmp/singularity.img edge/tools/singularity/debian.def; fi;
+  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity build --sandbox /tmp/singularity.img edge/tools/build/singularity/edge.def; fi;
 
 after_success:
   - ${GCOV} -v
