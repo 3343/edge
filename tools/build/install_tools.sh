@@ -59,7 +59,7 @@ then
   sudo yum install -y -q -e 0 centos-release-scl
   sudo yum install -y -q -e 0 devtoolset-7
   source /opt/rh/devtoolset-7/enable
-  echo "source /opt/rh/devtoolset-7/enable" >> ~/.bash_profile
+  echo "source /opt/rh/devtoolset-7/enable" | sudo tee --append /etc/bashrc
   # other
   sudo yum install -y -q -e 0 wget
   sudo yum install -y -q -e 0 unzip
@@ -72,7 +72,7 @@ then
   sudo yum install -y -q -e 0 libxml2-python.x86_64
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo yum install -y -q -e 0 openmpi openmpi-devel
-  echo "module load mpi" >> ~/.bash_profile
+  echo "module load mpi" | sudo tee --append /etc/bashrc
   sudo yum install -y -q -e 0 cppcheck
   # TODO: no gmsh RPM available, move to custom install
 fi
@@ -82,8 +82,8 @@ fi
 #########
 if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
-  sudo echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main"     >  /etc/apt/sources.list.d/clang.list
-  sudo echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" >> /etc/apt/sources.list.d/clang.list
+  echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main"     | sudo tee /etc/apt/sources.list.d/clang.list
+  echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" | sudo tee --append /etc/apt/sources.list.d/clang.list
   sudo wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
   sudo apt-get update
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y clang-7 lldb-7 lld-7
@@ -94,7 +94,7 @@ then
   sudo yum install -y -q -e 0 llvm-toolset-7-clang
   sudo yum install -y -q -e 0 clang
   source /opt/rh/llvm-toolset-7/enable
-  echo "source /opt/rh/llvm-toolset-7/enable" >> ~/.bash_profile
+  echo "source /opt/rh/llvm-toolset-7/enable" | sudo tee --append /etc/bashrc
 fi
 
 ############
