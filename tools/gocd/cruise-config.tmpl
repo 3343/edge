@@ -262,57 +262,72 @@
         <git url="TEMPLATE_GIT_EDGE_CORE" branch="develop" dest="edge"/>
       </materials>
 
-      <stage name="virtual_machine">
+      <!-- Build Singularity containers -->
+      <stage name="build_containers" fetchMaterials="true">
         <approval type="manual" />
         <jobs>
-          <job name="bootstrap">
+          <!-- EDGE container -->
+          <job name="EDGE">
             <tasks>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant destroy -f</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+              <!-- bootstrap Vagrant VM -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
                 <arg>vagrant up</arg>
                 <runif status="passed" />
               </exec>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+              <!-- build container -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
-                <arg>vagrant halt</arg>
+                <arg>vagrant ssh -c "sudo singularity build edge.simg /vagrant/edge.def"</arg>
                 <runif status="passed" />
               </exec>
-            </tasks>
-          </job>
-        </jobs>
-      </stage>
-      <stage name="container" fetchMaterials="false">
-        <jobs>
-          <job name="bootstrap">
-            <tasks>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant up</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant ssh -c "sudo singularity build edge.simg /vagrant/debian.def"</arg>
-                <runif status="passed" />
-              </exec>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+              <!-- store container -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
                 <arg>vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg</arg>
                 <runif status="passed" />
               </exec>
-              <exec command="/bin/bash" workingdir="edge/tools/singularity/">
+              <!-- destroy VM -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
                 <arg>vagrant destroy -f</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
             <artifacts>
-              <artifact type="build" src="edge/tools/singularity/edge.simg" />
+              <artifact type="build" src="edge/tools/build/singularity/edge.simg" />
+            </artifacts>
+          </job>
+          <!-- GoCD agent container -->
+          <job name="GoCD">
+            <tasks>
+              <!-- bootstrap Vagrant VM -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant up</arg>
+                <runif status="passed" />
+              </exec>
+              <!-- build container -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant ssh -c "sudo singularity build gocd.simg /vagrant/agent.def"</arg>
+                <runif status="passed" />
+              </exec>
+              <!-- store VM -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant ssh -c "cat /home/vagrant/gocd.simg" > ./gocd.simg</arg>
+                <runif status="passed" />
+              </exec>
+              <!-- destroy VM -->
+              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
+                <arg>-c</arg>
+                <arg>vagrant destroy -f</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+            <artifacts>
+              <artifact type="build" src="edge/tools/build/singularity/gocd.simg" />
             </artifacts>
           </job>
         </jobs>
