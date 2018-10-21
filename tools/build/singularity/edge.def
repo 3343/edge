@@ -28,7 +28,7 @@ MirrorURL: http://ftp.us.debian.org/debian/
 Include:
 
 %post
-  apt-get install -qq -o=Dpkg::Use-Pty=0 install sudo
+  apt-get install -qq -o=Dpkg::Use-Pty=0 sudo
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y curl
 
 bash <<EOF
