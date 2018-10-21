@@ -28,17 +28,9 @@ MirrorURL: http://ftp.us.debian.org/debian/
 Include:
 
 %post
-  EDGE_DIST=$(cat /etc/*-release | grep PRETTY_NAME)
+  apt-get install -qq -o=Dpkg::Use-Pty=0 install sudo
+  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y curl
 
-  if [[ ${EDGE_DIST} == *"Debian"* ]]
-  then
-    apt-get install -qq -o=Dpkg::Use-Pty=0 install sudo
-    sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y curl
-  elif [[ ${EDGE_DIST} == *"CentOS"* ]]
-  then
-    yum install -y -q -e 0 sudo
-    sudo yum install -y -q -e 0 curl
-  fi
 bash <<EOF
   bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_tools.sh)
 EOF
