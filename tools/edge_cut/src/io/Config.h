@@ -50,6 +50,9 @@ public:
   // Output file for topography surface mesh
   std::string m_topoOut;
 
+  // Input file with triangular mesh model of boundary
+  std::string m_bdryIn;
+  
   // Output file for domain boundary surface mesh
   std::string m_bdryOut;
 
