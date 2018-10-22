@@ -22,7 +22,8 @@
  **/
 #include "OptionParser.h"
 
-edge_cut::io::OptionParser::OptionParser( int argc, char** argv ) {
+edge_cut::io::OptionParser::OptionParser( int i_argc, char** i_argv )
+{
   m_usage = \
 "EDGEcut is a utility for generating surface meshes with a topographical\n" \
 "boundary. You can find detailed help in the main EDGE user guide.      \n" \
@@ -32,15 +33,15 @@ edge_cut::io::OptionParser::OptionParser( int argc, char** argv ) {
 "Options:                                                               \n" \
 "  xml_path        path to runtime configuration file                   \n";
 
-  if ( argc > 2 ) {
+  if ( i_argc > 2 ) {
     std::cerr << m_usage << std::endl;
     exit( EXIT_FAILURE );
   }
-  else if ( argc == 1 ) {
+  else if ( i_argc == 1 ) {
     std::cerr << m_usage << std::endl;
     exit( EXIT_FAILURE );
   }
   else {
-    m_xmlPath = argv[1];
+    m_xmlPath = i_argv[1];
   }
 }

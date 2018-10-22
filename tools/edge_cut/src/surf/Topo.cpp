@@ -37,12 +37,15 @@ edge_cut::surf::Topo::Topo( std::string const & i_topoFile )
   m_delTria = new Triangulation( l_fileBegin, l_fileEnd );
 }
 
+
 edge_cut::surf::Topo::~Topo()
 {
   delete m_delTria;
 }
 
-double edge_cut::surf::Topo::topoDisp( TopoPoint const & i_pt ) const {
+
+double edge_cut::surf::Topo::topoDisp( TopoPoint const & i_pt ) const
+{
   double l_zTopoDisp = 1;
 
   Triangulation::Face_handle l_faceHa = m_delTria->locate( i_pt );
@@ -79,7 +82,9 @@ double edge_cut::surf::Topo::topoDisp( TopoPoint const & i_pt ) const {
 }
 
 
-edge_cut::surf::TopoPoint edge_cut::surf::Topo::interpolatePt( double i_x, double i_y ) const {
+edge_cut::surf::TopoPoint edge_cut::surf::Topo::interpolatePt(  double i_x,
+                                                                double i_y ) const
+{
   TopoPoint l_basePt( i_x, i_y, 0 );
   double l_zDist = topoDisp( l_basePt );
 
@@ -87,8 +92,10 @@ edge_cut::surf::TopoPoint edge_cut::surf::Topo::interpolatePt( double i_x, doubl
 }
 
 
-bool edge_cut::surf::Topo::interRay( TopoPoint const & i_pt,
-                                     bool  i_positive ) const {
+bool
+edge_cut::surf::Topo::interRay( TopoPoint const & i_pt,
+                                     bool         i_positive   ) const
+{
   Triangulation::Face_handle l_faceHa;
 
   // get the possible 2D face
@@ -118,9 +125,12 @@ bool edge_cut::surf::Topo::interRay( TopoPoint const & i_pt,
   return false;
 }
 
-unsigned short edge_cut::surf::Topo::interSeg( TopoPoint const & i_segPt1,
-                                               TopoPoint const & i_segPt2,
-                                               TopoPoint         o_inters [C_MAX_SURF_INTER] ) const {
+
+unsigned short
+edge_cut::surf::Topo::interSeg( TopoPoint const & i_segPt1,
+                                TopoPoint const & i_segPt2,
+                                TopoPoint         o_inters [C_MAX_SURF_INTER] ) const
+{
   // set up segment
   CGAL::Segment_3< K > l_seg( i_segPt1, i_segPt2 );
 
@@ -160,43 +170,50 @@ unsigned short edge_cut::surf::Topo::interSeg( TopoPoint const & i_segPt1,
   return l_interCount;
 }
 
-std::ostream & edge_cut::surf::Topo::writeTriaToOff( std::ostream & os ) const {
+
+std::ostream &
+edge_cut::surf::Topo::writeTriaToOff( std::ostream & io_os ) const
+{
   typedef typename Triangulation::Vertex_handle                Vertex_handle;
   typedef typename Triangulation::Finite_vertices_iterator     Vertex_iterator;
   typedef typename Triangulation::Finite_faces_iterator        Face_iterator;
 
-  os << "OFF" << std::endl;
+  io_os << "OFF" << std::endl;
 
   // outputs the number of vertices and faces
-  std::size_t num_verts = m_delTria->number_of_vertices();
-  std::size_t num_faces = m_delTria->number_of_faces();
-  std::size_t num_edges = 0;                          //Assumption
+  std::size_t const l_nVerts = m_delTria->number_of_vertices();
+  std::size_t const l_nFaces = m_delTria->number_of_faces();
+  std::size_t const l_nEdges = 0;                          //Assumption
 
-  os << num_verts << " " << num_faces << " " << num_edges << std::endl;
+  io_os << l_nVerts << " " << l_nFaces << " " << l_nEdges << std::endl;
 
   // write the vertices
-  std::map<Vertex_handle, std::size_t> index_of_vertex;
+  std::map<Vertex_handle, std::size_t> l_idVertMap;
 
-  std::size_t v_idx = 0;
-  for( Vertex_iterator it = m_delTria->finite_vertices_begin(); it != m_delTria->finite_vertices_end(); ++it, ++v_idx )
+  std::size_t l_vertID = 0;
+  for( Vertex_iterator l_vit = m_delTria->finite_vertices_begin();
+       l_vit != m_delTria->finite_vertices_end();
+       ++l_vit, ++l_vertID )
   {
-      os << *it << std::endl;
-      index_of_vertex[it] = v_idx;
+      io_os << *l_vit << std::endl;
+      l_idVertMap[ l_vit ] = l_vertID;
   }
-  EDGE_CHECK_EQ( v_idx, num_verts );
+  EDGE_CHECK_EQ( l_vertID, l_nVerts );
 
   // write the vertex indices of each full_cell
-  std::size_t f_idx = 0;
-  for( Face_iterator it = m_delTria->finite_faces_begin(); it != m_delTria->finite_faces_end(); ++it, ++f_idx )
+  std::size_t l_faceID = 0;
+  for( Face_iterator l_fit = m_delTria->finite_faces_begin();
+       l_fit != m_delTria->finite_faces_end();
+       ++l_fit, ++l_faceID )
   {
-      os << 3;
+      io_os << 3;
       for( int j = 0; j < 3; ++j )
       {
-        os << ' ' << index_of_vertex[ it->vertex(j) ];
+        io_os << ' ' << l_idVertMap[ l_fit->vertex(j) ];
       }
-      os << std::endl;
+      io_os << std::endl;
   }
-  EDGE_CHECK_EQ( f_idx, num_faces );
+  EDGE_CHECK_EQ( l_faceID, l_nFaces );
 
-  return os;
+  return io_os;
 }

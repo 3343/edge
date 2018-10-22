@@ -120,7 +120,7 @@ public:
      * @param i_os ostream to be written to
      * @return the ostream after writing
      **/
-    std::ostream & writeTriaToOff( std::ostream & os ) const;
+    std::ostream & writeTriaToOff( std::ostream & io_os ) const;
 };
 
 #endif

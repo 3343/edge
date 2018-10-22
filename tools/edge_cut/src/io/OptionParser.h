@@ -38,7 +38,7 @@ public:
   /**
    * Constructor
    **/
-  OptionParser( int argc, char** argv );
+  OptionParser( int i_argc, char** i_argv );
 
   std::string m_xmlPath;
 

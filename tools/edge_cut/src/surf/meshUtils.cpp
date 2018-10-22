@@ -25,16 +25,18 @@
 #include "surf/meshUtils.h"
 
 edge_cut::surf::K::FT
-edge_cut::surf::SizingField::operator()(  Point_3 const & p,
+edge_cut::surf::SizingField::operator()(  Point_3 const & i_p,
                                           int     const,
-                                          Index   const &   ) const
+                                          Index   const &     ) const
 {
-  FT l_distance = std::sqrt( std::pow( p.x()-m_center.x(), 2 ) + std::pow( p.y()-m_center.y(), 2 ) );
+  FT l_distance = std::sqrt( std::pow( i_p.x()-m_center.x(), 2 ) + std::pow( i_p.y()-m_center.y(), 2 ) );
 
-  if ( l_distance <= m_innerRad )
+  if ( l_distance <= m_innerRad ) {
     return m_innerVal;
-  else if ( l_distance >= m_outerRad )
+  }
+  else if ( l_distance >= m_outerRad ) {
     return m_scale * m_innerVal;
+  }
   else {
     // Control should never reach here if inner and outer radii are equal
     EDGE_CHECK_NE( m_outerRad, m_innerRad );
@@ -44,29 +46,29 @@ edge_cut::surf::SizingField::operator()(  Point_3 const & p,
 
 
 edge_cut::surf::Polyline_type
-edge_cut::surf::topoIntersect(  Poly_slicer & i_slicer,
-                                K::Plane_3    i_plane   )
+edge_cut::surf::topoIntersect(  Poly_slicer const & i_slicer,
+                                K::Plane_3  const & i_plane   )
 {
-  Polylines     polylines;
-  Polyline_type ridges;
+  Polylines     l_polylines;
+  Polyline_type l_ridges;
 
-  i_slicer( i_plane, std::back_inserter( polylines ) );
+  i_slicer( i_plane, std::back_inserter( l_polylines ) );
 
-  if( polylines.size() == 1 ) {
-    ridges = *(polylines.begin());
+  if( l_polylines.size() == 1 ) {
+    l_ridges = *( l_polylines.begin() );
   }
   else {
     EDGE_LOG_ERROR << "Polyline slicer did not return precisely one intersection!";
-    EDGE_LOG_FATAL << "  Computed " << polylines.size() << " intersections";
+    EDGE_LOG_FATAL << "  Computed " << l_polylines.size() << " intersections";
   }
-  return ridges;
+  return l_ridges;
 }
 
 
 bool
-edge_cut::surf::checkMonotonic( Polyline_type & i_p,
-                                unsigned int    i_n,
-                                bool            i_inc )
+edge_cut::surf::checkMonotonic( Polyline_type const & i_p,
+                                unsigned int          i_n,
+                                bool                  i_inc )
 {
   if ( i_n > 2 ) {
     EDGE_LOG_FATAL << "checkMonotonic: Input index is greater than 2";
@@ -89,23 +91,24 @@ edge_cut::surf::checkMonotonic( Polyline_type & i_p,
 
 
 void
-edge_cut::surf::orderPolyline(  Polyline_type & i_p,
-                                unsigned int    i_n )
+edge_cut::surf::orderPolyline(  Polyline_type & io_polyline,
+                                unsigned int    i_n         )
 {
   // i_p is already monotonically increasing, so return
-  if ( checkMonotonic( i_p, i_n, true) )
+  if ( checkMonotonic( io_polyline, i_n, true) ) {
     return;
+  }
   // i_p is monotonically decreasing, so reverse order of all points
-  else if ( checkMonotonic( i_p, i_n, false ) ) {
-    Polyline_type l_temp = i_p;
-    for ( std::size_t l_idx = 0; l_idx < i_p.size(); l_idx++ ) {
-      i_p[ l_idx ] = l_temp[ i_p.size() - 1 - l_idx ];
+  else if ( checkMonotonic( io_polyline, i_n, false ) ) {
+    Polyline_type l_temp = io_polyline;
+    for ( std::size_t l_idx = 0; l_idx < io_polyline.size(); l_idx++ ) {
+      io_polyline[ l_idx ] = l_temp[ io_polyline.size() - 1 - l_idx ];
     }
   }
   // i_p is not monotonic in the (i_n+1)th coordinate, record an error
   else {
     EDGE_LOG_ERROR << "orderPolyline: encountered a non-monotonic polyline - printing polyline:";
-    for ( auto const & l_pt : i_p )
+    for ( auto const & l_pt : io_polyline )
       EDGE_LOG_ERROR << "  " << l_pt;
     EDGE_LOG_FATAL << "Cannot continue with unordered polyline features";
   }
@@ -118,54 +121,56 @@ std::list< edge_cut::surf::Polyline_type >
 edge_cut::surf::getIntersectionFeatures(  Polyhedron  const & i_topoSurface,
                                           double      const * i_bBox        )
 {
-  std::list< Polyline_type > features;
+  std::list< Polyline_type > l_features;
 
-  Poly_slicer   topoSlicer( i_topoSurface );
-  Polyline_type faultRidges, yMinRidges, yMaxRidges, xMinRidges, xMaxRidges;
-  K::Plane_3    yMinPlane  = K::Plane_3( 0, 1, 0, -1 * i_bBox[2] );
-  K::Plane_3    yMaxPlane  = K::Plane_3( 0, 1, 0, -1 * i_bBox[3] );
-  K::Plane_3    xMinPlane  = K::Plane_3( 1, 0, 0, -1 * i_bBox[0] );
-  K::Plane_3    xMaxPlane  = K::Plane_3( 1, 0, 0, -1 * i_bBox[1] );
+  Poly_slicer   l_topoSlicer( i_topoSurface );
+  Polyline_type l_yMinRidges, l_yMaxRidges, l_xMinRidges, l_xMaxRidges;
 
-  yMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMinPlane );
-  yMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, yMaxPlane );
-  xMinRidges  = edge_cut::surf::topoIntersect( topoSlicer, xMinPlane );
-  xMaxRidges  = edge_cut::surf::topoIntersect( topoSlicer, xMaxPlane );
-  edge_cut::surf::orderPolyline( yMinRidges, 0 );
-  edge_cut::surf::orderPolyline( yMaxRidges, 0 );
-  edge_cut::surf::orderPolyline( xMinRidges, 1 );
-  edge_cut::surf::orderPolyline( xMaxRidges, 1 );
-  features.push_back( yMinRidges );
-  features.push_back( yMaxRidges );
-  features.push_back( xMinRidges );
-  features.push_back( xMaxRidges );
+  K::Plane_3    l_yMinPlane  = K::Plane_3( 0, 1, 0, -1 * i_bBox[2] );
+  K::Plane_3    l_yMaxPlane  = K::Plane_3( 0, 1, 0, -1 * i_bBox[3] );
+  K::Plane_3    l_xMinPlane  = K::Plane_3( 1, 0, 0, -1 * i_bBox[0] );
+  K::Plane_3    l_xMaxPlane  = K::Plane_3( 1, 0, 0, -1 * i_bBox[1] );
 
-  K::Point_3 p000( i_bBox[0], i_bBox[2], i_bBox[4] );
-  K::Point_3 p010( i_bBox[0], i_bBox[3], i_bBox[4] );
-  K::Point_3 p100( i_bBox[1], i_bBox[2], i_bBox[4] );
-  K::Point_3 p110( i_bBox[1], i_bBox[3], i_bBox[4] );
+  l_yMinRidges  = edge_cut::surf::topoIntersect( l_topoSlicer, l_yMinPlane );
+  l_yMaxRidges  = edge_cut::surf::topoIntersect( l_topoSlicer, l_yMaxPlane );
+  l_xMinRidges  = edge_cut::surf::topoIntersect( l_topoSlicer, l_xMinPlane );
+  l_xMaxRidges  = edge_cut::surf::topoIntersect( l_topoSlicer, l_xMaxPlane );
+  edge_cut::surf::orderPolyline( l_yMinRidges, 0 );
+  edge_cut::surf::orderPolyline( l_yMaxRidges, 0 );
+  edge_cut::surf::orderPolyline( l_xMinRidges, 1 );
+  edge_cut::surf::orderPolyline( l_xMaxRidges, 1 );
+  l_features.push_back( l_yMinRidges );
+  l_features.push_back( l_yMaxRidges );
+  l_features.push_back( l_xMinRidges );
+  l_features.push_back( l_xMaxRidges );
+
+  K::Point_3 l_p000( i_bBox[0], i_bBox[2], i_bBox[4] );
+  K::Point_3 l_p010( i_bBox[0], i_bBox[3], i_bBox[4] );
+  K::Point_3 l_p100( i_bBox[1], i_bBox[2], i_bBox[4] );
+  K::Point_3 l_p110( i_bBox[1], i_bBox[3], i_bBox[4] );
 
   // Straight edges of bounding box
-  features.push_back( { p000, p010 } );
-  features.push_back( { p000, p100 } );
-  features.push_back( { p010, p110 } );
-  features.push_back( { p100, p110 } );
-  features.push_back( { p000, xMinRidges.front() } );
-  features.push_back( { p010, xMinRidges.back() } );
-  features.push_back( { p100, xMaxRidges.front() } );
-  features.push_back( { p110, xMaxRidges.back() } );
+  l_features.push_back( { l_p000, l_p010 } );
+  l_features.push_back( { l_p000, l_p100 } );
+  l_features.push_back( { l_p010, l_p110 } );
+  l_features.push_back( { l_p100, l_p110 } );
+  l_features.push_back( { l_p000, l_xMinRidges.front() } );
+  l_features.push_back( { l_p010, l_xMinRidges.back() } );
+  l_features.push_back( { l_p100, l_xMaxRidges.front() } );
+  l_features.push_back( { l_p110, l_xMaxRidges.back() } );
 
-  return features;
+  return l_features;
 }
 
 
 edge_cut::surf::Polyhedron&
-edge_cut::surf::makeBdry( Polyhedron        & io_bdry,
+edge_cut::surf::makeBdry( Polyhedron        & o_bdry,
                           double      const * i_bBox  )
 {
-  if( !io_bdry.is_empty() )
+  if( !o_bdry.is_empty() ) {
     EDGE_LOG_WARNING << "Overwriting existing polyhedron in makeBdry";
-  io_bdry.clear();
+  }
+  o_bdry.clear();
 
   K::Point_3 p0, p1, p2, p3, p4, p5, p6, p7;
   std::vector< K::Point_3 > l_points;
@@ -193,41 +198,40 @@ edge_cut::surf::makeBdry( Polyhedron        & io_bdry,
   CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(  l_points,
                                                                 l_polygons,
-                                                                io_bdry      );
-  io_bdry.normalize_border();
+                                                                o_bdry      );
+  o_bdry.normalize_border();
 
-  return io_bdry;
+  return o_bdry;
 }
 
 
 void
-edge_cut::surf::c3t3ToPolyhedron( C3t3        const & c3t3,
-                                  Polyhedron        & polyhedron )
+edge_cut::surf::c3t3ToPolyhedron( C3t3        const & i_c3t3,
+                                  Polyhedron        & o_polyhedron )
 {
-  if( !polyhedron.is_empty() )
+  if( !o_polyhedron.is_empty() ) {
     EDGE_LOG_WARNING << "Overwriting existing polyhedron in c3t3ToPolyhedron";
-  polyhedron.clear();
+  }
+  o_polyhedron.clear();
 
-  std::stringstream sstream;
-  std::vector<K::Point_3> points;
-  std::vector< std::vector<std::size_t> > polygons;
+  std::stringstream l_sstream;
+  std::vector< K::Point_3 > l_points;
+  std::vector< std::vector<std::size_t> > l_polygons;
 
-  c3t3.output_facets_in_complex_to_off( sstream );
+  i_c3t3.output_facets_in_complex_to_off( l_sstream );
 
-  if (!CGAL::read_OFF( sstream, points, polygons)) {
+  if (!CGAL::read_OFF( l_sstream, l_points, l_polygons)) {
     EDGE_LOG_FATAL << "c3t3ToPolyhedron: Error parsing the OFF stream";
-    return;
   }
 
-  CGAL::Polygon_mesh_processing::orient_polygon_soup( points, polygons );
+  CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
 
-  if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( polygons ) ) {
+  if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( l_polygons ) ) {
     EDGE_LOG_FATAL << "c3t3ToPolyhedron: Polygon soup is not a polygon mesh";
-    return;
   }
 
-  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( points, polygons, polyhedron );
-  polyhedron.normalize_border();
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( l_points, l_polygons, o_polyhedron );
+  o_polyhedron.normalize_border();
 
   return;
 }
@@ -235,50 +239,51 @@ edge_cut::surf::c3t3ToPolyhedron( C3t3        const & c3t3,
 
 void
 edge_cut::surf::c3t3ToSurfMesh( C3t3      const & i_c3t3,
-                                Surf_mesh       & io_surfMesh )
+                                Surf_mesh       & o_surfMesh )
 {
-  if( !io_surfMesh.is_empty() )
+  if( !o_surfMesh.is_empty() ) {
     EDGE_LOG_WARNING << "Overwriting existing surface mesh in c3t3ToSurfMesh";
-  io_surfMesh.clear();
+  }
+  o_surfMesh.clear();
 
-  std::stringstream sstream;
-  std::vector<K::Point_3> points;
-  std::vector< std::vector<std::size_t> > polygons;
+  std::stringstream l_sstream;
+  std::vector< K::Point_3 > l_points;
+  std::vector< std::vector<std::size_t> > l_polygons;
 
-  i_c3t3.output_facets_in_complex_to_off( sstream );
+  i_c3t3.output_facets_in_complex_to_off( l_sstream );
 
-  if (!CGAL::read_OFF( sstream, points, polygons)) {
+  if (!CGAL::read_OFF( l_sstream, l_points, l_polygons)) {
     EDGE_LOG_FATAL << "c3t3ToSurfMesh: Error parsing the OFF stream ";
-    return;
   }
 
-  CGAL::Polygon_mesh_processing::orient_polygon_soup( points, polygons );
+  CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
 
-  if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( polygons ) ) {
+  if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( l_polygons ) ) {
     EDGE_LOG_FATAL << "c3t3ToSurfMesh: Polygon soup is not a polygon mesh";
-    return;
   }
 
-  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( points, polygons, io_surfMesh );
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( l_points, l_polygons, o_surfMesh );
 
   return;
 }
 
 
 edge_cut::surf::Polyhedron&
-edge_cut::surf::topoPolyMeshFromXYZ(  Polyhedron& io_topoPolyMesh,
+edge_cut::surf::topoPolyMeshFromXYZ(  Polyhedron        & o_topoPolyMesh,
                                       std::string const & i_topoFile )
 {
-  edge_cut::surf::Topo l_topo( i_topoFile );
+  std::stringstream     l_topoStream;
+  edge_cut::surf::Topo  l_topo( i_topoFile );
 
-  std::stringstream   topoStream;
-  l_topo.writeTriaToOff( topoStream );
+  l_topo.writeTriaToOff( l_topoStream );
 
-  if (!topoStream || !(topoStream >> io_topoPolyMesh) || io_topoPolyMesh.is_empty()
-             || !CGAL::is_triangle_mesh( io_topoPolyMesh ) ) {
+  if (  !l_topoStream ||
+        !(l_topoStream >> o_topoPolyMesh) ||
+        o_topoPolyMesh.is_empty() ||
+        !CGAL::is_triangle_mesh( o_topoPolyMesh ) ) {
     EDGE_LOG_FATAL << "Input stream for topography triangulation is not valid.";
   }
-  topoStream.str( std::string() );
+  l_topoStream.str( std::string() );
 
-  return io_topoPolyMesh;
+  return o_topoPolyMesh;
 }

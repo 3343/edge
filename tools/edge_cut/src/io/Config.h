@@ -41,6 +41,7 @@ public:
   // XML document containing configuration
   pugi::xml_document m_doc;
 
+  // Coordinates of bounding box
   double m_bBox[6];
 
   // Input file with topography data

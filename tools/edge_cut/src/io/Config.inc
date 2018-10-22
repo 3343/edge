@@ -21,7 +21,8 @@
  * Configuration class for EDGEcut.
  **/
 template< class K >
-edge_cut::io::Config< K >::Config( std::string i_xmlPath ) {
+edge_cut::io::Config< K >::Config( std::string i_xmlPath )
+{
   // Check for valid config
   pugi::xml_parse_result l_parseResult = m_doc.load_file( i_xmlPath.c_str() );
 

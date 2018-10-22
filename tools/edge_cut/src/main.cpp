@@ -104,44 +104,44 @@ int main( int i_argc, char *i_argv[] ) {
   Mesh_criteria   l_topoCriteria( CGAL::parameters::edge_size = l_edgeCrit,
                                   CGAL::parameters::facet_size = l_topoFacetCrit,
                                   CGAL::parameters::facet_distance = l_topoApproxCrit,
-                                  CGAL::parameters::facet_angle = l_config.m_angleBound         );
+                                  CGAL::parameters::facet_angle = l_config.m_angleBound );
   Mesh_criteria   l_bdryCriteria( CGAL::parameters::edge_size = l_edgeCrit,
                                   CGAL::parameters::facet_size = l_bdryFacetCrit,
                                   CGAL::parameters::facet_distance = l_bdryApproxCrit,
-                                  CGAL::parameters::facet_angle = l_config.m_angleBound         );
+                                  CGAL::parameters::facet_angle = l_config.m_angleBound );
 
   // Mesh generation
   EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria...";
-  C3t3 topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
-                                              l_topoCriteria,
-                                              CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                                              CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                                              CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                                              CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+  C3t3 l_topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
+                                                l_topoCriteria,
+                                                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
-  C3t3 bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain,
-                                              l_bdryCriteria,
-                                              CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                                              CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                                              CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                                              CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+  C3t3 l_bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain,
+                                                l_bdryCriteria,
+                                                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
 
   // Trim bits of boundary mesh which extend above topography
   EDGE_LOG_INFO << "Trimming boundary mesh...";
   Polyhedron l_topoPolyMeshed, l_bdryPolyMeshed;
-  edge_cut::surf::c3t3ToPolyhedron( topoComplex, l_topoPolyMeshed );
-  edge_cut::surf::c3t3ToPolyhedron( bdryComplex, l_bdryPolyMeshed );
+  edge_cut::surf::c3t3ToPolyhedron( l_topoComplex, l_topoPolyMeshed );
+  edge_cut::surf::c3t3ToPolyhedron( l_bdryComplex, l_bdryPolyMeshed );
   edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyMeshed, l_topoPolyMeshed );
 
   l_trimmer.trim();
 
   // Output
   EDGE_LOG_INFO << "Writing meshes...";
-  std::ofstream topo_file( l_config.m_topoOut );
-  std::ofstream bdry_file( l_config.m_bdryOut );
+  std::ofstream l_topoFile( l_config.m_topoOut );
+  std::ofstream l_bdryFile( l_config.m_bdryOut );
 
-  bdry_file << l_bdryPolyMeshed;
-  topoComplex.output_facets_in_complex_to_off( topo_file );
+  l_bdryFile << l_bdryPolyMeshed;
+  l_topoFile << l_topoPolyMeshed;
   EDGE_LOG_INFO << "Done.";
   EDGE_LOG_INFO << "Thank you for using EDGEcut!";
 }

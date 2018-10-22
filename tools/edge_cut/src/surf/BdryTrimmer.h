@@ -33,7 +33,7 @@ namespace edge_cut {
 }
 
 template< class Polyhedron >
-class edge_cut::surf::BdryTrimmer{
+class edge_cut::surf::BdryTrimmer {
 public:
   // Const types are used for the (unchanged) topo mesh
   typedef typename Polyhedron::Vertex_const_handle       Vertex_const;
@@ -50,28 +50,28 @@ public:
   // vertices on two different meshes.
   typedef typename Polyhedron::Point                     Point;
 
-  BdryTrimmer( Polyhedron& i_bdry, Polyhedron& i_topo );
+  BdryTrimmer( Polyhedron & io_bdry, Polyhedron const & i_topo );
 
   void trim();
 
 private:
-  Vertex_const getPrevTopoVert( Vertex_const i_vertTopo );
+  Vertex_const getPrevTopoVert( Vertex_const i_vertTopo ) const;
 
-  Vertex_const getNextTopoVert( Vertex_const i_vertTopo );
+  Vertex_const getNextTopoVert( Vertex_const i_vertTopo ) const;
 
-  Vertex getBdryVertex( Vertex_const i_v );
+  Vertex getBdryVertex( Vertex_const i_v ) const;
 
-  Halfedge getBdryHalfedge( Vertex_const i_v1, Vertex_const i_v2 );
+  Halfedge getBdryHalfedge( Vertex_const i_v1, Vertex_const i_v2 ) const;
 
-  bool isPosOriented( Halfedge l_halfedge );
+  bool isPosOriented( Halfedge l_halfedge ) const;
 
   void deleteConnCompsExcept( Face i_rep );
 
 public:
-  Polyhedron& m_bdry;
+  Polyhedron       & m_bdry;
 
 private:
-  const Polyhedron& m_topo;
+  Polyhedron const & m_topo;
 };
 
 #include "BdryTrimmer.inc"

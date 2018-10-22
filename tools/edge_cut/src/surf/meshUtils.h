@@ -107,7 +107,7 @@ namespace edge_cut{
      * @return The single piecewise-linear intersection, or nothing if more than one
      * intersection is found
      **/
-    Polyline_type topoIntersect( Poly_slicer& i_slicer, K::Plane_3 i_plane );
+    Polyline_type topoIntersect( Poly_slicer const & i_slicer, K::Plane_3 const & i_plane );
 
     /**
      * Checks monotonicity of a polyline in the (i_n)th coordinate
@@ -116,7 +116,7 @@ namespace edge_cut{
      * @param i_n Index of the cartesian coordinate used to order vertices
      * @param i_inc Flag - true if testing for increasing, false for decreasing
      **/
-    bool checkMonotonic( Polyline_type & i_p, unsigned int i_n, bool i_inc );
+    bool checkMonotonic( Polyline_type const & i_p, unsigned int i_n, bool i_inc );
 
     /**
      * Reorders i_p so that it is increasing with respect to the (i_n)th coordinate.
@@ -127,7 +127,7 @@ namespace edge_cut{
      * @param i_n Index of the cartesian coordinate used to order vertices
      * @return Nothing
      **/
-    void orderPolyline( Polyline_type & i_p, unsigned int i_n );
+    void orderPolyline( Polyline_type & io_polyline, unsigned int i_n );
 
 
     /**
@@ -142,7 +142,8 @@ namespace edge_cut{
      *         appear more than once), as well as polylines for each edge of the
      *         bounding box (below the topography)
      **/
-    std::list< Polyline_type > getIntersectionFeatures( const Polyhedron& i_topoSurface, double const * i_bBox );
+    std::list< Polyline_type > getIntersectionFeatures( Polyhedron const & i_topoSurface,
+                                                        double     const * i_bBox         );
 
 
     /**
@@ -155,33 +156,33 @@ namespace edge_cut{
      *
      * @return A reference to the polyhedron with the constructed boundary mesh
      **/
-    Polyhedron& makeBdry ( Polyhedron        & io_bdry,
-                           double     const  * i_bBox  );
+    Polyhedron& makeBdry ( Polyhedron       & o_bdry,
+                           double     const * i_bBox  );
 
 
     /**
      * Converts the triangulation in a CGAL::Complex_3_in_Triangulation_3 to a
      * CGAL::Polyhedron_3
      *
-     * @param c3t3 the complex-in-triangulation to convert
-     * @param polyhedron a reference to the polyhedron to be created (overwrites any existing data)
+     * @param i_c3t3 the complex-in-triangulation to convert
+     * @param o_polyhedron a reference to the polyhedron to be created (overwrites any existing data)
      *
      * @return None
      **/
-    void c3t3ToPolyhedron(  C3t3       const & c3t3,
-                            Polyhedron       & polyhedron );
+    void c3t3ToPolyhedron(  C3t3       const & i_c3t3,
+                            Polyhedron       & o_polyhedron );
 
     /**
      * Converts the triangulation in a CGAL::Complex_3_in_Triangulation_3 to a
      * CGAL::Surface_mesh
      *
      * @param c3t3 reference to the complex-in-triangulation to convert
-     * @param io_surfMesh a reference to the surfaceMesh to be created (overwrites any existing data)
+     * @param o_surfMesh a reference to the surfaceMesh to be created (overwrites any existing data)
      *
      * @return None
      **/
     void c3t3ToSurfMesh(  C3t3      const & i_c3t3,
-                          Surf_mesh       & io_surfMesh );
+                          Surf_mesh       & o_surfMesh );
 
 
     /**
@@ -192,7 +193,8 @@ namespace edge_cut{
      *
      * @return A reference to the constructed topography mesh
      **/
-     Polyhedron& topoPolyMeshFromXYZ( Polyhedron& io_topoPolyMesh, std::string const & i_topoFile );
+    Polyhedron& topoPolyMeshFromXYZ(  Polyhedron        & o_topoPolyMesh,
+                                      std::string const & i_topoFile );
   }
 }
 
