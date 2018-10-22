@@ -34,30 +34,33 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath )
                    << " (error at ["   << i_xmlPath << " " << l_parseResult.offset << "]";
   }
 
+  pugi::xml_node l_root = m_doc.child("edge_cut");
+
   // Computational Domain
-  m_bBox[0] = m_doc.child("bbox").child("xMin").text().as_double();
-  m_bBox[1] = m_doc.child("bbox").child("xMax").text().as_double();
-  m_bBox[2] = m_doc.child("bbox").child("yMin").text().as_double();
-  m_bBox[3] = m_doc.child("bbox").child("yMax").text().as_double();
-  m_bBox[4] = m_doc.child("bbox").child("zMin").text().as_double();
-  m_bBox[5] = m_doc.child("bbox").child("zMax").text().as_double();
+  m_bBox[0] = l_root.child("bounding_box").child("xMin").text().as_double();
+  m_bBox[1] = l_root.child("bounding_box").child("xMax").text().as_double();
+  m_bBox[2] = l_root.child("bounding_box").child("yMin").text().as_double();
+  m_bBox[3] = l_root.child("bounding_box").child("yMax").text().as_double();
+  m_bBox[4] = l_root.child("bounding_box").child("zMin").text().as_double();
+  m_bBox[5] = l_root.child("bounding_box").child("zMax").text().as_double();
 
   // IO Targets
-  m_topoIn  = m_doc.child("io").child("topo_in").text().as_string();
-  m_topoOut = m_doc.child("io").child("topo_out").text().as_string();
-  m_bdryOut = m_doc.child("io").child("bdry_out").text().as_string();
+  m_topoIn  = l_root.child("io").child("topography").child("in").text().as_string();
+  m_topoOut = l_root.child("io").child("topography").child("out").text().as_string();
+  m_bdryIn  = l_root.child("io").child("boundary").child("in").text().as_string();
+  m_bdryOut = l_root.child("io").child("boundary").child("out").text().as_string();
 
   // Refinement Region Definition
-  m_scale    = m_doc.child("region").child("scale").text().as_double();
-  m_innerRad = m_doc.child("region").child("inner_rad").text().as_double();
-  m_outerRad = m_doc.child("region").child("outer_rad").text().as_double();
-  m_center   = typename K::Point_3( m_doc.child("region").child("center").child("x").text().as_double(),
-                                    m_doc.child("region").child("center").child("y").text().as_double(),
-                                    m_doc.child("region").child("center").child("z").text().as_double() );
+  m_scale    = l_root.child("region").child("scale").text().as_double();
+  m_innerRad = l_root.child("region").child("inner_radius").text().as_double();
+  m_outerRad = l_root.child("region").child("outer_radius").text().as_double();
+  m_center   = typename K::Point_3( l_root.child("region").child("center").child("x").text().as_double(),
+                                    l_root.child("region").child("center").child("y").text().as_double(),
+                                    l_root.child("region").child("center").child("z").text().as_double() );
 
   // Meshing Criteria
-  m_edgeBase        = m_doc.child("refine").child("edge").text().as_double();
-  m_facetSizeBase   = m_doc.child("refine").child("facet").text().as_double();
-  m_facetApproxBase = m_doc.child("refine").child("approx").text().as_double();
-  m_angleBound      = m_doc.child("refine").child("angle").text().as_double();
+  m_edgeBase        = l_root.child("refine").child("edge").text().as_double();
+  m_facetSizeBase   = l_root.child("refine").child("facet").text().as_double();
+  m_facetApproxBase = l_root.child("refine").child("approx").text().as_double();
+  m_angleBound      = l_root.child("refine").child("angle").text().as_double();
 }
