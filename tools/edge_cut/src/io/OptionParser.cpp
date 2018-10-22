@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,44 +18,30 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Oracle for the surface mesh.
+ * A simple command line parser for EDGEcut.
  **/
+#include "OptionParser.h"
 
-#include "Oracle.h"
-#include "io/logging.hpp"
+edge_cut::io::OptionParser::OptionParser( int i_argc, char** i_argv )
+{
+  m_usage = \
+"EDGEcut is a utility for generating surface meshes with a topographical\n" \
+"boundary. You can find detailed help in the main EDGE user guide.      \n" \
+"                                                                       \n" \
+"USAGE: ./edge_cut xml_path                                             \n" \
+"                                                                       \n" \
+"Options:                                                               \n" \
+"  xml_path        path to runtime configuration file                   \n";
 
-edge_cut::surf::Oracle::Oracle( double              i_box[5],
-                                std::string const & i_topoFile ): m_topo( i_topoFile ) {
-  // copy box to member
-  for( unsigned short l_bd = 0; l_bd < 5; l_bd++ ) m_box[l_bd] = i_box[l_bd];
-}
-
-CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT edge_cut::surf::Oracle::operator()(
-  CGAL::Surface_mesh_default_triangulation_3::Geom_traits::Point_3 i_pt
-) const {
-  bool l_inside = true;
-
-  // left and right boundary
-  l_inside = l_inside && ( i_pt.x() > m_box[0] && i_pt.x() < m_box[1] );
-  // front and back
-  l_inside = l_inside && ( i_pt.y() > m_box[2] && i_pt.y() < m_box[3] );
-  // bottom
-  l_inside = l_inside && ( i_pt.z() > m_box[4] );
-
-  // return if already outside 
-  if( !l_inside ) {
-    return CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT( 0 );
+  if ( i_argc > 2 ) {
+    std::cerr << m_usage << std::endl;
+    exit( EXIT_FAILURE );
+  }
+  else if ( i_argc == 1 ) {
+    std::cerr << m_usage << std::endl;
+    exit( EXIT_FAILURE );
   }
   else {
-    // check for intersection
-    CGAL::Point_3< CGAL::Cartesian<double> > l_pt( CGAL::to_double( i_pt.x() ),
-                                                   CGAL::to_double( i_pt.y() ),
-                                                   CGAL::to_double( i_pt.z() ) );
-    if( !m_topo.interRay( l_pt ) ) l_inside = false;
+    m_xmlPath = i_argv[1];
   }
-
-  if( !l_inside )
-    return CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT( 0 );
-  else
-    return CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT( 1 );
 }

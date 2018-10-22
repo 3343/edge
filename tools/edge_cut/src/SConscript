@@ -24,7 +24,9 @@
 Import('env')
 
 l_sources = [ 'surf/Topo.cpp',
-              'surf/Oracle.cpp' ]
+              'io/OptionParser.cpp',
+              '../../../../submodules/pugixml/src/pugixml.cpp',
+              'surf/meshUtils.cpp'      ]
 
 for l_source in l_sources:
   env.sources.append( env.Object( l_source ) )
