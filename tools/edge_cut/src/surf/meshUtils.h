@@ -35,6 +35,7 @@
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
+#include <CGAL/IO/facets_in_complex_3_to_triangle_mesh.h>
 
 #include <boost/foreach.hpp>
 #include <boost/property_map/property_map.hpp>
