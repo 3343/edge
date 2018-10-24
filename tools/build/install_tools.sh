@@ -107,7 +107,7 @@ then
   echo "source /opt/rh/llvm-toolset-7/enable" | sudo tee --append /etc/bashrc
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
-  # TODO: fix Clang support
+  echo "" > /dev/null # TODO: fix Clang support
 fi
 
 ############
@@ -125,7 +125,7 @@ then
   cd ..
 elif [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  # valgrind is already part of the CentOS tools
+  echo "" > /dev/null # valgrind is already part of the CentOS tools
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   sudo yum install -y -q -e 0 valgrind
@@ -176,7 +176,7 @@ fi
 if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
   sudo apt-get clean
-elif [[ ${EDGE_DIST} == *"CentOS"* ]]
+elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   sudo yum clean all
   sudo rm -rf /var/cache/yum
