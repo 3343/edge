@@ -19,7 +19,7 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Installs the tools used in CI/CD (tested for Debian 9.3, CentOS 7).
+# Installs the tools used in CI/CD (tested for Debian 9.3, CentOS 7, Amazon Linux 2).
 ##
 EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
@@ -75,6 +75,16 @@ then
   echo "module load mpi" | sudo tee --append /etc/bashrc
   sudo yum install -y -q -e 0 cppcheck
   # TODO: no gmsh RPM available, move to custom install
+elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
+then
+  sudo yum groupinstall -y -q -e 0 "Development Tools"
+  sudo yum install -y -q -e 0 cmake
+  sudo pip install --egg scons
+  sudo yum install -y -q -e 0 python python-pip python3 python3-pip
+  sudo yum install -y -q -e 0 openmpi openmpi-devel
+  echo "export PATH=/usr/lib64/openmpi/bin/:$PATH" | sudo tee --append /etc/bashrc
+  # TODO: no cppcheck RPM available
+  # TODO: no gmsh RPM available
 fi
 
 #########
@@ -95,6 +105,9 @@ then
   sudo yum install -y -q -e 0 clang
   source /opt/rh/llvm-toolset-7/enable
   echo "source /opt/rh/llvm-toolset-7/enable" | sudo tee --append /etc/bashrc
+elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
+then
+  # TODO: fix Clang support
 fi
 
 ############
@@ -110,7 +123,13 @@ then
   make -j ${EDGE_N_BUILD_PROC}
   sudo make install > /dev/null
   cd ..
-fi # valgrind is already part of the CentOS tools
+elif [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  # valgrind is already part of the CentOS tools
+elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
+then
+  sudo yum install -y -q -e 0 valgrind
+fi
 
 ###########
 # Git LFS #
@@ -119,7 +138,7 @@ if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y git-lfs
-elif [[ ${EDGE_DIST} == *"CentOS"* ]]
+elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | sudo bash
   sudo yum install -y -q -e 0 git-lfs
@@ -135,8 +154,8 @@ then
   sudo pip install --upgrade pip setuptools
   sudo pip3 install --upgrade pip setuptools
 fi
-sudo pip -q install xmltodict matplotlib netCDF4
-sudo pip3 -q install xmltodict matplotlib netCDF4
+sudo pip -q install xmltodict matplotlib netCDF4 h5py
+sudo pip3 -q install xmltodict matplotlib h5py
 
 ###########
 # Vagrant #
@@ -145,7 +164,7 @@ if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
   wget https://releases.hashicorp.com/vagrant/2.1.2/vagrant_2.1.2_x86_64.deb -O vagrant.deb
   sudo dpkg -i vagrant.deb
-elif [[ ${EDGE_DIST} == *"CentOS"* ]]
+elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   wget https://releases.hashicorp.com/vagrant/2.2.0/vagrant_2.2.0_x86_64.rpm -O vagrant.rpm
   sudo yum install -y -q -e 0 vagrant.rpm
