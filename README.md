@@ -105,6 +105,6 @@ Based on the equations and the element type, the following table shows the imple
 | [Bulldozer](http://products.amd.com/en-us/search/cpu/amd-opteron%E2%84%A2/amd-opteron%E2%84%A2-6200-series-processor) | [Blue Waters](https://bluewaters.ncsa.illinois.edu/hardware-summary) |
 | [Haswell](https://ark.intel.com/products/codename/42174/Haswell) | [Comet](http://www.sdsc.edu/support/user_guides/comet.html), [Cori Phase 1](http://www.nersc.gov/users/computational-systems/cori/configuration/) |
 | [Knights Landing](https://ark.intel.com/products/codename/48999/Knights-Landing)    | [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2), [Cori Phase 2](http://www.nersc.gov/users/computational-systems/cori/configuration/), [Theta](https://www.alcf.anl.gov/theta) |
-| [Skylake](https://ark.intel.com/products/codename/37572/Skylake) | [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2) |
+| [Skylake](https://ark.intel.com/products/codename/37572/Skylake) | [Amazon Elastic Compute Cloud](https://aws.amazon.com/ec2/), [Google Cloud Platform](https://cloud.google.com/), [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2) |
 | [EPYC](http://products.amd.com/en-us/search/cpu/amd-epyc%E2%84%A2)                                         | - |
 | [Knights Mill](https://ark.intel.com/products/codename/57723/Knights-Mill) | - |
