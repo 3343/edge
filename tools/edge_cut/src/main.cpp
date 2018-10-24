@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,21 +21,22 @@
  * This is the main file of EDGEcut.
  **/
 
+// Debug options
+// #include <gperftools/heap-profiler.h>      // For memory profiling
+
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
+#include "../../../submodules/pugixml/src/pugixml.hpp"
+#include "io/Config.h"
+#include "io/OptionParser.h"
+#include "surf/meshUtils.h"
+#include "surf/BdryTrimmer.h"
 
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/Implicit_surface_3.h>
-#include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
-
-
-#include "surf/Oracle.h"
-#include "surf/Topo.h"
-#include "surf/LayeredCriteria.h"
-
+using namespace edge_cut::surf;
 
 int main( int i_argc, char *i_argv[] ) {
-  
+  edge_cut::io::OptionParser l_options( i_argc, i_argv );
+
   EDGE_LOG_INFO << "##########################################################################";
   EDGE_LOG_INFO << "##############   ##############            ###############  ##############";
   EDGE_LOG_INFO << "##############   ###############         ################   ##############";
@@ -50,55 +51,97 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "###############  ##############           #############    ###############";
   EDGE_LOG_INFO << "#######################################################################cut";
   EDGE_LOG_INFO << "";
-
   EDGE_LOG_INFO << "ready to go..";
-  // delaunay triangulation
-  CGAL::Surface_mesh_default_triangulation_3 l_delTria; 
-  // complex
-  CGAL::Complex_2_in_triangulation_3<
-    CGAL::Surface_mesh_default_triangulation_3
-  > l_compl(l_delTria);
+
+  EDGE_LOG_INFO << "parsing xml config";
+  edge_cut::io::Config< K > l_config( l_options.m_xmlPath );
+
+  // Create polyhedral meshes of topography (with whatever sampling we were provided),
+  // and of domain boundary
+  EDGE_LOG_INFO << "Building initial polyhedral surfaces...";
+  Polyhedron l_topoPoly, l_bdryPoly;
+
+  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_config.m_topoIn );
+  EDGE_LOG_INFO << "  Initial topography mesh:";
+  EDGE_LOG_INFO << "    #vertices: " << l_topoPoly.size_of_vertices();
+  EDGE_LOG_INFO << "    #faces:    " << l_topoPoly.size_of_facets();
+
+  edge_cut::surf::makeBdry( l_bdryPoly, l_config.m_bBox );
+  EDGE_LOG_INFO << "  Initial boundary mesh:";
+  EDGE_LOG_INFO << "    #vertices: " << l_bdryPoly.size_of_vertices();
+  EDGE_LOG_INFO << "    #faces:    " << l_bdryPoly.size_of_facets();
 
 
-  // bounding sphere
-  CGAL::Surface_mesh_default_triangulation_3::Geom_traits::Point_3  l_bndSphereCenter(400000,3750000,-25000);
-  CGAL::Surface_mesh_default_triangulation_3::Geom_traits::FT       l_bndSphereRadiusSquared = 250000.0*250000.0;
-  CGAL::Surface_mesh_default_triangulation_3::Geom_traits::Sphere_3 l_bndSphere( l_bndSphereCenter,
-                                                                                 l_bndSphereRadiusSquared);
+  // Create polyhedral domains for re-meshing
+  // The "re-meshing" form of make-mesh only works when the polyhedral domain
+  // is constructed from a vector of polyhedral surfaces (as far as I can tell)
+  std::vector< Polyhedron* > l_topoVector( 1, &l_topoPoly );
+  std::vector< Polyhedron* > l_bdryVector( 1, &l_bdryPoly );
+  Mesh_domain l_topoDomain( l_topoVector.begin(), l_topoVector.end() );
+  Mesh_domain l_bdryDomain( l_bdryVector.begin(), l_bdryVector.end() );
 
-  // surround box:     x1      x2    y1      y2      z1
-  // 330000/500000/3700000/3850000
-  double l_box[5] = {335000, 495000, 3705000, 3845000, -25000};
-  
-  // construct oracle
-  EDGE_LOG_INFO << "constructing oracle for implicit surface meshing";
-  edge_cut::surf::Oracle l_oracle( l_box, "data/map_proj.xyz" );
+  // Preserve the intersection between topography and boundary meshes.
+  // This ensures that the two meshes coincide on their boundaries.
+  EDGE_LOG_INFO << "Computing topography-boundary intersection...";
+  std::list< Polyline_type > l_intersectFeatures = edge_cut::surf::getIntersectionFeatures( l_topoPoly, l_config.m_bBox );
+  l_bdryDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
+  l_topoDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
 
-  EDGE_LOG_INFO << "implicit surface constructor";
-  
-  CGAL::Implicit_surface_3<
-    CGAL::Surface_mesh_default_triangulation_3::Geom_traits,
-    edge_cut::surf::Oracle
-    > l_implSurf( l_oracle, l_bndSphere, 1e-5 ); 
+  // Free memory, a copy is stored in the Mesh_domain object (no move semantics in CGAL yet)
+  l_topoPoly.clear();
+  l_bdryPoly.clear();
 
-  EDGE_LOG_INFO << "mesh criteria constructor";
-  
-  edge_cut::surf::LayeredCriteria<
-    CGAL::Surface_mesh_default_triangulation_3
-    > l_criteria( 30., 75., 75., {-500, -1000, -3000, -6000, -11000, -21000, -31000}, {4.000, 5.333, 6.222, 8.000, 8.111, 8.444, 10.000});
 
-  
-  // derive surface mesh
-  EDGE_LOG_INFO << "deriving 3D surface mesh..";
-  CGAL::make_surface_mesh( l_compl, l_implSurf, l_criteria, CGAL::Non_manifold_tag() );
-  EDGE_LOG_INFO << "surface mesh stats:";
-  EDGE_LOG_INFO << "  #vertices: " << l_delTria.number_of_vertices();
-  EDGE_LOG_INFO << "  #faces:    " << l_delTria.number_of_facets(); // TODO: fix, this should be edges
+  // NOTE meshes must share common edge refinement criteria in order for borders
+  //      to coincide. (recall edge criteria only affects specified 1D features)
+  SizingField l_edgeCrit( l_config.m_edgeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
 
-  // write surface mesh
-  EDGE_LOG_INFO << "writing surface mesh";
-  std::ofstream l_out("out.off");
-  CGAL::output_surface_facets_to_off( l_out, l_compl );
+  SizingField l_topoFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
+  SizingField l_bdryFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, 0, 0 );
+  SizingField l_topoApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
+  SizingField l_bdryApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, 0, 0 );
 
-  EDGE_LOG_INFO << "thank you for using EDGEcut!";
+  Mesh_criteria   l_topoCriteria( CGAL::parameters::edge_size = l_edgeCrit,
+                                  CGAL::parameters::facet_size = l_topoFacetCrit,
+                                  CGAL::parameters::facet_distance = l_topoApproxCrit,
+                                  CGAL::parameters::facet_angle = l_config.m_angleBound );
+  Mesh_criteria   l_bdryCriteria( CGAL::parameters::edge_size = l_edgeCrit,
+                                  CGAL::parameters::facet_size = l_bdryFacetCrit,
+                                  CGAL::parameters::facet_distance = l_bdryApproxCrit,
+                                  CGAL::parameters::facet_angle = l_config.m_angleBound );
+
+  // Mesh generation
+  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria...";
+  C3t3 l_topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
+                                                l_topoCriteria,
+                                                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+
+  C3t3 l_bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain,
+                                                l_bdryCriteria,
+                                                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
+                                                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+
+  // Trim bits of boundary mesh which extend above topography
+  EDGE_LOG_INFO << "Trimming boundary mesh...";
+  Polyhedron l_topoPolyMeshed, l_bdryPolyMeshed;
+  edge_cut::surf::c3t3ToPolyhedron( l_topoComplex, l_topoPolyMeshed );
+  edge_cut::surf::c3t3ToPolyhedron( l_bdryComplex, l_bdryPolyMeshed );
+  edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyMeshed, l_topoPolyMeshed );
+
+  l_trimmer.trim();
+
+  // Output
+  EDGE_LOG_INFO << "Writing meshes...";
+  std::ofstream l_topoFile( l_config.m_topoOut );
+  std::ofstream l_bdryFile( l_config.m_bdryOut );
+
+  l_bdryFile << l_bdryPolyMeshed;
+  l_topoFile << l_topoPolyMeshed;
+  EDGE_LOG_INFO << "Done.";
+  EDGE_LOG_INFO << "Thank you for using EDGEcut!";
 }

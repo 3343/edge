@@ -27,6 +27,22 @@ def simpleWarning(message, category, filename, lineno, file=None, line=None):
     return '%s\n' % (message)
 warnings.formatwarning = simpleWarning
 
+##
+# Adjust the given variable by turning relative paths to absolute paths
+#
+#  i_var variable which is adjusted
+##
+def adjustPath( i_var ):
+  l_var = i_var
+
+  # only adjust if not boolean
+  if( i_var != True and i_var != False ):
+    # relative path is input
+    if( i_var[0] != '/' ):
+      l_var = os.path.join( Dir( '#'+i_var ).abspath )
+
+  return l_var
+
 # configuration
 vars = Variables()
 
@@ -67,6 +83,9 @@ vars.AddVariables(
                 PathVariable.PathIsDirCreate ),
   PathVariable( 'cgal_dir',
                 'directory of the cgal installation',
+                None ),
+  PathVariable( 'boost_dir',
+                'directory of the boost installation',
                 None )
 )
 
@@ -126,9 +145,16 @@ if 'CXXFLAGS' in env['ENV'].keys():
 if 'LINKFLAGS' in env['ENV'].keys():
   env['LINKFLAGS'] = env['ENV']['LINKFLAGS']
 if 'CPLUS_INCLUDE_PATH' in env['ENV'].keys():
-  env.Append( CPPPATH = env['ENV']['CPLUS_INCLUDE_PATH'] )
+  for l_incP in env['ENV']['CPLUS_INCLUDE_PATH'].split(':'):
+    if l_incP != '':
+      l_incP = adjustPath( l_incP )
+      env.AppendUnique( CPPPATH = [l_incP] )
 if 'LIBRARY_PATH' in env['ENV'].keys():
-  env.Append( LIBPATH = env['ENV']['LIBRARY_PATH'] )
+  for l_libP in env['ENV']['LIBRARY_PATH'].split(':'):
+    if l_libP != '':
+      l_libP = adjustPath( l_libP )
+      env.AppendUnique( LIBPATH = [l_libP] )
+      env.AppendUnique( RPATH   = [l_libP] )
 
 
 # add current path to seach path
@@ -136,10 +162,20 @@ env.Append( CPPPATH = ['#', '#/src'] )
 
 # forward CGAL
 if 'cgal_dir' in vars.args.keys():
-  env.Append( CXXFLAGS=['-isystem'+env['cgal_dir']+'/include'] )
-  env.Append( LIBPATH=[env['cgal_dir']+'/lib'    ] )
+  env.AppendUnique( CXXFLAGS=['-isystem'+env['cgal_dir']+'/include'] )
+  env.AppendUnique( LIBPATH=[env['cgal_dir']+'/lib'    ] )
+  env.AppendUnique( LIBPATH=[env['cgal_dir']+'/lib64'  ] )
   # set rpath, we dislike the annoying LD_LIBRARY_PATH
-  env.Append( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib'] )
+  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib'] )
+  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib64'] )
+
+#forward boost
+if 'boost_dir' in vars.args.keys():
+  env.AppendUnique( CXXFLAGS=['-isystem'+env['boost_dir']+'/include'] )
+  env.AppendUnique( LIBPATH=[env['boost_dir']+'/lib'    ] )
+  env.AppendUnique( LIBPATH=[env['boost_dir']+'/lib64'  ] )
+  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['boost_dir']+'/lib'] )
+  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['boost_dir']+'/lib64'] )
 
 # add CGAL
 #if( not conf.CheckLibWithHeader( 'libCGAL', 'CGAL/constant.h', 'CXX' ) ):
@@ -165,6 +201,9 @@ env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas"
 # set optimization mode
 if 'debug' in env['mode']:
   env.Append( CXXFLAGS = ['-g','-O0'] )
+  env.Append( CPPDEFINES = ['CGAL_MESH_3_PROFILING', 'CGAL_MESH_3_VERBOSE'] )
+  # tcmalloc is required to use the gperftools heap profiler
+  env.Append( LINKFLAGS = ['-ltcmalloc'] )
 else:
   env.Append( CXXFLAGS = ['-O2'] )
 
