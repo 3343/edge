@@ -19,7 +19,7 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Installs the tools used in CI/CD (tested for Debian 9.3, CentOS 7, Amazon Linux 2).
+# Installs the tools used in CI/CD (tested for Debian 9.3, CentOS 7, Amazon Linux 2, Amazon Linux AMI).
 ##
 EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
@@ -85,6 +85,33 @@ then
   echo "export PATH=/usr/lib64/openmpi/bin/:$PATH" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
   # TODO: no gmsh RPM available
+elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
+then
+  # install custom gcc, as the OS doesnt ship it with OpenMP support
+  svn co svn://gcc.gnu.org/svn/gcc/tags/gcc_8_2_0_release/ gcc > /dev/null
+  cd gcc
+  ./contrib/download_prerequisites
+  ./configure --enable-languages=c,c++,fortran --disable-multilib > /dev/null
+  make -j ${EDGE_N_BUILD_PROC} > /dev/null
+  sudo make install > /dev/null
+  cd ..
+  rm -rf gcc
+
+  # link gcc-8
+  sudo unlink /usr/bin/gcc
+  sudo unlink /usr/bin/g++
+  sudo unlink /usr/bin/gfortran
+  sudo ln -s /usr/local/bin/gcc /usr/bin
+  sudo ln -s /usr/local/bin/g++ /usr/bin
+  sudo ln -s /usr/local/bin/gfortran /usr/bin
+
+  sudo yum install -y -q -e 0 gcc72-c++ gcc64-gfortran
+  sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
+  sudo ln -s /usr/local/bin/easy_install* /bin
+  sudo yum install -y -q -e 0 scons
+  echo "module load mpi" | sudo tee --append /etc/bashrc
+  # TODO: no cppcheck RPM available
+  # TODO: no gmsh RPM available
 fi
 
 #########
@@ -108,6 +135,9 @@ then
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   echo "" > /dev/null # TODO: fix Clang support
+elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
+then
+  sudo yum install -y -q clang clang-develop
 fi
 
 ############
@@ -138,7 +168,7 @@ if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y git-lfs
-elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
+elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | sudo bash
   sudo yum install -y -q -e 0 git-lfs
@@ -147,10 +177,11 @@ fi
 ##################
 # Python modules #
 ##################
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
+if [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
   sudo easy_install-3.4 pip
   sudo easy_install pip
+  sudo ln -s /usr/local/bin/pip* /bin
   sudo pip install --upgrade pip setuptools
   sudo pip3 install --upgrade pip setuptools
 fi
@@ -164,7 +195,7 @@ if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
   wget https://releases.hashicorp.com/vagrant/2.1.2/vagrant_2.1.2_x86_64.deb -O vagrant.deb
   sudo dpkg -i vagrant.deb
-elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
+elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
   wget https://releases.hashicorp.com/vagrant/2.2.0/vagrant_2.2.0_x86_64.rpm -O vagrant.rpm
   sudo yum install -y -q -e 0 vagrant.rpm
@@ -176,7 +207,7 @@ fi
 if [[ ${EDGE_DIST} == *"Debian"* ]]
 then
   sudo apt-get clean
-elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
+elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
   sudo yum clean all
   sudo rm -rf /var/cache/yum
