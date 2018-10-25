@@ -51,10 +51,12 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "###############  ##############           #############    ###############";
   EDGE_LOG_INFO << "#######################################################################cut";
   EDGE_LOG_INFO << "";
-  EDGE_LOG_INFO << "ready to go..";
 
-  EDGE_LOG_INFO << "parsing xml config";
+  EDGE_LOG_INFO << "Generating runtime configuration...";
   edge_cut::io::Config< K > l_config( l_options.m_xmlPath );
+  l_config.printConfig();
+
+  EDGE_LOG_INFO << "Lets get started:";
 
   // Create polyhedral meshes of topography (with whatever sampling we were provided),
   // and of domain boundary
@@ -110,21 +112,22 @@ int main( int i_argc, char *i_argv[] ) {
                                   CGAL::parameters::facet_distance = l_bdryApproxCrit,
                                   CGAL::parameters::facet_angle = l_config.m_angleBound );
 
+
   // Mesh generation
   EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria...";
   C3t3 l_topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
                                                 l_topoCriteria,
-                                                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                                                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                                                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                                                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
-
+                                                l_config.m_lloydOpts,
+                                                l_config.m_odtOpts,
+                                                l_config.m_perturbOpts,
+                                                l_config.m_exudeOpts    );
   C3t3 l_bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain,
                                                 l_bdryCriteria,
-                                                CGAL::parameters::lloyd(    CGAL::parameters::time_limit = 60 ),
-                                                CGAL::parameters::odt(      CGAL::parameters::time_limit = 60 ),
-                                                CGAL::parameters::perturb(  CGAL::parameters::time_limit = 60 ),
-                                                CGAL::parameters::exude(    CGAL::parameters::time_limit = 60 ) );
+                                                l_config.m_lloydOpts,
+                                                l_config.m_odtOpts,
+                                                l_config.m_perturbOpts,
+                                                l_config.m_exudeOpts    );
+  
 
   // Trim bits of boundary mesh which extend above topography
   EDGE_LOG_INFO << "Trimming boundary mesh...";
