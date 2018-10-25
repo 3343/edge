@@ -21,7 +21,11 @@
  * Configuration class for EDGEcut.
  **/
 template< class K >
-edge_cut::io::Config< K >::Config( std::string i_xmlPath )
+edge_cut::io::Config< K >::Config( std::string i_xmlPath ) :
+  m_lloydOpts(false),
+  m_odtOpts(false),
+  m_perturbOpts(false),
+  m_exudeOpts(false)
 {
   // Check for valid config
   pugi::xml_parse_result l_parseResult = m_doc.load_file( i_xmlPath.c_str() );
@@ -35,6 +39,11 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath )
   }
 
   pugi::xml_node l_root = m_doc.child("edge_cut");
+  if( l_root == pugi::xml_node() ) {
+    EDGE_LOG_FATAL << "XML configuration does not contain <edge_cut> tree";
+  }
+
+  m_xmlPath = i_xmlPath;
 
   // Computational Domain
   m_bBox[0] = l_root.child("bounding_box").child("xMin").text().as_double();
@@ -63,4 +72,69 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath )
   m_facetSizeBase   = l_root.child("refine").child("facet").text().as_double();
   m_facetApproxBase = l_root.child("refine").child("approx").text().as_double();
   m_angleBound      = l_root.child("refine").child("angle").text().as_double();
+
+  m_optimizeTime = l_root.child("optimize").child("time_limit").text().as_double();
+
+  if ( !strcmp( l_root.child("optimize").child("lloyd").text().as_string(), "no" ) ) {
+    m_lloydOpts = CGAL::parameters::no_lloyd();
+  }
+  else {
+    m_lloydOpts = CGAL::parameters::lloyd( CGAL::parameters::time_limit = m_optimizeTime );
+  }
+
+  if ( !strcmp( l_root.child("optimize").child("odt").text().as_string(), "no" ) ) {
+    m_odtOpts = CGAL::parameters::no_odt();
+  }
+  else {
+    m_odtOpts = CGAL::parameters::odt( CGAL::parameters::time_limit = m_optimizeTime );
+  }
+
+  if ( !strcmp( l_root.child("optimize").child("perturb").text().as_string(), "no" ) ) {
+    m_perturbOpts = CGAL::parameters::no_perturb();
+  }
+  else {
+    m_perturbOpts = CGAL::parameters::perturb( CGAL::parameters::time_limit = m_optimizeTime );
+  }
+
+  if ( !strcmp( l_root.child("optimize").child("exude").text().as_string(), "no" ) ) {
+    m_exudeOpts = CGAL::parameters::no_exude();
+  }
+  else {
+    m_exudeOpts = CGAL::parameters::exude( CGAL::parameters::time_limit = m_optimizeTime );
+  }
+}
+
+
+template< class K >
+void
+edge_cut::io::Config< K >::printConfig()
+{
+  EDGE_LOG_INFO << "Printing runtime configuration:";
+  EDGE_LOG_INFO << "  Path to runtime config: " << m_xmlPath;
+  EDGE_LOG_INFO << "";
+  EDGE_LOG_INFO << "  Topography input:   " << m_topoIn;
+  EDGE_LOG_INFO << "  Topography output:  " << m_topoOut;
+  EDGE_LOG_INFO << "  Boundary output:    " << m_bdryOut;
+  EDGE_LOG_INFO << "  Bounding box:";
+  EDGE_LOG_INFO << "    X: " << m_bBox[0] << " to " << m_bBox[1];
+  EDGE_LOG_INFO << "    Y: " << m_bBox[2] << " to " << m_bBox[3];
+  EDGE_LOG_INFO << "    Z: " << m_bBox[4] << " to " << m_bBox[5];
+  EDGE_LOG_INFO << "  Meshing Criteria:";
+  EDGE_LOG_INFO << "    Edge Size:                " << m_edgeBase;
+  EDGE_LOG_INFO << "    Facet Size:               " << m_facetSizeBase;
+  EDGE_LOG_INFO << "    Approximation Error Size: " << m_facetApproxBase;
+  EDGE_LOG_INFO << "    Angle Bound:              " << m_angleBound;
+  EDGE_LOG_INFO << "  Mesh Optimization Options:";
+  EDGE_LOG_INFO << "    Time Limit: " << ( ( m_optimizeTime == 0 ) ? "none" : std::to_string((int)m_optimizeTime) + " sec" );
+  EDGE_LOG_INFO << "    Lloyd Smoother: " << ( ( m_lloydOpts == CGAL::parameters::no_lloyd() ) ? "no" : "yes" );
+  EDGE_LOG_INFO << "    ODT Smoother:   " << ( ( m_odtOpts == CGAL::parameters::no_odt() ) ? "no" : "yes" );
+  EDGE_LOG_INFO << "    Sliver Perturb: " << ( ( m_perturbOpts == CGAL::parameters::no_perturb() ) ? "no" : "yes" );
+  EDGE_LOG_INFO << "    Sliver Exuder:  " << ( ( m_exudeOpts == CGAL::parameters::no_exude() ) ? "no" : "yes" );
+  EDGE_LOG_INFO << "  Mesh Refinement Region:";
+  EDGE_LOG_INFO << "    Center:         ( "<< m_center.x() << ", " << m_center.y() << ", " << m_center.z() << " )";
+  EDGE_LOG_INFO << "    Inner Radius:   " << m_innerRad;
+  EDGE_LOG_INFO << "    Outer Radius:   " << m_outerRad;
+  EDGE_LOG_INFO << "    Scaling Factor: " << m_scale;
+  EDGE_LOG_INFO << "";
+
 }
