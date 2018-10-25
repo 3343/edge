@@ -105,7 +105,6 @@ then
   sudo ln -s /usr/local/bin/g++ /usr/bin
   sudo ln -s /usr/local/bin/gfortran /usr/bin
 
-  sudo yum install -y -q -e 0 gcc72-c++ gcc64-gfortran
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo ln -s /usr/local/bin/easy_install* /bin
   sudo yum install -y -q -e 0 scons
