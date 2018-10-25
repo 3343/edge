@@ -41,7 +41,7 @@ cd ..
 ########
 # HDF5 #
 ########
-wget https://www.hdfgroup.org/package/gzip/?wpdmdl=11810 -O hdf5.tar.gz
+wget https://www.hdfgroup.org/package/gzip/?wpdmdl=13048 -O hdf5.tar.gz
 mkdir hdf5
 tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
 cd hdf5

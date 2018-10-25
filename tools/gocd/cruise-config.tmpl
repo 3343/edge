@@ -278,13 +278,7 @@
               <!-- build container -->
               <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
-                <arg>vagrant ssh -c "sudo singularity build edge.simg /vagrant/edge.def"</arg>
-                <runif status="passed" />
-              </exec>
-              <!-- store container -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant ssh -c "cat /home/vagrant/edge.simg" > ./edge.simg</arg>
+                <arg>vagrant ssh -c "sudo singularity build /vagrant/edge.simg /vagrant/edge.def"</arg>
                 <runif status="passed" />
               </exec>
               <!-- destroy VM -->
@@ -310,13 +304,7 @@
               <!-- build container -->
               <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
-                <arg>vagrant ssh -c "sudo singularity build gocd.simg /vagrant/agent.def"</arg>
-                <runif status="passed" />
-              </exec>
-              <!-- store VM -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant ssh -c "cat /home/vagrant/gocd.simg" > ./gocd.simg</arg>
+                <arg>vagrant ssh -c "sudo singularity build /vagrant/gocd.simg /vagrant/agent.def"</arg>
                 <runif status="passed" />
               </exec>
               <!-- destroy VM -->
@@ -412,7 +400,7 @@
       <stage name="hdf5" fetchMaterials="false">
         <environmentvariables>
           <variable name="HDF5_LINK">
-            <value>https://www.hdfgroup.org/package/gzip/?wpdmdl=11810</value>
+            <value>https://www.hdfgroup.org/package/gzip/?wpdmdl=13048</value>
           </variable>
         </environmentvariables>
         <jobs>
