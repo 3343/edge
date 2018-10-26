@@ -46,7 +46,6 @@ else
   gcc -Ofast -march=native -fopenmp \
       -DNTIMES=1000 -DSTREAM_ARRAY_SIZE=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')000000 \
       stream.c -o stream-bench
-else
 fi
 sudo mv ./stream-bench /usr/local/bin
 
