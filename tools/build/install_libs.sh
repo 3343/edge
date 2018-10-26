@@ -27,6 +27,10 @@ EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $N
 
 cd ${EDGE_TMP_DIR}
 
+# detect compilers
+[[ $(type -P mpiicc)  ]] && export CC=mpiicc   || export CC=mpicc
+[[ $(type -P mpiicpc) ]] && export CXX=mpiicpc || export CXX=mpCC
+
 ########
 # zlib #
 ########
@@ -61,13 +65,13 @@ git submodule update
 
 # build libxsmm
 cd submodules/libxsmm
-sudo make BLAS=0 PREFIX=/usr/local install -j ${EDGE_N_BUILD_PROC} > /dev/null
+sudo make FORTRAN=0 BLAS=0 PREFIX=/usr/local install -j ${EDGE_N_BUILD_PROC} > /dev/null
 cd ../..
 
 # build moab
 cd submodules/moab
 LANG=C autoreconf -fi
-CC=mpicc CXX=mpiCC CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" ./configure --disable-debug --disable-optimize --enable-shared=no --with-mpi --enable-static=yes --with-pic=yes  --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" ./configure --disable-debug --disable-optimize --enable-shared=no --with-mpi --enable-static=yes --with-pic=yes  --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo make install > /dev/null
 cd ../..
