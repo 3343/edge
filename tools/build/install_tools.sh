@@ -150,7 +150,7 @@ then
   sed -i 's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/' ./silent.cfg
   sudo ./install.sh -s silent.cfg
 
-  echo "source /opt/intel/system_studio_*/bin/compilervars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
+  echo "source /opt/intel/bin/compilervars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
   echo "source /opt/intel/system_studio_*/vtune_amplifier/amplxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
   echo "source /opt/intel/system_studio_*/inspector/inspxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
 fi
