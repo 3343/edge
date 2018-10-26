@@ -1,5 +1,5 @@
-#!/bin/sh
-#
+#!/bin/bash
+##
 # Copyright (c) 2017-2018, Intel Corporation
 # Copyright (c) 2017-2018, Regents of the University of California
 #
@@ -26,6 +26,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+# @section DESCRIPTION
+# Builds EDGE in various versions.
+##
 
 # global build group variables
 if [[ -z $EDGE_DEPS ]]
@@ -73,10 +76,10 @@ if [[ -z $EDGE_CONFIGS ]]
 then
   if [[ "${EDGE_ARCH}" == "avx512" || "${EDGE_ARCH}" == "skx" || "${EDGE_ARCH}" == "knl" ]]
   then
-    EDGE_CONFIGS="2_64_1 2_32_1 2_64_8 2_32_16 3_64_1 3_32_1 3_64_8 3_32_16 4_64_1 4_32_1 4_64_8 4_32_16 5_64_1 5_32_1 5_64_8 5_32_16 6_64_1 6_32_1 6_64_8 6_32_16 7_64_1 7_32_1 7_64_8 7_32_16"
+    EDGE_CONFIGS="2_64_1 2_32_1 2_64_8 2_32_16 3_64_1 3_32_1 3_64_8 3_32_16 4_64_1 4_32_1 4_64_8 4_32_16 5_64_1 5_32_1 5_64_8 5_32_16"
   elif [[ "${EDGE_ARCH}" == "snb" || "${EDGE_ARCH}" == "hsw" ]]
   then
-    EDGE_CONFIGS="2_64_1 2_32_1 2_64_4 2_32_8 3_64_1 3_32_1 3_64_4 3_32_8 4_64_1 4_32_1 4_64_4 4_32_8 5_64_1 5_32_1 5_64_4 5_32_8 6_64_1 6_32_1 6_64_4 6_32_8 7_64_1 7_32_1 7_64_4 7_32_8"
+    EDGE_CONFIGS="2_64_1 2_32_1 2_64_4 2_32_8 3_64_1 3_32_1 3_64_4 3_32_8 4_64_1 4_32_1 4_64_4 4_32_8 5_64_1 5_32_1 5_64_4 5_32_8"
   else
     echo "unknown arch was specified!"
     exit -1
@@ -111,7 +114,7 @@ do
   rm -rf .sconsign.dblite
 
   # finally let's build the code
-  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=${EDGE_DEPS} zlib=${EDGE_DEPS} hdf5=${EDGE_DEPS} netcdf=${EDGE_DEPS} moab=${EDGE_DEPS} -j ${EDGE_PAR_COMPILE}
+  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=${EDGE_DEPS} zlib=${EDGE_DEPS} hdf5=${EDGE_DEPS} moab=${EDGE_DEPS} -j ${EDGE_PAR_COMPILE}
 
   # copy binary
   cp ./build/edge ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
