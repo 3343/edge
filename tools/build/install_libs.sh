@@ -29,7 +29,7 @@ cd ${EDGE_TMP_DIR}
 
 # detect compilers
 [[ $(type -P mpiicc)  ]] && export CC=mpiicc   || export CC=mpicc
-[[ $(type -P mpiicpc) ]] && export CXX=mpiicpc || export CXX=mpCC
+[[ $(type -P mpiicpc) ]] && export CXX=mpiicpc || export CXX=mpiCC
 
 ########
 # zlib #
