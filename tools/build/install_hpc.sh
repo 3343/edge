@@ -54,6 +54,7 @@ sudo mv ./stream-bench /usr/local/bin
 ###########
 wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.4.4.tar.gz -O osu.tar.gz
 mkdir osu; tar -xzf osu.tar.gz -C osu --strip-components=1
+cd osu
 ./configure
 make -j ${EDGE_N_BUILD_PROC}
 sudo make install\
@@ -61,6 +62,7 @@ for osu_type in collective one-sided pt2pt startup
 do
   echo "export PATH=/usr/local/libexec/osu-micro-benchmarks/mpi/${osu_type}:\${PATH}" | sudo tee --append /etc/bashrc
 done
+cd ..
 
 ############
 # Clean up #
