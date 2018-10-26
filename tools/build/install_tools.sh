@@ -82,7 +82,7 @@ then
   sudo yum install -y -q -e 0 python python-pip python3 python3-pip
   sudo pip install -q --egg scons
   sudo yum install -y -q -e 0 openmpi openmpi-devel
-  echo "export PATH=/usr/lib64/openmpi/bin/:$PATH" | sudo tee --append /etc/bashrc
+  echo "export PATH=/usr/lib64/openmpi/bin/:\$PATH" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
   # TODO: no gmsh RPM available
 elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]

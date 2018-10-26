@@ -25,11 +25,12 @@ EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
 EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
-cd ${EDGE_TMP_DIR}
-
 # detect compilers
 [[ $(type -P mpiicc)  ]] && export CC=mpiicc   || export CC=mpicc
 [[ $(type -P mpiicpc) ]] && export CXX=mpiicpc || export CXX=mpiCC
+
+
+cd ${EDGE_TMP_DIR}
 
 ########
 # zlib #
