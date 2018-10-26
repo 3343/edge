@@ -59,7 +59,7 @@ then
   sudo yum install -y -q -e 0 centos-release-scl
   sudo yum install -y -q -e 0 devtoolset-7
   source /opt/rh/devtoolset-7/enable
-  echo "source /opt/rh/devtoolset-7/enable" | sudo tee --append /etc/bashrc
+  echo "source /opt/rh/devtoolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
   # other
   sudo yum install -y -q -e 0 wget
   sudo yum install -y -q -e 0 unzip
@@ -72,7 +72,7 @@ then
   sudo yum install -y -q -e 0 libxml2-python.x86_64
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo yum install -y -q -e 0 openmpi openmpi-devel
-  echo "module load mpi" | sudo tee --append /etc/bashrc
+  echo "module load mpi > /dev/null" | sudo tee --append /etc/bashrc
   sudo yum install -y -q -e 0 cppcheck
   # TODO: no gmsh RPM available, move to custom install
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
@@ -108,7 +108,7 @@ then
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo ln -s /usr/local/bin/easy_install* /bin
   sudo yum install -y -q -e 0 scons
-  echo "module load mpi" | sudo tee --append /etc/bashrc
+  echo "module load mpi > /dev/null" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
   # TODO: no gmsh RPM available
 fi
@@ -130,13 +130,42 @@ then
   sudo yum install -y -q -e 0 llvm-toolset-7-clang
   sudo yum install -y -q -e 0 clang
   source /opt/rh/llvm-toolset-7/enable
-  echo "source /opt/rh/llvm-toolset-7/enable" | sudo tee --append /etc/bashrc
+  echo "source /opt/rh/llvm-toolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   echo "" > /dev/null # TODO: fix Clang support
 elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
   sudo yum install -y -q clang clang-develop
+fi
+
+#######################
+# Intel System Studio #
+#######################
+if [ -f ${EDGE_CURRENT_DIR}/intel-sw-tools-installation-bundle.zip ]
+then
+  unzip ${EDGE_CURRENT_DIR}/intel-sw-tools-installation-bundle.zip > /dev/null
+  tar -xzf system_studio*.tar.gz
+  cd system_studio*
+  sed -i 's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/' ./silent.cfg
+  sudo ./install.sh -s silent.cfg
+
+  echo "source /opt/intel/system_studio_*/bin/compilervars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
+  echo "source /opt/intel/system_studio_*/vtune_amplifier/amplxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
+  echo "source /opt/intel/system_studio_*/inspector/inspxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
+fi
+
+#############
+# Intel MPI #
+#############
+if [ -f ${EDGE_CURRENT_DIR}/l_mpi_*.tgz ]
+then
+  tar -xf ${EDGE_CURRENT_DIR}/l_mpi_*.tgz
+  cd l_mpi_*
+  sed -i 's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/' ./silent.cfg
+  sudo ./install.sh -s silent.cfg
+
+  echo "source /opt/intel/impi/*/intel64/bin/mpivars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
 fi
 
 ############
