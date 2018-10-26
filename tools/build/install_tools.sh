@@ -139,33 +139,24 @@ then
   sudo yum install -y -q clang clang-develop
 fi
 
-#######################
-# Intel System Studio #
-#######################
-if [ -f ${EDGE_CURRENT_DIR}/intel-sw-tools-installation-bundle.zip ]
+############################
+# Intel Parallel Studio XE #
+############################
+if [ -f ${EDGE_CURRENT_DIR}/parallel_studio_xe_*.tgz ]
 then
-  unzip ${EDGE_CURRENT_DIR}/intel-sw-tools-installation-bundle.zip > /dev/null
-  tar -xzf system_studio*.tar.gz
-  cd system_studio*
+  tar -xzf ${EDGE_CURRENT_DIR}/parallel_studio_xe_*.tgz
+  cd parallel_studio_xe_*
   sed -i 's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/' ./silent.cfg
+  sed -i 's/ACTIVATION_TYPE=exist_lic/ACTIVATION_TYPE=license_file/' ./silent.cfg
+  sed -i "s<#ACTIVATION_LICENSE_FILE=<ACTIVATION_LICENSE_FILE=$(ls ${EDGE_CURRENT_DIR}/*.lic)<" ./silent.cfg
+  sed -i "s/ARCH_SELECTED=ALL/ARCH_SELECTED=INTEL64/" ./silent.cfg
   sudo ./install.sh -s silent.cfg
+  cd ..
 
   echo "source /opt/intel/bin/compilervars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
-  echo "source /opt/intel/system_studio_*/vtune_amplifier/amplxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
-  echo "source /opt/intel/system_studio_*/inspector/inspxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
-fi
-
-#############
-# Intel MPI #
-#############
-if [ -f ${EDGE_CURRENT_DIR}/l_mpi_*.tgz ]
-then
-  tar -xf ${EDGE_CURRENT_DIR}/l_mpi_*.tgz
-  cd l_mpi_*
-  sed -i 's/ACCEPT_EULA=decline/ACCEPT_EULA=accept/' ./silent.cfg
-  sudo ./install.sh -s silent.cfg
-
   echo "source /opt/intel/impi/*/intel64/bin/mpivars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
+  echo "source /opt/intel/vtune_amplifier/amplxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
+  echo "source /opt/intel/inspector/inspxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
 fi
 
 ############
