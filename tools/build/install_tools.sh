@@ -46,7 +46,6 @@ then
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y dh-autoreconf
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y make
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y cmake
-  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y scons
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y git
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y python-pip python3-pip
@@ -67,10 +66,9 @@ then
   sudo yum install -y -q -e 0 dh-autoreconf
   sudo yum install -y -q -e 0 make
   sudo yum install -y -q -e 0 cmake
-  sudo yum install -y -q -e 0 scons
   sudo yum install -y -q -e 0 git
   sudo yum install -y -q -e 0 libxml2-python.x86_64
-  sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
+  sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools python-pip python34-pip
   sudo yum install -y -q -e 0 openmpi openmpi-devel
   echo "module load mpi > /dev/null" | sudo tee --append /etc/bashrc
   sudo yum install -y -q -e 0 cppcheck
@@ -80,7 +78,6 @@ then
   sudo yum groupinstall -y -q -e 0 "Development Tools"
   sudo yum install -y -q -e 0 cmake
   sudo yum install -y -q -e 0 python python-pip python3 python3-pip
-  sudo pip install -q --egg scons
   sudo yum install -y -q -e 0 openmpi openmpi-devel
   echo "export PATH=/usr/lib64/openmpi/bin/:\$PATH" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
@@ -107,7 +104,6 @@ then
 
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo ln -s /usr/local/bin/easy_install* /bin
-  sudo yum install -y -q -e 0 scons
   echo "module load mpi > /dev/null" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
   # TODO: no gmsh RPM available
@@ -198,14 +194,25 @@ fi
 ##################
 if [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
-  sudo easy_install-3.4 pip
-  sudo easy_install pip
-  sudo ln -s /usr/local/bin/pip* /bin
-  sudo pip install --upgrade pip setuptools
-  sudo pip3 install --upgrade pip setuptools
+  sudo pip install pip==18.0
+  sudo pip install --upgrade setuptools
+  sudo pip3 install pip==18.0
+  sudo pip install --upgrade setuptools
 fi
 sudo pip -q install xmltodict matplotlib netCDF4 h5py
 sudo pip3 -q install xmltodict matplotlib h5py
+
+
+#########
+# Scons #
+#########
+wget http://prdownloads.sourceforge.net/scons/scons-3.0.1.tar.gz -O scons.tar.gz
+sudo pip install -q scons
+mkdir scons
+tar -xzf scons.tar.gz -C scons --strip-components=1
+cd scons
+sudo python setup.py install
+cd ..
 
 ###########
 # Vagrant #
