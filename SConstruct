@@ -213,25 +213,25 @@ env = Environment( variables = vars )
 
 # exit in the case of unknown variables
 if vars.UnknownVariables():
-  print "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys())
+  print( "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys()) )
   exit(1)
 
 # generate help message
 Help( vars.GenerateHelpText(env) )
 
-print "##########################################################################"
-print "##############   ##############            ###############  ##############"
-print "##############   ###############         ################   ##############"
-print "#####            #####       #####      ######                       #####"
-print "#####            #####        #####    #####                         #####"
-print "#############    #####         #####  #####                  #############"
-print "#############    #####         #####  #####      #########   #############"
-print "#####            #####         #####  #####      #########           #####"
-print "#####            #####        #####    #####        ######           #####"
-print "#####            #####       #####      #####       #####            #####"
-print "###############  ###############         ###############   ###############"
-print "###############  ##############           #############    ###############"
-print "##########################################################################"
+print( "##########################################################################" )
+print( "##############   ##############            ###############  ##############" )
+print( "##############   ###############         ################   ##############" )
+print( "#####            #####       #####      ######                       #####" )
+print( "#####            #####        #####    #####                         #####" )
+print( "#############    #####         #####  #####                  #############" )
+print( "#############    #####         #####  #####      #########   #############" )
+print( "#####            #####         #####  #####      #########           #####" )
+print( "#####            #####        #####    #####        ######           #####" )
+print( "#####            #####       #####      #####       #####            #####" )
+print( "###############  ###############         ###############   ###############" )
+print( "###############  ##############           #############    ###############" )
+print( "##########################################################################" )
 
 # print welcome message
 print( 'Running build script of EDGE.' )
@@ -288,15 +288,15 @@ elif( 'clang' in compVer):
   compilers='clang'
 else:
   compilers='gnu'
-  print '  no compiler detected'
+  print( '  no compiler detected' )
 env['compilers']=compilers
-print '  using', compilers, 'as compiler suite'
+print( '  using', compilers, 'as compiler suite' )
 
 if env['PLATFORM'] == 'darwin':
   env['op_sys'] = 'macos'
 else:
   env['op_sys'] = 'linux'
-print '  using', env['op_sys'], 'as operating system'
+print( '  using', env['op_sys'], 'as operating system' )
 
 # use static linking for EDGE's direct dependencies (if possible) and dynamic for the rest
 if env['op_sys'] != 'macos': # not supported by mac's ld
@@ -441,7 +441,7 @@ if 'omp' in env['parallel']:
       rpath = os.path.dirname( rpath )
       env.Append( LINKFLAGS = [ '-Wl,-rpath='+rpath ] )
     except:
-      print '  failed getting dir of libiomp5.so, not setting rpath'
+      print( '  failed getting dir of libiomp5.so, not setting rpath' )
 
 # fix clang's confusion with old libstdc++ at runtime (no proper automatic rpath)
 if compilers == 'clang':
@@ -450,7 +450,7 @@ if compilers == 'clang':
     rpath = os.path.dirname( rpath )
     env.Append( LINKFLAGS = [ '-Wl,-rpath='+rpath ] )
   except:
-    print '  failed getting dir of libstdc++.so, not setting rpath'
+    print( '  failed getting dir of libstdc++.so, not setting rpath' )
 
 # enable mpi
 if 'mpi' in env['parallel']:
@@ -519,7 +519,7 @@ if env['inst']:
   env.Append( CPPDEFINES = ['PP_USE_INSTR'] )
 
 # add a new line
-print ''
+print( '' )
 env.Program( env['build_dir']+'/edge', source = env.sources )
 
 if env['tests']:
