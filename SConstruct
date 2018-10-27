@@ -290,13 +290,13 @@ else:
   compilers='gnu'
   print( '  no compiler detected' )
 env['compilers']=compilers
-print( '  using', compilers, 'as compiler suite' )
+print( '  using ' + compilers + ' as compiler suite' )
 
 if env['PLATFORM'] == 'darwin':
   env['op_sys'] = 'macos'
 else:
   env['op_sys'] = 'linux'
-print( '  using', env['op_sys'], 'as operating system' )
+print( '  using ' + env['op_sys'] + ' as operating system' )
 
 # use static linking for EDGE's direct dependencies (if possible) and dynamic for the rest
 if env['op_sys'] != 'macos': # not supported by mac's ld
