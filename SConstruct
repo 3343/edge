@@ -242,6 +242,9 @@ conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHea
 # include environment
 env['ENV'] = os.environ
 
+# enable default tool (otherwise SCons breaks on some systems)
+env.Tool('default')
+
 # adjust path variables
 for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab' ]:
   env[l_va] = adjustPath( env[l_va] )
