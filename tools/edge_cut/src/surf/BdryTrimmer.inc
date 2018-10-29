@@ -245,6 +245,9 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::trim()
     l_topoVert = l_topoVertNext;
   } while ( l_topoVert->point() != l_startVert->point() );
 
+
+  // The do-while loop above separates the boundary into two connected components;
+  // Now we simply delete the "upper" CC
   deleteConnCompsExcept( l_ccRep );
 
   return;
