@@ -74,6 +74,7 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath ) :
   m_angleBound      = l_root.child("refine").child("angle").text().as_double();
 
   m_optimizeTime = l_root.child("optimize").child("time_limit").text().as_double();
+  EDGE_CHECK_GE( m_optimizeTime, 0 );
 
   if ( !strcmp( l_root.child("optimize").child("lloyd").text().as_string(), "no" ) ) {
     m_lloydOpts = CGAL::parameters::no_lloyd();
