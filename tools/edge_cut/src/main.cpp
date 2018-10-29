@@ -22,7 +22,7 @@
  **/
 
 // Debug options
-// #include <gperftools/heap-profiler.h>      // For memory profiling
+// #include <gperftools/heap-profiler.h>      // For memory profiling TODO
 
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
@@ -75,8 +75,6 @@ int main( int i_argc, char *i_argv[] ) {
 
 
   // Create polyhedral domains for re-meshing
-  // The "re-meshing" form of make-mesh only works when the polyhedral domain
-  // is constructed from a vector of polyhedral surfaces (as far as I can tell)
   std::vector< Polyhedron* > l_topoVector( 1, &l_topoPoly );
   std::vector< Polyhedron* > l_bdryVector( 1, &l_bdryPoly );
   Mesh_domain l_topoDomain( l_topoVector.begin(), l_topoVector.end() );
