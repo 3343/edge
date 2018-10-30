@@ -20,10 +20,6 @@
  * @section DESCRIPTION
  * This is the main file of EDGEcut.
  **/
-
-// Debug options
-// #include <gperftools/heap-profiler.h>      // For memory profiling TODO
-
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
 #include "../../../submodules/pugixml/src/pugixml.hpp"
