@@ -202,8 +202,6 @@ env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas"
 if 'debug' in env['mode']:
   env.Append( CXXFLAGS = ['-g','-O0'] )
   env.Append( CPPDEFINES = ['CGAL_MESH_3_PROFILING', 'CGAL_MESH_3_VERBOSE'] )
-  # tcmalloc is required to use the gperftools heap profiler
-  env.Append( LINKFLAGS = ['-ltcmalloc'] )
 else:
   env.Append( CXXFLAGS = ['-O2'] )
 
