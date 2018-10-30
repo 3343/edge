@@ -103,10 +103,6 @@ edge_cut::surf::BdryTrimmer<Polyhedron>::getBdryHalfedge( Vertex_const i_v1, Ver
 }
 
 
-// Checks the relative orientation of the two meshes. Given a halfedge on the
-// boundary mesh which also represents an edge on the topography mesh,
-// determines whether that halfedge belongs to the face above the topography or
-// below.
 template< class Polyhedron >
 bool
 edge_cut::surf::BdryTrimmer<Polyhedron>::isPosOriented( Halfedge i_halfedge ) const
