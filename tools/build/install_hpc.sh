@@ -30,6 +30,7 @@ EDGE_DIST=$(cat /etc/*-release | grep PRETTY_NAME)
 # detect compilers
 [[ $(type -P mpiicc)  ]] && export CC=mpiicc   || export CC=mpicc
 [[ $(type -P mpiicpc) ]] && export CXX=mpiicpc || export CXX=mpiCC
+[[ $(type -P mpiifort) ]] && export F90=mpiifort || export CXX=mpifort
 
 cd ${EDGE_TMP_DIR}
 
@@ -57,11 +58,45 @@ mkdir osu; tar -xzf osu.tar.gz -C osu --strip-components=1
 cd osu
 ./configure
 make -j ${EDGE_N_BUILD_PROC}
-sudo make install\
+sudo make install
 for osu_type in collective one-sided pt2pt startup
 do
   echo "export PATH=/usr/local/libexec/osu-micro-benchmarks/mpi/${osu_type}:\${PATH}" | sudo tee --append /etc/bashrc
 done
+cd ..
+
+###########
+# SCORE-P #
+###########
+wget https://www.vi-hps.org/upload/packages/scorep/scorep-4.1.tar.gz -O scorep.tar.gz
+mkdir scorep; tar -xzf scorep.tar.gz -C scorep --strip-components=1
+cd scorep
+if [[ $(type -P mpiicc) ]] && [[ $(type -P mpiicpc) ]] && [[ $(type -P mpiifort) ]]
+then
+  ./configure --with-mpi=intel3 --with-nocross-compiler-suite=intel
+else
+  ./configure
+fi
+make -j ${EDGE_N_BUILD_PROC}
+sudo make install
+echo "export PATH=/opt/scorep/bin:\${PATH}" | sudo tee --append /etc/bashrc
+cd ..
+
+############
+# SCALASCA #
+############
+wget http://apps.fz-juelich.de/scalasca/releases/scalasca/2.4/dist/scalasca-2.4.tar.gz -O scalasca.tar.gz
+mkdir scalasca; tar -xzf scalasca.tar.gz -C scalasca --strip-components=1
+cd scalasca
+if [[ $(type -P mpiicc) ]] && [[ $(type -P mpiicpc) ]] && [[ $(type -P mpiifort) ]]
+then
+  ./configure --with-mpi=intel3 --with-nocross-compiler-suite=intel
+else
+  ./configure
+fi
+make -j ${EDGE_N_BUILD_PROC}
+sudo make install
+echo "export PATH=/opt/scalasca/bin:\${PATH}" | sudo tee --append /etc/bashrc
 cd ..
 
 ############
