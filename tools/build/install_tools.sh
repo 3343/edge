@@ -199,15 +199,13 @@ then
   sudo pip3 install pip==18.0
   sudo pip install --upgrade setuptools
 fi
-sudo pip -q install xmltodict matplotlib netCDF4 h5py
-sudo pip3 -q install xmltodict matplotlib h5py
+sudo pip3 -q install xmltodict matplotlib netCDF4 h5py
 
 
 #########
 # Scons #
 #########
 wget http://prdownloads.sourceforge.net/scons/scons-3.0.1.tar.gz -O scons.tar.gz
-sudo pip install -q scons
 mkdir scons
 tar -xzf scons.tar.gz -C scons --strip-components=1
 cd scons
