@@ -90,9 +90,9 @@ mkdir scalasca; tar -xzf scalasca.tar.gz -C scalasca --strip-components=1
 cd scalasca
 if [[ $(type -P mpiicc) ]] && [[ $(type -P mpiicpc) ]] && [[ $(type -P mpiifort) ]]
 then
-  ./configure --disable-static --enable-shared --with-mpi=intel --with-nocross-compiler-suite=intel
+  ./configure --with-libz=no --disable-static --enable-shared --with-mpi=intel --with-nocross-compiler-suite=intel
 else
-  ./configure --disable-static --enable-shared
+  ./configure --with-libz=no --disable-static --enable-shared
 fi
 make -j ${EDGE_N_BUILD_PROC}
 sudo make install
