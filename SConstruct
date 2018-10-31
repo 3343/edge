@@ -515,7 +515,7 @@ Import('env')
 # WARNING: leave scorep at the very bottom (outherwise it will be used in CheckLib-tests
 if env['inst']:
   # disable most of scorep
-  scorep = "scorep --thread=omp --nocompiler --user --static "
+  scorep = "scorep --thread=omp --nocompiler --user "
 
   env['CC']  = scorep+env['CC']
   env['CXX'] = scorep+env['CXX']
