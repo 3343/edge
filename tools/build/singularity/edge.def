@@ -28,7 +28,11 @@ MirrorURL: http://ftp.us.debian.org/debian/
 Include:
 
 %post
-  apt-get install -qq -o=Dpkg::Use-Pty=0 sudo
+  echo "deb http://http.us.debian.org/debian testing main non-free contrib"     >> /etc/apt/sources.list
+  echo "deb-src http://http.us.debian.org/debian testing main non-free contrib" >> /etc/apt/sources.list
+  apt-get update -qq -o=Dpkg::Use-Pty=0
+
+  apt-get install -qq -o=Dpkg::Use-Pty=0 -y sudo
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y curl
 
 bash <<EOF
