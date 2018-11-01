@@ -46,6 +46,8 @@ void edge::time::Manager::communicate() {
 }
 
 void edge::time::Manager::compute() {
+  PP_INSTR_FUN("compute")
+
   // scheduling and communicating workers have other duties, pure workers stay where they are
   bool l_schdCmm = m_shared.isSched() || m_shared.isComm();
 
