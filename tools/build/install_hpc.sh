@@ -19,7 +19,7 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Installation of HPC-related tools.
+# Installation of HPC-related tools and HPC-specific parameters.
 ##
 EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
@@ -98,6 +98,24 @@ make -j ${EDGE_N_BUILD_PROC}
 sudo make install
 echo "export PATH=/opt/scalasca/bin:\${PATH}" | sudo tee --append /etc/bashrc
 cd ..
+
+##################
+# NUMA balancing #
+##################
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" numa_balancing=disable\""/ /etc/default/grub
+  sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
+###############
+# Max C-state #
+###############
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" intel_idle.max_cstate=1\""/ /etc/default/grub
+  sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
 
 ############
 # Clean up #
