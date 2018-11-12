@@ -49,7 +49,6 @@ then
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y git
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y python-pip python3-pip
-  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y openmpi-bin libopenmpi-dev
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y cppcheck
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gmsh
 elif [[ ${EDGE_DIST} == *"CentOS"* ]]
@@ -69,8 +68,6 @@ then
   sudo yum install -y -q -e 0 git
   sudo yum install -y -q -e 0 libxml2-python.x86_64
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools python-pip python34-pip
-  sudo yum install -y -q -e 0 openmpi openmpi-devel
-  echo "module load mpi > /dev/null" | sudo tee --append /etc/bashrc
   sudo yum install -y -q -e 0 cppcheck
   # TODO: no gmsh RPM available, move to custom install
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
@@ -78,8 +75,6 @@ then
   sudo yum groupinstall -y -q -e 0 "Development Tools"
   sudo yum install -y -q -e 0 cmake
   sudo yum install -y -q -e 0 python python-pip python3 python3-pip
-  sudo yum install -y -q -e 0 openmpi openmpi-devel
-  echo "export PATH=/usr/lib64/openmpi/bin/:\$PATH" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
   # TODO: no gmsh RPM available
 elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
@@ -104,7 +99,6 @@ then
 
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo ln -s /usr/local/bin/easy_install* /bin
-  echo "module load mpi > /dev/null" | sudo tee --append /etc/bashrc
   # TODO: no cppcheck RPM available
   # TODO: no gmsh RPM available
 fi
@@ -135,6 +129,18 @@ then
   sudo yum install -y -q clang clang-develop
 fi
 
+###########
+# OpenMPI #
+###########
+wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.0.tar.bz2 -O openmpi.tar.bz2
+mkdir openmpi
+tar -xjf openmpi.tar.bz2 -C openmpi --strip-components=1
+cd openmpi
+./configure
+make -j ${EDGE_N_BUILD_PROC} > /dev/null
+sudo make install > /dev/null
+cd ..
+
 ############################
 # Intel Parallel Studio XE #
 ############################
@@ -150,7 +156,6 @@ then
   cd ..
 
   echo "source /opt/intel/bin/compilervars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
-  echo "source /opt/intel/impi/*/intel64/bin/mpivars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
   echo "source /opt/intel/vtune_amplifier/amplxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
   echo "source /opt/intel/inspector/inspxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
 fi
