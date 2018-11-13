@@ -105,7 +105,7 @@ cd ..
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" numa_balancing=disable\""/ /etc/default/grub
-  sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ###############
@@ -114,7 +114,15 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" intel_idle.max_cstate=1\""/ /etc/default/grub
-  sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
+####################
+# TSC clock source #
+####################
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo bash -c 'echo tsc > /sys/devices/system/clocksource/clocksource0/current_clocksource'
 fi
 
 ############
