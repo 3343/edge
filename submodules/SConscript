@@ -38,7 +38,8 @@ Import('conf')
 l_objects = []
 
 # add pugixml
-l_objects.append( env.Object( 'pugixml/src/pugixml.cpp' ) )
+l_objects.append( env.Object( 'pugixml/src/pugixml.cpp',
+                               CXXFLAGS = env['CXXFLAGS']+ ['-Wno-error'] ) )
 
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
