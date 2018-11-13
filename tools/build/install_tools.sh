@@ -136,7 +136,7 @@ wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.0.tar.bz2 -
 mkdir openmpi
 tar -xjf openmpi.tar.bz2 -C openmpi --strip-components=1
 cd openmpi
-./configure
+./configure --enable-static=yes --enable-mpi1-compatibility > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo make install > /dev/null
 cd ..
@@ -154,10 +154,6 @@ then
   sed -i "s/ARCH_SELECTED=ALL/ARCH_SELECTED=INTEL64/" ./silent.cfg
   sudo ./install.sh -s silent.cfg
   cd ..
-
-  echo "source /opt/intel/bin/compilervars.sh intel64 > /dev/null" | sudo tee --append /etc/bashrc
-  echo "source /opt/intel/vtune_amplifier/amplxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
-  echo "source /opt/intel/inspector/inspxe-vars.sh > /dev/null" | sudo tee --append /etc/bashrc
 fi
 
 ############
