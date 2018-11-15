@@ -195,6 +195,9 @@ vars.AddVariables(
   PackageVariable( 'moab',
                    'Enables the use of MOAB (The Mesh-Oriented datABase) and thus support for unstructured meshes if set. Otherwise regular meshes are used.',
                    'no' ),
+  BoolVariable( 'easylogging',
+                'Enables the use of Easylogging.',
+                True ),
   BoolVariable( 'inst',
                 'enable instrumentation',
                 False )

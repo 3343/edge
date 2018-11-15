@@ -26,6 +26,7 @@
 #include <cassert>
 #include <sys/types.h>
 #include <cstring>
+#include <algorithm>
 #include "logging.h"
 #include "FileSystem.hpp"
 #include "monitor/instrument.hpp"

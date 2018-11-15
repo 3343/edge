@@ -331,7 +331,7 @@ TEST_CASE( "Inside/outside derivation: Points with respect to tet4 elements", "[
   l_pt[0] = 0.45; l_pt[1] = 0.45; l_pt[2] = 0.001;
   REQUIRE( edge::linalg::Geom::inside( TET4, (real_mesh*) l_veCrds, l_pt ) == 1 );
 
-  l_pt[0] = 0.0001; l_pt[1] = 0.99; l_pt[2] = 0.00001;
+  l_pt[0] = 0.001; l_pt[1] = 0.99; l_pt[2] = 0.0001;
   REQUIRE( edge::linalg::Geom::inside( TET4, (real_mesh*) l_veCrds, l_pt ) == 1 );
 
   l_pt[0] = -0.0001; l_pt[1] = 0.99; l_pt[2] = 0.00001;

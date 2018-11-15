@@ -26,6 +26,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <functional>
 #include "submodules/wykobi/wykobi.hpp"
 #include "constants.hpp"
 #include "io/logging.h"

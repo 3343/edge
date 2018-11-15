@@ -80,7 +80,7 @@ if env['tests']:
              'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
              'mesh/regular/Base.test.cpp',
-             'mesh/common.test.cpp',
+             'parallel/Shared.test.cpp',
              'parallel/Mpi.test.cpp',
              'linalg/Geom.test.cpp',
              'linalg/Matrix.test.cpp',

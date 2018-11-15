@@ -225,7 +225,7 @@ void edge::dg::Basis::getMassInvDense( int_md     i_nModes,
                                        real_base *o_matrix,
                                        bool       i_rowMajor ) const {
   // check that we have enough basis functions
-  CHECK( i_nModes <= m_nBaseFuncs );
+  EDGE_CHECK( i_nModes <= m_nBaseFuncs );
 
   // non-zero entry of stiffness matrix
   unsigned int l_nzId = 0;

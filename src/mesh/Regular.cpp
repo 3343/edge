@@ -37,12 +37,12 @@ edge::mesh::Regular::Regular( Type   i_elementType,
  m_dY(0),
  m_dZ(0) {
   // check for valid requests
-  CHECK( i_sizeX > 0 );
-  CHECK( i_sizeY > 0 || i_elementType == Line );
-  CHECK( i_sizeZ > 0 || i_elementType != Hexahedral );
-  CHECK( i_nX > 1                             || i_elementType != Line          );
-  CHECK( ( i_nX > 1 && i_nY > 1 )             || i_elementType != Quadrilateral );
-  CHECK( ( i_nX > 2 && i_nY > 2 && i_nZ > 2 ) || i_elementType != Hexahedral    );
+  EDGE_CHECK( i_sizeX > 0 );
+  EDGE_CHECK( i_sizeY > 0 || i_elementType == Line );
+  EDGE_CHECK( i_sizeZ > 0 || i_elementType != Hexahedral );
+  EDGE_CHECK( i_nX > 1                             || i_elementType != Line          );
+  EDGE_CHECK( ( i_nX > 1 && i_nY > 1 )             || i_elementType != Quadrilateral );
+  EDGE_CHECK( ( i_nX > 2 && i_nY > 2 && i_nZ > 2 ) || i_elementType != Hexahedral    );
 
   // store the data
   m_elementType = i_elementType;

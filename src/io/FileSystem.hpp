@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,13 +21,14 @@
  * Interactions with the file system.
  **/
 
-#ifndef FILE_SYSTEM_HPP_
-#define FILE_SYSTEM_HPP_
+#ifndef EDGE_FILE_SYSTEM_HPP_
+#define EDGE_FILE_SYSTEM_HPP_
 
 #include "parallel/Mpi.h"
 #include <sys/stat.h>
 #include "io/logging.h"
 #include <unistd.h>
+#include <cstring>
 
 namespace edge {
   namespace io {

@@ -25,6 +25,7 @@
 
 #include "parallel/Mpi.h"
 #include "constants.hpp"
+#include <fstream>
 #include <io/logging.h>
 
 #ifdef PP_USE_MEMKIND
@@ -189,7 +190,7 @@ class edge::data::common {
 #else
         l_err = (posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
 #endif
-        CHECK(!l_err) << "The malloc failed (bytes: " << i_size << ", alignment: " << i_alignment << ").";
+        EDGE_CHECK(!l_err) << "The malloc failed (bytes: " << i_size << ", alignment: " << i_alignment << ").";
 
         return l_ptrBuffer;
       }

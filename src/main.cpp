@@ -25,7 +25,9 @@
 #include "parallel/Shared.h"
 
 #include "io/logging.h"
+#ifdef PP_USE_EASYLOGGING
 INITIALIZE_EASYLOGGINGPP
+#endif
 
 #include <limits>
 #include <string>

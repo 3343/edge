@@ -23,6 +23,7 @@
 #include "logging.h"
 
 void edge::io::logging::config() {
+#ifdef PP_USE_EASYLOGGING
   el::Configurations l_conf;
   l_conf.setToDefault();
 
@@ -35,4 +36,5 @@ void edge::io::logging::config() {
   l_conf.setGlobally(el::ConfigurationType::Format, "%datetime %rank-%omp_thread %level %msg");
   l_conf.setGlobally(el::ConfigurationType::ToFile, "false" );
   el::Loggers::reconfigureAllLoggers(l_conf);
+#endif
 }
