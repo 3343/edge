@@ -113,8 +113,12 @@ if env['tests']:
 
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )
+  l_cxxflags = ['-DPP_UNIT_TEST']
+  if  env['compilers'] != 'intel':
+    l_cxxflags.append( '-Wno-keyword-macro' )
+
   for l_test in l_tests:
-    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+['-Wno-keyword-macro', '-DPP_UNIT_TEST'] ) )
+    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+l_cxxflags ) )
 
 # prepend main file to edge
 env.sources = env.Object( 'main.cpp' ) + env.sources
