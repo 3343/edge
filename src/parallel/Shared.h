@@ -36,11 +36,10 @@ namespace edge {
 }
 
 class edge::parallel::Shared {
-  private:
+  public:
     //! number of workers
     int m_nWrks;
 
-  public:
     // per-thread status of a work package
     typedef enum {
       RDY, // ready
