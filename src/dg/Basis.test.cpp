@@ -43,7 +43,7 @@ TEST_CASE( "Tests the precomputation of the basis values and quad points.", "[ba
 
     for( int l_lo = 0; l_lo < (l_pq+1) * (l_pq+1) * (l_pq+1); l_lo++ ) {
       for( unsigned short l_pb = 0; l_pb < 2+1; l_pb++ ) {
-        unsigned short l_nModes = -1;
+        unsigned short l_nModes = std::numeric_limits< unsigned short >::max();
         if(      l_pb == 0 ) l_nModes = 1;
         else if( l_pb == 1 ) l_nModes = 4;
         else if( l_pb == 2 ) l_nModes = 10;
