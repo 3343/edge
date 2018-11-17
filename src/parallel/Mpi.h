@@ -76,6 +76,12 @@ class edge::parallel::Mpi {
 
       //! pointer-sized id of the group, defaults to 0 if not set
       std::uintptr_t id;
+
+      //! send status of the time groups: -1 undefined, 0 if ongoing, 1 if finished
+      std::vector< int > sendTest;
+
+      //! receive status of the time groups: -1 undefined, 0 if ongoing, 1 if finished
+      std::vector< int > recvTest;
     } t_grp;
 
     //! mpi groups

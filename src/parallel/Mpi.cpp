@@ -24,6 +24,7 @@
 #include "Mpi.h"
 #include "io/logging.h"
 #include <set>
+#include "monitor/instrument.hpp"
 
 void edge::parallel::Mpi::start( int i_argc, char *i_argv[] ) {
       // set default values for non-mpi runs
@@ -58,6 +59,14 @@ void edge::parallel::Mpi::init( int_tg             i_tgFirst,
                                 t_grp            & o_grp ) {
   // set identifier
   o_grp.id = i_id;
+
+  // set statuses to undefined
+  o_grp.sendTest.resize( i_enLay.timeGroups.size() );
+  o_grp.recvTest.resize( i_enLay.timeGroups.size() );
+  for( int_tg l_tg = 0; l_tg < i_enLay.timeGroups.size(); l_tg++ ) {
+    o_grp.sendTest[l_tg] = -1;
+    o_grp.recvTest[l_tg] = -1;
+  }
 
   // prepare the messages
   o_grp.send.resize( i_enLay.timeGroups.size() );
@@ -316,6 +325,11 @@ void edge::parallel::Mpi::beginSends( int_tg         i_tg,
   // ignore command, if group does not exist
   if( i_mg == std::numeric_limits< unsigned short >::max() ) return;
 
+#ifdef PP_USE_INSTR
+  std::string l_regName = "send_" + std::to_string(i_tg) + "_" + std::to_string(i_mg);
+  PP_INSTR_REG_NAME_BEG( l_regName.c_str() )
+#endif
+
 #ifdef PP_USE_MPI
   for( std::size_t l_msg = 0; l_msg < m_grps[i_mg].send[i_tg].size(); l_msg++ ) {
     // get message
@@ -343,6 +357,9 @@ void edge::parallel::Mpi::beginSends( int_tg         i_tg,
     }
   }
 #endif
+
+  // set send status of the group to ongoing
+  m_grps[i_mg].sendTest[i_tg] = 0;
 }
 
 void edge::parallel::Mpi::beginRecvs( int_tg         i_tg,
@@ -377,6 +394,9 @@ void edge::parallel::Mpi::beginRecvs( int_tg         i_tg,
     }
   }
 #endif
+
+  // set recv status of the group to ongoing
+  m_grps[i_mg].recvTest[i_tg] = 0;
 }
 
 bool edge::parallel::Mpi::finSends( int_tg         i_tg,
@@ -396,6 +416,16 @@ bool edge::parallel::Mpi::finSends( int_tg         i_tg,
     if( l_send->test == 0 ) return false;
   }
 #endif
+
+#ifdef PP_USE_INSTR
+  if( m_grps[i_mg].sendTest[i_tg] == 0 ) {
+    std::string l_regName = "send_" + std::to_string(i_tg) + "_" + std::to_string(i_mg);
+    PP_INSTR_REG_NAME_END( l_regName.c_str() )
+  }
+#endif
+
+  // set send status of the group to finished
+  m_grps[i_mg].sendTest[i_tg] = 1;
 
   return true;
 }
@@ -417,6 +447,9 @@ bool edge::parallel::Mpi::finRecvs( int_tg         i_tg,
     if( l_recv->test == 0 ) return false;
   }
 #endif
+
+  // set recv status of the group to finished
+  m_grps[i_mg].recvTest[i_tg] = 1;
 
   return true;
 }

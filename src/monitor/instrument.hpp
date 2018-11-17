@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,8 +21,8 @@
  * Instrumentation macros.
  **/
 
-#ifndef INSTRUMENT_H_
-#define INSTRUMENT_H_
+#ifndef EDGE_MONITOR_INSTRUMENT_H_
+#define EDGE_MONITOR_INSTRUMENT_H_
 
 #ifdef PP_USE_INSTR
 
@@ -41,6 +41,8 @@ class gccDisableUnusedScoreP {
 #define PP_INSTR_REG_BEG(str1,str2)    SCOREP_USER_REGION_BEGIN(str1,str2,SCOREP_USER_REGION_TYPE_COMMON)
 #define PP_INSTR_PAR_UINT64(str1,str2) SCOREP_USER_PARAMETER_UINT64(str1,str2)
 #define PP_INSTR_REG_END(str)          SCOREP_USER_REGION_END(str)
+#define PP_INSTR_REG_NAME_BEG(str)     SCOREP_USER_REGION_BY_NAME_BEGIN(str,SCOREP_USER_REGION_TYPE_COMMON)
+#define PP_INSTR_REG_NAME_END(str)     SCOREP_USER_REGION_BY_NAME_END(str)
 
 #else
 
@@ -50,6 +52,8 @@ class gccDisableUnusedScoreP {
 #define PP_INSTR_REG_BEG(str1,str2)
 #define PP_INSTR_PAR_UINT64(str1,str2)
 #define PP_INSTR_REG_END(str)
+#define PP_INSTR_REG_NAME_BEG(str)
+#define PP_INSTR_REG_NAME_END(str)
 
 #endif
 
