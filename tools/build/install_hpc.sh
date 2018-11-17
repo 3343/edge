@@ -24,6 +24,7 @@
 EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
 EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
+EDGE_N_HYPER_THREADS=$(cat /proc/cpuinfo | grep processor | wc -l)
 
 EDGE_DIST=$(cat /etc/*-release | grep PRETTY_NAME)
 
@@ -83,7 +84,7 @@ echo "export PATH=/opt/scorep/bin:\${PATH}" | sudo tee --append /etc/bashrc
 cd ..
 
 ############
-# SCALASCA #
+# Scalasca #
 ############
 wget http://apps.fz-juelich.de/scalasca/releases/scalasca/2.4/dist/scalasca-2.4.tar.gz -O scalasca.tar.gz
 mkdir scalasca; tar -xzf scalasca.tar.gz -C scalasca --strip-components=1
@@ -99,18 +100,18 @@ sudo make install
 echo "export PATH=/opt/scalasca/bin:\${PATH}" | sudo tee --append /etc/bashrc
 cd ..
 
-##################
-# NUMA balancing #
-##################
+##########################
+# Disable NUMA balancing #
+##########################
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" numa_balancing=disable\""/ /etc/default/grub
   sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
-###############
-# Max C-state #
-###############
+#####################
+# Limit max C-state #
+#####################
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" intel_idle.max_cstate=1\""/ /etc/default/grub
@@ -123,6 +124,44 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo bash -c 'echo tsc > /sys/devices/system/clocksource/clocksource0/current_clocksource'
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" clocksource=tsc tsc=reliable\""/ /etc/default/grub
+  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
+######################################################################
+# Reserved kernel memory (ENA for high rate of packet buffer allocs) #
+######################################################################
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo bash -c "echo vm.min_free_kbytes = 1048576 >> /etc/sysctl.conf"
+  sudo sysctl -p
+fi
+
+###############################################
+# Disable irqbalance (distributed interrupts) #
+###############################################
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo service irqbalance stop
+  sudo chkconfig irqbalance off
+fi
+
+###########################################################
+# Boot tickless, except for the first core of each socket #
+###########################################################
+if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+then
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nohz_full=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
+##############################################
+# Hide all but first core per socket from OS #
+##############################################
+if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+then
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ############
