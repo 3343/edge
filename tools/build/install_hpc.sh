@@ -106,7 +106,7 @@ cd ..
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" numa_balancing=disable\""/ /etc/default/grub
-  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 #####################
@@ -115,7 +115,7 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" intel_idle.max_cstate=1\""/ /etc/default/grub
-  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ####################
@@ -125,7 +125,7 @@ if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo bash -c 'echo tsc > /sys/devices/system/clocksource/clocksource0/current_clocksource'
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" clocksource=tsc tsc=reliable\""/ /etc/default/grub
-  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ######################################################################
@@ -152,16 +152,16 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nohz_full=1-17,19-35,37-53,55-71\""/ /etc/default/grub
-  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
-##############################################
-# Hide all but first core per socket from OS #
-##############################################
+##################################################################
+# Isolate all but the first core per socket from OS disturbances #
+##################################################################
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-17,19-35,37-53,55-71\""/ /etc/default/grub
-  sudo /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ############
