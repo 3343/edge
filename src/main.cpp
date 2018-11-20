@@ -115,7 +115,8 @@ int main( int i_argc, char *i_argv[] ) {
   l_shared.print();
 #endif
 
-  // print memory statistics
+  // print memory information
+  edge::data::common::printHugePages();
   edge::data::common::printNumaSizes();
   edge::data::common::printMemStats();
 

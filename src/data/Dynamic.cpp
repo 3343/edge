@@ -25,17 +25,20 @@
 
 edge::data::Dynamic::~Dynamic() {
   for( std::size_t l_me = 0; l_me < m_mem.size(); l_me++ ) {
-    common::release( m_mem[l_me], m_hbw[l_me] );
+    common::release( m_mem[l_me], m_hbw[l_me], m_huge[l_me] );
   }
 }
 
 void* edge::data::Dynamic::allocate( std::size_t i_size,
                                      std::size_t i_alignment,
-                                     bool        i_hbw ) {
+                                     bool        i_hbw,
+                                     bool        i_huge ) {
   // allocate memory and store pointer
-  m_mem.push_back( common::allocate( i_size, i_alignment, i_hbw ) );
-  // store mem-type
+  m_mem.push_back( common::allocate( i_size, i_alignment, i_hbw, i_huge ) );
+  // store hbw-info
   m_hbw.push_back( i_hbw );
+  // store huge pages info
+  m_huge.push_back( i_huge );
 
   return m_mem.back();
 }

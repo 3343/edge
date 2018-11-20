@@ -367,6 +367,10 @@ if( env['xsmm'] ):
 # forward number of forward runs to compiler
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 
+# enable libhugetlbfs if available (dynamic because static misses functions, e.g., gethugepagesize())
+if( conf.CheckLibWithHeaderFlags('hugetlbfs', '', 'CXX', [], [], True) ):
+  env.AppendUnique( CPPDEFINES =['PP_USE_HUGETLBFS'] )
+
 # enable libnuma if available
 if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
    conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], False):

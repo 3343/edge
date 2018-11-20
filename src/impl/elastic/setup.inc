@@ -131,6 +131,7 @@
                                             l_spSizes,
                                             l_internal.m_elementChars,
                                             ALIGNMENT.BASE.HEAP,
+                                            true,
                                             true );
 
   l_internal.m_globalShared6[0] = l_raw;
