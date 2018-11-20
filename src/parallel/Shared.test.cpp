@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017, Regents of the University of California
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,27 +18,44 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Dynamic memory allocations, bookeeping and memory release on destruction.
+ * Unit tests of the shared memory implementation.
  **/
+#include <catch.hpp>
 
-#include "Dynamic.h"
+#ifdef PP_USE_OMP
+#include <omp.h>
+#endif
 
-edge::data::Dynamic::~Dynamic() {
-  for( std::size_t l_me = 0; l_me < m_mem.size(); l_me++ ) {
-    common::release( m_mem[l_me], m_hbw[l_me], m_huge[l_me] );
+#define private public
+#include "Shared.h"
+#undef private
+
+TEST_CASE( "NUMA-aware initialization", "[numaInit]" ) {
+
+  // our test arrays, which are have to be set to zero
+  float l_arr1[73*31];
+  for( unsigned int l_en = 0; l_en < 73*31; l_en++ ) l_arr1[l_en] = float(1);
+  float l_arr2[3] = {1, 1, 1};
+
+  // open OMP-region if required
+#ifdef PP_USE_OMP
+#pragma omp parallel
+#endif
+  {
+
+#ifdef PP_USE_OMP
+    edge::parallel::g_thread = omp_get_thread_num();
+    if( edge::parallel::g_thread == 0 ) edge::parallel::g_nThreads = omp_get_num_threads();
+#else
+    edge::parallel::g_thread   = 0;
+    edge::parallel::g_nThreads = 1;
+#endif
+
+    edge::parallel::Shared::numaInit( edge::parallel::g_nThreads, 73*31, l_arr1 );
+    edge::parallel::Shared::numaInit( edge::parallel::g_nThreads, 3,     l_arr2 );
   }
-}
 
-void* edge::data::Dynamic::allocate( std::size_t i_size,
-                                     std::size_t i_alignment,
-                                     bool        i_hbw,
-                                     bool        i_huge ) {
-  // allocate memory and store pointer
-  m_mem.push_back( common::allocate( i_size, i_alignment, i_hbw, i_huge ) );
-  // store hbw-info
-  m_hbw.push_back( i_hbw );
-  // store huge pages info
-  m_huge.push_back( i_huge );
-
-  return m_mem.back();
+  // check the result
+  for( unsigned int l_en = 0; l_en < 73*31; l_en++ )  REQUIRE( l_arr1[l_en] == float(0) );
+  for( unsigned int l_en = 0; l_en <     3; l_en++ )  REQUIRE( l_arr2[l_en] == float(0) );
 }

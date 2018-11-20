@@ -195,6 +195,9 @@ vars.AddVariables(
   PackageVariable( 'moab',
                    'Enables the use of MOAB (The Mesh-Oriented datABase) and thus support for unstructured meshes if set. Otherwise regular meshes are used.',
                    'no' ),
+  BoolVariable( 'easylogging',
+                'Enables the use of Easylogging.',
+                True ),
   BoolVariable( 'inst',
                 'enable instrumentation',
                 False )
@@ -363,6 +366,10 @@ if( env['xsmm'] ):
 
 # forward number of forward runs to compiler
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
+
+# enable libhugetlbfs if available (dynamic because static misses functions, e.g., gethugepagesize())
+if( conf.CheckLibWithHeaderFlags('hugetlbfs', '', 'CXX', [], [], True) ):
+  env.AppendUnique( CPPDEFINES =['PP_USE_HUGETLBFS'] )
 
 # enable libnuma if available
 if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\

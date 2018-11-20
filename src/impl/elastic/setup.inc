@@ -131,6 +131,7 @@
                                             l_spSizes,
                                             l_internal.m_elementChars,
                                             ALIGNMENT.BASE.HEAP,
+                                            true,
                                             true );
 
   l_internal.m_globalShared6[0] = l_raw;
@@ -207,16 +208,66 @@ else {
 
 // perform NUMA-aware zero-init of DOFs and tDOFs
 #ifdef PP_USE_OMP
+#pragma omp parallel
+#endif
+{
+  // offset
+  std::size_t l_off = 0;
+  // number of floating point entries per element
+  std::size_t l_nEnPerEl = N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS;
+
+  for( unsigned short l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
+    // inner
+    std::size_t l_nEns  = l_enLayouts[2].timeGroups[l_tg].inner.size;
+                l_nEns *= l_nEnPerEl;
+
+    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
+                                      l_nEns,
+                                      l_internal.m_elementModePrivate1[0][0][0]+l_off );
+
+    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
+                                      l_nEns,
+                                      l_internal.m_globalShared6[0][0][0][0]+l_off );
+
+    l_off += l_nEns;
+
+    // send
+    l_nEns  = l_enLayouts[2].timeGroups[l_tg].nEntsOwn;
+    l_nEns -= l_enLayouts[2].timeGroups[l_tg].inner.size;
+    l_nEns *= l_nEnPerEl;
+
+    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
+                                      l_nEns,
+                                      l_internal.m_elementModePrivate1[0][0][0]+l_off );
+
+    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
+                                      l_nEns,
+                                      l_internal.m_globalShared6[0][0][0][0]+l_off );
+    l_off += l_nEns;
+
+    // recv
+    l_nEns = l_enLayouts[2].timeGroups[l_tg].nEntsNotOwn;
+    l_nEns *= l_nEnPerEl;
+    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
+                                      l_nEns,
+                                      l_internal.m_elementModePrivate1[0][0][0]+l_off );
+
+    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
+                                      l_nEns,
+                                      l_internal.m_globalShared6[0][0][0][0]+l_off );
+    l_off += l_nEns;
+  }
+}
+
+// init buffer DOFs
+// TODO: Add NUMA init for limiter and LTS
+#ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
 for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
-  EDGE_CHECK( l_internal.m_globalShared6[0] != nullptr );
-
   for( int_qt l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
     for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
       for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
-        l_internal.m_elementModePrivate1[l_el][l_qt][l_md][l_ru] = 0;
-        l_internal.m_globalShared6[0][l_el][l_qt][l_md][l_ru] = 0;
         if( l_internal.m_globalShared6[1][l_el] != nullptr )
           l_internal.m_globalShared6[1][l_el][l_qt][l_md][l_ru] = 0;
       }

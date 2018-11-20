@@ -36,11 +36,10 @@ namespace edge {
 }
 
 class edge::parallel::Shared {
-  private:
+  public:
     //! number of workers
     int m_nWrks;
 
-  public:
     // per-thread status of a work package
     typedef enum {
       RDY, // ready
@@ -316,6 +315,40 @@ class edge::parallel::Shared {
      * @param i_status status to reset to.
      **/
     void resetStatus( t_status i_status );
+
+    /**
+     * @brief Performs NUMA-aware zero-initialization of the given array through first-touch.
+     *        Should be called within an OpenMP region.
+     *
+     * @param i_nWrks number of workers.
+     * @param i_nEns number of entries in the given array, which will be split equally among the available workers. Remainders will be added to the first workers.
+     * @param o_arr array, which will be initialized.
+     *
+     * @paramt TL_T_EN type of the array entries.
+     */
+    template< typename TL_T_EN >
+    static void numaInit( unsigned int        i_nWrks,
+                          std::size_t const   i_nEns,
+                          TL_T_EN           * o_arr ) {
+      // return early, if if this is not a worker.
+      if( g_thread >= int(i_nWrks) ) return;
+
+      // split among the workers
+      std::size_t l_split = i_nEns / std::size_t(i_nWrks);
+      std::size_t l_rem   = i_nEns % std::size_t(i_nWrks);
+
+      // derive start position of the calling worker in the array
+      TL_T_EN * l_arr = o_arr;
+      l_arr += l_split * g_thread;
+      if( l_rem > 0 ) l_arr += std::min( int(l_rem), g_thread );
+
+      // derive number of entries under control of the worker
+      std::size_t l_nEns = l_split;
+      if( g_thread < int(l_rem) ) l_nEns++;
+
+      // perform NUMA-aware init
+      for( std::size_t l_en = 0; l_en < l_nEns; l_en++ ) l_arr[l_en] = 0;
+    }
 };
 
 #endif

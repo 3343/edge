@@ -947,10 +947,12 @@ TEST_CASE_METHOD( RegTet, "Regular meshes with tets: Element chars", "[regTet][e
 }
 
 TEST_CASE_METHOD( RegTet, "Regular meshes with tets: Init", "[regTet][init]" ) {
+#ifdef PP_USE_EASYLOGGING
   // disable info logger
   el::Configurations l_conf;
   l_conf.parseFromText("* INFO:\n ENABLED = false");
   el::Loggers::reconfigureLogger("default", l_conf);
+#endif
 
   // create tet-object
   edge::mesh::regular::Tet l_tet;
@@ -1066,6 +1068,8 @@ TEST_CASE_METHOD( RegTet, "Regular meshes with tets: Init", "[regTet][init]" ) {
   REQUIRE( l_tet.m_elLayout.timeGroups[0].receive[5].size  == 66*19*2 );
 
   // reset the logger
+#ifdef PP_USE_EASYLOGGING
   l_conf.setToDefault();
   el::Loggers::reconfigureLogger("default", l_conf);
+#endif
 }

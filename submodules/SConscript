@@ -38,7 +38,8 @@ Import('conf')
 l_objects = []
 
 # add pugixml
-l_objects.append( env.Object( 'pugixml/src/pugixml.cpp' ) )
+l_objects.append( env.Object( 'pugixml/src/pugixml.cpp',
+                               CXXFLAGS = env['CXXFLAGS']+ ['-Wno-error'] ) )
 
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
@@ -110,12 +111,14 @@ env.sources.append( env.Object( 'visit_writer/visit_writer.cpp',
                                            ['-Wno-format-security'] ) )
 
 # create easylogging separately to get around shadow warnings
-l_def = ['ELPP_NO_DEFAULT_LOG_FILE']
-if 'omp' in env['parallel']: l_def=l_def+['ELPP_THREAD_SAFE']
-env.sources.append( env.Object( 'easylogging/src/easylogging++.cc',
-                                CXXFLAGS   = env['CXXFLAGS']+
-                                             ['-Wno-shadow'],
-                                CPPDEFINES = l_def ) )
+if env['easylogging'] != False:
+  env.AppendUnique( CPPDEFINES=['PP_USE_EASYLOGGING'] )
+  l_def = ['ELPP_NO_DEFAULT_LOG_FILE']
+  if 'omp' in env['parallel']: l_def=l_def+['ELPP_THREAD_SAFE']
+  env.sources.append( env.Object( 'easylogging/src/easylogging++.cc',
+                                  CXXFLAGS   = env['CXXFLAGS']+
+                                              ['-Wno-shadow'],
+                                  CPPDEFINES = l_def ) )
 
 # compile numerical libs separately
 l_numLibs = [ 'FastGL/fastgl.cpp' ]

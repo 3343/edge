@@ -26,6 +26,7 @@
 
 #include <cassert>
 #include <vector>
+#include <array>
 #include "constants.hpp"
 #include "linalg/Matrix.h"
 

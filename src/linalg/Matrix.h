@@ -31,6 +31,7 @@
 #include <sstream>
 #include <io/logging.h>
 #include <cmath>
+#include <limits>
 #include "constants.hpp"
 
 #ifdef PP_T_KERNELS_XSMM_DENSE_SINGLE

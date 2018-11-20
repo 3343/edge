@@ -23,7 +23,9 @@
 #include "parallel/Mpi.h"
 #include <string>
 #include "io/logging.h"
+#ifdef PP_USE_EASYLOGGING
 INITIALIZE_EASYLOGGINGPP
+#endif
 
 #define CATCH_CONFIG_RUNNER
 #include <catch.hpp>

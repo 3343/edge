@@ -39,7 +39,7 @@ wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz
 mkdir zlib
 tar -xzf zlib.tar.gz -C zlib --strip-components=1
 cd zlib
-./configure --static --prefix=/usr/local > /dev/null
+CFLAGS="-fPIC" ./configure --static --prefix=/usr/local > /dev/null
 sudo make install -j ${EDGE_N_BUILD_PROC} > /dev/null
 cd ..
 

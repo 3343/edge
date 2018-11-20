@@ -30,11 +30,7 @@
 #include "parallel/mpi_wrapper.inc"
 #endif
 
-#ifdef __COVERITY__
-// includes for Coverity Scan
-#include <cassert>
-#include <iostream>
-#endif
+#ifdef PP_USE_EASYLOGGING
 
 // enable thread-safety in omp-configs
 #ifdef PP_USE_OMP
@@ -59,7 +55,6 @@
 #define EDGE_VLOG_ALL(str)        VLOG(str)
 #define EDGE_VLOG(str)            VLOG_IF(edge::parallel::g_rank==0,str)
 
-#ifndef __COVERITY__
 #define EDGE_CHECK(str)           CHECK(str)
 #define EDGE_CHECK_EQ(str1, str2) CHECK_EQ(str1, str2)
 #define EDGE_CHECK_NE(str1, str2) CHECK_NE(str1, str2)
@@ -67,16 +62,31 @@
 #define EDGE_CHECK_GT(str1, str2) CHECK_GT(str1, str2)
 #define EDGE_CHECK_LE(str1, str2) CHECK_LE(str1, str2)
 #define EDGE_CHECK_GE(str1, str2) CHECK_GE(str1, str2)
+
 #else
-// special handling for Coverity Scan:
-// overwrite check-macros with default c-asserts, having killpaths in Coverity
-#define EDGE_CHECK(str)           assert(str);          std::cout
-#define EDGE_CHECK_EQ(str1, str2) assert(str1 == str2); std::cout
-#define EDGE_CHECK_NE(str1, str2) assert(str1 != str2); std::cout
-#define EDGE_CHECK_LT(str1, str2) assert(str1 <  str2); std::cout
-#define EDGE_CHECK_GT(str1, str2) assert(str1 >  str2); std::cout
-#define EDGE_CHECK_LE(str1, str2) assert(str1 <= str2); std::cout
-#define EDGE_CHECK_GE(str1, str2) assert(str1 >= str2); std::cout
+
+#include <cassert>
+#include <iostream>
+
+#define EDGE_LOG_INFO_ALL    std::cout << ""
+#define EDGE_LOG_INFO        std::cout << ""
+#define EDGE_LOG_TRACE       std::cout << ""
+#define EDGE_LOG_DEBUG       std::cout << ""
+#define EDGE_LOG_FATAL       std::cerr << ""
+#define EDGE_LOG_ERROR       std::cerr << ""
+#define EDGE_LOG_WARNING     std::cerr << ""
+#define EDGE_LOG_VERBOSE     std::cout << ""
+#define EDGE_VLOG_IS_ON(str) std::cout << ""
+#define EDGE_VLOG_ALL(str)   std::cout << ""
+#define EDGE_VLOG(str)       std::cout << ""
+
+#define EDGE_CHECK(str)           if( !( str          ) ) std::cerr << ""
+#define EDGE_CHECK_EQ(str1, str2) if( !( str1 == str2 ) ) std::cerr << ""
+#define EDGE_CHECK_NE(str1, str2) if( !( str1 != str2 ) ) std::cerr << ""
+#define EDGE_CHECK_LT(str1, str2) if( !( str1 <  str2 ) ) std::cerr << ""
+#define EDGE_CHECK_GT(str1, str2) if( !( str1 > str2  ) ) std::cerr << ""
+#define EDGE_CHECK_LE(str1, str2) if( !( str1 <= str2 ) ) std::cerr << ""
+#define EDGE_CHECK_GE(str1, str2) if( !( str1 >= str2 ) ) std::cerr << ""
 #endif
 
 namespace edge {

@@ -36,8 +36,10 @@ class edge::data::Dynamic {
   private:
     //! allocated memory
     std::vector< void* > m_mem;
-    //! memory type of allocated memory
-    std::vector< bool  > m_hbw;
+    //! high-bandwidth setting of allocated memory
+    std::vector< bool > m_hbw;
+    //! huge pages setting of allocated memory
+    std::vector< bool > m_huge;
 
   public:
    /**
@@ -53,11 +55,13 @@ class edge::data::Dynamic {
      * @param i_size size in bytes.
      * @param i_alignment alignment of the base pointer.
      * @param i_hbw if true, function allocates high bandwidth memory if available.
+     * @param i_huge if true, huge pages are allocated.
      * @return pointer to memory.
      **/
     void* allocate( std::size_t i_size,
                     std::size_t i_alignment=64,
-                    bool        i_hbw=false );
+                    bool        i_hbw=false,
+                    bool        i_huge=false );
 
     /**
      * Allocates EDGE's flex data type.
@@ -92,7 +96,8 @@ class edge::data::Dynamic {
      * @param i_spSizes associated sizes of the sparse types. 1 corresponds to sizeof(TL_T_FL).
      * @param i_enChars entity characteristics.
      * @param i_alignment alignment of the base pointer.
-     * @param i_hbw if true, function allocates high bandwidth memory (if available).
+     * @param i_hbw if true, function allocates high bandwidth memory for the raw data (if available).
+     * @param i_huge if true, huge pages are used for the raw data (if available).
      * @return array of pointers, which point to the respective start addresses of the entities. Last entry ( (i_nSp+1)*i_nEn+1 in total) is ghost for consistent size computations.
      *
      * @paramt TL_T_FL type of the items in the flex data structure.
@@ -111,7 +116,8 @@ class edge::data::Dynamic {
                     std::size_t    *i_spSizes,
                     TL_T_CHARS     *i_enChars,
                     std::size_t     i_alignment = 64,
-                    bool            i_hbw       = false ) {
+                    bool            i_hbw       = false,
+                    bool            i_huge      = false ) {
       // determine required amount of memory
       std::size_t l_memSize = 0;
 
@@ -129,12 +135,12 @@ class edge::data::Dynamic {
       // allocate raw memory
       TL_T_FL *l_raw = (TL_T_FL*) allocate( l_memSize,
                                             i_alignment,
-                                            i_hbw );
+                                            i_hbw,
+                                            i_huge );
 
       // allocate memory for the pointers
       TL_T_FL** l_ptrs = (TL_T_FL **) allocate( ( (i_nSp+1)*i_nEn + 1 )*sizeof(TL_T_FL*),
-                                                i_alignment,
-                                                i_hbw );
+                                                i_alignment );
 
       // set the base pointers
       for( TL_T_INT_LID l_en = 0; l_en < i_nEn; l_en++ ) {

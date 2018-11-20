@@ -25,7 +25,9 @@
 #include "parallel/Shared.h"
 
 #include "io/logging.h"
+#ifdef PP_USE_EASYLOGGING
 INITIALIZE_EASYLOGGINGPP
+#endif
 
 #include <limits>
 #include <string>
@@ -113,7 +115,8 @@ int main( int i_argc, char *i_argv[] ) {
   l_shared.print();
 #endif
 
-  // print memory statistics
+  // print memory information
+  edge::data::common::printHugePages();
   edge::data::common::printNumaSizes();
   edge::data::common::printMemStats();
 

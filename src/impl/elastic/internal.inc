@@ -62,12 +62,14 @@ typedef t_bgPars t_elementShared1;
 /*
  * Second shared element data are the flux solvers for the element's own contribution.
  */
+#define PP_ELEMENT_SHARED_2_HUGE
 #define PP_N_ELEMENT_SHARED_2 C_ENT[T_SDISC.ELEMENT].N_FACES
 typedef t_fluxSolver t_elementShared2;
 
 /*
  * Third shared element data are the flux solvers for the neighboring elements' contribution.
  */
+#define PP_ELEMENT_SHARED_3_HUGE
 #define PP_N_ELEMENT_SHARED_3 C_ENT[T_SDISC.ELEMENT].N_FACES
 typedef t_fluxSolver t_elementShared3;
 
@@ -87,12 +89,14 @@ typedef struct {
 #endif
 } t_matStar;
 
+#define PP_ELEMENT_SHARED_4_HUGE
 #define PP_N_ELEMENT_SHARED_4 N_DIM
 typedef t_matStar t_elementShared4;
 
 /*
  * First private element mode data are the first set of dofs.
  */
+#define PP_ELEMENT_MODE_PRIVATE_1_HUGE
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
 typedef real_base t_elementModePrivate1;
 

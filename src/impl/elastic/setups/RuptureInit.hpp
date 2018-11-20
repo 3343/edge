@@ -24,6 +24,7 @@
 #ifndef EDGE_SEISMIC_RUPTURE_INIT_HPP
 #define EDGE_SEISMIC_RUPTURE_INIT_HPP
 
+#include <cstring>
 #include "io/logging.h"
 #include "linalg/Geom.hpp"
 #include "data/Dynamic.h"

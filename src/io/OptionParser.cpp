@@ -43,7 +43,9 @@ edge::io::OptionParser::OptionParser( int i_argc, char ** i_argv ) {
   };
 
   // parse easylogging args first
+#ifdef PP_USE_EASYLOGGING
   START_EASYLOGGINGPP( i_argc, i_argv);
+#endif
 
   // ignore program name
   i_argc -= ( i_argc>0 );

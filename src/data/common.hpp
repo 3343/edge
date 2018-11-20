@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,12 +20,14 @@
  * @section DESCRIPTION
  * Shared functions of the data.
  **/
-#ifndef DATA_COMMON_HPP
-#define DATA_COMMON_HPP
+#ifndef EDGE_DATA_COMMON_HPP
+#define EDGE_DATA_COMMON_HPP
 
 #include "parallel/Mpi.h"
 #include "constants.hpp"
+#include <fstream>
 #include <io/logging.h>
+#include <string>
 
 #ifdef PP_USE_MEMKIND
 #include <hbwmalloc.h>
@@ -33,6 +35,12 @@
 
 #ifdef PP_USE_NUMA
 #include <numa.h>
+#endif
+
+#ifdef PP_USE_HUGETLBFS
+extern "C" {
+#include <hugetlbfs.h>
+}
 #endif
 
 namespace edge {
@@ -165,31 +173,89 @@ class edge::data::common {
 #endif
     }
 
+    /*
+     * Prints the system's huge pages information.
+     */
+    static void printHugePages() {
+#ifdef PP_USE_HUGETLBFS
+      EDGE_LOG_INFO << "support for huge pages through libhugetlbfs is enabled";
+
+      // get the available huge page sizes
+      int l_nHps = gethugepagesizes( NULL, 0 );
+      long *l_hpSizes = new long[l_nHps];
+      gethugepagesizes( l_hpSizes, l_nHps );
+
+      // convert to string
+      std::string l_hpSizesStr = "";
+      for( int l_hp = 0; l_hp < l_nHps; l_hp++ ) l_hpSizesStr += " " + std::to_string( l_hpSizes[l_hp] );
+      EDGE_LOG_INFO << "  available huge page sizes:" << l_hpSizesStr;
+
+      // print info
+      long l_defaultSize = gethugepagesize();
+      if( l_defaultSize != -1 ) {
+        EDGE_LOG_INFO << "  used huge page size: " << l_defaultSize;
+      }
+      else {
+        EDGE_LOG_INFO << "  something went wrong when obtaining the default page size, printing error:";
+        EDGE_LOG_INFO << "    " << strerror( errno );
+      }
+
+      delete[] l_hpSizes;
+#endif
+    }
+
     /**
      * Allocates aligned memory of the given size.
      *
+     * TODO: Currently only default aligned memory, high bandwidth memory, or huge pages can be used.
+     *       If both, high bandwidth memory and huge pages, are requested (and supported),
+     *       only high bandwith memory will be returned silently (ignoring the huge pages flag).
+     *
      * @param i_size size in bytes.
      * @param i_alignment alignment of the base pointer.
-     * @param i_hbw if true, function allocates high bandwidth memory if available.
+     * @param i_hbw if true, high bandwidth memory is allocated (if available).
+     * @param i_huge if true, the huge pages are used for the allocation (if available) with systems default huge page size.
+     *
      * @return pointer to memory.
      **/
     static void* allocate( size_t i_size,
                            size_t i_alignment=64,
-                           bool   i_hbw=false ) {
+                           bool   i_hbw=false,
+                           bool   i_huge=false ) {
       if( i_size > 0 ) {
-        void* l_ptrBuffer;
-        bool l_err;
+        void* l_ptrBuffer = nullptr;
+        bool l_err = 1;
+
+        // true if alloc was called
+        bool l_alloc = false;
+
 #ifdef PP_USE_MEMKIND
-        if( i_hbw ) {
+        if( i_hbw && !l_alloc ) {
+          EDGE_VLOG(5) << "hbw_posix_memalign, size: " << i_size << " bytes, alignment: " << i_alignment;
           l_err = (hbw_posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
+          l_alloc = true;
         }
-        else {
-          l_err = (posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
-        }
-#else
-        l_err = (posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
 #endif
-        CHECK(!l_err) << "The malloc failed (bytes: " << i_size << ", alignment: " << i_alignment << ").";
+
+#ifdef PP_USE_HUGETLBFS
+        if( i_huge && !l_alloc ) {
+          EDGE_VLOG(5) << "get_hugepage_region, size: " << i_size << " bytes";
+          l_ptrBuffer = get_hugepage_region(i_size, GHR_DEFAULT);
+          l_err = (l_ptrBuffer == NULL);
+          l_alloc = true;
+        }
+#endif
+
+        // fall back to standard aligned malloc, if none of the above allocated memory already
+        if( !l_alloc ) {
+          EDGE_VLOG(5) << "posix_memalign, size: " << i_size << " bytes, alignment: " << i_alignment;
+          l_err = (posix_memalign( &l_ptrBuffer, i_alignment, i_size ) != 0);
+          l_alloc = true;
+        }
+
+        // check the result
+        EDGE_CHECK(!l_err) << "malloc failed (bytes: " << i_size << ", alignment: " << i_alignment << ").";
+        EDGE_VLOG(5) << "allocate successfull, address: " << l_ptrBuffer;
 
         return l_ptrBuffer;
       }
@@ -203,13 +269,35 @@ class edge::data::common {
      * @param i_hbw true if high bandwidth memory.
      **/
     static void release( void *i_memory,
-                         bool  i_hbw=false ) {
+                         bool  i_hbw=false,
+                         bool  i_huge=false ) {
+      // do nothing on nullpointers
+      if( i_memory == nullptr) return;
+
+      // true if memory was freed
+      bool l_free = false;
+
 #ifdef PP_USE_MEMKIND
-      if( i_hbw ) hbw_free(i_memory);
-      else free(i_memory);
-#else
-      free(i_memory);
+      if( i_hbw && !l_free ) {
+        EDGE_VLOG(5) << "hbw_free on " << i_memory;
+        hbw_free( i_memory );
+        l_free = true
+      }
 #endif
+
+#ifdef PP_USE_HUGETLBFS
+      if( i_huge && !l_free ) {
+        EDGE_VLOG(5) << "free_hugepage_region on " << i_memory;
+        free_hugepage_region( i_memory );
+        l_free = true;
+      }
+#endif
+
+      if( !l_free ) {
+        EDGE_VLOG(5) << "free on " << i_memory;
+        free( i_memory );
+        l_free = true;
+      }
     }
 };
 

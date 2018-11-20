@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -63,42 +63,102 @@ class edge::data::Internal {
      * TODO: Extend with more data structures.
      **/
     struct {
+      struct {
 #ifdef PP_ELEMENT_PRIVATE_1_HBW
-      unsigned short elementPrivate1 = 1;
+        bool elementPrivate1 = true;
 #else
-      unsigned short elementPrivate1 = 0;
+        bool elementPrivate1 = false;
 #endif
 #ifdef PP_ELEMENT_PRIVATE_2_HBW
-      unsigned short elementPrivate2 = 1;
+        bool elementPrivate2 = true;
 #else
-      unsigned short elementPrivate2 = 0;
+        bool elementPrivate2 = false;
 #endif
 #ifdef PP_ELEMENT_PRIVATE_3_HBW
-      unsigned short elementPrivate3 = 1;
+        bool elementPrivate3 = true;
 #else
-      unsigned short elementPrivate3 = 0;
+        bool elementPrivate3 = false;
 #endif
 
 #ifdef PP_ELEMENT_MODE_PRIVATE_1_HBW
-      unsigned short elementModePrivate1 = 1;
+        bool elementModePrivate1 = true;
 #else
-      unsigned short elementModePrivate1 = 0;
+        bool elementModePrivate1 = false;
 #endif
 #ifdef PP_ELEMENT_MODE_PRIVATE_2_HBW
-      unsigned short elementModePrivate2 = 1;
+        bool elementModePrivate2 = true;
 #else
-      unsigned short elementModePrivate2 = 0;
+        bool elementModePrivate2 = false;
 #endif
 #ifdef PP_ELEMENT_MODE_PRIVATE_3_HBW
-      unsigned short elementModePrivate3 = 1;
+        bool elementModePrivate3 = true;
 #else
-      unsigned short elementModePrivate3 = 0;
+        bool elementModePrivate3 = false;
 #endif
 #ifdef PP_SCRATCH_MEMORY_HBW
-      unsigned short scratchMem = 1;
+        bool scratchMem = true;
 #else
-      unsigned short scratchMem = 0;
+        bool scratchMem = false;
 #endif
+#ifdef PP_ELEMENT_SHARED_1_HBW
+        bool elementShared1 = true;
+#else
+        bool elementShared1 = false;
+#endif
+#ifdef PP_ELEMENT_SHARED_2_HBW
+        bool elementShared2 = true;
+#else
+        bool elementShared2 = false;
+#endif
+#ifdef PP_ELEMENT_SHARED_3_HBW
+        bool elementShared3 = true;
+#else
+        bool elementShared3 = false;
+#endif
+#ifdef PP_ELEMENT_SHARED_4_HBW
+        bool elementShared4 = true;
+#else
+        bool elementShared4 = false;
+#endif
+      } hbw;
+      struct {
+#ifdef PP_ELEMENT_MODE_PRIVATE_1_HUGE
+        bool elementModePrivate1 = true;
+#else
+        bool elementModePrivate1 = false;
+#endif
+#ifdef PP_ELEMENT_MODE_PRIVATE_2_HUGE
+        bool elementModePrivate2 = true;
+#else
+        bool elementModePrivate2 = false;
+#endif
+#ifdef PP_ELEMENT_MODE_PRIVATE_3_HUGE
+        bool elementModePrivate3 = true;
+#else
+        bool elementModePrivate3 = false;
+#endif
+
+#ifdef PP_ELEMENT_SHARED_1_HUGE
+        bool elementShared1 = true;
+#else
+        bool elementShared1 = false;
+#endif
+#ifdef PP_ELEMENT_SHARED_2_HUGE
+        bool elementShared2 = true;
+#else
+        bool elementShared2 = false;
+#endif
+#ifdef PP_ELEMENT_SHARED_3_HUGE
+        bool elementShared3 = true;
+#else
+        bool elementShared3 = false;
+#endif
+#ifdef PP_ELEMENT_SHARED_4_HUGE
+        bool elementShared4 = true;
+#else
+        bool elementShared4 = false;
+#endif
+      } huge;
     } m_memTypes;
 
     /**
@@ -388,7 +448,7 @@ class edge::data::Internal {
 #ifdef PP_USE_OMP
 #pragma omp critical
 #endif
-        if( parallel::g_scratchMem == nullptr ) parallel::g_scratchMem = (t_scratchMem*) common::allocate( sizeof(t_scratchMem), ALIGNMENT.BASE.HEAP, m_memTypes.scratchMem );
+        if( parallel::g_scratchMem == nullptr ) parallel::g_scratchMem = (t_scratchMem*) common::allocate( sizeof(t_scratchMem), ALIGNMENT.BASE.HEAP, m_memTypes.hbw.scratchMem );
       }
 
 #endif
@@ -503,17 +563,20 @@ class edge::data::Internal {
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_1
       m_elementModePrivate1   = (t_elementModePrivate1 (*)[PP_N_ELEMENT_MODE_PRIVATE_1][N_ELEMENT_MODES][N_CRUNS]) common::allocate( l_elementModePrivateSize1,
                                                                                                                                      ALIGNMENT.BASE.HEAP,
-                                                                                                                                     m_memTypes.elementModePrivate1 );
+                                                                                                                                     m_memTypes.hbw.elementModePrivate1,
+                                                                                                                                     m_memTypes.huge.elementModePrivate1 );
 #endif
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_2
       m_elementModePrivate2   = (t_elementModePrivate2 (*)[PP_N_ELEMENT_MODE_PRIVATE_2][N_ELEMENT_MODES][N_CRUNS]) common::allocate( l_elementModePrivateSize2,
                                                                                                                                      ALIGNMENT.BASE.HEAP,
-                                                                                                                                     m_memTypes.elementModePrivate2 );
+                                                                                                                                     m_memTypes.hbw.elementModePrivate2,
+                                                                                                                                     m_memTypes.huge.elementModePrivate2 );
 #endif
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_3
       m_elementModePrivate3   = (t_elementModePrivate3 (*)[PP_N_ELEMENT_MODE_PRIVATE_3][N_ELEMENT_MODES][N_CRUNS]) common::allocate( l_elementModePrivateSize3,
                                                                                                                                      ALIGNMENT.BASE.HEAP,
-                                                                                                                                     m_memTypes.elementModePrivate3 );
+                                                                                                                                     m_memTypes.hbw.elementModePrivate3,
+                                                                                                                                     m_memTypes.huge.elementModePrivate3 );
 #endif
 
 
@@ -534,35 +597,43 @@ class edge::data::Internal {
 #ifdef PP_N_ELEMENT_PRIVATE_1
       m_elementPrivate1   = (t_elementPrivate1 (*)[PP_N_ELEMENT_PRIVATE_1][N_CRUNS]) common::allocate( l_elementPrivateSize1,
                                                                                                        ALIGNMENT.BASE.HEAP,
-                                                                                                       m_memTypes.elementPrivate1 );
+                                                                                                       m_memTypes.hbw.elementPrivate1 );
 #endif
 #ifdef PP_N_ELEMENT_PRIVATE_2
       m_elementPrivate2   = (t_elementPrivate2 (*)[PP_N_ELEMENT_PRIVATE_2][N_CRUNS]) common::allocate( l_elementPrivateSize2,
                                                                                                        ALIGNMENT.BASE.HEAP,
-                                                                                                       m_memTypes.elementPrivate2 );
+                                                                                                       m_memTypes.hbw.elementPrivate2 );
 #endif
 #ifdef PP_N_ELEMENT_PRIVATE_3
       m_elementPrivate3   = (t_elementPrivate3 (*)[PP_N_ELEMENT_PRIVATE_3][N_CRUNS]) common::allocate( l_elementPrivateSize3,
                                                                                                        ALIGNMENT.BASE.HEAP,
-                                                                                                       m_memTypes.elementPrivate3 );
+                                                                                                       m_memTypes.hbw.elementPrivate3 );
 #endif
 
 
 #ifdef PP_N_ELEMENT_SHARED_1
       m_elementShared1        = (t_elementShared1 (*)[PP_N_ELEMENT_SHARED_1]                                     ) common::allocate( l_elementSharedSize1,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
+                                                                                                                                     ALIGNMENT.BASE.HEAP,
+                                                                                                                                     m_memTypes.hbw.elementShared1,
+                                                                                                                                     m_memTypes.huge.elementShared1 );
 #endif
 #ifdef PP_N_ELEMENT_SHARED_2
       m_elementShared2        = (t_elementShared2 (*)[PP_N_ELEMENT_SHARED_2]                                     ) common::allocate( l_elementSharedSize2,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
+                                                                                                                                     ALIGNMENT.BASE.HEAP,
+                                                                                                                                     m_memTypes.hbw.elementShared2,
+                                                                                                                                     m_memTypes.huge.elementShared2 );
 #endif
 #ifdef PP_N_ELEMENT_SHARED_3
       m_elementShared3        = (t_elementShared3 (*)[PP_N_ELEMENT_SHARED_3]                                     ) common::allocate( l_elementSharedSize3,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
+                                                                                                                                     ALIGNMENT.BASE.HEAP,
+                                                                                                                                     m_memTypes.hbw.elementShared3,
+                                                                                                                                     m_memTypes.huge.elementShared3 );
 #endif
 #ifdef PP_N_ELEMENT_SHARED_4
       m_elementShared4        = (t_elementShared4 (*)[PP_N_ELEMENT_SHARED_4]                                     ) common::allocate( l_elementSharedSize4,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
+                                                                                                                                     ALIGNMENT.BASE.HEAP,
+                                                                                                                                     m_memTypes.hbw.elementShared4,
+                                                                                                                                     m_memTypes.huge.elementShared4 );
 #endif
 
       m_connect.elVe            = (int_el         (*)[C_ENT[T_SDISC.ELEMENT].N_VERTICES]                         ) common::allocate( l_connElVeSize,
@@ -912,7 +983,7 @@ class edge::data::Internal {
 #ifdef PP_USE_OMP
 #pragma omp critical
 #endif
-          if( parallel::g_scratchMem != nullptr ) common::release( parallel::g_scratchMem,  m_memTypes.scratchMem );
+          if( parallel::g_scratchMem != nullptr ) common::release( parallel::g_scratchMem,  m_memTypes.hbw.scratchMem );
           parallel::g_scratchMem = nullptr;
         }
 
@@ -933,23 +1004,23 @@ class edge::data::Internal {
 
        // elements
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_1
-       common::release(m_elementModePrivate1, m_memTypes.elementModePrivate1);
+       common::release(m_elementModePrivate1, m_memTypes.hbw.elementModePrivate1, m_memTypes.huge.elementModePrivate1);
 #endif
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_2
-       common::release(m_elementModePrivate2, m_memTypes.elementModePrivate2);
+       common::release(m_elementModePrivate2, m_memTypes.hbw.elementModePrivate2, m_memTypes.huge.elementModePrivate2);
 #endif
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_3
-       common::release(m_elementModePrivate3, m_memTypes.elementModePrivate3);
+       common::release(m_elementModePrivate3, m_memTypes.hbw.elementModePrivate3, m_memTypes.huge.elementModePrivate3);
 #endif
 
 #ifdef PP_N_ELEMENT_PRIVATE_1
-       common::release(m_elementPrivate1, m_memTypes.elementPrivate1);
+       common::release(m_elementPrivate1, m_memTypes.hbw.elementPrivate1);
 #endif
 #ifdef PP_N_ELEMENT_PRIVATE_2
-       common::release(m_elementPrivate2, m_memTypes.elementPrivate2);
+       common::release(m_elementPrivate2, m_memTypes.hbw.elementPrivate2);
 #endif
 #ifdef PP_N_ELEMENT_PRIVATE_3
-       common::release(m_elementPrivate3, m_memTypes.elementPrivate3);
+       common::release(m_elementPrivate3, m_memTypes.hbw.elementPrivate3);
 #endif
 
 #ifdef PP_N_ELEMENT_MODE_SHARED_1
@@ -963,16 +1034,16 @@ class edge::data::Internal {
 #endif
 
 #ifdef PP_N_ELEMENT_SHARED_1
-        common::release(m_elementShared1);
+       common::release(m_elementShared1, m_memTypes.hbw.elementShared1, m_memTypes.huge.elementShared1);
 #endif
 #ifdef PP_N_ELEMENT_SHARED_2
-       common::release(m_elementShared2);
+       common::release(m_elementShared2, m_memTypes.hbw.elementShared2, m_memTypes.huge.elementShared2);
 #endif
 #ifdef PP_N_ELEMENT_SHARED_3
-       common::release(m_elementShared3);
+       common::release(m_elementShared3, m_memTypes.hbw.elementShared3, m_memTypes.huge.elementShared3);
 #endif
 #ifdef PP_N_ELEMENT_SHARED_4
-       common::release(m_elementShared4);
+       common::release(m_elementShared4, m_memTypes.hbw.elementShared4, m_memTypes.huge.elementShared4);
 #endif
 
       common::release(m_connect.elVe);
