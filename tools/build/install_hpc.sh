@@ -146,6 +146,76 @@ then
   sudo chkconfig irqbalance off
 fi
 
+###############
+# Set ulimits #
+###############
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+# Set ulimits
+cat << EOF | sudo tee /etc/security/limits.conf
+# -c maximum size of core files
+*           hard    core           0
+*           soft    core           0
+
+# -d maximum size of a process's data segment
+*           hard    data           unlimited
+*           soft    data           unlimited
+
+# -e maximum scheduling priority (nice)
+*           hard    priority       0
+*           soft    priority       0
+
+# -f maximum size of files written by the shell and childs
+*           hard    fsize          unlimited
+*           soft    fsize          unlimited
+
+# -i maximum number of pending signals
+*           hard    sigpending     1015390
+*           soft    sigpending     1015390
+
+# -l maximum size that my be locked into memory
+*           hard    memlock        unlimited
+*           soft    memlock        unlimited
+
+# -n maximum number of open file descriptors
+*           hard    nofile         65536
+*           soft    nofile         65536
+
+# -q maximum number of bytes in POSIX message queues
+*           hard    msgqueue       819200
+*           soft    msgqueue       819200
+
+# -r maximum real-time scheduling priority
+*           hard    rtprio         0
+*           soft    rtprio         0
+
+# -s maximum stack size
+*           hard    stack          unlimited
+*           soft    stack          unlimited
+
+# -t maximum amount of CPU time in seconds
+*           hard    cpu            unlimited
+*           soft    cpu            unlimited
+
+# -u maximum number of processes available to a user
+*           soft    nproc          16384
+*           hard    nproc          16384
+
+# -x maximum number of file locks
+*           hard    locks          unlimited
+*           soft    locks          unlimited
+EOF
+fi
+
+################################
+# Disable hardlockup detection #
+################################
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nmi_watchdog=0\""/ /etc/default/grub
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
 ###########################################################
 # Boot tickless, except for the first core of each socket #
 ###########################################################
@@ -161,6 +231,25 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
+#########################
+# Offload RCU callbacks #
+#########################
+if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+then
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" rcu_nocbs=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+fi
+
+########################
+# Configure huge pages #
+########################
+if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+then
+  # disable transparent huge pages, set default size, reserve 96GiB
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" transparent_hugepage=never default_hugepagesz=2M hugepagesz=2M hugepages=49152\""/ /etc/default/grub
   PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
