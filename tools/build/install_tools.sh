@@ -69,6 +69,8 @@ then
   sudo yum install -y -q -e 0 libxml2-python.x86_64
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools python-pip python34-pip
   sudo yum install -y -q -e 0 cppcheck
+  sudo yum install -y -q -e 0 glibc-static
+  sudo yum install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
   # TODO: no gmsh RPM available, move to custom install
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
