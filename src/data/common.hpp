@@ -255,7 +255,7 @@ class edge::data::common {
 
         // check the result
         EDGE_CHECK(!l_err) << "malloc failed (bytes: " << i_size << ", alignment: " << i_alignment << ").";
-        EDGE_VLOG(5) << "allocate successfull, address: " << l_ptrBuffer;
+        EDGE_VLOG(5) << "allocate successful, address: " << l_ptrBuffer;
 
         return l_ptrBuffer;
       }

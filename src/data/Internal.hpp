@@ -158,6 +158,12 @@ class edge::data::Internal {
 #else
         bool elementShared4 = false;
 #endif
+
+#ifdef PP_SCRATCH_MEMORY_HUGE
+        bool scratchMem = true;
+#else
+        bool scratchMem = false;
+#endif
       } huge;
     } m_memTypes;
 
@@ -448,7 +454,10 @@ class edge::data::Internal {
 #ifdef PP_USE_OMP
 #pragma omp critical
 #endif
-        if( parallel::g_scratchMem == nullptr ) parallel::g_scratchMem = (t_scratchMem*) common::allocate( sizeof(t_scratchMem), ALIGNMENT.BASE.HEAP, m_memTypes.hbw.scratchMem );
+        if( parallel::g_scratchMem == nullptr ) parallel::g_scratchMem = (t_scratchMem*) common::allocate( sizeof(t_scratchMem),
+                                                                                                           ALIGNMENT.BASE.HEAP,
+                                                                                                           m_memTypes.hbw.scratchMem,
+                                                                                                           m_memTypes.huge.scratchMem );
       }
 
 #endif
@@ -983,7 +992,9 @@ class edge::data::Internal {
 #ifdef PP_USE_OMP
 #pragma omp critical
 #endif
-          if( parallel::g_scratchMem != nullptr ) common::release( parallel::g_scratchMem,  m_memTypes.hbw.scratchMem );
+          if( parallel::g_scratchMem != nullptr ) common::release( parallel::g_scratchMem,
+                                                                   m_memTypes.hbw.scratchMem,
+                                                                   m_memTypes.huge.scratchMem );
           parallel::g_scratchMem = nullptr;
         }
 
