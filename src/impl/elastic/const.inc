@@ -82,6 +82,7 @@ typedef struct {
  **/
 #define PP_SCRATCH_MEMORY
 #define PP_SCRATCH_MEMORY_HBW
+#define PP_SCRATCH_MEMORY_HUGE
 struct scratchMem {
   // temporary results
   real_base tRes[2][N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
