@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -150,6 +150,12 @@ bool edge::parallel::Shared::getWrkTd( int_tg          &o_tg,
       o_size  = l_wps[g_thread].ents.size;
       if( o_spEn != nullptr && m_wrkRgns[l_rg].wrkPkgs[g_thread].spEn.size() > 0 )
         *o_spEn = &m_wrkRgns[l_rg].wrkPkgs[g_thread].spEn[0];
+
+      // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
       return true;
     }
   }
@@ -160,6 +166,11 @@ bool edge::parallel::Shared::getWrkTd( int_tg          &o_tg,
 
 void edge::parallel::Shared::setStatusAll( t_status     i_status,
                                            unsigned int i_id ) {
+  // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   std::size_t l_rg = getWrkRgn( i_id );
 
   volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
@@ -179,6 +190,11 @@ void edge::parallel::Shared::setStatusAll( t_status     i_status,
 }
 
 void edge::parallel::Shared::resetStatus( t_status i_status ) {
+  // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   // iterate over all regions
   for( unsigned short l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
     volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
@@ -193,6 +209,11 @@ void edge::parallel::Shared::resetStatus( t_status i_status ) {
 
 void edge::parallel::Shared::setStatusTd(  t_status     i_status,
                                            unsigned int i_id ) {
+  // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   // check that the calling thread is a worker
   EDGE_CHECK( g_thread < m_nWrks );
 
@@ -226,6 +247,10 @@ bool edge::parallel::Shared::getStatusAll( t_status     i_status,
   for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
     if(l_wps[l_td].status != i_status) return false;
   }
+
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
 
   return true;
 }

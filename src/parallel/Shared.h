@@ -265,6 +265,7 @@ class edge::parallel::Shared {
 
     /**
      * Gets work for the calling thread.
+     * If work is available, OMP-flush is called.
      *
      * @param o_tg time group.
      * @param o_step step in the computational scheme.
@@ -272,6 +273,7 @@ class edge::parallel::Shared {
      * @param o_first first entity to work on; numeric_limits<int_el>::max() if none available.
      * @param o_size number of entities to work on; numeric_limits<int_el>::max() if none available.
      * @param o_spEn sparse-entities, one range for every defined sparse type.
+     *
      * @return true if work is available; false otherwise.
      **/
     bool getWrkTd( int_tg          &o_tg,
@@ -283,6 +285,7 @@ class edge::parallel::Shared {
 
     /**
      * Sets the given status of the work package in the respective region for the calling thread.
+     * Additionally, OMP-flush is called.
      *
      * @param i_st status which is set.
      * @param i_id id of the work region.
@@ -292,6 +295,7 @@ class edge::parallel::Shared {
 
     /**
      * Checks if the status of all workers matches for the region.
+     * If this is true, OMP-flush is called.
      *
      * @param i_status status to check.
      * @param i_id id of the region.
@@ -302,6 +306,7 @@ class edge::parallel::Shared {
 
     /**
      * Sets the status of the region for all workers.
+     * Additionally, OMP-flush is called.
      *
      * @param i_status status to set.
      * @param i_id id of the region.
@@ -311,6 +316,7 @@ class edge::parallel::Shared {
 
     /**
      * Resets the status for all regions for all workers to the given value.
+     * Additionally, OMP-flush is called.
      *
      * @param i_status status to reset to.
      **/
