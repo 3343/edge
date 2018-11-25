@@ -325,12 +325,12 @@ void edge::parallel::Mpi::beginSends( int_tg         i_tg,
   // ignore command, if group does not exist
   if( i_mg == std::numeric_limits< unsigned short >::max() ) return;
 
+#ifdef PP_USE_MPI
 #ifdef PP_USE_INSTR
   std::string l_regName = "send_" + std::to_string(i_tg) + "_" + std::to_string(i_mg);
   PP_INSTR_REG_NAME_BEG( l_regName.c_str() )
 #endif
 
-#ifdef PP_USE_MPI
   for( std::size_t l_msg = 0; l_msg < m_grps[i_mg].send[i_tg].size(); l_msg++ ) {
     // get message
     volatile t_msg *l_send = &m_grps[i_mg].send[i_tg][l_msg];
@@ -356,10 +356,10 @@ void edge::parallel::Mpi::beginSends( int_tg         i_tg,
       l_send->cmmTd = -1;
     }
   }
-#endif
 
   // set send status of the group to ongoing
   m_grps[i_mg].sendTest[i_tg] = 0;
+#endif
 }
 
 void edge::parallel::Mpi::beginRecvs( int_tg         i_tg,
@@ -393,10 +393,10 @@ void edge::parallel::Mpi::beginRecvs( int_tg         i_tg,
       l_recv->cmmTd = -1;
     }
   }
-#endif
 
   // set recv status of the group to ongoing
   m_grps[i_mg].recvTest[i_tg] = 0;
+#endif
 }
 
 bool edge::parallel::Mpi::finSends( int_tg         i_tg,
@@ -415,7 +415,6 @@ bool edge::parallel::Mpi::finSends( int_tg         i_tg,
 
     if( l_send->test == 0 ) return false;
   }
-#endif
 
 #ifdef PP_USE_INSTR
   if( m_grps[i_mg].sendTest[i_tg] == 0 ) {
@@ -426,6 +425,7 @@ bool edge::parallel::Mpi::finSends( int_tg         i_tg,
 
   // set send status of the group to finished
   m_grps[i_mg].sendTest[i_tg] = 1;
+#endif
 
   return true;
 }
@@ -446,10 +446,10 @@ bool edge::parallel::Mpi::finRecvs( int_tg         i_tg,
 
     if( l_recv->test == 0 ) return false;
   }
-#endif
 
   // set recv status of the group to finished
   m_grps[i_mg].recvTest[i_tg] = 1;
+#endif
 
   return true;
 }
