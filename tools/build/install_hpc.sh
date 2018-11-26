@@ -248,8 +248,8 @@ fi
 ########################
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
-  # disable transparent huge pages, set default size, reserve 96GiB
-  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" transparent_hugepage=never default_hugepagesz=2M hugepagesz=2M hugepages=49152\""/ /etc/default/grub
+  # enable transparent huge pages, set default size
+  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" transparent_hugepage=always default_hugepagesz=2M hugepagesz=2M hugepages=0\""/ /etc/default/grub
   PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
