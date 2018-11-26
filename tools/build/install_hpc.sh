@@ -134,7 +134,7 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo bash -c "echo vm.min_free_kbytes = 1048576 >> /etc/sysctl.conf"
-  sudo sysctl -p
+  PATH=/sbin:$PATH sudo sysctl -p
 fi
 
 ###############################################
@@ -142,8 +142,8 @@ fi
 ###############################################
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo service irqbalance stop
-  sudo chkconfig irqbalance off
+  PATH=/sbin:$PATH sudo service irqbalance stop
+  PATH=/sbin:$PATH sudo chkconfig irqbalance off
 fi
 
 ###############
@@ -213,7 +213,7 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nmi_watchdog=0\""/ /etc/default/grub
-  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ###########################################################
@@ -222,7 +222,7 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nohz_full=1-17,19-35,37-53,55-71\""/ /etc/default/grub
-  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ##################################################################
@@ -231,7 +231,7 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-17,19-35,37-53,55-71\""/ /etc/default/grub
-  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 #########################
@@ -240,7 +240,7 @@ fi
 if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" rcu_nocbs=1-17,19-35,37-53,55-71\""/ /etc/default/grub
-  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ########################
@@ -250,7 +250,7 @@ if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
 then
   # enable transparent huge pages, set default size
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" transparent_hugepage=always default_hugepagesz=2M hugepagesz=2M hugepages=0\""/ /etc/default/grub
-  PATH=/usr/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+  PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ############
