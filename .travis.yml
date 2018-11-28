@@ -288,21 +288,6 @@ matrix:
         SYSTEM_SETUP=1
         N_BUILD_PROC=4
 
-    #
-    # Container build: Singularity
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        SINGULARITY_VERSION=2.5.1
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-
 before_install:
   - cd ..
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
@@ -314,9 +299,6 @@ before_install:
   - export FC=${FORT_COMPILER}
   - export F77=${FORT_COMPILER}
   - export F90=${FORT_COMPILER}
-
-  # install packages
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo apt-get install libarchive-dev squashfs-tools; fi;
 
   # install open mpi
   - if [ "$SYSTEM_SETUP" = "1" ] && [ "$USE_MPI" = "1" ]; then wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.3.tar.bz2; fi;
@@ -383,12 +365,6 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local BLAS=0 INTRINSICS=1 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
-  # install singularity and dependencies
-  - if [ "$SINGULARITY_VERSION" != "" ]; then wget https://launchpad.net/ubuntu/+archive/primary/+files/debootstrap_1.0.81ubuntu2.1_all.deb; sudo dpkg -i debootstrap_1.0.81ubuntu2.1_all.deb; fi
-  - if [ "$SINGULARITY_VERSION" != "" ]; then wget https://github.com/singularityware/singularity/releases/download/${SINGULARITY_VERSION}/singularity-${SINGULARITY_VERSION}.tar.gz; fi;
-  - if [ "$SINGULARITY_VERSION" != "" ]; then tar -xf singularity-${SINGULARITY_VERSION}.tar.gz; fi;
-  - if [ "$SINGULARITY_VERSION" != "" ]; then cd singularity-${SINGULARITY_VERSION}; ./configure > /dev/null; make > /dev/null; sudo make install; cd ..; fi;
-
   # clone EDGE's asset repository
   - git lfs clone --exclude=* https://bitbucket.org/3343/edge_opt.git
   - cd edge_opt
@@ -407,8 +383,8 @@ before_install:
 
 script:
   # do static code analysis
-  - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck --version; fi;
-  - if [ "$SINGULARITY_VERSION" = "" ]; then cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1; fi;
+  - cppcheck --version
+  - cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1
 
   # disable advanced exprtk features to speedup compilation
   - export CXXFLAGS=-Dexprtk_disable_enhanced_features
@@ -687,16 +663,6 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons order=2 precision=32 cfr=16 arch=knl parallel=omp xml=cont/elastic/plane_waves/tet4_uns.xml xsmm=yes zlib=yes hdf5=yes moab=yes -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -knm -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
-
-  #
-  # Singularity bootstrap
-  #
-  # enforce fewer builds in boostrap to fit in limited windows of public Travis CI
-  - if [ "$SINGULARITY_VERSION" != "" ]; then cd ..; fi
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for order in 1 2 3 4 5/for order in 1 2 3/g'     edge/tools/build/singularity/edge.def; fi
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sed -i 's/for mesh_type in reg uns/for mesh_type in uns/g' edge/tools/build/singularity/edge.def; fi
-  # run bootstrap
-  - if [ "$SINGULARITY_VERSION" != "" ]; then sudo singularity build --sandbox /tmp/singularity.img edge/tools/build/singularity/edge.def; fi;
 
 after_success:
   - ${GCOV} -v
