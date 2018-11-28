@@ -80,13 +80,27 @@
 #define EDGE_VLOG_ALL(str)   std::cout << ""
 #define EDGE_VLOG(str)       std::cout << ""
 
-#define EDGE_CHECK(str)           if( !( str          ) ) std::cerr << ""
-#define EDGE_CHECK_EQ(str1, str2) if( !( str1 == str2 ) ) std::cerr << ""
-#define EDGE_CHECK_NE(str1, str2) if( !( str1 != str2 ) ) std::cerr << ""
-#define EDGE_CHECK_LT(str1, str2) if( !( str1 <  str2 ) ) std::cerr << ""
-#define EDGE_CHECK_GT(str1, str2) if( !( str1 > str2  ) ) std::cerr << ""
-#define EDGE_CHECK_LE(str1, str2) if( !( str1 <= str2 ) ) std::cerr << ""
-#define EDGE_CHECK_GE(str1, str2) if( !( str1 >= str2 ) ) std::cerr << ""
+namespace edge {
+  namespace io {
+    class NullStream {
+      public:
+        NullStream() {}
+
+        template<typename T>
+        NullStream& operator<<( T const& ) {
+          return *this;
+        }
+    };
+  }
+}
+
+#define EDGE_CHECK(str)           assert( str          ); edge::io::NullStream() << ""
+#define EDGE_CHECK_EQ(str1, str2) assert( str1 == str2 ); edge::io::NullStream() << ""
+#define EDGE_CHECK_NE(str1, str2) assert( str1 != str2 ); edge::io::NullStream() << ""
+#define EDGE_CHECK_LT(str1, str2) assert( str1 <  str2 ); edge::io::NullStream() << ""
+#define EDGE_CHECK_GT(str1, str2) assert( str1 > str2  ); edge::io::NullStream() << ""
+#define EDGE_CHECK_LE(str1, str2) assert( str1 <= str2 ); edge::io::NullStream() << ""
+#define EDGE_CHECK_GE(str1, str2) assert( str1 >= str2 ); edge::io::NullStream() << ""
 #endif
 
 namespace edge {
