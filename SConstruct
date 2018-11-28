@@ -245,7 +245,8 @@ conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHea
 # include environment
 env['ENV'] = os.environ
 
-# enable default tool (otherwise SCons breaks on some systems)
+# enable default tool (otherwise SCons breaks on some systems); for some reason a repeat is required on some systems
+env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
