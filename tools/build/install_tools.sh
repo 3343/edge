@@ -50,7 +50,6 @@ then
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y python-pip python3-pip
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y cppcheck
-  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y gmsh
 elif [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   # recent build tools
@@ -71,14 +70,14 @@ then
   sudo yum install -y -q -e 0 cppcheck
   sudo yum install -y -q -e 0 glibc-static
   sudo yum install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
-  # TODO: no gmsh RPM available, move to custom install
+  sudo yum install -y -q -e 0 irqbalance
+  sudo yum install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   sudo yum groupinstall -y -q -e 0 "Development Tools"
   sudo yum install -y -q -e 0 cmake
   sudo yum install -y -q -e 0 python python-pip python3 python3-pip
   # TODO: no cppcheck RPM available
-  # TODO: no gmsh RPM available
 elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
   # install custom gcc, as the OS doesnt ship it with OpenMP support
@@ -102,8 +101,13 @@ then
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools
   sudo ln -s /usr/local/bin/easy_install* /bin
   # TODO: no cppcheck RPM available
-  # TODO: no gmsh RPM available
 fi
+
+########
+# GMSH #
+########
+wget http://gmsh.info/bin/Linux/gmsh-3.0.2-Linux64.tgz -O gmsh.tgz
+sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 
 #########
 # Clang #

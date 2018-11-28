@@ -219,34 +219,61 @@ fi
 ###########################################################
 # Boot tickless, except for the first core of each socket #
 ###########################################################
-if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nohz_full=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  if [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+  then
+    sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nohz_full=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  fi
+
+  if [[ ${EDGE_N_HYPER_THREADS} == 96 ]]
+  then
+    sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" nohz_full=1-23,25-47,49-71,73-95\""/ /etc/default/grub
+  fi
+
   PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ##################################################################
 # Isolate all but the first core per socket from OS disturbances #
 ##################################################################
-if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  if [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+  then
+    sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  fi
+
+  if [[ ${EDGE_N_HYPER_THREADS} == 96 ]]
+  then
+    sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" isolcpus=1-23,25-47,49-71,73-95\""/ /etc/default/grub
+  fi
+
   PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 #########################
 # Offload RCU callbacks #
 #########################
-if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" rcu_nocbs=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  if [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+  then
+    sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" rcu_nocbs=1-17,19-35,37-53,55-71\""/ /etc/default/grub
+  fi
+
+  if [[ ${EDGE_N_HYPER_THREADS} == 96 ]]
+  then
+    sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" rcu_nocbs=1-23,25-47,49-71,73-95\""/ /etc/default/grub
+  fi
+
   PATH=/sbin:$PATH sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 fi
 
 ########################
 # Configure huge pages #
 ########################
-if [[ ${EDGE_DIST} == *"CentOS"* ]] && [[ ${EDGE_N_HYPER_THREADS} == 72 ]]
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   # enable transparent huge pages, set default size
   sudo sed -i /GRUB_CMDLINE_LINUX/s/\"$/" transparent_hugepage=always default_hugepagesz=2M hugepagesz=2M hugepages=0\""/ /etc/default/grub
