@@ -35,6 +35,9 @@ from sys import path
 Import('env')
 Import('conf')
 
+# enable default tool (otherwise SCons breaks on some systems)
+env.Tool('default')
+
 l_objects = []
 
 # add pugixml
