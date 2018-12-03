@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016, Regents of the University of California
+ * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Access to timing functions
  **/
-#ifndef TIMER_HPP
-#define TIMER_HPP
+#ifndef EDGE_MONITOR_TIMER_HPP
+#define EDGE_MONITOR_TIMER_HPP
 
 #include <sys/time.h>
 
@@ -34,13 +34,16 @@ namespace edge {
 class edge::monitor::Timer {
   private:
     //! start time
-    double l_start;
+    double m_start;
 
     //! end time
-    double l_end;
+    double m_end;
+
+    //! elapsed time
+    double m_elapsed;
 
     /**
-     * Gets the current wall clock time.
+     * @brief Gets the current wall clock time.
      *
      * @return wallclock time in seconds.
      **/
@@ -55,29 +58,40 @@ class edge::monitor::Timer {
     }
 
   public:
-    Timer(): l_start(0), l_end(0){}
+    /**
+     * @brief Constructor of the timer.
+     */
+    Timer(): m_start(0), m_end(0), m_elapsed(0){}
 
     /**
-     * Starts the timer.
+     * @brief Starts the timer.
      **/
     void start() {
-      l_start = getWtime();
+      m_start = getWtime();
     }
 
     /**
-     * Ends the time.
+     * @brief Ends the timer and adds the elapsed time to the internal stop watch.
      **/
     void end() {
-      l_end = getWtime();
+      m_end = getWtime();
+      m_elapsed += (m_end - m_start);
     }
 
     /**
-     * Returns the elapsed time between start and end (seconds).
+     * @brief Returns the elapsed time of the internal stop watch (seconds).
      *
      * @return elapsed time.
      **/
     double elapsed() const {
-      return l_end - l_start;
+      return m_elapsed;
+    }
+
+    /**
+     * @brief Resets the internal stop-block to zero.
+     */
+    void reset() {
+      m_elapsed = 0;
     }
 };
 

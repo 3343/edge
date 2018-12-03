@@ -280,6 +280,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   l_timer.end();
   PP_INSTR_REG_END(init)
   EDGE_LOG_INFO << "initialization phase took us " << l_timer.elapsed() << " seconds";
+  l_timer.reset();
 
   PP_INSTR_REG_DEF(comp)
 #ifdef PP_USE_MPI
@@ -342,6 +343,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   EDGE_LOG_INFO << "that's the duration of the computations ("
                 << l_cluster.getUpdatesPer() << " time steps): "
                 << l_timer.elapsed() << " seconds";
+  l_timer.reset();
   PP_INSTR_REG_DEF(fin)
   PP_INSTR_REG_BEG(fin,"fin")
   l_timer.start();
@@ -364,4 +366,5 @@ l_mesh.getGIdsEl( l_gIdsEl );
   l_timer.end();
   PP_INSTR_REG_END(fin)
   EDGE_LOG_INFO << "finalizing time: " << l_timer.elapsed();
+  l_timer.reset();
 }
