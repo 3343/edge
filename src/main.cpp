@@ -299,6 +299,9 @@ l_mesh.getGIdsEl( l_gIdsEl );
     double l_stepTime = std::max( 0.0, l_endTime - l_simTime );
            l_stepTime = std::min( l_stepTime, l_syncInt );
 
+    // artificial synchronization after 1% of the simulation time for load balancing
+    if( l_step == 0 ) l_stepTime = std::min( l_stepTime, 0.01*(l_endTime-l_simTime) );
+
     l_time.simulate( l_stepTime );
 
     // update simulation time

@@ -89,7 +89,7 @@ void edge::time::TimeGroupStatic::updateTsInfo() {
 void edge::time::TimeGroupStatic::computeStep( unsigned short                              i_step,
                                                int_el                                      i_first,
                                                int_el                                      i_size,
-                                               t_timeRegion                        const * i_enSp,
+                                               int_el                              const * i_enSp,
                                                io::Receivers                             & io_recvs,
                                                io::ReceiversSf< real_base,
                                                                 T_SDISC.ELEMENT,

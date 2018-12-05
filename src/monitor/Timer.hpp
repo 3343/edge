@@ -23,6 +23,7 @@
 #ifndef EDGE_MONITOR_TIMER_HPP
 #define EDGE_MONITOR_TIMER_HPP
 
+#include <cstddef>
 #include <sys/time.h>
 
 namespace edge {
