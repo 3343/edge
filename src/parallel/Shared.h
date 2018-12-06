@@ -23,6 +23,7 @@
 #ifndef EDGE_PARALLEL_SHARED_H_
 #define EDGE_PARALLEL_SHARED_H_
 
+#include <cstdint>
 #include <vector>
 #include "data/EntityLayout.type"
 #include "data/SparseEntities.hpp"
@@ -54,6 +55,9 @@ class edge::parallel::Shared {
     struct WrkPkg {
       //! status
       t_status status;
+
+      //! 64byte padding for separate signaling cache lines
+      uint64_t padding[8];
     };
 
     // work region containing work packages of all threads for this region
