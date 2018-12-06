@@ -198,7 +198,7 @@ for l_pre in l_dgPre+l_scPre:
   env.Command( l_cpp, l_csv, csvToCpp )
 
   # append object to edge_pre library
-  edgePre['src'].append( l_cpp )
+  edgePre['src'].append( env.Object( l_cpp ) )
 
 # create a library out of EDGE's pre-processed data
 edgePre['lib'] = env.StaticLibrary( 'edge_pre/edge_pre', edgePre['src'] )

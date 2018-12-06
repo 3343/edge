@@ -209,23 +209,29 @@ l_mesh.getGIdsEl( l_gIdsEl );
 #endif
   PP_INSTR_REG_END(equSpe)
 
+  // determine global time step stats
+  double l_dtG[3];
 #ifdef PP_USE_MPI
-  double l_dTgts;
-  MPI_Allreduce( l_dT, &l_dTgts, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+  MPI_Allreduce( l_dT,   l_dtG,   1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+  MPI_Allreduce( l_dT+1, l_dtG+1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+  MPI_Allreduce( l_dT+2, l_dtG+2, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
 #else
-  double l_dTgts = l_dT[0];
+  l_dtG[0] = l_dT[0];
+  l_dtG[1] = l_dT[1];
+  l_dtG[2] = l_dT[2];
 #endif
+  l_dtG[1] /= edge::parallel::g_nRanks;
 
   // construct single GTS cluster
   edge::time::TimeGroupStatic l_cluster( std::numeric_limits< int_ts >::max(),
                                          1,
                                          l_internal );
 
-  EDGE_LOG_INFO << "time step stats coming thru (min_mpi,min,ave,max): "
-                << l_dTgts << ", " << l_dT[0] << ", " << l_dT[1] << ", " << l_dT[2];
+  EDGE_LOG_INFO << "time step stats coming thru (min,ave,max): "
+                << l_dtG[0] << ", " << l_dtG[1] << ", " << l_dtG[2];
 
   // add cluster to time manager
-  edge::time::Manager l_time(l_dTgts, l_shared, l_mpi, l_receivers, l_recvsSf );
+  edge::time::Manager l_time( l_dtG[0], l_shared, l_mpi, l_receivers, l_recvsSf );
   l_time.add( &l_cluster );
 
   // set up simulation times and synchronization intervals
@@ -274,6 +280,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   l_timer.end();
   PP_INSTR_REG_END(init)
   EDGE_LOG_INFO << "initialization phase took us " << l_timer.elapsed() << " seconds";
+  l_timer.reset();
 
   PP_INSTR_REG_DEF(comp)
 #ifdef PP_USE_MPI
@@ -291,6 +298,9 @@ l_mesh.getGIdsEl( l_gIdsEl );
     // derive time to advance in this step
     double l_stepTime = std::max( 0.0, l_endTime - l_simTime );
            l_stepTime = std::min( l_stepTime, l_syncInt );
+
+    // artificial synchronization after 1% of the simulation time for load balancing
+    if( l_step == 0 ) l_stepTime = std::min( l_stepTime, 0.01*(l_endTime-l_simTime) );
 
     l_time.simulate( l_stepTime );
 
@@ -336,6 +346,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   EDGE_LOG_INFO << "that's the duration of the computations ("
                 << l_cluster.getUpdatesPer() << " time steps): "
                 << l_timer.elapsed() << " seconds";
+  l_timer.reset();
   PP_INSTR_REG_DEF(fin)
   PP_INSTR_REG_BEG(fin,"fin")
   l_timer.start();
@@ -358,4 +369,5 @@ l_mesh.getGIdsEl( l_gIdsEl );
   l_timer.end();
   PP_INSTR_REG_END(fin)
   EDGE_LOG_INFO << "finalizing time: " << l_timer.elapsed();
+  l_timer.reset();
 }

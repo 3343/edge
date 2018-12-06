@@ -46,6 +46,7 @@ TEST_CASE( "NUMA-aware initialization", "[numaInit]" ) {
 #ifdef PP_USE_OMP
     edge::parallel::g_thread = omp_get_thread_num();
     if( edge::parallel::g_thread == 0 ) edge::parallel::g_nThreads = omp_get_num_threads();
+#pragma omp barrier
 #else
     edge::parallel::g_thread   = 0;
     edge::parallel::g_nThreads = 1;

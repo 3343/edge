@@ -108,7 +108,7 @@ void edge::mesh::Moab::init() {
   // get the size of the tag and check with internal definition
   int l_lIdSize = 0;
   l_error = m_core.tag_get_bytes( m_tagLId, l_lIdSize ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
-  CHECK( l_lIdSize == sizeof( int_el ) );
+  EDGE_CHECK_EQ( l_lIdSize, sizeof( int_el ) );
 
   initEn( m_vertices, m_inMap.veMeDa, m_inMap.veDaMe );
   initEn( m_faces,    m_inMap.faMeDa, m_inMap.faDaMe );
@@ -673,7 +673,7 @@ void edge::mesh::Moab::setupDataLayout() {
   EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
 
   // check that our gid fits into int
-  CHECK_EQ( sizeof(int), sizeof( int_gid ) );
+  EDGE_CHECK_EQ( sizeof(int), sizeof( int_gid ) );
 
   // get MOAB's global id tag of entities
   moab::Tag l_tagMoabGId;
@@ -687,7 +687,7 @@ void edge::mesh::Moab::setupDataLayout() {
   // get the size of the tag and check with internal definition
   int l_gIdSize = 0;
   l_error = m_core.tag_get_bytes( l_tagMoabGId, l_gIdSize ); EDGE_CHECK_EQ( l_error, moab::MB_SUCCESS );
-  CHECK( l_gIdSize == sizeof( int_gid ) );
+  EDGE_CHECK_EQ( l_gIdSize, sizeof( int_gid ) );
 
   // MPI: create a consistent view of global id tag w.r.t. ghost elements and vertices
 #ifdef PP_USE_MPI

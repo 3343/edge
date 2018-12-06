@@ -53,15 +53,15 @@ void edge::time::Manager::compute() {
 
   while( m_finished == false ) {
     bool l_wrk;
-    int_tg          l_tg;
-    unsigned short  l_st;
-    unsigned int    l_id;
-    int_el          l_first;
-    int_el          l_size;
-    t_timeRegion   *l_enSp;
+    int_tg         l_tg;
+    unsigned short l_st;
+    unsigned int   l_id;
+    int_el         l_first;
+    int_el         l_size;
+    int_el         l_enSp[128];
 
     // check for work
-    l_wrk = m_shared.getWrkTd( l_tg, l_st, l_id, l_first, l_size, &l_enSp );
+    l_wrk = m_shared.getWrkTd( l_tg, l_st, l_id, l_first, l_size, l_enSp );
 
     if( l_wrk == true ) {
       // set status to "in progress"
@@ -122,6 +122,9 @@ void edge::time::Manager::simulate( double i_time ) {
 #ifdef PP_USE_OMP
 }
 #endif
+
+  // (re-)balance work regions
+  m_shared.balance();
 
   // prepare limiter for sync
   for( int_tg l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {

@@ -214,24 +214,12 @@ edge_cut::surf::c3t3ToPolyhedron( C3t3        const & i_c3t3,
   }
   o_polyhedron.clear();
 
-  std::stringstream l_sstream;
-  std::vector< K::Point_3 > l_points;
-  std::vector< std::vector<std::size_t> > l_polygons;
-
-  i_c3t3.output_facets_in_complex_to_off( l_sstream );
-
-  if (!CGAL::read_OFF( l_sstream, l_points, l_polygons)) {
-    EDGE_LOG_FATAL << "c3t3ToPolyhedron: Error parsing the OFF stream";
-  }
-
-  CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
-
-  if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( l_polygons ) ) {
-    EDGE_LOG_FATAL << "c3t3ToPolyhedron: Polygon soup is not a polygon mesh";
-  }
-
-  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( l_points, l_polygons, o_polyhedron );
+  CGAL::facets_in_complex_3_to_triangle_mesh< C3t3, Polyhedron >( i_c3t3, o_polyhedron );
   o_polyhedron.normalize_border();
+
+  EDGE_CHECK( !o_polyhedron.is_empty() );
+  EDGE_CHECK( o_polyhedron.is_pure_triangle() );
+  EDGE_CHECK( o_polyhedron.normalized_border_is_valid() );
 
   return;
 }
@@ -246,23 +234,9 @@ edge_cut::surf::c3t3ToSurfMesh( C3t3      const & i_c3t3,
   }
   o_surfMesh.clear();
 
-  std::stringstream l_sstream;
-  std::vector< K::Point_3 > l_points;
-  std::vector< std::vector<std::size_t> > l_polygons;
+  CGAL::facets_in_complex_3_to_triangle_mesh< C3t3, Surf_mesh >( i_c3t3, o_surfMesh );
 
-  i_c3t3.output_facets_in_complex_to_off( l_sstream );
-
-  if (!CGAL::read_OFF( l_sstream, l_points, l_polygons)) {
-    EDGE_LOG_FATAL << "c3t3ToSurfMesh: Error parsing the OFF stream ";
-  }
-
-  CGAL::Polygon_mesh_processing::orient_polygon_soup( l_points, l_polygons );
-
-  if( !CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh( l_polygons ) ) {
-    EDGE_LOG_FATAL << "c3t3ToSurfMesh: Polygon soup is not a polygon mesh";
-  }
-
-  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh( l_points, l_polygons, o_surfMesh );
+  EDGE_CHECK( !o_surfMesh.is_empty() );
 
   return;
 }
@@ -272,6 +246,11 @@ edge_cut::surf::Polyhedron&
 edge_cut::surf::topoPolyMeshFromXYZ(  Polyhedron        & o_topoPolyMesh,
                                       std::string const & i_topoFile )
 {
+  if( !o_topoPolyMesh.is_empty() ) {
+    EDGE_LOG_WARNING << "Overwriting existing polyhedron in topoPolyMeshFromXYZ";
+  }
+  o_topoPolyMesh.clear();
+
   std::stringstream     l_topoStream;
   edge_cut::surf::Topo  l_topo( i_topoFile );
 

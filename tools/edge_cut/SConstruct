@@ -102,25 +102,25 @@ env = Environment( variables = vars )
 
 # exit in the case of unknown variables
 if vars.UnknownVariables():
-  print "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys())
+  print( "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys()) )
   exit(1)
 
 # generate help message
 Help( vars.GenerateHelpText(env) )
 
-print "##########################################################################"
-print "##############   ##############            ###############  ##############"
-print "##############   ###############         ################   ##############"
-print "#####            #####       #####      ######                       #####"
-print "#####            #####        #####    #####                         #####"
-print "#############    #####         #####  #####                  #############"
-print "#############    #####         #####  #####      #########   #############"
-print "#####            #####         #####  #####      #########           #####"
-print "#####            #####        #####    #####        ######           #####"
-print "#####            #####       #####      #####       #####            #####"
-print "###############  ###############         ###############   ###############"
-print "###############  ##############           #############    ###############"
-print "#######################################################################cut"
+print( "##########################################################################" )
+print( "##############   ##############            ###############  ##############" )
+print( "##############   ###############         ################   ##############" )
+print( "#####            #####       #####      ######                       #####" )
+print( "#####            #####        #####    #####                         #####" )
+print( "#############    #####         #####  #####                  #############" )
+print( "#############    #####         #####  #####      #########   #############" )
+print( "#####            #####         #####  #####      #########           #####" )
+print( "#####            #####        #####    #####        ######           #####" )
+print( "#####            #####       #####      #####       #####            #####" )
+print( "###############  ###############         ###############   ###############" )
+print( "###############  ##############           #############    ###############" )
+print( "#######################################################################cut" )
 
 # print welcome message
 print( 'Running build script of EDGEcut.' )
@@ -178,8 +178,6 @@ if 'boost_dir' in vars.args.keys():
   env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['boost_dir']+'/lib64'] )
 
 # add CGAL
-#if( not conf.CheckLibWithHeader( 'libCGAL', 'CGAL/constant.h', 'CXX' ) ):
-#  warnings.warn('Error: Could not find CGAL. Try using cgal_dir option')
 if( not conf.CheckLib( 'libCGAL', language='CXX' ) ):
   warnings.warn('Error: Could not find CGAL. Try using cgal_dir option')
 
@@ -202,15 +200,18 @@ env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas"
 if 'debug' in env['mode']:
   env.Append( CXXFLAGS = ['-g','-O0'] )
   env.Append( CPPDEFINES = ['CGAL_MESH_3_PROFILING', 'CGAL_MESH_3_VERBOSE'] )
-  # tcmalloc is required to use the gperftools heap profiler
-  env.Append( LINKFLAGS = ['-ltcmalloc'] )
 else:
   env.Append( CXXFLAGS = ['-O2'] )
 
 # add sanitizers
 if 'san' in  env['mode']:
-  env.Append( CXXFLAGS =  ['-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
-  env.Append( LINKFLAGS = ['-fsanitize=address', '-fsanitize=undefined'] )
+  if env['CXX'] == 'clang++':
+      env.Append( CXXFLAGS =  ['-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
+      env.Append( LINKFLAGS = ['-fsanitize=address', '-fsanitize=undefined'] )
+  else:
+    print( '' )
+    print( 'WARNING: Continuing without sanitizers - clang compilers required for sanitizer mode, but not found.' )
+    print( '   export CXX=clang++ to change compilers' )
 
 # enable code coverage, if requested
 if env['cov'] == True:
@@ -234,5 +235,5 @@ SConscript( env['build_dir']+'/src/SConscript' )
 Import('env')
 
 # add a new line
-print ''
+print( '' )
 env.Program( env['build_dir']+'/edge_cut', source = env.sources )

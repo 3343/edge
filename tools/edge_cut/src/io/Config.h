@@ -24,6 +24,7 @@
 #define EDGE_CUT_CONFIG_H
 
 #include <string>
+#include <CGAL/make_mesh_3.h>
 #include "logging.hpp"
 #include "../../../submodules/pugixml/src/pugixml.hpp"
 
@@ -38,6 +39,11 @@ class edge_cut::io::Config {
 public:
   Config( std::string i_xmlPath );
 
+  void printConfig();
+
+  // Path to XML file containing the runtime config
+  std::string m_xmlPath;
+
   // XML document containing configuration
   pugi::xml_document m_doc;
 
@@ -49,6 +55,9 @@ public:
 
   // Output file for topography surface mesh
   std::string m_topoOut;
+
+  // Input file with triangular mesh model of boundary
+  std::string m_bdryIn;
 
   // Output file for domain boundary surface mesh
   std::string m_bdryOut;
@@ -76,6 +85,21 @@ public:
 
   // Minimum allowable facet angle for mesher
   typename K::FT m_angleBound;
+
+  // Time limit for each mesh optimization step (0 == no time limit)
+  double m_optimizeTime;
+
+  // CGAL object containing options for lloyd smoothing in mesher
+  CGAL::parameters::internal::Lloyd_options   m_lloydOpts;
+
+  // CGAL object containing options for ODT smoothing in mesher
+  CGAL::parameters::internal::Odt_options     m_odtOpts;
+
+  // CGAL object containing options for sliver perturbation in mesher
+  CGAL::parameters::internal::Perturb_options m_perturbOpts;
+
+  // CGAL object containing options for sliver exudation in mesher
+  CGAL::parameters::internal::Exude_options   m_exudeOpts;
 };
 
 #include "Config.inc"

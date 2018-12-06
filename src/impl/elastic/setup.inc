@@ -211,52 +211,41 @@ else {
 #pragma omp parallel
 #endif
 {
-  // offset
-  std::size_t l_off = 0;
-  // number of floating point entries per element
-  std::size_t l_nEnPerEl = N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS;
+  // star matrix
+#if defined PP_T_KERNELS_XSMM
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_MAT_STAR,
+                                    l_internal.m_elementShared4[0][0].mat );
+#else
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_QUANTITIES*N_QUANTITIES,
+                                    l_internal.m_elementShared4[0][0].mat[0] );
+#endif
 
-  for( unsigned short l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
-    // inner
-    std::size_t l_nEns  = l_enLayouts[2].timeGroups[l_tg].inner.size;
-                l_nEns *= l_nEnPerEl;
+  // flux solver own
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_QUANTITIES*N_QUANTITIES,
+                                    l_internal.m_elementShared2[0][0].solver[0] );
+  // flux solver neigh
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_QUANTITIES*N_QUANTITIES,
+                                    l_internal.m_elementShared3[0][0].solver[0] );
 
-    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
-                                      l_nEns,
-                                      l_internal.m_elementModePrivate1[0][0][0]+l_off );
+  // DOFs
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS,
+                                    l_internal.m_elementModePrivate1[0][0][0] );
 
-    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
-                                      l_nEns,
-                                      l_internal.m_globalShared6[0][0][0][0]+l_off );
-
-    l_off += l_nEns;
-
-    // send
-    l_nEns  = l_enLayouts[2].timeGroups[l_tg].nEntsOwn;
-    l_nEns -= l_enLayouts[2].timeGroups[l_tg].inner.size;
-    l_nEns *= l_nEnPerEl;
-
-    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
-                                      l_nEns,
-                                      l_internal.m_elementModePrivate1[0][0][0]+l_off );
-
-    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
-                                      l_nEns,
-                                      l_internal.m_globalShared6[0][0][0][0]+l_off );
-    l_off += l_nEns;
-
-    // recv
-    l_nEns = l_enLayouts[2].timeGroups[l_tg].nEntsNotOwn;
-    l_nEns *= l_nEnPerEl;
-    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
-                                      l_nEns,
-                                      l_internal.m_elementModePrivate1[0][0][0]+l_off );
-
-    edge::parallel::Shared::numaInit( l_shared.m_nWrks,
-                                      l_nEns,
-                                      l_internal.m_globalShared6[0][0][0][0]+l_off );
-    l_off += l_nEns;
-  }
+  // tDOFs
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS,
+                                    l_internal.m_globalShared6[0][0][0][0] );
 }
 
 // init buffer DOFs

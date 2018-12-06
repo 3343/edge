@@ -56,18 +56,37 @@ then
   exit 1
 fi
 
-# add GoCD packages and key
-sudo echo "deb https://download.gocd.org /" > /etc/apt/sources.list.d/gocd.list
-curl -s https://download.gocd.org/GOCD-GPG-KEY.asc | sudo apt-key add -
-sudo apt-get -qq update
+EDGE_CURRENT_DIR=$(pwd)
+EDGE_TMP_DIR=$(mktemp -d)
+EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
-# install Java 8
-sudo add-apt-repository -y ppa:openjdk-r/ppa > /dev/null
-sudo apt-get -qq update
-sudo apt-get -qq install openjdk-8-jre > /dev/null
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo curl https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo
+  sudo yum install -y java-1.8.0-openjdk
 
-sudo apt-get -qq install go-agent
-sudo su go -c "git lfs install"
+  # run install
+  sudo yum install -y go-agent
+
+  # fix install
+  sudo mkdir /var/go
+  sudo chown go:go /var/go
+else
+  # add GoCD packages and key
+  sudo echo "deb https://download.gocd.org /" > /etc/apt/sources.list.d/gocd.list
+  curl -s https://download.gocd.org/GOCD-GPG-KEY.asc | sudo apt-key add -
+  sudo apt-get -qq update
+
+  # install Java 8
+  sudo add-apt-repository -y ppa:openjdk-r/ppa > /dev/null
+  sudo apt-get -qq update
+  sudo apt-get -qq install openjdk-8-jre > /dev/null
+
+  sudo apt-get -qq install go-agent
+fi
+
+# init git lfs
+sudo su go -c "cd ~; git lfs install"
 
 # add server key
-openssl s_client -showcerts -connect ${GOCD_SERVER} </dev/null 2>/dev/null|openssl x509 -outform PEM > /var/go/root-cert.pem
+sudo su go -c "openssl s_client -showcerts -connect ${GOCD_SERVER} </dev/null 2>/dev/null|openssl x509 -outform PEM > /var/go/root-cert.pem"

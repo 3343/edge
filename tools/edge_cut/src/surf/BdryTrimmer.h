@@ -50,27 +50,85 @@ public:
   // vertices on two different meshes.
   typedef typename Polyhedron::Point                     Point;
 
+  /**
+   * Constructor: Checks validity of polyhedron input
+   *
+   * @param io_bdry polyhedron for boundary mesh
+   * @param i_topo poolyhedron for topography mesh
+   **/
   BdryTrimmer( Polyhedron & io_bdry, Polyhedron const & i_topo );
 
+  /**
+  * Trims the boundary mesh of all facets which lie above the topography mesh
+  *
+  * @return None
+  **/
   void trim();
 
 private:
+  /**
+   * Gets the previous vertex along the boundary of topography mesh
+   *
+   * @param i_vertTopo vertex on topography mesh
+   * @return const handle to previous vertex
+   **/
   Vertex_const getPrevTopoVert( Vertex_const i_vertTopo ) const;
 
+  /**
+   * Gets the next vertex along the boundary of topography mesh
+   *
+   * @param i_vertTopo vertex on topography mesh
+   * @return const handle to next vertex
+   **/
   Vertex_const getNextTopoVert( Vertex_const i_vertTopo ) const;
 
+  /**
+   * Gets the vertex on the boundary mesh which coincides with the given vertex
+   * on the topography mesh
+   *
+   * @param i_v vertex on the topography mesh to match
+   * @return handle to the matching vertex on the boundary mesh
+   **/
   Vertex getBdryVertex( Vertex_const i_v ) const;
 
+  /**
+   * Gets the halfedge on the boundary mesh with endpoints coinciding with
+   * the two given vertices on the topography mesh
+   *
+   * @param i_v1 topography vertex which is the base point of the desired halfedge
+   * @param i_v2 topography vertex which is the incident point of the desired halfedge
+   * @param handle to the matching halfedge on the boundary
+   **/
   Halfedge getBdryHalfedge( Vertex_const i_v1, Vertex_const i_v2 ) const;
 
-  bool isPosOriented( Halfedge l_halfedge ) const;
+  /**
+   * Checks the relative orientations of the topography mesh and the boundary mesh.
+   * Given a directed edge on the boundary mesh which also represents an edge on the
+   * topography mesh, determines whether that halfedge belongs to the face above
+   * the topography or below.
+   *
+   * @param i_halfedge halfedge on the boundary to test
+   * @return True if the halfedge belongs to a face which extends above
+   * the topography mesh
+   **/
+  bool isPosOriented( Halfedge i_halfedge ) const;
 
+  /**
+   * Deletes all connected components of m_bdry except for the one containing
+   * the face i_rep
+   *
+   * @param i_rep facet in the boundary mesh which is contained in the connected
+   *              component to save
+   * @return None
+   **/
   void deleteConnCompsExcept( Face i_rep );
 
 public:
+  // Boundary mesh
   Polyhedron       & m_bdry;
 
 private:
+  // Topography mesh
   Polyhedron const & m_topo;
 };
 

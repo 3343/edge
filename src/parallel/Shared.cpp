@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2015-2016, Regents of the University of California
+ * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -63,6 +63,9 @@ void edge::parallel::Shared::init( unsigned int i_nWrks ) {
   g_nThreads = 1;
   m_nWrks    = 1;
 #endif
+
+  // init the load balancing
+  m_balancing.init( m_nWrks );
 }
 
 void edge::parallel::Shared::print() {
@@ -122,12 +125,12 @@ std::size_t edge::parallel::Shared::getWrkRgn( unsigned int i_id ) {
   return l_rg;
 }
 
-bool edge::parallel::Shared::getWrkTd( int_tg          &o_tg,
-                                       unsigned short  &o_step,
-                                       unsigned int    &o_id,
-                                       int_el          &o_first,
-                                       int_el          &o_size,
-                                       t_timeRegion   **o_spEn ) {
+bool edge::parallel::Shared::getWrkTd( int_tg         & o_tg,
+                                       unsigned short & o_step,
+                                       unsigned int   & o_id,
+                                       int_el         & o_first,
+                                       int_el         & o_size,
+                                       int_el         * o_firstSp ) {
   EDGE_CHECK( g_thread < m_nWrks );
 
   // invalid everything by default
@@ -136,7 +139,6 @@ bool edge::parallel::Shared::getWrkTd( int_tg          &o_tg,
   o_id        = std::numeric_limits< unsigned int >::max();
   o_first     = std::numeric_limits< int_el       >::max();
   o_size      = std::numeric_limits< int_el       >::max();
-  if( o_spEn != nullptr ) *o_spEn = nullptr;
 
   // iterate over work region
   for( std::size_t l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
@@ -146,10 +148,18 @@ bool edge::parallel::Shared::getWrkTd( int_tg          &o_tg,
       o_tg    = m_wrkRgns[l_rg].tg;
       o_step  = m_wrkRgns[l_rg].step;
       o_id    = m_wrkRgns[l_rg].id;
-      o_first = l_wps[g_thread].ents.first;
-      o_size  = l_wps[g_thread].ents.size;
-      if( o_spEn != nullptr && m_wrkRgns[l_rg].wrkPkgs[g_thread].spEn.size() > 0 )
-        *o_spEn = &m_wrkRgns[l_rg].wrkPkgs[g_thread].spEn[0];
+
+      m_balancing.getWrkTd( l_rg,
+                            g_thread,
+                            o_first,
+                            o_size,
+                            o_firstSp );
+
+      // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
       return true;
     }
   }
@@ -160,6 +170,11 @@ bool edge::parallel::Shared::getWrkTd( int_tg          &o_tg,
 
 void edge::parallel::Shared::setStatusAll( t_status     i_status,
                                            unsigned int i_id ) {
+  // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   std::size_t l_rg = getWrkRgn( i_id );
 
   volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
@@ -179,6 +194,11 @@ void edge::parallel::Shared::setStatusAll( t_status     i_status,
 }
 
 void edge::parallel::Shared::resetStatus( t_status i_status ) {
+  // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   // iterate over all regions
   for( unsigned short l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
     volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
@@ -193,6 +213,11 @@ void edge::parallel::Shared::resetStatus( t_status i_status ) {
 
 void edge::parallel::Shared::setStatusTd(  t_status     i_status,
                                            unsigned int i_id ) {
+  // flush for a consistent view
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   // check that the calling thread is a worker
   EDGE_CHECK( g_thread < m_nWrks );
 
@@ -203,9 +228,13 @@ void edge::parallel::Shared::setStatusTd(  t_status     i_status,
   // check that the previous status matches
   if( i_status == IPR ) {
     EDGE_CHECK( *l_st == RDY );
+    // start the timer for this work package, now having status "in progress"
+    m_balancing.startClock( l_rg, g_thread );
   }
   else if( i_status == FIN ) {
     EDGE_CHECK( *l_st == IPR );
+    // stop the timer for this work package, now having status "finished"
+    m_balancing.stopClock( l_rg, g_thread );
   }
   else {
     EDGE_LOG_FATAL << "previous status not matching: " << i_status;
@@ -227,5 +256,14 @@ bool edge::parallel::Shared::getStatusAll( t_status     i_status,
     if(l_wps[l_td].status != i_status) return false;
   }
 
+#ifdef PP_USE_OMP
+#pragma omp flush
+#endif
+
   return true;
+}
+
+void edge::parallel::Shared::balance() {
+  m_balancing.balance();
+  m_balancing.print();
 }

@@ -27,6 +27,7 @@
 #include "data/EntityLayout.type"
 #include "data/SparseEntities.hpp"
 #include "parallel/global.h"
+#include "LoadBalancing.h"
 #include "io/logging.h"
 
 namespace edge {
@@ -53,12 +54,6 @@ class edge::parallel::Shared {
     struct WrkPkg {
       //! status
       t_status status;
-
-      //! entities covered by this work package
-      t_timeRegion ents;
-
-      //! sparse entities covered by the work package; dimension corresponds to the sparse types given at init
-      std::vector< t_timeRegion> spEn;
     };
 
     // work region containing work packages of all threads for this region
@@ -84,6 +79,9 @@ class edge::parallel::Shared {
 
     //! work regions present in the simulation, sorted by priority (descending).
     std::vector< WrkRgn > m_wrkRgns;
+
+    //! dynamic load balancing
+    LoadBalancing m_balancing;
 
     /**
      * Gets the work region for the given id.
@@ -176,7 +174,7 @@ class edge::parallel::Shared {
                     unsigned short  i_nSpTypes=0,
                     int_spType     *i_spType=NULL,
                     const T        *i_enChars=NULL ) {
-    // wait for all threads since memory modifications before might result in inconsitent results
+    // wait for all threads since memory modifications before might result in inconsistent results
 #ifdef PP_USE_OMP
 #pragma omp barrier
 #endif
@@ -189,59 +187,9 @@ class edge::parallel::Shared {
       l_wrkRgn.id   = i_id;
       l_wrkRgn.prio = i_prio;
 
-      // derive shared size per worker
-      int_el l_size = i_size / m_nWrks;
-
-      // distribute the equal contribution
+      // init to wait
       for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
-        l_wrkRgn.wrkPkgs[l_td].status    = WAI;
-        l_wrkRgn.wrkPkgs[l_td].ents.size = l_size;
-      }
-
-      // derive remainder which doesn't match the number of workers
-      l_size = i_size % m_nWrks;
-
-      // distribute remainder round-robin
-      int_el l_tdRr = m_wrkRgns.size() % m_nWrks;
-      for( int_el l_rm = l_size; l_rm > 0; l_rm-- ) {
-        l_wrkRgn.wrkPkgs[l_tdRr].ents.size++;
-        l_tdRr++;
-        l_tdRr = l_tdRr % m_nWrks;
-      }
-
-      // set first positions
-      l_wrkRgn.wrkPkgs[0].ents.first = i_first;
-      for( int l_td = 1; l_td < m_nWrks; l_td++ ) {
-        l_wrkRgn.wrkPkgs[l_td].ents.first = l_wrkRgn.wrkPkgs[l_td-1].ents.first+
-                                            l_wrkRgn.wrkPkgs[l_td-1].ents.size;
-      }
-
-      // determine the first sparse entry in the step for every type
-      for( unsigned short l_st = 0; l_st < i_nSpTypes; l_st++ ) {
-        l_wrkRgn.spTypes.push_back( i_spType[l_st] );
-      }
-
-      std::vector< int_el > l_wpSizes(m_nWrks);
-      for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
-        l_wpSizes[l_td] = l_wrkRgn.wrkPkgs[l_td].ents.size;
-        l_wrkRgn.wrkPkgs[l_td].spEn.resize(i_nSpTypes);
-      }
-
-      std::vector< int_el > l_wpFirstSp(m_nWrks);
-      std::vector< int_el > l_wpSizesSp(m_nWrks);
-      for( unsigned short l_st = 0; l_st < i_nSpTypes; l_st++ ) {
-        data::SparseEntities::subRgnsSpId( i_first,
-                                           m_nWrks,
-                                           l_wpSizes.data(),
-                                           i_spType[l_st],
-                                           i_enChars,
-                                           l_wpFirstSp.data(),
-                                           l_wpSizesSp.data() );
-
-        for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
-          l_wrkRgn.wrkPkgs[l_td].spEn[l_st].first = l_wpFirstSp[l_td];
-          l_wrkRgn.wrkPkgs[l_td].spEn[l_st].size  = l_wpSizesSp[l_td];
-        }
+        l_wrkRgn.wrkPkgs[l_td].status = WAI;
       }
 
       // put the work region in the right spot based on priority
@@ -255,6 +203,14 @@ class edge::parallel::Shared {
       }
 
       m_wrkRgns.insert( m_wrkRgns.begin()+l_ps, l_wrkRgn );
+
+      // register the work region in the dynamic load balancing
+      m_balancing.regWrkRgn( l_ps,
+                             i_first,
+                             i_size,
+                             i_nSpTypes,
+                             i_spType,
+                             i_enChars );
     }
 
 // sync memory view
@@ -265,6 +221,7 @@ class edge::parallel::Shared {
 
     /**
      * Gets work for the calling thread.
+     * If work is available, OMP-flush is called.
      *
      * @param o_tg time group.
      * @param o_step step in the computational scheme.
@@ -272,17 +229,19 @@ class edge::parallel::Shared {
      * @param o_first first entity to work on; numeric_limits<int_el>::max() if none available.
      * @param o_size number of entities to work on; numeric_limits<int_el>::max() if none available.
      * @param o_spEn sparse-entities, one range for every defined sparse type.
+     *
      * @return true if work is available; false otherwise.
      **/
-    bool getWrkTd( int_tg          &o_tg,
-                   unsigned short  &o_step,
-                   unsigned int    &o_id,
-                   int_el          &o_first,
-                   int_el          &o_size,
-                   t_timeRegion   **o_spEn=nullptr );
+    bool getWrkTd( int_tg         & o_tg,
+                   unsigned short & o_step,
+                   unsigned int   & o_id,
+                   int_el         & o_first,
+                   int_el         & o_size,
+                   int_el         * o_spEn );
 
     /**
      * Sets the given status of the work package in the respective region for the calling thread.
+     * Additionally, OMP-flush is called.
      *
      * @param i_st status which is set.
      * @param i_id id of the work region.
@@ -292,6 +251,7 @@ class edge::parallel::Shared {
 
     /**
      * Checks if the status of all workers matches for the region.
+     * If this is true, OMP-flush is called.
      *
      * @param i_status status to check.
      * @param i_id id of the region.
@@ -302,6 +262,7 @@ class edge::parallel::Shared {
 
     /**
      * Sets the status of the region for all workers.
+     * Additionally, OMP-flush is called.
      *
      * @param i_status status to set.
      * @param i_id id of the region.
@@ -311,14 +272,22 @@ class edge::parallel::Shared {
 
     /**
      * Resets the status for all regions for all workers to the given value.
+     * Additionally, OMP-flush is called.
      *
      * @param i_status status to reset to.
      **/
     void resetStatus( t_status i_status );
 
     /**
+     * @brief Balances the work packages.
+     */
+    void balance();
+
+    /**
      * @brief Performs NUMA-aware zero-initialization of the given array through first-touch.
-     *        Should be called within an OpenMP region.
+     *        Should be called within an OpenMP-parallel region from all threads.
+     *        The inits of the workers are done as OpenMP-critical (on by one).
+     *        After all init an OpenMP-barrier is called.
      *
      * @param i_nWrks number of workers.
      * @param i_nEns number of entries in the given array, which will be split equally among the available workers. Remainders will be added to the first workers.
@@ -331,7 +300,14 @@ class edge::parallel::Shared {
                           std::size_t const   i_nEns,
                           TL_T_EN           * o_arr ) {
       // return early, if if this is not a worker.
-      if( g_thread >= int(i_nWrks) ) return;
+      if( g_thread >= int(i_nWrks) ) {
+        // wait for other threads
+#ifdef PP_USE_OMP
+#pragma omp barrier
+#endif
+
+        return;
+      }
 
       // split among the workers
       std::size_t l_split = i_nEns / std::size_t(i_nWrks);
@@ -347,7 +323,67 @@ class edge::parallel::Shared {
       if( g_thread < int(l_rem) ) l_nEns++;
 
       // perform NUMA-aware init
+#ifdef PP_USE_OMP
+#pragma omp critical
+#endif
       for( std::size_t l_en = 0; l_en < l_nEns; l_en++ ) l_arr[l_en] = 0;
+
+      // wait for other threads
+#ifdef PP_USE_OMP
+#pragma omp barrier
+#endif
+    }
+
+    /**
+     * @brief Performs NUMA-aware zero-initialization of the given array through first-touch.
+     *        Should be called within an OpenMP-parallel region from all threads.
+     *        For every region, the inits of the workers are done as OpenMP-critical (on by one).
+     *        After all inits in a region, an OpenMP-barrier is called.
+     *
+     * @param i_enLa entity layout.
+     * @param i_nWrks number of workers.
+     * @param i_nVasPerEn number of values per entity
+     * @param o_arr array, which will be initialized.
+     *
+     * @paramt TL_T_VA type of the values.
+     */
+    template< typename TL_T_VA >
+    static void numaInit( t_enLayout  const & i_enLa,
+                          unsigned int        i_nWrks,
+                          std::size_t const   i_nVasPerEn,
+                          TL_T_VA           * o_arr ) {
+      // offset
+      std::size_t l_off = 0;
+
+      for( unsigned short l_tg = 0; l_tg < i_enLa.timeGroups.size(); l_tg++ ) {
+        // inner
+        std::size_t l_nVas = i_enLa.timeGroups[l_tg].inner.size;
+        l_nVas *= i_nVasPerEn;
+
+        edge::parallel::Shared::numaInit( i_nWrks,
+                                          l_nVas,
+                                          o_arr+l_off );
+        l_off += l_nVas;
+
+        // send
+        l_nVas  = i_enLa.timeGroups[l_tg].nEntsOwn;
+        l_nVas -= i_enLa.timeGroups[l_tg].inner.size;
+        l_nVas *= i_nVasPerEn;
+
+        edge::parallel::Shared::numaInit( i_nWrks,
+                                          l_nVas,
+                                          o_arr+l_off );
+        l_off += l_nVas;
+
+        // recv
+        l_nVas  = i_enLa.timeGroups[l_tg].nEntsNotOwn;
+        l_nVas *= i_nVasPerEn;
+
+        edge::parallel::Shared::numaInit( i_nWrks,
+                                          l_nVas,
+                                          o_arr+l_off );
+        l_off += l_nVas;
+      }
     }
 };
 
