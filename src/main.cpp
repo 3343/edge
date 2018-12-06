@@ -239,6 +239,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   double l_endTime = l_config.m_endTime;
   double l_syncInt = l_config.m_waveFieldInt;
          l_syncInt = std::min( l_syncInt, l_config.m_iBndInt );
+         l_syncInt = std::min( l_syncInt, l_config.m_syncMaxInt );
 
   if( std::abs(l_syncInt) < TOL.TIME ) l_syncInt = l_endTime;
 
@@ -299,9 +300,6 @@ l_mesh.getGIdsEl( l_gIdsEl );
     double l_stepTime = std::max( 0.0, l_endTime - l_simTime );
            l_stepTime = std::min( l_stepTime, l_syncInt );
 
-    // artificial synchronization after 1% of the simulation time for load balancing
-    if( l_step == 0 ) l_stepTime = std::min( l_stepTime, 0.01*(l_endTime-l_simTime) );
-
     l_time.simulate( l_stepTime );
 
     // update simulation time
@@ -337,7 +335,10 @@ l_mesh.getGIdsEl( l_gIdsEl );
     else
       l_syncInt = (l_stepBnd+1)*l_config.m_iBndInt      - l_simTime;
 
-    if( std::abs(l_syncInt) < TOL.TIME ) l_syncInt = l_endTime;
+    l_syncInt = std::min( l_syncInt, l_config.m_syncMaxInt );
+    l_syncInt = std::min( l_syncInt, l_endTime-l_simTime );
+
+    if( l_syncInt < TOL.TIME ) l_syncInt = l_endTime;
   }
 
   // print time info for compute

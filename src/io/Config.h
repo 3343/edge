@@ -236,6 +236,9 @@ class edge::io::Config {
     //! interval of wave field output (max/2 to prevent inf when used in comparisons)
     double m_waveFieldInt =  std::numeric_limits< double >::max()/2;
 
+    //! maximum synchronization interval (if sync point is reached otherwise before, this is ignored)
+    double m_syncMaxInt = std::numeric_limits< double >::max()/2;
+
     //! type of the internal boundary output
     std::string m_iBndType;
 
