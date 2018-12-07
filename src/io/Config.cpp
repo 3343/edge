@@ -133,6 +133,8 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
 void edge::io::Config::printConfig() {
   EDGE_LOG_INFO << "printing the runtime config, just for you!";
 
+  EDGE_LOG_INFO << "  synchronization:";
+  EDGE_LOG_INFO << "    max_int (possibly using default settings): " << m_syncMaxInt;
   EDGE_LOG_INFO << "  here's the mesh:";
 #ifdef PP_T_MESH_REGULAR
   EDGE_LOG_INFO << "    n_elements: ";
@@ -426,6 +428,18 @@ edge::io::Config::Config( std::string i_xmlPath ):
 
   m_errorNormsType = l_output.child("error_norms").child("type").text().as_string();
   m_errorNormsFile = l_output.child("error_norms").child("file").text().as_string();
+
+  /*
+   * read maximum sync interval
+   */
+  if( m_doc.child("edge").find_child(
+      []( pugi::xml_node i_node ){ return std::string(i_node.name()) == "synchronization";} ) ) {
+    m_syncMaxInt = m_doc.child("edge").child("synchronization").child("max_int").text().as_double();
+  }
+  else {
+    m_syncMaxInt = std::min( 0.05*m_endTime, m_waveFieldInt );
+  }
+  EDGE_CHECK_GT( m_syncMaxInt, TOL.TIME );
 
   // print config
   printConfig();
