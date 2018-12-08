@@ -76,7 +76,7 @@
 #define EDGE_LOG_ERROR       std::cerr << ""
 #define EDGE_LOG_WARNING     std::cerr << ""
 #define EDGE_LOG_VERBOSE     std::cout << ""
-#define EDGE_VLOG_IS_ON(str) std::cout << ""
+#define EDGE_VLOG_IS_ON(str) true
 #define EDGE_VLOG_ALL(str)   std::cout << ""
 #define EDGE_VLOG(str)       std::cout << ""
 
