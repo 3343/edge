@@ -79,10 +79,6 @@ if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 1);
   m_cflow[1] = 1;
 
-  // compute local updates: inner elements
-  m_shared.setStatusAll(parallel::Shared::RDY, 0);
-  m_cflow[0] = 1;
-
   // compute rupture net-updates: send/recv faces
   m_shared.setStatusAll(parallel::Shared::RDY, 4);
   m_cflow[4] = 1;
@@ -178,6 +174,12 @@ if( m_cflow[2] == 2 && m_cflow[1] == 0 ) {
   m_cflow[1] = 1;
 
   m_cflow[2] = 0;
+}
+
+// compute local send done: compute local inner
+if( m_cflow[1] == 2 && m_cflow[0] == 0 ) {
+  m_shared.setStatusAll(parallel::Shared::RDY, 0);
+  m_cflow[0] = 1;
 }
 
 // compute local, send done: MPI-send DG DOFs 
@@ -325,15 +327,12 @@ if( m_cflow[11] == 2 && m_cflow[12] == 2 ) {
 
   // schedule next time step if not finished
   if( !m_timeGroups[0]->finished() ) {
-    // inner, local
-    m_shared.setStatusAll(parallel::Shared::RDY, 0);
-    m_cflow[0] = 1;
-
     // inner rupture
     m_shared.setStatusAll(parallel::Shared::RDY, 3);
     m_cflow[3] = 1;
 
     // reset compute tasks
+    m_cflow[ 0] = 0;
     m_cflow[ 1] = 0;
     m_cflow[ 4] = 0;
     m_cflow[ 5] = 0;
