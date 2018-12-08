@@ -265,5 +265,6 @@ bool edge::parallel::Shared::getStatusAll( t_status     i_status,
 
 void edge::parallel::Shared::balance() {
   m_balancing.balance();
-  m_balancing.print();
+  if( EDGE_VLOG_IS_ON(2) )
+    m_balancing.print();
 }
