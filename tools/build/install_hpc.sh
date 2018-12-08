@@ -155,7 +155,7 @@ then
 
   sudo bash -c "echo net.ipv4.tcp_mem = 16777216 16777216 16777216 >> /etc/sysctl.conf"
 
-  sudo bash -c "echo net.ipv4.route.flush = 1"
+  sudo bash -c "echo net.ipv4.route.flush = 1 >> /etc/sysctl.conf"
 
   PATH=/sbin:$PATH sudo sysctl -p
 fi
