@@ -64,7 +64,8 @@ then
   sudo yum install -y -q -e 0 m4
   sudo yum install -y -q -e 0 dh-autoreconf
   sudo yum install -y -q -e 0 make
-  sudo yum install -y -q -e 0 cmake
+  sudo yum install -y -q -e 0 cmake3
+  sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
   sudo yum install -y -q -e 0 git
   sudo yum install -y -q -e 0 libxml2-python.x86_64
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools python-pip python34-pip
@@ -74,6 +75,11 @@ then
   sudo yum install -y -q -e 0 irqbalance
   sudo yum install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
   sudo yum install -y -q -e 0 atop
+  sudo yum install -y -q -e 0 GMT
+  # EDGEcut dependencies
+  sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
+  sudo pip install meshio > /dev/null
+
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   sudo yum groupinstall -y -q -e 0 "Development Tools"
