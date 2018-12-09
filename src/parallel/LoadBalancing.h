@@ -168,13 +168,13 @@ class edge::parallel::LoadBalancing {
       l_wrkRgn.wrkPkgs.resize( m_nWrks );
 
       // init
+      l_wrkRgn.elaMin = 0;
+      l_wrkRgn.elaSum = 0;
+      l_wrkRgn.elaMax = 0;
       for( unsigned short l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
         l_wrkRgn.wrkPkgs[l_wo].size  = std::numeric_limits< std::size_t >::max();
         l_wrkRgn.wrkPkgs[l_wo].first = std::numeric_limits< std::size_t >::max();
         l_wrkRgn.wrkPkgs[l_wo].firstSp.resize( i_nSpTypes );
-        l_wrkRgn.wrkPkgs[l_wo].elaMin = 0;
-        l_wrkRgn.wrkPkgs[l_wo].elaSum = 0;
-        l_wrkRgn.wrkPkgs[l_wo].elaMax = 0;
       }
 
       // set boundaries of the region
