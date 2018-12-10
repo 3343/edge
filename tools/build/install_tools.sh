@@ -241,6 +241,14 @@ then
   sudo yum install -y -q -e 0 vagrant.rpm
 fi
 
+#################
+# GCP specifics #
+#################
+if [[ $(curl metadata.google.internal -si | grep Google) ]]
+then
+  sudo python -m pip install google-api-python-client
+fi
+
 ############
 # Clean up #
 ############
