@@ -50,7 +50,7 @@ class edge::parallel::LoadBalancing {
     unsigned int m_nWrks;
 
     //! load balancing definition of a work package
-    struct WrkPkg {
+    struct WrkPkgLb {
       //! timer for the work package
       edge::monitor::Timer timer;
 
@@ -65,7 +65,7 @@ class edge::parallel::LoadBalancing {
     };
 
     //! load balancing definition of a work region
-    struct WrkRgn {
+    struct WrkRgnLb {
       //! first entity
       std::size_t first;
 
@@ -73,7 +73,7 @@ class edge::parallel::LoadBalancing {
       std::size_t size;
 
       //! work packages of the region
-      std::vector< WrkPkg > wrkPkgs;
+      std::vector< WrkPkgLb > wrkPkgs;
 
       //! first sparse entity id
       std::vector< std::size_t > firstSp;
@@ -92,7 +92,7 @@ class edge::parallel::LoadBalancing {
     };
 
     //! work regions present in the simulation
-    std::vector< WrkRgn > m_wrkRgns;
+    std::vector< WrkRgnLb > m_wrkRgns;
 
     /**
      * @brief Resolves the sparse entities, based on a computed balancing.
@@ -164,7 +164,7 @@ class edge::parallel::LoadBalancing {
                     TL_T_SP             * i_spType=NULL,
                     const TL_T_EN_CHARS * i_enChars=NULL ) {
       // create new work region
-      WrkRgn l_wrkRgn;
+      WrkRgnLb l_wrkRgn;
       l_wrkRgn.wrkPkgs.resize( m_nWrks );
 
       // init
