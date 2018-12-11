@@ -28,7 +28,7 @@
 
 void edge::parallel::LoadBalancing::resolveSpEn( unsigned short i_id ) {
   // work packages of the region
-  WrkPkg *l_wps = m_wrkRgns[i_id].wrkPkgs.data();
+  WrkPkgLb *l_wps = m_wrkRgns[i_id].wrkPkgs.data();
 
   // iterate over the defined sparse types
   for( unsigned short l_ty = 0; l_ty < m_wrkRgns[i_id].firstSp.size(); l_ty++ ) {
@@ -60,7 +60,7 @@ void edge::parallel::LoadBalancing::init( unsigned int i_nWrks) {
 
 void edge::parallel::LoadBalancing::balanceWrkRgn( unsigned short i_id ) {
   // work packages of the region
-  WrkPkg *l_wps = m_wrkRgns[i_id].wrkPkgs.data();
+  WrkPkgLb *l_wps = m_wrkRgns[i_id].wrkPkgs.data();
 
   // gather elapsed times
   m_wrkRgns[i_id].elaMin = std::numeric_limits< double >::max();

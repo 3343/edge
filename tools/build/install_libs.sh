@@ -35,7 +35,7 @@ cd ${EDGE_TMP_DIR}
 ########
 # zlib #
 ########
-wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz
+wget http://zlib.net/zlib-1.2.11.tar.gz -O zlib.tar.gz > /dev/null
 mkdir zlib
 tar -xzf zlib.tar.gz -C zlib --strip-components=1
 cd zlib
@@ -46,7 +46,7 @@ cd ..
 ########
 # HDF5 #
 ########
-wget https://www.hdfgroup.org/package/gzip/?wpdmdl=13048 -O hdf5.tar.gz
+wget https://www.hdfgroup.org/package/gzip/?wpdmdl=13048 -O hdf5.tar.gz > /dev/null
 mkdir hdf5
 tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
 cd hdf5
@@ -78,6 +78,32 @@ sudo make install > /dev/null
 cd ../..
 
 cd ..
+
+########
+# CGAL #
+########
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  wget https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-4.13/CGAL-4.13.tar.xz -O cgal.tar.xz > /dev/null
+  mkdir cgal
+  tar -xf cgal.tar.xz -C cgal --strip-components=1
+  cd cgal
+  cmake . -DWITH_CGAL_ImageIO=OFF -DWITH_CGAL_Qt5=OFF -DCMAKE_BUILD_TYPE=Release > /dev/null
+  make -j ${EDGE_N_BUILD_PROC} > /dev/null
+  sudo make install > /dev/null
+  cd ..
+fi
+
+###########
+# EDGEcut #
+###########
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  cd edge/tools/edge_cut
+  scons cgal_dir=/usr/local -j ${EDGE_N_BUILD_PROC}
+  sudo mv ./build/edge_cut /usr/local/bin
+  cd ../../..
+fi
 
 ############
 # Clean up #

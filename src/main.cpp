@@ -300,7 +300,17 @@ l_mesh.getGIdsEl( l_gIdsEl );
     double l_stepTime = std::max( 0.0, l_endTime - l_simTime );
            l_stepTime = std::min( l_stepTime, l_syncInt );
 
+
+    PP_INSTR_REG_DEF( sync )
+    PP_INSTR_REG_BEG( sync, "sync" )
+#pragma warning push
+#pragma warning(disable:68)
+    PP_INSTR_PAR_UINT64("sync_id",  (uint64_t) l_step )
+#pragma warning pop
+
     l_time.simulate( l_stepTime );
+
+    PP_INSTR_REG_END( sync )
 
     // update simulation time
     l_simTime += l_stepTime;

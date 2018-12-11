@@ -50,6 +50,7 @@ then
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y libxml2-utils
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y python-pip python3-pip
   sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y cppcheck
+  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y atop
 elif [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   # recent build tools
@@ -63,7 +64,8 @@ then
   sudo yum install -y -q -e 0 m4
   sudo yum install -y -q -e 0 dh-autoreconf
   sudo yum install -y -q -e 0 make
-  sudo yum install -y -q -e 0 cmake
+  sudo yum install -y -q -e 0 cmake3
+  sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
   sudo yum install -y -q -e 0 git
   sudo yum install -y -q -e 0 libxml2-python.x86_64
   sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools python-pip python34-pip
@@ -72,11 +74,18 @@ then
   sudo yum install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
   sudo yum install -y -q -e 0 irqbalance
   sudo yum install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
+  sudo yum install -y -q -e 0 atop
+  sudo yum install -y -q -e 0 GMT
+  # EDGEcut dependencies
+  sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
+  sudo pip install meshio > /dev/null
+
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
   sudo yum groupinstall -y -q -e 0 "Development Tools"
   sudo yum install -y -q -e 0 cmake
   sudo yum install -y -q -e 0 python python-pip python3 python3-pip
+  sudo yum install -y -q -e 0 atop
   # TODO: no cppcheck RPM available
 elif [[ ${EDGE_DIST} == *"Amazon Linux AMI"* ]]
 then
@@ -230,6 +239,14 @@ elif [[ ${EDGE_DIST} == *"CentOS"* ]] || [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]
 then
   wget https://releases.hashicorp.com/vagrant/2.2.0/vagrant_2.2.0_x86_64.rpm -O vagrant.rpm
   sudo yum install -y -q -e 0 vagrant.rpm
+fi
+
+#################
+# GCP specifics #
+#################
+if [[ $(curl metadata.google.internal -si | grep Google) ]]
+then
+  sudo python -m pip install google-api-python-client
 fi
 
 ############
