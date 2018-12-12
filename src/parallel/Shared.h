@@ -319,12 +319,12 @@ class edge::parallel::Shared {
 
       // derive start position of the calling worker in the array
       TL_T_EN * l_arr = o_arr;
-      l_arr += l_split * g_thread;
-      if( l_rem > 0 ) l_arr += std::min( int(l_rem), g_thread );
+      l_arr += l_split * (std::size_t) g_thread;
+      if( l_rem > 0 ) l_arr += std::min( l_rem, (std::size_t) g_thread );
 
       // derive number of entries under control of the worker
       std::size_t l_nEns = l_split;
-      if( g_thread < int(l_rem) ) l_nEns++;
+      if( (std::size_t) g_thread < l_rem ) l_nEns++;
 
       // perform NUMA-aware init
 #ifdef PP_USE_OMP
