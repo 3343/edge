@@ -28,6 +28,7 @@
 #include <fstream>
 #include <io/logging.h>
 #include <string>
+#include <cstring>
 
 #ifdef PP_USE_MEMKIND
 #include <hbwmalloc.h>
