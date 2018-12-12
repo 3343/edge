@@ -486,72 +486,72 @@ class edge::data::Internal {
 
       // faces
 #ifdef PP_N_FACE_MODE_PRIVATE_1
-      size_t l_faceModePrivateSize1      = m_nFaces * PP_N_FACE_MODE_PRIVATE_1 * N_FACE_MODES    * N_CRUNS       * sizeof(t_faceModePrivate1);
+      size_t l_faceModePrivateSize1      = std::size_t(m_nFaces) * PP_N_FACE_MODE_PRIVATE_1 * N_FACE_MODES    * N_CRUNS       * sizeof(t_faceModePrivate1);
 #endif
 #ifdef PP_N_FACE_MODE_PRIVATE_2
-      size_t l_faceModePrivateSize2      = m_nFaces * PP_N_FACE_MODE_PRIVATE_2 * N_FACE_MODES    * N_CRUNS       * sizeof(t_faceModePrivate2);
+      size_t l_faceModePrivateSize2      = std::size_t(m_nFaces) * PP_N_FACE_MODE_PRIVATE_2 * N_FACE_MODES    * N_CRUNS       * sizeof(t_faceModePrivate2);
 #endif
 #ifdef PP_N_FACE_MODE_PRIVATE_3
-      size_t l_faceModePrivateSize3      = m_nFaces * PP_N_FACE_MODE_PRIVATE_3 * N_FACE_MODES    * N_CRUNS       * sizeof(t_faceModePrivate3);
+      size_t l_faceModePrivateSize3      = std::size_t(m_nFaces) * PP_N_FACE_MODE_PRIVATE_3 * N_FACE_MODES    * N_CRUNS       * sizeof(t_faceModePrivate3);
 #endif
 
       // elements
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_1
-      size_t l_elementModePrivateSize1   = m_nElements * PP_N_ELEMENT_MODE_PRIVATE_1 * N_ELEMENT_MODES * N_CRUNS * sizeof(t_elementModePrivate1);
+      size_t l_elementModePrivateSize1   = std::size_t(m_nElements) * PP_N_ELEMENT_MODE_PRIVATE_1 * N_ELEMENT_MODES * N_CRUNS * sizeof(t_elementModePrivate1);
 #endif
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_2
-      size_t l_elementModePrivateSize2   = m_nElements * PP_N_ELEMENT_MODE_PRIVATE_2 * N_ELEMENT_MODES * N_CRUNS * sizeof(t_elementModePrivate2);
+      size_t l_elementModePrivateSize2   = std::size_t(m_nElements) * PP_N_ELEMENT_MODE_PRIVATE_2 * N_ELEMENT_MODES * N_CRUNS * sizeof(t_elementModePrivate2);
 #endif
 #ifdef PP_N_ELEMENT_MODE_PRIVATE_3
-      size_t l_elementModePrivateSize3   = m_nElements * PP_N_ELEMENT_MODE_PRIVATE_3 * N_ELEMENT_MODES * N_CRUNS * sizeof(t_elementModePrivate3);
+      size_t l_elementModePrivateSize3   = std::size_t(m_nElements) * PP_N_ELEMENT_MODE_PRIVATE_3 * N_ELEMENT_MODES * N_CRUNS * sizeof(t_elementModePrivate3);
 #endif
 
 
 #ifdef PP_N_ELEMENT_MODE_SHARED_1
-      size_t l_elementModeSharedSize1    = m_nElements * PP_N_ELEMENT_MODE_SHARED_1  * N_ELEMENT_MODES           * sizeof(t_elementModeShared1);
+      size_t l_elementModeSharedSize1    = std::size_t(m_nElements) * PP_N_ELEMENT_MODE_SHARED_1  * N_ELEMENT_MODES           * sizeof(t_elementModeShared1);
 #endif
 #ifdef PP_N_ELEMENT_MODE_SHARED_2
-      size_t l_elementModeSharedSize2    = m_nElements * PP_N_ELEMENT_MODE_SHARED_2  * N_ELEMENT_MODES           * sizeof(t_elementModeShared2);
+      size_t l_elementModeSharedSize2    = std::size_t(m_nElements) * PP_N_ELEMENT_MODE_SHARED_2  * N_ELEMENT_MODES           * sizeof(t_elementModeShared2);
 #endif
 #ifdef PP_N_ELEMENT_MODE_SHARED_3
-      size_t l_elementModeSharedSize3    = m_nElements * PP_N_ELEMENT_MODE_SHARED_3  * N_ELEMENT_MODES           * sizeof(t_elementModeShared3);
+      size_t l_elementModeSharedSize3    = std::size_t(m_nElements) * PP_N_ELEMENT_MODE_SHARED_3  * N_ELEMENT_MODES           * sizeof(t_elementModeShared3);
 #endif
 
 #ifdef PP_N_ELEMENT_PRIVATE_1
-      size_t l_elementPrivateSize1   = m_nElements * PP_N_ELEMENT_PRIVATE_1 * N_CRUNS * sizeof(t_elementPrivate1);
+      size_t l_elementPrivateSize1       = std::size_t(m_nElements) * PP_N_ELEMENT_PRIVATE_1 * N_CRUNS                        * sizeof(t_elementPrivate1);
 #endif
 #ifdef PP_N_ELEMENT_PRIVATE_2
-      size_t l_elementPrivateSize2   = m_nElements * PP_N_ELEMENT_PRIVATE_2 * N_CRUNS * sizeof(t_elementPrivate2);
+      size_t l_elementPrivateSize2       = std::size_t(m_nElements) * PP_N_ELEMENT_PRIVATE_2 * N_CRUNS                        * sizeof(t_elementPrivate2);
 #endif
 #ifdef PP_N_ELEMENT_PRIVATE_3
-      size_t l_elementPrivateSize3   = m_nElements * PP_N_ELEMENT_PRIVATE_3 * N_CRUNS * sizeof(t_elementPrivate3);
+      size_t l_elementPrivateSize3       = std::size_t(m_nElements) * PP_N_ELEMENT_PRIVATE_3 * N_CRUNS                        * sizeof(t_elementPrivate3);
 #endif
 
 #ifdef PP_N_ELEMENT_SHARED_1
-      size_t l_elementSharedSize1        = m_nElements * PP_N_ELEMENT_SHARED_1                                   * sizeof(t_elementShared1);
+      size_t l_elementSharedSize1        = std::size_t(m_nElements) * PP_N_ELEMENT_SHARED_1                                   * sizeof(t_elementShared1);
 #endif
 #ifdef PP_N_ELEMENT_SHARED_2
-      size_t l_elementSharedSize2        = m_nElements * PP_N_ELEMENT_SHARED_2                                   * sizeof(t_elementShared2);
+      size_t l_elementSharedSize2        = std::size_t(m_nElements) * PP_N_ELEMENT_SHARED_2                                   * sizeof(t_elementShared2);
 #endif
 #ifdef PP_N_ELEMENT_SHARED_3
-      size_t l_elementSharedSize3        = m_nElements * PP_N_ELEMENT_SHARED_3                                   * sizeof(t_elementShared3);
+      size_t l_elementSharedSize3        = std::size_t(m_nElements) * PP_N_ELEMENT_SHARED_3                                   * sizeof(t_elementShared3);
 #endif
 #ifdef PP_N_ELEMENT_SHARED_4
-      size_t l_elementSharedSize4        = m_nElements * PP_N_ELEMENT_SHARED_4                                   * sizeof(t_elementShared4);
+      size_t l_elementSharedSize4        = std::size_t(m_nElements) * PP_N_ELEMENT_SHARED_4                                   * sizeof(t_elementShared4);
 #endif
 
-      size_t l_connElVeSize              =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_VERTICES                 * sizeof(int_el);
-      size_t l_connElVeElSize            = (m_nElements + 1)                                                     * sizeof(int_el*);
-      size_t l_connElFaElSize            =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
-      size_t l_connElFaSize              =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
-      size_t l_connFaElSize              =  m_nFaces         * 2                                                 * sizeof(int_el);
-      size_t l_connFaVeSize              =  m_nFaces         * C_ENT[T_SDISC.FACE].N_VERTICES                    * sizeof(int_el);
-      size_t l_connfIdElFaElSize         =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
-      size_t l_connvIdElFaElSize         =  m_nElements      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
+      size_t l_connElVeSize              =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_VERTICES                 * sizeof(int_el);
+      size_t l_connElVeElSize            =  std::size_t((m_nElements + 1))                                                    * sizeof(int_el*);
+      size_t l_connElFaElSize            =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
+      size_t l_connElFaSize              =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
+      size_t l_connFaElSize              =  std::size_t(m_nFaces)         * 2                                                 * sizeof(int_el);
+      size_t l_connFaVeSize              =  std::size_t(m_nFaces)         * C_ENT[T_SDISC.FACE].N_VERTICES                    * sizeof(int_el);
+      size_t l_connfIdElFaElSize         =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
+      size_t l_connvIdElFaElSize         =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
 
-      size_t l_vertexCharsSize           =  m_nVertices                                                          * sizeof(t_vertexChars);
-      size_t l_faceCharsSize             =  m_nFaces                                                             * sizeof(t_faceChars);
-      size_t l_elementCharsSize          =  m_nElements                                                          * sizeof(t_elementChars);
+      size_t l_vertexCharsSize           =  std::size_t(m_nVertices)                                                          * sizeof(t_vertexChars);
+      size_t l_faceCharsSize             =  std::size_t(m_nFaces)                                                             * sizeof(t_faceChars);
+      size_t l_elementCharsSize          =  std::size_t(m_nElements)                                                          * sizeof(t_elementChars);
 
       // faces
 #ifdef PP_N_FACE_MODE_PRIVATE_1
@@ -734,107 +734,107 @@ class edge::data::Internal {
 
       // vertices
 #ifdef PP_N_VERTEX_SPARSE_PRIVATE_1
-      size_t l_veSpPrivate1              = m_nVeSp1 * PP_N_VERTEX_SPARSE_1 * N_CRUNS                            * sizeof(t_vertexSparsePrivate1);
+      size_t l_veSpPrivate1              = std::size_t(m_nVeSp1) * PP_N_VERTEX_SPARSE_1 * N_CRUNS                            * sizeof(t_vertexSparsePrivate1);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_PRIVATE_2
-      size_t l_veSpPrivate2              = m_nVeSp2 * PP_N_VERTEX_SPARSE_2 * N_CRUNS                            * sizeof(t_vertexSparsePrivate2);
+      size_t l_veSpPrivate2              = std::size_t(m_nVeSp2) * PP_N_VERTEX_SPARSE_2 * N_CRUNS                            * sizeof(t_vertexSparsePrivate2);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_PRIVATE_3
-      size_t l_veSpPrivate3              = m_nVeSp3 * PP_N_VERTEX_SPARSE_3 * N_CRUNS                            * sizeof(t_vertexSparsePrivate3);
+      size_t l_veSpPrivate3              = std::size_t(m_nVeSp3) * PP_N_VERTEX_SPARSE_3 * N_CRUNS                            * sizeof(t_vertexSparsePrivate3);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_PRIVATE_4
-      size_t l_veSpPrivate4              = m_nVeSp4 * PP_N_VERTEX_SPARSE_4 * N_CRUNS                            * sizeof(t_vertexSparsePrivate4);
+      size_t l_veSpPrivate4              = std::size_t(m_nVeSp4) * PP_N_VERTEX_SPARSE_4 * N_CRUNS                            * sizeof(t_vertexSparsePrivate4);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_PRIVATE_5
-      size_t l_veSpPrivate5              = m_nVeSp5 * PP_N_VERTEX_SPARSE_5 * N_CRUNS                            * sizeof(t_vertexSparsePrivate5);
+      size_t l_veSpPrivate5              = std::size_t(m_nVeSp5) * PP_N_VERTEX_SPARSE_5 * N_CRUNS                            * sizeof(t_vertexSparsePrivate5);
 #endif
 
 #ifdef PP_N_VERTEX_SPARSE_SHARED_1
-      size_t l_veSpShared1               = m_nVeSp1 * PP_N_VERTEX_SPARSE_1                                      * sizeof(t_vertexSparseShared1);
+      size_t l_veSpShared1               = std::size_t(m_nVeSp1) * PP_N_VERTEX_SPARSE_1                                      * sizeof(t_vertexSparseShared1);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_SHARED_2
-      size_t l_veSpShared2               = m_nVeSp2 * PP_N_VERTEX_SPARSE_2                                      * sizeof(t_vertexSparseShared2);
+      size_t l_veSpShared2               = std::size_t(m_nVeSp2) * PP_N_VERTEX_SPARSE_2                                      * sizeof(t_vertexSparseShared2);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_SHARED_3
-      size_t l_veSpShared3               = m_nVeSp3 * PP_N_VERTEX_SPARSE_3                                      * sizeof(t_vertexSparseShared3);
+      size_t l_veSpShared3               = std::size_t(m_nVeSp3) * PP_N_VERTEX_SPARSE_3                                      * sizeof(t_vertexSparseShared3);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_SHARED_4
-      size_t l_veSpShared4               = m_nVeSp4 * PP_N_VERTEX_SPARSE_4                                      * sizeof(t_vertexSparseShared4);
+      size_t l_veSpShared4               = std::size_t(m_nVeSp4) * PP_N_VERTEX_SPARSE_4                                      * sizeof(t_vertexSparseShared4);
 #endif
 #ifdef PP_N_VERTEX_SPARSE_SHARED_5
-      size_t l_veSpShared5               = m_nVeSp5 * PP_N_VERTEX_SPARSE_5                                      * sizeof(t_vertexSparseShared5);
+      size_t l_veSpShared5               = std::size_t(m_nVeSp5) * PP_N_VERTEX_SPARSE_5                                      * sizeof(t_vertexSparseShared5);
 #endif
 
       // faces
 #ifdef PP_N_FACE_SPARSE_PRIVATE_1
-      size_t l_faSpPrivate1              = m_nFaSp1 * PP_N_FACE_SPARSE_PRIVATE_1 * N_CRUNS                       * sizeof(t_faceSparsePrivate1);
+      size_t l_faSpPrivate1              = std::size_t(m_nFaSp1) * PP_N_FACE_SPARSE_PRIVATE_1 * N_CRUNS                       * sizeof(t_faceSparsePrivate1);
 #endif
 #ifdef PP_N_FACE_SPARSE_PRIVATE_2
-      size_t l_faSpPrivate2              = m_nFaSp2 * PP_N_FACE_SPARSE_PRIVATE_2 * N_CRUNS                       * sizeof(t_faceSparsePrivate2);
+      size_t l_faSpPrivate2              = std::size_t(m_nFaSp2) * PP_N_FACE_SPARSE_PRIVATE_2 * N_CRUNS                       * sizeof(t_faceSparsePrivate2);
 #endif
 #ifdef PP_N_FACE_SPARSE_PRIVATE_3
-      size_t l_faSpPrivate3              = m_nFaSp3 * PP_N_FACE_SPARSE_PRIVATE_3 * N_CRUNS                       * sizeof(t_faceSparsePrivate3);
+      size_t l_faSpPrivate3              = std::size_t(m_nFaSp3) * PP_N_FACE_SPARSE_PRIVATE_3 * N_CRUNS                       * sizeof(t_faceSparsePrivate3);
 #endif
 #ifdef PP_N_FACE_SPARSE_PRIVATE_4
-      size_t l_faSpPrivate4              = m_nFaSp4 * PP_N_FACE_SPARSE_PRIVATE_4 * N_CRUNS                       * sizeof(t_faceSparsePrivate4);
+      size_t l_faSpPrivate4              = std::size_t(m_nFaSp4) * PP_N_FACE_SPARSE_PRIVATE_4 * N_CRUNS                       * sizeof(t_faceSparsePrivate4);
 #endif
 #ifdef PP_N_FACE_SPARSE_PRIVATE_5
-      size_t l_faSpPrivate5              = m_nFaSp5 * PP_N_FACE_SPARSE_PRIVATE_5 * N_CRUNS                       * sizeof(t_faceSparsePrivate5);
+      size_t l_faSpPrivate5              = std::size_t(m_nFaSp5) * PP_N_FACE_SPARSE_PRIVATE_5 * N_CRUNS                       * sizeof(t_faceSparsePrivate5);
 #endif
 
 #ifdef PP_N_FACE_SPARSE_SHARED_1
-      size_t l_faSpShared1               = m_nFaSp1 * PP_N_FACE_SPARSE_SHARED_1                                  * sizeof(t_faceSparseShared1);
+      size_t l_faSpShared1               = std::size_t(m_nFaSp1) * PP_N_FACE_SPARSE_SHARED_1                                  * sizeof(t_faceSparseShared1);
 #endif
 #ifdef PP_N_FACE_SPARSE_SHARED_2
-      size_t l_faSpShared2               = m_nFaSp2 * PP_N_FACE_SPARSE_SHARED_2                                  * sizeof(t_faceSparseShared2);
+      size_t l_faSpShared2               = std::size_t(m_nFaSp2) * PP_N_FACE_SPARSE_SHARED_2                                  * sizeof(t_faceSparseShared2);
 #endif
 #ifdef PP_N_FACE_SPARSE_SHARED_3
-      size_t l_faSpShared3               = m_nFaSp3 * PP_N_FACE_SPARSE_SHARED_3                                  * sizeof(t_faceSparseShared3);
+      size_t l_faSpShared3               = std::size_t(m_nFaSp3) * PP_N_FACE_SPARSE_SHARED_3                                  * sizeof(t_faceSparseShared3);
 #endif
 #ifdef PP_N_FACE_SPARSE_SHARED_4
-      size_t l_faSpShared4               = m_nFaSp4 * PP_N_FACE_SPARSE_SHARED_4                                  * sizeof(t_faceSparseShared4);
+      size_t l_faSpShared4               = std::size_t(m_nFaSp4) * PP_N_FACE_SPARSE_SHARED_4                                  * sizeof(t_faceSparseShared4);
 #endif
 #ifdef PP_N_FACE_SPARSE_SHARED_5
-      size_t l_faSpShared5               = m_nFaSp5 * PP_N_FACE_SPARSE_SHARED_5                                  * sizeof(t_faceSparseShared5);
+      size_t l_faSpShared5               = std::size_t(m_nFaSp5) * PP_N_FACE_SPARSE_SHARED_5                                  * sizeof(t_faceSparseShared5);
 #endif
 #ifdef PP_N_FACE_SPARSE_SHARED_6
-      size_t l_faSpShared6               = m_nFaSp6 * PP_N_FACE_SPARSE_SHARED_6                                  * sizeof(t_faceSparseShared6);
+      size_t l_faSpShared6               = std::size_t(m_nFaSp6) * PP_N_FACE_SPARSE_SHARED_6                                  * sizeof(t_faceSparseShared6);
 #endif
 
       // elements
 #ifdef PP_N_ELEMENT_SPARSE_PRIVATE_1
-      size_t l_elSpPrivate1              = m_nElSp1 * PP_N_ELEMENT_SPARSE_PRIVATE_1 * N_CRUNS                    * sizeof(t_elementSparsePrivate1);
+      size_t l_elSpPrivate1              = std::size_t(m_nElSp1) * PP_N_ELEMENT_SPARSE_PRIVATE_1 * N_CRUNS                    * sizeof(t_elementSparsePrivate1);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_PRIVATE_2
-      size_t l_elSpPrivate2              = m_nElSp2 * PP_N_ELEMENT_SPARSE_PRIVATE_2 * N_CRUNS                    * sizeof(t_elementSparsePrivate2);
+      size_t l_elSpPrivate2              = std::size_t(m_nElSp2) * PP_N_ELEMENT_SPARSE_PRIVATE_2 * N_CRUNS                    * sizeof(t_elementSparsePrivate2);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_PRIVATE_3
-      size_t l_elSpPrivate3              = m_nElSp3 * PP_N_ELEMENT_SPARSE_PRIVATE_3 * N_CRUNS                    * sizeof(t_elementSparsePrivate3);
+      size_t l_elSpPrivate3              = std::size_t(m_nElSp3) * PP_N_ELEMENT_SPARSE_PRIVATE_3 * N_CRUNS                    * sizeof(t_elementSparsePrivate3);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_PRIVATE_4
-      size_t l_elSpPrivate4              = m_nElSp4 * PP_N_ELEMENT_SPARSE_PRIVATE_4 * N_CRUNS                    * sizeof(t_elementSparsePrivate4);
+      size_t l_elSpPrivate4              = std::size_t(m_nElSp4) * PP_N_ELEMENT_SPARSE_PRIVATE_4 * N_CRUNS                    * sizeof(t_elementSparsePrivate4);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_PRIVATE_5
-      size_t l_elSpPrivate5              = m_nElSp5 * PP_N_ELEMENT_SPARSE_PRIVATE_5 * N_CRUNS                    * sizeof(t_elementSparsePrivate5);
+      size_t l_elSpPrivate5              = std::size_t(m_nElSp5) * PP_N_ELEMENT_SPARSE_PRIVATE_5 * N_CRUNS                    * sizeof(t_elementSparsePrivate5);
 #endif
 
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_1
-      size_t l_elSpShared1               = m_nElSp1 * PP_N_ELEMENT_SPARSE_SHARED_1                               * sizeof(t_elementSparseShared1);
+      size_t l_elSpShared1               = std::size_t(m_nElSp1) * PP_N_ELEMENT_SPARSE_SHARED_1                               * sizeof(t_elementSparseShared1);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_2
-      size_t l_elSpShared2               = m_nElSp2 * PP_N_ELEMENT_SPARSE_SHARED_2                               * sizeof(t_elementSparseShared2);
+      size_t l_elSpShared2               = std::size_t(m_nElSp2) * PP_N_ELEMENT_SPARSE_SHARED_2                               * sizeof(t_elementSparseShared2);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_3
-      size_t l_elSpShared3               = m_nElSp3 * PP_N_ELEMENT_SPARSE_SHARED_3                               * sizeof(t_elementSparseShared3);
+      size_t l_elSpShared3               = std::size_t(m_nElSp3) * PP_N_ELEMENT_SPARSE_SHARED_3                               * sizeof(t_elementSparseShared3);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_4
-      size_t l_elSpShared4               = m_nElSp4 * PP_N_ELEMENT_SPARSE_SHARED_4                               * sizeof(t_elementSparseShared4);
+      size_t l_elSpShared4               = std::size_t(m_nElSp4) * PP_N_ELEMENT_SPARSE_SHARED_4                               * sizeof(t_elementSparseShared4);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_5
-      size_t l_elSpShared5               = m_nElSp5 * PP_N_ELEMENT_SPARSE_SHARED_5                               * sizeof(t_elementSparseShared5);
+      size_t l_elSpShared5               = std::size_t(m_nElSp5) * PP_N_ELEMENT_SPARSE_SHARED_5                               * sizeof(t_elementSparseShared5);
 #endif
 #ifdef PP_N_ELEMENT_SPARSE_SHARED_6
-      size_t l_elSpShared6               = m_nElSp6 * PP_N_ELEMENT_SPARSE_SHARED_6                               * sizeof(t_elementSparseShared6);
+      size_t l_elSpShared6               = std::size_t(m_nElSp6) * PP_N_ELEMENT_SPARSE_SHARED_6                               * sizeof(t_elementSparseShared6);
 #endif
 
 
