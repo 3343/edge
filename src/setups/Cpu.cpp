@@ -41,12 +41,19 @@ bool edge::setups::Cpu::getFlushToZero() {
 }
 
 void edge::setups::Cpu::setFlushToZero( bool i_on ) {
+#ifdef PP_USE_OMP
+#pragma omp parallel
+#endif
+{
+
 #ifdef __SSE__
   if( i_on )
     _MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
   else
     _MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_OFF );
 #endif
+
+}
 }
 
 bool edge::setups::Cpu::getDenormalsAreZero() {
@@ -65,10 +72,17 @@ bool edge::setups::Cpu::getDenormalsAreZero() {
 }
 
 void edge::setups::Cpu::setDenormalsAreZero( bool i_on ) {
+#ifdef PP_USE_OMP
+#pragma omp parallel
+#endif
+{
+
 #ifdef __SSE__
   if( i_on )
     _MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_ON );
   else
     _MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_OFF );
 #endif
+
+}
 }
