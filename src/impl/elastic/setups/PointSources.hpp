@@ -949,7 +949,7 @@ class edge::seismic::setups::PointSources {
                 TL_T_LID     i_size,
                 TL_T_REAL    i_t1,
                 TL_T_REAL    i_t2,
-                TL_T_REAL (* io_dofs)[TL_N_QTS_SIM][TL_N_MDS][TL_N_CRS] ) {
+                TL_T_REAL (* io_dofs)[TL_N_QTS_SIM][TL_N_MDS][TL_N_CRS] ) const {
       // abort if nothing is defined
       if( m_elSpPs != nullptr ) {}
       else return;

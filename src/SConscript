@@ -47,6 +47,7 @@ l_sources = [ 'data/Expression.cpp',
               'parallel/LoadBalancing.cpp',
               'parallel/Mpi.cpp',
               'parallel/global.cpp',
+              'setups/Cpu.cpp',
               'time/Manager.cpp' ]
 if env['element_type'] == 'tet4':
   l_sources = l_sources + ['mesh/regular/Tet.cpp']
@@ -91,6 +92,7 @@ if env['tests']:
              'linalg/HalfSpace.test.cpp',
              'linalg/Domain.test.cpp',
              'linalg/Series.test.cpp',
+             'setups/Cpu.test.cpp',
              'setups/InitialDofs.test.cpp',
              'io/Config.test.cpp',
              'io/Receivers.test.cpp',

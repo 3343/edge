@@ -105,6 +105,28 @@ then
   cd ../../..
 fi
 
+########
+# UCVM #
+########
+git clone https://github.com/SCECcode/UCVMC.git
+git checkout v17.1.0
+cd UCVMC/largefiles
+./get_large_files.py
+./check_largefiles_md5.py
+./stage_large_files.py
+cd ..
+# CVM-S4.26 and CVM-H
+sudo bash -c "printf \"/usr/local/ucvm\nno\nyes\nno\nyes\nno\n\" | ./ucvm_setup.py"
+cd ..
+
+##########
+# EDGE-V #
+##########
+cd edge/tools/edge_v
+scons moab=yes ucvm=/usr/local/ucvm zlib=yes hdf5=yes netcdf=no
+sudo mv build/edge_v /usr/local/bin
+cd ../..
+
 ############
 # Clean up #
 ############

@@ -38,6 +38,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "sc/Memory.hpp"
 #include "sc/Init.hpp"
 #include "sc/ibnd/SuperCell.hpp"
+#include "setups/Cpu.h"
 #include "io/Receivers.h"
 #include "io/ReceiversSf.hpp"
 #include "io/WaveField.h"
@@ -67,6 +68,10 @@ INITIALIZE_EASYLOGGINGPP
 
 int main( int i_argc, char *i_argv[] ) {
   PP_INSTR_FUN("main")
+
+  // set CPU flags
+  edge::setups::Cpu::setFlushToZero( true );
+  edge::setups::Cpu::setDenormalsAreZero( true );
 
   // disable logging file-IO
   edge::io::logging::config();
