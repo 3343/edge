@@ -282,7 +282,7 @@ class edge::data::common {
       if( i_hbw && !l_free ) {
         EDGE_VLOG(5) << "hbw_free on " << i_memory;
         hbw_free( i_memory );
-        l_free = true
+        l_free = true;
       }
 #endif
 
