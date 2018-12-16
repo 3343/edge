@@ -71,6 +71,16 @@ then
   EDGE_BIN_DIR=./bin/
 fi
 
+if [[ -z $EDGE_INST ]]
+then
+  EDGE_INST=no
+fi
+
+if [[ -z $EDGE_MOAB ]]
+then
+  EDGE_MOAB=yes
+fi
+
 # configs to build, $order_$precision_$cfr
 if [[ -z $EDGE_CONFIGS ]]
 then
@@ -114,15 +124,20 @@ do
   rm -rf .sconsign.dblite
 
   # finally let's build the code
-  CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=${EDGE_DEPS} zlib=${EDGE_DEPS} hdf5=${EDGE_DEPS} moab=${EDGE_DEPS} -j ${EDGE_PAR_COMPILE}
+  if [[ "${EDGE_MOAB}" == "yes" ]]
+  then
+    CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=${EDGE_DEPS} zlib=${EDGE_DEPS} hdf5=${EDGE_DEPS} moab=${EDGE_DEPS} inst=${EDGE_INST} -j ${EDGE_PAR_COMPILE}
+  else
+    CXX=${EDGE_CXX} scons equations=${EDGE_EQUATION} order=${EDGE_ORDER} precision=${EDGE_PRECISION} cfr=${EDGE_CFR} element_type=${EDGE_ELEMENT} parallel=${EDGE_PARALLEL} arch=${EDGE_ARCH} xsmm=${EDGE_DEPS} zlib=${EDGE_DEPS} inst=${EDGE_INST} -j ${EDGE_PAR_COMPILE}
+  fi
 
   # copy binary
-  cp ./build/edge ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
-  if [[ -f ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR} ]]
-   then
-    unlink ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
+  cp ./build/edge ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}_moab-${EDGE_MOAB}_inst-${EDGE_INST}
+  if [[ -f ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}_moab-${EDGE_MOAB}_inst-${EDGE_INST} ]]
+  then
+    unlink ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}_moab-${EDGE_MOAB}_inst-${EDGE_INST}
   fi
-  ln -s edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR} ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}
+  ln -s edge_${EDGE_ARCH}_${EDGE_PARALLEL}_${EDGE_ELEMENT}_${EDGE_EQUATION}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}_moab-${EDGE_MOAB}_inst-${EDGE_INST} ${EDGE_BIN_DIR}/edge_${EDGE_ARCH}_${EDGE_ORDER}_${EDGE_PRECISION}_${EDGE_CFR}_moab-${EDGE_MOAB}_inst-${EDGE_INST}
 done
 
 cd ${PWD_JUMP_BACK}
