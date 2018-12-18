@@ -494,7 +494,7 @@ class edge::seismic::setups::PointSources {
 #endif
       for( std::size_t l_pt = 0; l_pt < i_srcIdsP.size(); l_pt++ ) {
         // get the vertices of hte element
-        TL_T_REAL l_veCrds[TL_N_DIS][TL_N_VES];
+        double l_veCrds[TL_N_DIS][TL_N_VES];
         mesh::common< TL_T_EL >::getElVeCrds( i_srcElsP[l_pt],
                                               i_elVe,
                                               i_charsVe,
@@ -502,7 +502,7 @@ class edge::seismic::setups::PointSources {
 
         // get source coordinates
         TL_T_LID l_ptId = i_srcIdsP[l_pt];
-        TL_T_REAL l_ptCrds[TL_N_DIS];
+        double l_ptCrds[TL_N_DIS];
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) l_ptCrds[l_di] = l_ptsRaw[l_ptId][l_di];
 
         // get coordinates of the source w.r.t. the element
@@ -511,7 +511,7 @@ class edge::seismic::setups::PointSources {
                                           l_ptCrds );
 
         // get position in ref element
-        TL_T_REAL l_refCrds[3] = {0,0,0};
+        double l_refCrds[3] = {0,0,0};
         edge::linalg::Mappings::phyToRef( TL_T_EL,
                                           l_veCrds[0],
                                           l_ptCrds,
@@ -537,12 +537,12 @@ class edge::seismic::setups::PointSources {
         }
 
         // divide by jacobi det
-        TL_T_REAL l_jac[TL_N_DIS][TL_N_DIS];
+        double l_jac[TL_N_DIS][TL_N_DIS];
         edge::linalg::Mappings::evalJac( TL_T_EL,
                                         l_veCrds[0],
                                         l_jac[0] );
 
-        TL_T_REAL l_jacDet = TL_T_REAL(1) / edge::linalg::Matrix::det( TL_N_DIS, l_jac[0] );
+        double l_jacDet = TL_T_REAL(1) / edge::linalg::Matrix::det( TL_N_DIS, l_jac[0] );
 
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
           o_ps.bEvals[l_pt][l_md] *= l_jacDet;
