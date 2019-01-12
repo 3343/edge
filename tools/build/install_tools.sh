@@ -79,6 +79,8 @@ then
   # EDGEcut dependencies
   sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
   sudo pip install meshio > /dev/null
+  # GoCD dependencies
+  sudo yum install -y -q -e 0 java
 
 elif [[ ${EDGE_DIST} == *"Amazon Linux 2"* ]]
 then
@@ -127,7 +129,7 @@ then
   echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" | sudo tee --append /etc/apt/sources.list.d/clang.list
   sudo wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
   sudo apt-get update
-  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y clang-7 lldb-7 lld-7
+  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y clang-7 llvm-toolset-7-libomp-devel lldb-7 lld-7
   sudo ln -s /usr/bin/clang-7   /usr/bin/clang
   sudo ln -s /usr/bin/clang++-7 /usr/bin/clang++
 elif [[ ${EDGE_DIST} == *"CentOS"* ]]
