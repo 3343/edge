@@ -60,6 +60,31 @@ class edge::data::MmXsmmFused< float > {
     std::vector< std::vector< libxsmm_smmfunction > > m_kernels;
 
     /**
+     * @brief Constructor, which limits the LIBXSMM target architecture, if required.
+     */
+    MmXsmmFused() {
+      if( PP_N_CRUNS == 16 ) {
+#if !defined(__AVX512F__)
+        EDGE_LOG_FATAL;
+#endif
+      }
+      else if( PP_N_CRUNS == 8 ) {
+#if defined(__AVX2__)
+        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx2 to match 8 FP32-fused sims";
+        libxsmm_set_target_arch( "avx2" );
+#elif defined(__AVX__)
+        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx to match 8 FP32-fused sims";
+        libxsmm_set_target_arch( "avx" );
+#else
+        EDGE_LOG_FATAL;
+#endif
+      }
+      else {
+        EDGE_LOG_FATAL;
+      }
+    }
+
+    /**
      * Adds a sparse, single-precision libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
      * @param i_group id of the kernel group.
@@ -94,12 +119,6 @@ class edge::data::MmXsmmFused< float > {
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                    << " alpha=" << i_alpha << " beta=" << i_beta;
- 
-#if defined(__AVX512F__)
-      EDGE_CHECK( PP_N_CRUNS == 16 );
-#elif defined(__AVX2__)
-      EDGE_CHECK( PP_N_CRUNS == 8 );
-#endif
 
       // add kernel groups, if required
       if( i_group >= m_kernels.size() ) {
@@ -214,6 +233,31 @@ class edge::data::MmXsmmFused< double > {
     std::vector< std::vector< libxsmm_dmmfunction > > m_kernels;
  
     /**
+     * @brief Constructor, which limits the LIBXSMM target architecture, if required.
+     */
+    MmXsmmFused() {
+      if( PP_N_CRUNS == 8 ) {
+#if !defined(__AVX512F__)
+        EDGE_LOG_FATAL;
+#endif
+      }
+      else if( PP_N_CRUNS == 4 ) {
+#if defined(__AVX2__)
+        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx2 to match 4 FP64-fused sims";
+        libxsmm_set_target_arch( "avx2" );
+#elif defined(__AVX__)
+        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx to match 4 FP64-fused sims";
+        libxsmm_set_target_arch( "avx" );
+#else
+        EDGE_LOG_FATAL;
+#endif
+      }
+      else {
+        EDGE_LOG_FATAL;
+      }
+    }
+
+    /**
      * Adds a sparse libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
      * @param i_group id of the kernel group.
@@ -249,13 +293,6 @@ class edge::data::MmXsmmFused< double > {
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                    << " alpha=" << i_alpha << " beta=" << i_beta;
-
-      // check fused runs
-#if defined(__AVX512F__)
-      EDGE_CHECK( PP_N_CRUNS == 8 );
-#elif defined(__AVX2__)
-      EDGE_CHECK( PP_N_CRUNS == 4 );
-#endif
 
       // add kernel groups, if required
       if( i_group >= m_kernels.size() ) {
