@@ -383,17 +383,17 @@ if env['arch'] == 'snb':
 elif env['arch'] == 'hsw':
   env.Append( CPPFLAGS = ['-march=core-avx2'] )
 elif env['arch'] == 'avx512':
-  if compilers=='gnu':
+  if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd'] )
   elif compilers=='intel':
     env.Append( CPPFLAGS = ['-xCOMMON-AVX512'] )
 elif env['arch'] == 'skx':
-  if compilers=='gnu':
+  if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512bw', '-mavx512dq', '-mavx512vl'] )
   elif compilers=='intel':
     env.Append( CPPFLAGS = ['-xCORE-AVX512'] )
 elif env['arch'] == 'knl' or env['arch'] == 'knm':
-  if compilers=='gnu':
+  if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mavx512f', '-mavx512cd', '-mavx512er', '-mavx512pf'] )
   elif compilers=='intel':
     env.Append( CPPFLAGS = ['-xMIC-AVX512'] )
