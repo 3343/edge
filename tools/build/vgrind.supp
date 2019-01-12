@@ -130,6 +130,7 @@
    flush_to_zero
    Memcheck:Leak
    match-leak-kinds: possible
+   ...
    fun:*edge*setups*Cpu*setFlushToZero*
    fun:main
 }
