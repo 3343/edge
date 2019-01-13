@@ -2702,7 +2702,7 @@
               </exec>
               <exec command="/bin/bash">
                 <arg>-c</arg>
-                <arg>mkdir plots_hsp1a; dims=(x y z); for dir in HSP1a_tet4_reg_omp/recvs/*; do for dim in 0 1 2; do for recv in `seq 1 12`; do basedir=$(basename ${dir}); if [ $(echo ${basedir} | grep c4) ] ; then fruns=4; else fruns=1 ; fi; python edge/tools/processing/recvs_compare_csv.py --in_csv ref_hsp1a/${dims[$dim]}_${recv}.csv ${dir}/hsp1a_${recv}.csv --cols 1 $((7*${fruns} + ${dim})) --out_pdf plots_hsp1a/${basedir}_${recv}_${dims[$dim]}.pdf; done; done; done</arg>
+                <arg>mkdir plots_hsp1a; dims=(x y z); for dir in HSP1a_tet4_reg_omp/recvs/*; do for dim in 0 1 2; do for recv in `seq 1 12`; do basedir=$(basename ${dir}); if [ $(echo ${basedir} | grep c4) ] ; then fruns=4; else fruns=1 ; fi; edge/tools/processing/recvs_compare_csv.py --in_csv ref_hsp1a/${dims[$dim]}_${recv}.csv ${dir}/hsp1a_${recv}.csv --cols 1 $((7*${fruns} + ${dim})) --out_pdf plots_hsp1a/${basedir}_${recv}_${dims[$dim]}.pdf; done; done; done</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
