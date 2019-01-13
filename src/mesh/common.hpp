@@ -856,8 +856,9 @@ class edge::mesh::common {
                 if( i_elVe[l_el][l_ve1] == i_elVe[l_ne][l_ve2] ) l_nSharedVes++;
               }
             }
-            assert( l_nSharedVes == 3 || l_nSharedVes == 0 );
-
+            // this might fail for very small meshes, where all tets are connected to each other (l_nSharedVes)
+            // we keep the check as this is unrealistic
+            EDGE_CHECK( l_nSharedVes == 3 || l_nSharedVes == 0 );
 
             // global ids of neighboring vertices
             int_gid l_neVe[4];
