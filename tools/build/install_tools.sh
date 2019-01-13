@@ -56,6 +56,7 @@ then
   # recent build tools
   sudo yum install -y -q -e 0 centos-release-scl
   sudo yum install -y -q -e 0 devtoolset-7
+  sudo yum install -y -q -e 0 devtoolset-7-libasan-devel devtoolset-7-libubsan-devel
   source /opt/rh/devtoolset-7/enable
   echo "source /opt/rh/devtoolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
   # other
