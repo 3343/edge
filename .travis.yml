@@ -327,7 +327,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://mirrors.kernel.org/sourceware/valgrind/valgrind-3.14.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar -xjf valgrind-3.14.0.tar.bz2; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd valgrind-3.14.0; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure --enable-lto > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./configure > /dev/null && make -j $N_BUILD_PROC > /dev/null && sudo make install; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
