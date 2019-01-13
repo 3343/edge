@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -74,7 +74,7 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
                         (real_base *) l_fluxTDe );
 
   // non-zero entries of the matices
-  std::vector< real_base > *l_globalMat = new std::vector< real_base >();
+  std::vector< real_base > l_globalMat;
 
   // offsets of the matrices
   std::vector< unsigned int > l_offsets;
@@ -116,7 +116,7 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
     if( l_de == 1 || l_maxNzCol < l_nzBl[0][0][1] ) {
       for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
         for( unsigned int l_nz = 0; l_nz < l_stiffTCsc[l_di].val.size(); l_nz++ ) {
-          l_globalMat->push_back( l_stiffTCsc[l_di].val[l_nz] );
+          l_globalMat.push_back( l_stiffTCsc[l_di].val[l_nz] );
         }
         l_offsets.push_back( l_offsets.back() + l_stiffTCsc[l_di].val.size() );
       }
@@ -148,7 +148,7 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
                                                    l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_stiffCsc.val.size(); l_nz++ ) {
-      l_globalMat->push_back( l_stiffCsc.val[l_nz] );
+      l_globalMat.push_back( l_stiffCsc.val[l_nz] );
     }
     l_offsets.push_back( l_offsets.back() + l_stiffCsc.val.size() );
   }
@@ -166,7 +166,7 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
                                                    l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
-      l_globalMat->push_back( l_fluxCsc.val[l_nz] );
+      l_globalMat.push_back( l_fluxCsc.val[l_nz] );
     }
     l_offsets.push_back( l_offsets.back() + l_fluxCsc.val.size() );
   }
@@ -181,7 +181,7 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
                                                    l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
-      l_globalMat->push_back( l_fluxCsc.val[l_nz] );
+      l_globalMat.push_back( l_fluxCsc.val[l_nz] );
     }
     l_offsets.push_back( l_offsets.back() + l_fluxCsc.val.size() );
   }
@@ -196,35 +196,43 @@ l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
                                                    l_cscFillIn );
 
     for( unsigned short l_nz = 0; l_nz < l_fluxCsc.val.size(); l_nz++ ) {
-      l_globalMat->push_back( l_fluxCsc.val[l_nz] );
+      l_globalMat.push_back( l_fluxCsc.val[l_nz] );
     }
     l_offsets.push_back( l_offsets.back() + l_fluxCsc.val.size() );
+  }
+
+  // copy sparse matrices to a permanent data structure
+  real_base* l_globalMatPerm = (real_base*) l_dynMem.allocate( l_globalMat.size() * sizeof(real_base),
+                                                               4096,
+                                                               true );
+  for( std::size_t l_en = 0; l_en < l_globalMat.size(); l_en++ ) {
+    l_globalMatPerm[l_en] = l_globalMat[l_en];
   }
 
   // set the pointers
   unsigned short l_mat = 0;
   for( unsigned int l_de = 1; l_de < ORDER; l_de++ ) {
     for( unsigned int l_di = 0; l_di < N_DIM; l_di++ ) {
-      l_internal.m_globalShared1[0].mat.stiffT[(l_de-1)*N_DIM+l_di] = &(*l_globalMat)[0] + l_offsets[l_mat];
+      l_internal.m_globalShared1[0].mat.stiffT[(l_de-1)*N_DIM+l_di] = l_globalMatPerm + l_offsets[l_mat];
       l_mat++;
     }
   }
 
   for( unsigned int l_di = 0; l_di < N_DIM; l_di++ ) {
-    l_internal.m_globalShared1[0].mat.stiff[l_di] = &(*l_globalMat)[0] + l_offsets[l_mat];
+    l_internal.m_globalShared1[0].mat.stiff[l_di] = l_globalMatPerm + l_offsets[l_mat];
     l_mat++;
   }
 
   for( unsigned short l_fl = 0; l_fl < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fl++ ) {
-    l_internal.m_globalShared1[0].mat.fluxL[l_fl] = &(*l_globalMat)[0] + l_offsets[l_mat];
+    l_internal.m_globalShared1[0].mat.fluxL[l_fl] = l_globalMatPerm + l_offsets[l_mat];
     l_mat++;
   }
   for( unsigned short l_fn = 0; l_fn < N_FLUXN_MATRICES; l_fn++ ) {
-    l_internal.m_globalShared1[0].mat.fluxN[l_fn] = &(*l_globalMat)[0] + l_offsets[l_mat];
+    l_internal.m_globalShared1[0].mat.fluxN[l_fn] = l_globalMatPerm + l_offsets[l_mat];
     l_mat++;
   }
   for( unsigned short l_ft = 0; l_ft < C_ENT[T_SDISC.ELEMENT].N_FACES; l_ft++ ) {
-    l_internal.m_globalShared1[0].mat.fluxT[l_ft] = &(*l_globalMat)[0] + l_offsets[l_mat];
+    l_internal.m_globalShared1[0].mat.fluxT[l_ft] = l_globalMatPerm + l_offsets[l_mat];
     l_mat++;
   }
 }
