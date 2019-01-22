@@ -93,7 +93,9 @@ class edge::io::FileSystem {
         if( stat( l_dirCreate.c_str(), &l_stat ) != 0 ) {
           // try to continue by creating the directory
           int l_error = mkdir( l_dirCreate.c_str(), S_IRWXU | S_IRWXG );
-          if( l_error != 0 ) {
+
+          // abort on error (other than exist, as this might be called from multiple ranks)
+          if( l_error != 0 && errno != EEXIST ) {
             EDGE_LOG_FATAL << "  creating " << l_dirCreate << " failed: " << std::strerror( errno );
           }
 
