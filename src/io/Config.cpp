@@ -107,6 +107,7 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
   EDGE_LOG_INFO << "sharing the build config, note that every change requires a recompile";
   EDGE_LOG_INFO << "  running without a recompile will just use the settings of the";
   EDGE_LOG_INFO << "  last compile and ignore changed runtime parameters:";
+  EDGE_LOG_INFO << "    EDGE version:                      " << PP_EDGE_VERSION;
   EDGE_LOG_INFO << "    date / time of the build:          " << __DATE__      << " / " << __TIME__;
   EDGE_LOG_INFO << "    compiler name / version:           " << l_compiler    << " / " << __VERSION__;
   EDGE_LOG_INFO << "    inst. set build / arch runtime:    " << l_instSet     << " / " << i_build.child("arch").text().as_string();
