@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2018, Regents of the University of California
+ * Copyright (c) 2016-2019, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -39,7 +39,6 @@ if( l_config.m_recvCrds[0].size() > 0 ) {
                                         l_enLayouts[2],
                                         l_internal.m_connect.elVe[0],
                                         l_internal.m_vertexChars );
-   l_receivers.print( l_config.m_recvCrds[0].size() );
 
    // get dense-entities with receivers
    std::vector< int_el > l_enRecv;

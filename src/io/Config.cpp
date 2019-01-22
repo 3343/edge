@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2018, Regents of the University of California
+ * Copyright (c) 2016-2019, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -212,20 +212,6 @@ void edge::io::Config::printConfig() {
       EDGE_LOG_INFO << "  we have " << m_recvNames[l_rt].size() << " " << l_type << " receivers in the config: ";
       EDGE_LOG_INFO << "    sampling frequency: " << m_recvFreq[l_rt];
       EDGE_LOG_INFO << "    path to out-directory: "<< m_recvPath[l_rt];
-      EDGE_LOG_INFO << "    and here they are, our receivers: ";
-      for( std::size_t l_re = 0; l_re < m_recvNames[l_rt].size(); l_re++ ) {
-        EDGE_LOG_INFO << "      #" << l_re << ":";
-        EDGE_LOG_INFO << "        name: " << m_recvNames[l_rt][l_re];
-#if PP_N_DIM == 1
-        EDGE_LOG_INFO << "        x: " << m_recvCrds[l_rt][l_re][0];
-#elif PP_N_DIM == 2
-        EDGE_LOG_INFO << "        x, y: " << m_recvCrds[l_rt][l_re][0] << ", " << m_recvCrds[l_rt][l_re][1];
-#else
-        EDGE_LOG_INFO << "        x, y, z: " << m_recvCrds[l_rt][l_re][0] << ", "
-                                             << m_recvCrds[l_rt][l_re][1] << ", "
-                                             << m_recvCrds[l_rt][l_re][2];
-#endif
-      }
     }
   }
 

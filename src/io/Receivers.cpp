@@ -31,53 +31,6 @@
 #include <fstream>
 #include <sstream>
 
-void edge::io::Receivers::print( unsigned int i_nRecvs ) {
-  // coordinates of all receivers
-  double (*l_recvCrds)[3] = (double (*)[3]) new double[3*i_nRecvs];
-
-  // init invalid
-  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
-    for( unsigned short l_di = 0; l_di < 3; l_di++ )
-      l_recvCrds[l_re][l_di] = std::numeric_limits< double >::max();
-
-  // assign local receivers
-  for( unsigned int l_re = 0; l_re < m_recvs.size(); l_re++ ) {
-    unsigned int l_reId = m_recvs[l_re].id;
-
-    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-      l_recvCrds[l_reId][l_di] = m_recvs[l_re].coords[l_di];
-    }
-  }
-
-#ifdef PP_USE_MPI
-  // receive buffer
-  double (*l_buf)[3] = (double (*)[3]) new double[3*i_nRecvs];
-
-  MPI_Reduce( l_recvCrds,
-              l_buf,
-              3*i_nRecvs,
-              MPI_DOUBLE,
-              MPI_MIN,
-              0,
-              MPI_COMM_WORLD );
-
-  // copy back
-  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
-    for( unsigned short l_di = 0; l_di < 3; l_di++ )
-      l_recvCrds[l_re][l_di] = l_buf[l_re][l_di];
-
-  delete[] l_buf;
-#endif
-
-  for( unsigned short l_re = 0; l_re < i_nRecvs; l_re++ )
-    EDGE_LOG_INFO << "  receiver #" << l_re << " added at: "
-                  << l_recvCrds[l_re][0]
-                  << ((N_DIM > 1) ? " " +std::to_string(l_recvCrds[l_re][1]) : "")
-                  << ((N_DIM > 2) ? " " +std::to_string(l_recvCrds[l_re][2]) : "");
-
-  delete[] l_recvCrds;
-}
-
 void edge::io::Receivers::init(       t_entityType    i_enType,
                                       unsigned int    i_nRecvs,
                                 const std::string    &i_outDir,
@@ -185,22 +138,29 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
     std::string l_dirCreate = i_outDir + "/" + std::to_string(parallel::g_rank);
     FileSystem::createDir( l_dirCreate );
 
-    touchOutput();
+    touchOutput( i_recvNames,
+                 i_recvCrds );
   }
 
   // free memory
   delete[] l_deIds;
 }
 
-void edge::io::Receivers::touchOutput() {
-  // define a header
-  std::string l_header = "time";
+void edge::io::Receivers::touchOutput( std::string const (*i_recvNames),
+                                       real_mesh   const (*i_recvCrds)[3] ) {
+  // shared header
+  std::string l_headerSh  = "# EDGE\n";
+              l_headerSh += "# code version: " + std::string(PP_EDGE_VERSION) + "\n";
+              l_headerSh += "# build date / time: " + std::string(__DATE__) + " / " + std::string(__TIME__) + "\n";
+
+  // define column names
+  std::string l_colNames = "time";
   for( int_qt l_qt = 0; l_qt < m_nQts; l_qt++ ) {
     for( int_cfr l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
-      l_header += ",Q" + std::to_string(l_qt) + "_C" + std::to_string(l_cr);
+      l_colNames += ",Q" + std::to_string(l_qt) + "_C" + std::to_string(l_cr);
     }
   }
-  l_header += '\n';
+  l_colNames += '\n';
 
   // write header
   for( std::size_t l_re = 0; l_re < m_recvs.size(); l_re++ ) {
@@ -208,7 +168,17 @@ void edge::io::Receivers::touchOutput() {
     l_file.open( m_recvs[l_re].path );
 
     if( l_file.is_open() ) {
-      l_file << l_header;
+      unsigned int l_id = m_recvs[l_re].id;
+
+      l_file << l_headerSh;
+      l_file << "# receiver name: " << i_recvNames[l_id] << "\n";
+      l_file << "# specified coordinates: " << i_recvCrds[l_id][0] << " "
+                                            << i_recvCrds[l_id][1] << " "
+                                            << i_recvCrds[l_id][2] << "\n";
+      l_file << "# projected coordinates: " << m_recvs[l_re].coords[0] << " "
+                                            << m_recvs[l_re].coords[1] << " "
+                                            << m_recvs[l_re].coords[2] << "\n";
+      l_file << l_colNames;
     }
     else EDGE_LOG_FATAL;
   }

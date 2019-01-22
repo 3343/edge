@@ -90,23 +90,6 @@ class edge::io::ReceiversSf: public Receivers {
 
   public:
     /**
-     * Prints statistics of the receivers.
-     **/
-    void print() {
-      for( std::size_t l_re = 0; l_re < m_recvsSf.size(); l_re++ ) {
-        // get location
-        std::string l_loc = "";
-        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-          l_loc += " ";
-          l_loc += std::to_string( m_recvsSf[l_re].crds[l_di] );
-        }
-
-        EDGE_LOG_INFO_ALL << "    receiver " << m_recvs[l_re].path
-                          << " is located at (average sub-vertices): " <<  l_loc;
-      }
-    }
-
-    /**
      * Intitializes receivers at sub-faces.
      *
      * The receivers are based on the nearest found sub-face.
@@ -318,7 +301,7 @@ class edge::io::ReceiversSf: public Receivers {
               m_recvs.back().tg    = l_tg;
               m_recvs.back().en    = l_spId;
               m_recvs.back().enTg  = l_spIdTg;
-              std::string l_dir = i_outDir + "/" + std::to_string(parallel::g_rank);
+              std::string l_dir    = i_outDir + "/" + std::to_string(parallel::g_rank);
               m_recvs.back().path  = l_dir + "/" + i_recvNames[l_re]+".csv";
 
               m_recvsSf.back().sf = l_minSf[l_re];
@@ -347,7 +330,7 @@ class edge::io::ReceiversSf: public Receivers {
       std::string l_dirCreate = i_outDir + "/" + std::to_string(parallel::g_nRanks);
       FileSystem::createDir( l_dirCreate );
 
-      touchOutput();
+      touchOutput( i_recvNames, i_recvCrds );
     }
   }
 

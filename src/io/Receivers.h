@@ -77,8 +77,12 @@ class edge::io::Receivers {
 
     /**
      * Touches the output for the first time and writes the headers.
+     *
+     * @param i_recvNames name of the receivers.
+     * @param i_recvCrds coordinates of the receivers.
      **/
-    void touchOutput();
+    void touchOutput( std::string const (*i_recvNames),
+                      real_mesh   const (*i_recvCrds)[3] );
 
     /**
      * Flushes a receiver to disk.
@@ -96,13 +100,6 @@ class edge::io::Receivers {
      * Destructor which flushes everything to disk.
      **/
     ~Receivers() { flushAll(); };
-
-    /**
-     * Prints statistics of the receivers.
-     *
-     * @param i_nRecvs number of global receivers.
-     **/
-    void print( unsigned int i_nRecvs );
 
     /**
      * Initialzes the receiver output.

@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2016-2018, Regents of the University of California
+ * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
@@ -642,7 +642,6 @@ if( l_elasticConf.m_frictionLaw != "" &&
                                       l_internal.m_globalShared2[0].svChars,
                                       l_internal.m_vertexChars,
                                       l_internal.m_faceChars );
-   l_recvsSf.print();
 }
 
 // init sparse, internal data structures
