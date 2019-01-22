@@ -5,7 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
-# Copyright (c) 2015-2018, Regents of the University of California
+# Copyright (c) 2015-2019, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
 #
@@ -28,6 +28,20 @@ import subprocess
 import xml.etree.ElementTree
 import warnings
 import SCons
+
+##
+# Gets the EDGE_version
+##
+def getEdgeVersion():
+  # check if dirty
+  l_dirty = subprocess.check_output(['git', 'diff', '--', '.', '\':(exclude)submodules\''])
+
+  # assemble version
+  l_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+  if( l_dirty != '' ):
+    l_version = l_version + '_dirty'
+
+  return l_version
 
 ##
 # Adjust the given variable by turning relative paths to absolute paths
@@ -281,6 +295,10 @@ if 'LIBRARY_PATH' in env['ENV'].keys():
       l_libP = adjustPath( l_libP )
       env.AppendUnique( LIBPATH = [l_libP] )
       env.AppendUnique( RPATH   = [l_libP] )
+
+
+# forward EDGE version
+env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
 
 # detect compilers
 try:
