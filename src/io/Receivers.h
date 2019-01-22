@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2018, Regents of the University of California
+ * Copyright (c) 2016-2019, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -77,10 +77,8 @@ class edge::io::Receivers {
 
     /**
      * Touches the output for the first time and writes the headers.
-     *
-     * @param i_outDir output directory which gets created if it does not exist.
      **/
-    void touchOutput( const std::string &i_outDir );
+    void touchOutput();
 
     /**
      * Flushes a receiver to disk.

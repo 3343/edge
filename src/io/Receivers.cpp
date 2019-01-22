@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2018, Regents of the University of California
+ * Copyright (c) 2016-2019, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -156,7 +156,8 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
           m_recvs.back().tg    = l_tg;
           m_recvs.back().en    = l_en;
           m_recvs.back().enTg  = l_en-l_first;
-          m_recvs.back().path  = i_outDir+"/"+i_recvNames[l_re]+".csv";
+          std::string l_dir = i_outDir + "/" + std::to_string(parallel::g_rank);
+          m_recvs.back().path  = l_dir + "/" + i_recvNames[l_re]+".csv";
 
           // determine the location in reference coordinates
           real_mesh l_ref[3] = {0,0,0};
@@ -179,21 +180,19 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
                i_enLayout.timeGroups[l_tg].nEntsNotOwn;
   }
 
-  // touch output
-  if( i_nRecvs > 0 ) touchOutput( i_outDir );
+  // create directories and touch output
+  if( m_recvs.size() > 0 ) {
+    std::string l_dirCreate = i_outDir + "/" + std::to_string(parallel::g_rank);
+    FileSystem::createDir( l_dirCreate );
+
+    touchOutput();
+  }
 
   // free memory
   delete[] l_deIds;
 }
 
-void edge::io::Receivers::touchOutput( const std::string &i_outDir ) {
-  // create ouput-directories if not present
-  if( parallel::g_rank == 0 )
-    FileSystem::createDir( i_outDir );
-#ifdef PP_USE_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
+void edge::io::Receivers::touchOutput() {
   // define a header
   std::string l_header = "time";
   for( int_qt l_qt = 0; l_qt < m_nQts; l_qt++ ) {

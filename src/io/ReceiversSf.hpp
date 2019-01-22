@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017-2018, Regents of the University of California
+ * Copyright (c) 2017-2019, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,7 @@
 #include "data/EntityLayout.type"
 #include "linalg/Mappings.hpp"
 #include "linalg/Geom.hpp"
+#include "FileSystem.hpp"
 #include <limits>
 
 namespace edge {
@@ -317,7 +318,8 @@ class edge::io::ReceiversSf: public Receivers {
               m_recvs.back().tg    = l_tg;
               m_recvs.back().en    = l_spId;
               m_recvs.back().enTg  = l_spIdTg;
-              m_recvs.back().path  = i_outDir+"/"+i_recvNames[l_re]+".csv";
+              std::string l_dir = i_outDir + "/" + std::to_string(parallel::g_rank);
+              m_recvs.back().path  = l_dir + "/" + i_recvNames[l_re]+".csv";
 
               m_recvsSf.back().sf = l_minSf[l_re];
               for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
@@ -340,8 +342,13 @@ class edge::io::ReceiversSf: public Receivers {
       l_first += l_size;
     }
 
-    // touch output
-    if( i_nRecvs > 0 ) touchOutput( i_outDir );
+    // create directories and touch output
+    if( i_nRecvs > 0 ) {
+      std::string l_dirCreate = i_outDir + "/" + std::to_string(parallel::g_nRanks);
+      FileSystem::createDir( l_dirCreate );
+
+      touchOutput();
+    }
   }
 
   /**
