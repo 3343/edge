@@ -110,18 +110,13 @@ edge::io::WaveField::WaveField(       std::string      i_type,
     std::string l_dir, l_file;
     FileSystem::splitPathLast( i_outFile, l_dir, l_file );
 
-    if( parallel::g_rank == 0 ) {
-      for( int l_ra = 0; l_ra < parallel::g_nRanks; l_ra++ ) {
-        std::string l_dirCreate = l_dir + "/" + std::to_string(l_ra);
-        FileSystem::createDir( l_dirCreate );
-      }
-    }
-#ifdef PP_USE_MPI
-    MPI_Barrier( MPI_COMM_WORLD );
-#endif
+    if( m_elPrint.size() > 0 ) {
+      std::string l_dirCreate = l_dir + "/" + std::to_string(parallel::g_rank);
+      FileSystem::createDir( l_dirCreate );
 
-    l_dir = l_dir + "/" + std::to_string(parallel::g_rank) + '/';
-    m_outFile = l_dir + l_file;
+      l_dir = l_dir + "/" + std::to_string(parallel::g_rank) + '/';
+      m_outFile = l_dir + l_file;
+    }
   }
 
   m_nVe = i_inMap->veDaMe.size();
