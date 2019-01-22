@@ -260,7 +260,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
                                 l_config.m_waveFieldSpType );
 
   // write setup
-  EDGE_LOG_INFO << "reached synchronization point #0: " << l_simTime;
+  EDGE_LOG_INFO << "reached synchronization point #0";
+  EDGE_LOG_INFO << "  simulation time: " << l_simTime;
   if( l_config.m_waveFieldInt > TOL.TIME ) {
     EDGE_LOG_INFO << "  writing wave field #0";
     l_writer.write( 0,
@@ -320,7 +321,11 @@ l_mesh.getGIdsEl( l_gIdsEl );
     // update simulation time
     l_simTime += l_stepTime;
 
-    EDGE_LOG_INFO << "reached synchronization point #" << l_step << ": " << l_simTime;
+    EDGE_LOG_INFO << "reached synchronization point #" << l_step+1;
+    EDGE_LOG_INFO << "  simulation time: " << l_simTime;
+    l_timer.end();
+    EDGE_LOG_INFO << "  estimated remaining time: " << (l_endTime / l_simTime - 1.0) * l_timer.elapsed() << " seconds";
+    l_timer.start();
 
     // write this sync step
     if( l_simTime + TOL.TIME > (l_stepWf+1)*l_config.m_waveFieldInt ) {
