@@ -171,13 +171,17 @@ void edge::io::Receivers::touchOutput( std::string const (*i_recvNames),
       unsigned int l_id = m_recvs[l_re].id;
 
       l_file << l_headerSh;
-      l_file << "# receiver name: " << i_recvNames[l_id] << "\n";
-      l_file << "# specified coordinates: " << i_recvCrds[l_id][0] << " "
-                                            << i_recvCrds[l_id][1] << " "
-                                            << i_recvCrds[l_id][2] << "\n";
-      l_file << "# projected coordinates: " << m_recvs[l_re].coords[0] << " "
-                                            << m_recvs[l_re].coords[1] << " "
-                                            << m_recvs[l_re].coords[2] << "\n";
+
+      if( i_recvNames != nullptr && i_recvCrds != nullptr ) {
+        l_file << "# receiver name: " << i_recvNames[l_id] << "\n";
+        l_file << "# specified coordinates: " << i_recvCrds[l_id][0] << " "
+                                              << i_recvCrds[l_id][1] << " "
+                                              << i_recvCrds[l_id][2] << "\n";
+        l_file << "# projected coordinates: " << m_recvs[l_re].coords[0] << " "
+                                              << m_recvs[l_re].coords[1] << " "
+                                              << m_recvs[l_re].coords[2] << "\n";
+      }
+
       l_file << l_colNames;
     }
     else EDGE_LOG_FATAL;

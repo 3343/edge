@@ -330,7 +330,7 @@ class edge::io::ReceiversSf: public Receivers {
       std::string l_dirCreate = i_outDir + "/" + std::to_string(parallel::g_nRanks);
       FileSystem::createDir( l_dirCreate );
 
-      touchOutput( i_recvNames, i_recvCrds );
+      touchOutput();
     }
   }
 

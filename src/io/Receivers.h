@@ -81,8 +81,8 @@ class edge::io::Receivers {
      * @param i_recvNames name of the receivers.
      * @param i_recvCrds coordinates of the receivers.
      **/
-    void touchOutput( std::string const (*i_recvNames),
-                      real_mesh   const (*i_recvCrds)[3] );
+    void touchOutput( std::string const (*i_recvNames) = nullptr,
+                      real_mesh   const (*i_recvCrds)[3] = nullptr );
 
     /**
      * Flushes a receiver to disk.
