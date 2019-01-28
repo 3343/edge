@@ -27,6 +27,7 @@ INITIALIZE_EASYLOGGINGPP
 #include "io/OptionParser.h"
 #include "surf/meshUtils.h"
 #include "surf/BdryTrimmer.h"
+#include "surf/SizingField.h"
 
 using namespace edge_cut::surf;
 
@@ -90,12 +91,12 @@ int main( int i_argc, char *i_argv[] ) {
 
   // NOTE meshes must share common edge refinement criteria in order for borders
   //      to coincide. (recall edge criteria only affects specified 1D features)
-  SizingField l_edgeCrit( l_config.m_edgeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
-
-  SizingField l_topoFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
-  SizingField l_bdryFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, 0, 0 );
-  SizingField l_topoApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad );
-  SizingField l_bdryApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, 0, 0 );
+  SizingField<edge_cut::surf::Mesh_domain>
+    l_edgeCrit( l_config.m_edgeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad, l_config.m_layers ),
+    l_topoFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad, l_config.m_layers ),
+    l_bdryFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, 0, 0, l_config.m_layers ),
+    l_topoApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad, l_config.m_layers ),
+    l_bdryApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, 0, 0, l_config.m_layers );
 
   Mesh_criteria   l_topoCriteria( CGAL::parameters::edge_size = l_edgeCrit,
                                   CGAL::parameters::facet_size = l_topoFacetCrit,
@@ -121,7 +122,7 @@ int main( int i_argc, char *i_argv[] ) {
                                                 l_config.m_odtOpts,
                                                 l_config.m_perturbOpts,
                                                 l_config.m_exudeOpts    );
-  
+
 
   // Trim bits of boundary mesh which extend above topography
   EDGE_LOG_INFO << "Trimming boundary mesh...";
