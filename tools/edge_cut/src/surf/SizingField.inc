@@ -34,6 +34,8 @@
   m_outerRad( i_outerRad ),
   m_layers( i_layers )
 {
+  EDGE_CHECK_NE( m_scale, 0 );
+  
   if ( m_innerRad != m_outerRad ) {
     m_widthInv = 1 / ( m_outerRad - m_innerRad );
   }
