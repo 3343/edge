@@ -69,34 +69,6 @@ namespace edge_cut{
     typedef std::vector< std::size_t >                                          Polygon;
 
 
-    struct SizingField {
-      typedef K::FT FT;
-      typedef K::Point_3 Point_3;
-      typedef Mesh_domain::Index Index;
-
-      FT                m_innerVal;
-      FT                m_scale;
-      Point_3           m_center;
-      FT                m_innerRad;
-      FT                m_outerRad;
-      FT                m_widthInv;
-
-      SizingField( FT i_innerVal, FT i_scale, Point_3 i_center, FT i_innerRad, FT i_outerRad ) :
-        m_innerVal( i_innerVal ),
-        m_scale( i_scale ),
-        m_center( i_center ),
-        m_innerRad( i_innerRad ),
-        m_outerRad( i_outerRad )
-      {
-        if ( m_innerRad != m_outerRad )
-          m_widthInv = 1 / ( m_outerRad - m_innerRad );
-        else
-          m_widthInv = 0;
-      }
-
-      FT operator()( const Point_3& p, const int, const Index& ) const;
-    };
-
     /**
      * Computes the intersection between the polygonal surface stored in i_slicer and
      * the plane i_plane, which should be a collection of piecewise-linear curves.

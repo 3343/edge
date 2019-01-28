@@ -24,27 +24,6 @@
 #include <CGAL/IO/OFF_reader.h>  // Must include here to avoid multiple defn errors (CGAL bug as of v4.13)
 #include "surf/meshUtils.h"
 
-edge_cut::surf::K::FT
-edge_cut::surf::SizingField::operator()(  Point_3 const & i_p,
-                                          int     const,
-                                          Index   const &     ) const
-{
-  FT l_distance = std::sqrt( std::pow( i_p.x()-m_center.x(), 2 ) + std::pow( i_p.y()-m_center.y(), 2 ) );
-
-  if ( l_distance <= m_innerRad ) {
-    return m_innerVal;
-  }
-  else if ( l_distance >= m_outerRad ) {
-    return m_scale * m_innerVal;
-  }
-  else {
-    // Control should never reach here if inner and outer radii are equal
-    EDGE_CHECK_NE( m_outerRad, m_innerRad );
-    return ( 1 + ( l_distance - m_innerRad ) * ( m_scale - 1) * m_widthInv ) * m_innerVal;
-  }
-}
-
-
 edge_cut::surf::Polyline_type
 edge_cut::surf::topoIntersect(  Poly_slicer const & i_slicer,
                                 K::Plane_3  const & i_plane   )

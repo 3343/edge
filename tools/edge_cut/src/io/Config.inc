@@ -38,6 +38,7 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath ) :
                    << " (error at ["   << i_xmlPath << " " << l_parseResult.offset << "]";
   }
 
+  // Check for EDGEcut root
   pugi::xml_node l_root = m_doc.child("edge_cut");
   if( l_root == pugi::xml_node() ) {
     EDGE_LOG_FATAL << "XML configuration does not contain <edge_cut> tree";
@@ -46,6 +47,7 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath ) :
   m_xmlPath = i_xmlPath;
 
   // Computational Domain
+  // NOTE as_double() returns 0 if node is null or empty
   m_bBox[0] = l_root.child("bounding_box").child("xMin").text().as_double();
   m_bBox[1] = l_root.child("bounding_box").child("xMax").text().as_double();
   m_bBox[2] = l_root.child("bounding_box").child("yMin").text().as_double();
@@ -59,13 +61,36 @@ edge_cut::io::Config< K >::Config( std::string i_xmlPath ) :
   m_bdryIn  = l_root.child("io").child("boundary").child("in").text().as_string();
   m_bdryOut = l_root.child("io").child("boundary").child("out").text().as_string();
 
+  // Depth-Based Refinement
+  pugi::xml_node l_regionDepth = l_root.child("region").child("layered");
+  if ( l_regionDepth == pugi::xml_node() ) {
+    EDGE_LOG_WARNING << "No depth-based refinement criteria found in runtime config";
+    EDGE_CHECK_EQ( m_layers.size(), 0 );
+  }
+  else {
+    for ( pugi::xml_node l_layer : l_regionDepth.children("layer") ) {
+      m_layers.emplace( l_layer.child("depth").text().as_double(),
+                        l_layer.child("scale").text().as_double() );
+    }
+  }
+
   // Refinement Region Definition
-  m_scale    = l_root.child("region").child("scale").text().as_double();
-  m_innerRad = l_root.child("region").child("inner_radius").text().as_double();
-  m_outerRad = l_root.child("region").child("outer_radius").text().as_double();
-  m_center   = typename K::Point_3( l_root.child("region").child("center").child("x").text().as_double(),
-                                    l_root.child("region").child("center").child("y").text().as_double(),
-                                    l_root.child("region").child("center").child("z").text().as_double() );
+  pugi::xml_node l_regionCirc = l_root.child("region").child("circular");
+  if ( l_regionCirc == pugi::xml_node() ) {
+    EDGE_LOG_WARNING << "No circular refinement criteria found in runtime config";
+    m_scale = 1;
+    m_innerRad = 0;
+    m_outerRad = 0;
+    m_center = CGAL::Origin();
+  }
+  else {
+    m_scale    = l_regionCirc.child("scale").text().as_double();
+    m_innerRad = l_regionCirc.child("inner_radius").text().as_double();
+    m_outerRad = l_regionCirc.child("outer_radius").text().as_double();
+    m_center   = typename K::Point_3( l_regionCirc.child("center").child("x").text().as_double(),
+                                      l_regionCirc.child("center").child("y").text().as_double(),
+                                      l_regionCirc.child("center").child("z").text().as_double() );
+  }
 
   // Meshing Criteria
   m_edgeBase        = l_root.child("refine").child("edge").text().as_double();
@@ -131,11 +156,17 @@ edge_cut::io::Config< K >::printConfig()
   EDGE_LOG_INFO << "    ODT Smoother:   " << ( ( m_odtOpts == CGAL::parameters::no_odt() ) ? "no" : "yes" );
   EDGE_LOG_INFO << "    Sliver Perturb: " << ( ( m_perturbOpts == CGAL::parameters::no_perturb() ) ? "no" : "yes" );
   EDGE_LOG_INFO << "    Sliver Exuder:  " << ( ( m_exudeOpts == CGAL::parameters::no_exude() ) ? "no" : "yes" );
-  EDGE_LOG_INFO << "  Mesh Refinement Region:";
+  EDGE_LOG_INFO << "  Circular-Region Refinement:";
   EDGE_LOG_INFO << "    Center:         ( "<< m_center.x() << ", " << m_center.y() << ", " << m_center.z() << " )";
   EDGE_LOG_INFO << "    Inner Radius:   " << m_innerRad;
   EDGE_LOG_INFO << "    Outer Radius:   " << m_outerRad;
   EDGE_LOG_INFO << "    Scaling Factor: " << m_scale;
+  EDGE_LOG_INFO << "  Depth-Based Refinement:";
+  if ( m_layers.size() == 0 ) EDGE_LOG_INFO << "    None";
+  else {
+  for ( const auto & l_layer : m_layers ) {
+  EDGE_LOG_INFO << "    Layer  /  Scale: " << l_layer.first << "  /  " << l_layer.second;
+  } }
   EDGE_LOG_INFO << "";
 
 }

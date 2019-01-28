@@ -62,6 +62,9 @@ public:
   // Output file for domain boundary surface mesh
   std::string m_bdryOut;
 
+  // Depth layers and scaling factors for depth-based refinement
+  std::map< typename K::FT, typename K::FT, std::greater<typename K::FT> > m_layers;
+
   // Radius for region of maximum refinement
   typename K::FT m_innerRad;
 
