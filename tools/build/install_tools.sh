@@ -119,7 +119,7 @@ fi
 ########
 # GMSH #
 ########
-wget http://gmsh.info/bin/Linux/gmsh-3.0.2-Linux64.tgz -O gmsh.tgz
+wget http://gmsh.info/bin/Linux/gmsh-4.1.5-Linux64.tgz -O gmsh.tgz
 sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 
 #########
