@@ -77,6 +77,7 @@ then
   sudo yum install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
   sudo yum install -y -q -e 0 atop
   sudo yum install -y -q -e 0 GMT
+  sudo yum install -y -q -e 0 ghostscript
   # EDGEcut dependencies
   sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
   sudo pip install meshio > /dev/null
