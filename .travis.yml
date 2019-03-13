@@ -291,6 +291,7 @@ matrix:
 before_install:
   - cd ..
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get update -qq; fi;
 
   # set compilers
