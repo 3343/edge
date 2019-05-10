@@ -99,10 +99,10 @@ struct edge::sc::t_connect {
   TL_T_LID *liLp;
 
   //! link between limited plus elements and dense elements (no bridge)
-  TL_T_LID (*lpEl);
+  TL_T_LID *lpEl;
 
   //! link between limited plus elements and limited elements (no bridge)
-  TL_T_LID (*lpLi);
+  TL_T_LID *lpLi;
 
   //! link between limited plus elements and limited plus elements (faces as bridge)
   TL_T_LID (*lpFaLp)[ TL_N_FAS ];
@@ -111,7 +111,7 @@ struct edge::sc::t_connect {
   TL_T_LID *liEx;
 
   //! link between limited elements and elements providing extrema (vertices as bridge)
-  TL_T_LID *(*liVeEx);
+  TL_T_LID **liVeEx;
 };
 
 /**
