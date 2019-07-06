@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2016-2018, Regents of the University of California
 # All rights reserved.
 #
@@ -21,6 +22,7 @@
 # Continuous integration via Travis CI.
 ##
 
+dist: xenial
 sudo: required
 
 env:
@@ -71,145 +73,7 @@ matrix:
         COVERITY_SCAN_PROJECT_NAME=3343/edge
 
     #
-    # SWE - line
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=swe
-        T_ELEMENTS=line
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-    #
-    # advection - line
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=line
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-    #
-    # advection - quad4r
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-    #
-    # advection - tria3
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=tria3
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=1
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=tria3
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-    #
-    # advection - hex8r
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-    #
-    # advection - tet4
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=tet4
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=4
-
-
-    #
-    # elastics - quad4r
+    # elastics - tet4
     #
     - os: linux
       compiler: gcc
@@ -219,14 +83,14 @@ matrix:
           packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
-        T_ELEMENTS=quad4r
+        T_ELEMENTS=tet4
         CXX_COMPILER=g++-7
         CC_COMPILER=gcc-7
         FORT_COMPILER=gfortran-7
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=4
+        N_BUILD_PROC=2
 
     #
     # elastics - tria3
@@ -246,7 +110,27 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=4
+        N_BUILD_PROC=2
+
+    #
+    # elastics - quad4r
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=elastics
+        T_ELEMENTS=quad4r
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=0
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
 
     #
     # elastics - hex8r
@@ -266,10 +150,10 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=4
+        N_BUILD_PROC=2
 
     #
-    # elastics - tet4
+    # SWE - line
     #
     - os: linux
       compiler: gcc
@@ -278,7 +162,124 @@ matrix:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-7', 'gfortran-7']
       env:
-        EQUATIONS=elastics
+        EQUATIONS=swe
+        T_ELEMENTS=line
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=0
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
+
+    #
+    # advection - line
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=advection
+        T_ELEMENTS=line
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=0
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
+
+    #
+    # advection - quad4r
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=advection
+        T_ELEMENTS=quad4r
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=0
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
+
+    #
+    # advection - tria3
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=advection
+        T_ELEMENTS=tria3
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=1
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
+
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=advection
+        T_ELEMENTS=tria3
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=0
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
+
+    #
+    # advection - hex8r
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=advection
+        T_ELEMENTS=hex8r
+        CXX_COMPILER=g++-7
+        CC_COMPILER=gcc-7
+        FORT_COMPILER=gfortran-7
+        USE_MPI=0
+        GCOV=gcov-7
+        SYSTEM_SETUP=1
+        N_BUILD_PROC=2
+
+    #
+    # advection - tet4
+    #
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7', 'gfortran-7']
+      env:
+        EQUATIONS=advection
         T_ELEMENTS=tet4
         CXX_COMPILER=g++-7
         CC_COMPILER=gcc-7
@@ -286,7 +287,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=4
+        N_BUILD_PROC=2
 
 before_install:
   - cd ..
@@ -363,7 +364,7 @@ before_install:
 
   # install LIBXSMM
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local BLAS=0 INTRINSICS=1 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local FORTRAN=0 BLAS=0 -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # clone EDGE's asset repository
@@ -610,6 +611,24 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then sde64 -knl -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "hex8r" ]; then sde64 -knm -ptr_check -null_check -- ./build/edge -x cont/elastic/plane_waves/hex8r.xml; fi;
 
+  ## tet4, unit tests
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=3 cfr=1 xsmm=no arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
+
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=3 cfr=1 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
+
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=3 cfr=16 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
+
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=4 cfr=1 xsmm=no arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
+
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml scons order=4 cfr=1 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
+
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml then scons order=4 cfr=16 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
 
   ## tet4, unstructured, fv, cfr=1,2
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=1 zlib=yes hdf5=yes moab=yes -j $N_BUILD_PROC > /dev/null; fi;
