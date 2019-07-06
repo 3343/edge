@@ -90,7 +90,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # elastics - tria3
@@ -110,7 +110,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # elastics - quad4r
@@ -130,7 +130,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # elastics - hex8r
@@ -150,7 +150,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # SWE - line
@@ -170,7 +170,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # advection - line
@@ -190,7 +190,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # advection - quad4r
@@ -210,7 +210,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # advection - tria3
@@ -230,7 +230,7 @@ matrix:
         USE_MPI=1
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     - os: linux
       compiler: gcc
@@ -247,7 +247,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # advection - hex8r
@@ -267,7 +267,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
     #
     # advection - tet4
@@ -287,7 +287,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov-7
         SYSTEM_SETUP=1
-        N_BUILD_PROC=2
+        N_BUILD_PROC=3
 
 before_install:
   - cd ..
