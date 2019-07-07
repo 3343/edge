@@ -77,7 +77,6 @@ if env['tests']:
              'dg/QuadratureEval.test.cpp',
              'sc/Init.test.cpp',
              'sc/SubGrid.test.cpp',
-             'sc/Kernels.test.cpp',
              'sc/Detections.test.cpp',
              'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
@@ -104,6 +103,9 @@ if env['tests']:
 
   if env['element_type'] == 'tet4':
     l_tests = l_tests + ['mesh/regular/Tet.test.cpp']
+
+  if not env['xsmm']:
+    l_tests = l_tests + [ 'sc/Kernels.test.cpp' ]
 
   if 'elastic' in env['equations']:
     l_tests = l_tests+['impl/elastic/common.test.cpp',
