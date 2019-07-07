@@ -628,10 +628,10 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=4 cfr=1 xsmm=no arch=skx -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml scons order=4 cfr=1 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=4 cfr=1 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
 
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml then scons order=4 cfr=16 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=4 cfr=16 xsmm=yes arch=skx -j $N_BUILD_PROC > /dev/null; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
 
   ## tet4, unstructured, fv, cfr=1,2
