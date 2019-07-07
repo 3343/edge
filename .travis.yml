@@ -364,7 +364,7 @@ before_install:
 
   # install LIBXSMM
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local FORTRAN=0 BLAS=0 -j $N_BUILD_PROC > /dev/null; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local FORTRAN=0 BLAS=0 -j $N_BUILD_PROC; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # clone EDGE's asset repository
