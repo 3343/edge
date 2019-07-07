@@ -324,6 +324,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install gmsh
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install libglu1; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then wget http://gmsh.info/bin/Linux/gmsh-3.0.2-Linux64.tgz; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo tar -xzf gmsh-3.0.2-Linux64.tgz -C /usr --strip-components=1; fi;
 
