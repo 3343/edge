@@ -183,10 +183,13 @@ class edge::elastic::kernels::TimePredSingle: public edge::elastic::kernels::Tim
         // update scalar
         l_scalar *= -i_dT / (l_de+1);
 
+        // number of modes, which have to be updated for the elastic quantities
+        unsigned short l_nMdsUp = CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de );
+
         // update time integrated dofs
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
 #pragma omp simd
-          for( unsigned short l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
+          for( unsigned short l_md = 0; l_md < l_nMdsUp; l_md++ ) {
             o_tInt[l_qt][l_md][0] += l_scalar * o_der[l_de][l_qt][l_md][0];
           }
         }
