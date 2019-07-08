@@ -426,15 +426,6 @@ class edge::sc::Limiter {
         // limited id
         TL_T_LID l_li = i_scConn.lpLi[l_lp];
 
-        // derive the adjacent limited elements (faces as bridge)
-        TL_T_LID l_lpFaLi[TL_N_FAS];
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          if( i_scConn.lpFaLp[l_lp][l_fa] < std::numeric_limits< TL_T_LID >::max() )
-            l_lpFaLi[l_fa] = i_scConn.lpLi[ i_scConn.lpFaLp[l_lp][l_fa] ];
-          else
-            l_lpFaLi[l_fa] = std::numeric_limits< TL_T_LID >::max();
-        }
-
         EDGE_LOG_FATAL << "missing implementation of DG rollback";
 
         /*
