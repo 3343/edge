@@ -5,6 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
@@ -22,33 +23,27 @@
  * @section DESCRIPTION
  * ADER-DG solver for the elastic wave equations.
  **/
-#ifndef EDGE_SEISMIC_ADER_DG_HPP
-#define EDGE_SEISMIC_ADER_DG_HPP
+#ifndef EDGE_SEISMIC_SOLVERS_ADER_DG_HPP
+#define EDGE_SEISMIC_SOLVERS_ADER_DG_HPP
 
 #include <limits>
-#include <cassert>
 #include "constants.hpp"
 #include "mesh/common.hpp"
 #include "impl/elastic/common.hpp"
 #include "linalg/Matrix.h"
 #include "linalg/Mappings.hpp"
-#include "TimePred.hpp"
-#include "VolInt.hpp"
-#include "SurfInt.hpp"
+#include "../kernels/Kernels.hpp"
 #include "io/Receivers.h"
 #include "InternalBoundary.hpp"
 #include "FrictionLaws.hpp"
 #include "sc/Kernels.hpp"
 #include "sc/Detections.hpp"
 
-#if defined(PP_T_KERNELS_XSMM) || defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
-#include <libxsmm.h>
-#endif
-
 namespace edge {
   namespace elastic {
     namespace solvers { 
-      template< t_entityType   TL_T_EL,
+      template< typename       TL_T_REAL,
+                t_entityType   TL_T_EL,
                 unsigned short TL_N_QTS,
                 unsigned short TL_O_SP,
                 unsigned short TL_O_TI,
@@ -59,15 +54,17 @@ namespace edge {
 }
 
 /**
- * ADER-DG solver for the elastic wave equations split into local and neighboring updates.
+ * ADER-DG solver for the elastic wave equations, split into local and neighboring updates.
  *
+ * @paramt TL__T_REAL floating point precision.
  * @paramt TL_T_EL element type.
  * @paramt TL_N_QTS number of quantities.
  * @paramt TL_O_SP spatial order.
  * @paramt TL_O_TI temporal order.
  * @paramt TL_N_CRS number of fused simulations.
  **/
-template< t_entityType   TL_T_EL,
+template< typename       TL_T_REAL,
+          t_entityType   TL_T_EL,
           unsigned short TL_N_QTS,
           unsigned short TL_O_SP,
           unsigned short TL_O_TI,
@@ -95,26 +92,20 @@ class edge::elastic::solvers::AderDg {
     //! number of subcells per DG-element
     static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
+    //! kernels
+    kernels::Kernels< TL_T_REAL,
+                      TL_T_EL,
+                      TL_O_SP,
+                      TL_O_TI,
+                      TL_N_CRS > m_kernels;
+
   public:
     /**
-     * Gets the Jacobians of the elastic wave equations.
+     * @brief Initializes the ADER-DG kernels.
      *
-     * @param i_rho density rho.
-     * @param i_lam Lame parameter lambda.
-     * @param i_mu Lame parameter mu.
-     * @param o_A will be set to Jacobians.
-     * @param i_nDim number of dimensions (2 or 3).
-     **/
-    template <typename T>
-    static void getJac( T               i_rho,
-                        T               i_lam,
-                        T               i_mu,
-                        T              *o_A,
-                        unsigned short  i_nDim = TL_N_DIS ) {
-      if( i_nDim == 2 )      elastic::common::getJac2D( i_rho, i_lam, i_mu, (T (*)[5][5]) o_A);
-      else if( i_nDim == 3 ) elastic::common::getJac3D( i_rho, i_lam, i_mu, (T (*)[9][9]) o_A );
-      else                   EDGE_LOG_FATAL << "dimensions not supported: " << i_nDim;
-    }
+     * @param io_dynMem dynamic memory management.
+     */
+    AderDg( data::Dynamic & io_dynMem ): m_kernels( io_dynMem ) {}
 
     /**
      * Sets up the star matrices, which are a linear combination of the Jacobians.
@@ -154,7 +145,11 @@ class edge::elastic::solvers::AderDg {
 
         EDGE_CHECK( i_bgPars[l_el][0].rho > TOL.SOLVER );
 
-        getJac( i_bgPars[l_el][0].rho, i_bgPars[l_el][0].lam, i_bgPars[l_el][0].mu, l_A[0][0], TL_N_DIS );
+        elastic::common::getJac( i_bgPars[l_el][0].rho,
+                                 i_bgPars[l_el][0].lam,
+                                 i_bgPars[l_el][0].mu,
+                                 l_A[0][0],
+                                 TL_N_DIS );
 
         // derive vertex coords
         real_mesh l_veCoords[TL_N_DIS][TL_N_VES_EL];
@@ -235,7 +230,7 @@ class edge::elastic::solvers::AderDg {
     }
 
     /**
-     * Local step: Cauchy Kowalevski + volume.
+     * Local step: ADER + volume + local surface.
      *
      * @param i_first first element considered.
      * @param i_nElements number of elements.
@@ -243,34 +238,26 @@ class edge::elastic::solvers::AderDg {
      * @param i_dt time step.
      * @param i_firstSpRe first sparse receiver entity.
      * @param i_elChars element characteristics.
-     * @param i_dg const DG data.
      * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers for the local element's contribution.
      * @param io_dofs DOFs.
      * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
      * @param io_recvs will be updated with receiver info.
-     * @param i_mm matrix-matrix multiplication kernels.
      *
      * @paramt TL_T_LID integer type of local entity ids.
-     * @paramt TL_T_REAL floating point type.
-     * @paramt TL_T_MM matrix-matrix multiplication kernels.
      **/
-    template < typename TL_T_LID,
-               typename TL_T_REAL,
-               typename TL_T_MM >
-    static void local( TL_T_LID                             i_first,
-                       TL_T_LID                             i_nElements,
-                       double                               i_time,
-                       double                               i_dt,
-                       TL_T_LID                             i_firstSpRe,
-                       t_elementChars              const  * i_elChars,
-                       t_dg                        const  & i_dg,
-                       t_matStar                   const (* i_starM)[TL_N_DIS],
-                       t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
-                       TL_T_REAL                         (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL        (* const * const    o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
-                       edge::io::Receivers                & io_recvs,
-                       TL_T_MM                     const  & i_mm ) {
+    template < typename TL_T_LID >
+    void local( TL_T_LID                             i_first,
+                TL_T_LID                             i_nElements,
+                double                               i_time,
+                double                               i_dt,
+                TL_T_LID                             i_firstSpRe,
+                t_elementChars              const  * i_elChars,
+                t_matStar                   const (* i_starM)[TL_N_DIS],
+                t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
+                TL_T_REAL                         (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL        (* const * const    o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+                edge::io::Receivers                & io_recvs ) const {
       // counter for receivers
       unsigned int l_enRe = i_firstSpRe;
 
@@ -292,18 +279,12 @@ class edge::elastic::solvers::AderDg {
         }
 
         // compute ADER time integration
-        TimePred< TL_T_EL,
-                  TL_N_QTS,
-                  TL_O_SP,
-                  TL_O_TI,
-                  TL_N_CRS >::ck( (TL_T_REAL)  i_dt,
-                                               i_dg.mat.stiffT,
-                                             &(i_starM[l_el][0].mat), // TODO: fix struct
-                                               io_dofs[l_el],
-                                               i_mm,
-                                               l_tmp,
-                                               l_derBuffer,
-                                               o_tDofsDg[0][l_el] );
+        m_kernels.m_time.ck( (TL_T_REAL)  i_dt,
+                                        &(i_starM[l_el][0].mat), // TODO: fix struct
+                                          io_dofs[l_el],
+                                          l_tmp,
+                                          l_derBuffer,
+                                          o_tDofsDg[0][l_el] );
 
         // write receivers (if required)
         if( !( (i_elChars[l_el].spType & RECEIVER) == RECEIVER) ) {} // no receivers in the current element
@@ -314,13 +295,9 @@ class edge::elastic::solvers::AderDg {
             else {
               TL_T_REAL l_rePts = l_rePt;
               // eval time prediction at the given point
-              TimePred< T_SDISC.ELEMENT,
-                        N_QUANTITIES,
-                        ORDER,
-                        ORDER,
-                        N_CRUNS >::evalTimePrediction(  1,
-                                                       &l_rePts,
-                                                        l_derBuffer,
+              m_kernels.m_time.evalTimePrediction(  1,
+                                                  & l_rePts,
+                                                    l_derBuffer,
                           (TL_T_REAL (*)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS])l_tmp );
 
               // write this time prediction
@@ -331,15 +308,10 @@ class edge::elastic::solvers::AderDg {
         }
 
         // compute volume integral
-        VolInt< TL_T_EL,
-                TL_N_QTS,
-                TL_O_SP,
-                TL_N_CRS >::apply(   i_dg.mat.stiff,
-                                   & i_starM[l_el][0].mat, // TODO: fix struct
-                                     o_tDofsDg[0][l_el],
-                                     i_mm,
-                                     io_dofs[l_el],
-                                     l_tmp );
+        m_kernels.m_volInt.apply( & i_starM[l_el][0].mat, // TODO: fix struct
+                                    o_tDofsDg[0][l_el],
+                                    io_dofs[l_el],
+                                    l_tmp );
 
         // prefetches for next iteration
         const TL_T_REAL (* l_preDofs)[TL_N_MDS][TL_N_CRS] = nullptr;
@@ -360,19 +332,12 @@ class edge::elastic::solvers::AderDg {
         // reuse derivative buffer
         TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
         // call kernel
-        SurfInt< TL_T_EL,
-                 TL_N_QTS,
-                 TL_O_SP,
-                 TL_O_TI,
-                 TL_N_CRS >::local( i_dg.mat.fluxL,
-                                    i_dg.mat.fluxT,
-                                    ( TL_T_REAL (*)[TL_N_QTS][TL_N_QTS] ) ( i_fluxSolvers[l_el][0].solver[0] ), // TODO: fix struct
-                                    o_tDofsDg[0][l_el],
-                                    i_mm,
-                                    io_dofs[l_el],
-                                    l_tmpFa,
-                                    l_preDofs,
-                                    l_preTint );
+        m_kernels.m_surfInt.local( ( TL_T_REAL (*)[TL_N_QTS][TL_N_QTS] ) ( i_fluxSolvers[l_el][0].solver[0] ), // TODO: fix struct
+                                   o_tDofsDg[0][l_el],
+                                   io_dofs[l_el],
+                                   l_tmpFa,
+                                   l_preDofs,
+                                   l_preTint );
       }
     }
 
@@ -406,7 +371,6 @@ class edge::elastic::solvers::AderDg {
      * @paramt TL_T_RECV_SF type of the sub-face receivers.
      **/
     template< typename TL_T_LID,
-              typename TL_T_REAL,
               typename TL_T_FRI_GL,
               typename TL_T_FRI_FA,
               typename TL_T_FRI_SF,
@@ -603,7 +567,6 @@ class edge::elastic::solvers::AderDg {
      * @param i_firstLi first limited element.
      * @param i_firstLp first limited plus element.
      * @param i_firstEx first element computing extrema.
-     * @param i_dg constant DG data.
      * @param i_scatter scatter opterators (DG -> sub-cells).
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
@@ -621,40 +584,37 @@ class edge::elastic::solvers::AderDg {
      * @param i_mm matrix-matrix multiplication kernels.
      *
      * @paramt TL_T_LID integer type of local entity ids.
-     * @paramt TL_T_REAL type used for floating point arithmetic.
      * @paramt TL_T_MM type of the matrix-matrix multiplication kernels.
      **/
     template< typename TL_T_LID,
-              typename TL_T_REAL,
               typename TL_T_MM >
-    static void neigh( TL_T_LID                              i_first,
-                       TL_T_LID                              i_nElements,
-                       TL_T_LID                              i_firstLi,
-                       TL_T_LID                              i_firstLp,
-                       TL_T_LID                              i_firstEx,
-                       t_dg           const                & i_dg,
-                       TL_T_REAL      const                  i_scatter[TL_N_MDS][TL_N_SCS],
-                       t_faceChars    const                * i_faChars,
-                       t_elementChars const                * i_elChars,
-                       t_fluxSolver   const               (* i_fluxSolvers)[TL_N_FAS],
-                       unsigned short const                  i_faSfSc[TL_N_FAS][TL_N_SFS],
-                       unsigned short const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
-                       TL_T_LID       const               (* i_lpFaLp)[TL_N_FAS],
-                       TL_T_LID       const               (* i_elFa)[TL_N_FAS],
-                       TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
-                       unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
-                       unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
+    void neigh( TL_T_LID                              i_first,
+                TL_T_LID                              i_nElements,
+                TL_T_LID                              i_firstLi,
+                TL_T_LID                              i_firstLp,
+                TL_T_LID                              i_firstEx,
+                TL_T_REAL      const                  i_scatter[TL_N_MDS][TL_N_SCS],
+                t_faceChars    const                * i_faChars,
+                t_elementChars const                * i_elChars,
+                t_fluxSolver   const               (* i_fluxSolvers)[TL_N_FAS],
+                unsigned short const                  i_faSfSc[TL_N_FAS][TL_N_SFS],
+                unsigned short const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
+                TL_T_LID       const               (* i_lpFaLp)[TL_N_FAS],
+                TL_T_LID       const               (* i_elFa)[TL_N_FAS],
+                TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
+                unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
+                unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
 #ifndef __INTEL_COMPILER
-                       TL_T_REAL      const (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL      const (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
 #else
-                       TL_T_REAL                          (**i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL                          (**i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
 #endif
-                       TL_T_REAL                          (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                       bool                               (* io_admC)[TL_N_CRS],
-                       TL_T_REAL      const               (* i_extP)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_REAL                          (* o_extC)[2][TL_N_QTS][TL_N_CRS],
-                       TL_T_REAL                        (* (*o_tDofsSc) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
-                       TL_T_MM        const                & i_mm ) {
+                TL_T_REAL                          (* io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                bool                               (* io_admC)[TL_N_CRS],
+                TL_T_REAL      const               (* i_extP)[2][TL_N_QTS][TL_N_CRS],
+                TL_T_REAL                          (* o_extC)[2][TL_N_QTS][TL_N_CRS],
+                TL_T_REAL                        (* (*o_tDofsSc) [TL_N_FAS])[TL_N_QTS][TL_N_SFS][TL_N_CRS],
+                TL_T_MM        const                & i_mm ) const {
       // counter for elements computing extrema
       TL_T_LID l_ex = i_firstEx;
 
@@ -673,14 +633,6 @@ class edge::elastic::solvers::AderDg {
         for( TL_T_LID l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
           TL_T_LID l_faId = i_elFa[l_el][l_fa];
           TL_T_LID l_ne;
-
-          // determine flux matrix id
-          unsigned short l_fId = SurfInt< TL_T_EL,
-                                          TL_N_QTS,
-                                          TL_O_SP,
-                                          TL_O_TI,
-                                          TL_N_CRS >::fMatId( i_vIdElFaEl[l_el][l_fa],
-                                                              i_fIdElFaEl[l_el][l_fa] );
 
           if( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW ) {
             // derive neighbor
@@ -709,21 +661,23 @@ class edge::elastic::solvers::AderDg {
             /*
              * solve
              */
-            SurfInt< T_SDISC.ELEMENT,
-                     N_QUANTITIES,
-                     ORDER,
-                     ORDER,
-                     N_CRUNS >::neigh( ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? i_dg.mat.fluxN[l_fId] :
-                                                                                                      i_dg.mat.fluxL[l_fa],
-                                       i_dg.mat.fluxT[l_fa],
+            // default are free-surface boundaries
+            unsigned short l_vId = std::numeric_limits< unsigned short >::max();
+            unsigned short l_fId = std::numeric_limits< unsigned short >::max();
+            // switch to mesh-ids if not at the free surface
+            if( (i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) {
+              l_vId = i_vIdElFaEl[l_el][l_fa];
+              l_fId = i_fIdElFaEl[l_el][l_fa];
+            }
+
+            m_kernels.m_surfInt.neigh( l_fa,
+                                       l_vId,
+                                       l_fId,
                                        ( TL_T_REAL (*)[TL_N_QTS] )  ( i_fluxSolvers[l_el][l_fa].solver[0] ), // TODO: fix struct
                                        i_tDofsDg[0][l_ne],
-                                       i_mm,
                                        io_dofs[l_el],
                                        l_tmpFa,
-                                       l_pre,
-                                       l_fa,
-                                       ((i_faChars[l_faId].spType & FREE_SURFACE) != FREE_SURFACE ) ? l_fId + C_ENT[TL_T_EL].N_FACES: l_fa );
+                                       l_pre );
           }
         }
 

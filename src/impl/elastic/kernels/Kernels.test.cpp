@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2016-2017, Regents of the University of California
+ * Copyright (c) 2019, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,24 +18,19 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Dependendencies of the setup.
+ * Tests the wrapper for the time, volume and surface kernels.
  **/
+#include <catch.hpp>
+#define private public
+#include "Kernels.hpp"
+#undef private
 
-#include "setups/InitialDofs.hpp"
-#include "impl/elastic/io/Config.h"
-#include "impl/elastic/solvers/AderDg.hpp"
-#include "impl/elastic/solvers/common.hpp"
-#ifdef PP_HAS_HDF5
-#include "impl/elastic/setups/PointSources.hpp"
-#endif
+TEST_CASE( "Time, volume and surface kernels.", "[Kernels][seismic]" ) {
+  edge::data::Dynamic l_dynMem;
 
-// rupture boundaries
-#include "impl/elastic/solvers/InternalBoundary.hpp"
-#include "sc/ibnd/Memory.hpp"
-#include "sc/ibnd/Init.hpp"
-#include "impl/elastic/setups/RuptureInit.hpp"
-#include "io/InternalBoundary.hpp"
-
-// sub-cell solver
-#include "sc/Memory.hpp"
-#include "impl/elastic/sc/Llf.hpp"
+  edge::elastic::kernels::Kernels< real_base,
+                                   T_SDISC.ELEMENT,
+                                   PP_ORDER,
+                                   PP_ORDER,
+                                   PP_N_CRUNS > l_kernels( l_dynMem );
+}

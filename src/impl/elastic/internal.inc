@@ -118,3 +118,13 @@ typedef edge::elastic::sc::UpWind< real_base,
                                    T_SDISC.ELEMENT,
                                    ORDER,
                                    N_CRUNS > t_globalShared8;
+
+// ADER-DG kernels
+#include "impl/elastic/solvers/AderDg.hpp"
+#define PP_N_GLOBAL_SHARED_4 1
+typedef edge::elastic::solvers::AderDg< real_base,
+                                        T_SDISC.ELEMENT,
+                                        N_QUANTITIES,
+                                        ORDER,
+                                        ORDER,
+                                        N_CRUNS > * t_globalShared4;

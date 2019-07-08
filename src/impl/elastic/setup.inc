@@ -5,6 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
@@ -148,6 +149,15 @@
                     0,
                     1 );
 #endif
+
+// initialize the ADER-DG kernels
+edge::elastic::solvers::AderDg< real_base,
+                                T_SDISC.ELEMENT,
+                                N_QUANTITIES,
+                                ORDER,
+                                ORDER,
+                                N_CRUNS > l_aderDg( l_dynMem );
+l_internal.m_globalShared4[0] = &l_aderDg;
 
 // init data of limiter
 #include "sc/init.inc"
@@ -368,252 +378,6 @@ edge::data::SparseEntities::denseToSparseAdj( C_ENT[T_SDISC.ELEMENT].N_FACES,
                                               l_enLayouts[2],
                                               l_enLayouts[l_rupLayoutEl] );
 
-// setup the GEMM kernels for ADER-DG
-#if defined PP_T_KERNELS_XSMM
-{
-  EDGE_LOG_INFO << "  setting up libxsmm, sparse";
-
-  unsigned short l_mmGr = static_cast< unsigned short >( t_mmSeismic::ADER_DG );
-
-  // determine CSC fill-in strategy
-  std::string l_cscFillIn = "none";
-  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-    l_cscFillIn = "qfma";
-  }
-
-  // get matrices as dense
-  real_base l_stiffTDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  real_base l_stiffDe[N_DIM][N_ELEMENT_MODES][N_ELEMENT_MODES];
-  real_base l_fluxLDe[ C_ENT[T_SDISC.ELEMENT].N_FACES ][N_ELEMENT_MODES][N_FACE_MODES];
-  real_base l_fluxNDe[ N_FLUXN_MATRICES               ][N_ELEMENT_MODES][N_FACE_MODES];
-  real_base l_fluxTDe[ C_ENT[T_SDISC.ELEMENT].N_FACES ][N_FACE_MODES][N_ELEMENT_MODES];
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffTDe, true  );
-  l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_stiffDe,  false );
-  l_basis.getFluxDense( (real_base *) l_fluxLDe,
-                        (real_base *) l_fluxNDe,
-                        (real_base *) l_fluxTDe );
-
-  real_base l_star[N_DIM][N_QUANTITIES][N_QUANTITIES];
-  edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
-                                  N_QUANTITIES,
-                                  ORDER,
-                                  ORDER,
-                                  N_CRUNS
-                                >::getJac( (real_base) 1.0,
-                                           (real_base) 1.0,
-                                           (real_base) 1.0,
-                                                       l_star[0][0],
-                                                       N_DIM );
-  real_base l_fSolv[N_QUANTITIES][N_QUANTITIES];
-  for( unsigned short l_di = 1; l_di < N_DIM; l_di++ ) {
-    for( int_qt l_q1 = 0; l_q1 < N_QUANTITIES; l_q1++ ) {
-      for( int_qt l_q2 = 0; l_q2 < N_QUANTITIES; l_q2++ ) {
-        l_star[0][l_q1][l_q2] =   std::abs(l_star[0][l_q1][l_q2])
-                                + std::abs(l_star[l_di][l_q1][l_q2]);
-        l_fSolv[l_q1][l_q2] = 1;
-      }
-    }
-  }
-
-  /*
-   * Derive sparse AoSoA-LIBXSMM kernels.
-   *
-   * 1) Cauchy Kovalewski
-   */
-  // get sparse, transposed stiffness matrices
-  t_matCrd l_stiffTCrd[N_DIM];
-  for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-    edge::linalg::Matrix::denseToCrd< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffTDe[l_di][0], l_stiffTCrd[l_di], TOL.BASIS );
-  }
-
-  // get csr star matrix
-  t_matCsr l_starCsr;
-  edge::linalg::Matrix::denseToCsr< real_base >( N_QUANTITIES, N_QUANTITIES,
-                                                 l_star[0][0],  l_starCsr,  TOL.BASIS );
-  EDGE_CHECK( l_starCsr.val.size() == N_MAT_STAR );
-
-  // exploit potential zero-block generation in recursive CK
-
-  // nz-blocks
-  unsigned int l_nzBl[2][2][2];
-  // init with matrix dim
-  l_nzBl[0][0][0] = l_nzBl[0][1][0] = 0;
-  l_nzBl[0][0][1] = l_nzBl[0][1][1] = N_ELEMENT_MODES-1;
-
-  // iterate over derivatives (recusive calls)
-  for( unsigned short l_de = 1; l_de < ORDER; l_de++ ) {
-    // determine non-zero block in the next iteration
-    unsigned int l_maxNzCol = 0;
-    for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-      edge::linalg::Matrix::getBlockNz( l_stiffTCrd[l_di], l_nzBl[0], l_nzBl[1] );
-      l_maxNzCol = std::max( l_maxNzCol, l_nzBl[1][1][1] );
-    }
-
-    // generate libxsmm kernel for transposed stiffness matrices
-    for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-      t_matCsc l_stiffTCsc;
-      edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                     l_stiffTDe[l_di][0], l_stiffTCsc, TOL.BASIS,
-                                                     l_nzBl[0][0][1]+1, l_maxNzCol+1,
-                                                     l_cscFillIn );
-
-      l_internal.m_mm.add(  l_mmGr,
-                            false,
-                           &l_stiffTCsc.colPtr[0],  &l_stiffTCsc.rowIdx[0], &l_stiffTCsc.val[0],
-                            N_QUANTITIES, l_maxNzCol+1, l_nzBl[0][0][1]+1,
-                            N_ELEMENT_MODES, 0, l_maxNzCol+1,
-                            real_base(1.0), real_base(0.0),
-                            LIBXSMM_GEMM_PREFETCH_NONE );
-    }
-    // generate libxsmm kernel for star matrix
-    l_internal.m_mm.add(  l_mmGr,
-                          true,
-                         &l_starCsr.rowPtr[0],  &l_starCsr.colIdx[0], &l_starCsr.val[0],
-                          N_QUANTITIES, l_maxNzCol+1, N_QUANTITIES,
-                          0, l_maxNzCol+1, N_ELEMENT_MODES,
-                          real_base(1.0), real_base(1.0),
-                          LIBXSMM_GEMM_PREFETCH_NONE );
-
-#ifdef PP_T_BASIS_HIERARCHICAL
-   // check that size goes down with the number of derivatives
-   EDGE_CHECK_EQ( l_maxNzCol+1, CE_N_ELEMENT_MODES( T_SDISC.ELEMENT, ORDER-l_de ) );
-#endif
-
-    // reduce relevant rows due to generated zero block
-    l_nzBl[0][0][1] = l_maxNzCol;
-  }
-
-  /*
-   * 2) add volume kernels
-   */
-  // get stiffness matrices
-  t_matCrd l_stiffCrd[3];
-  for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-    edge::linalg::Matrix::denseToCrd< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffDe[l_di][0], l_stiffCrd[l_di], TOL.BASIS );
-  }
-
-  // reset zero-blocks
-  l_nzBl[0][0][0] = l_nzBl[0][1][0] = 0;
-  l_nzBl[0][0][1] = l_nzBl[0][1][1] = N_ELEMENT_MODES-1;
-  unsigned int l_maxNzRow = 0;
-  // get max #nz-rows
-  for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-    edge::linalg::Matrix::getBlockNz( l_stiffCrd[l_di], l_nzBl[0], l_nzBl[1] );
-    l_maxNzRow = std::max( l_maxNzRow, l_nzBl[1][0][1] );
-  }
-
-#ifdef PP_T_BASIS_HIERARCHICAL
-   // check that size is one "order" less
-   EDGE_CHECK_EQ( l_maxNzRow+1, CE_N_ELEMENT_MODES( T_SDISC.ELEMENT, ORDER-1 ) );
-#endif
-
-  for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
-    t_matCsc l_stiffCsc;
-    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_ELEMENT_MODES,
-                                                   l_stiffDe[l_di][0],  l_stiffCsc, TOL.BASIS,
-                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
-                                                   l_cscFillIn );
-
-    l_internal.m_mm.add(  l_mmGr,
-                          false,
-                         &l_stiffCsc.colPtr[0], &l_stiffCsc.rowIdx[0], &l_stiffCsc.val[0],
-                          N_QUANTITIES, N_ELEMENT_MODES, l_maxNzRow+1,
-                          l_maxNzRow+1, 0, N_ELEMENT_MODES,
-                          real_base(1.0), real_base(1.0),
-                          LIBXSMM_GEMM_PREFETCH_NONE ); // Remark: Star matrix is multiplied first
-  }
-
-  // star matrix
-  l_internal.m_mm.add(  l_mmGr,
-                        true,
-                       &l_starCsr.rowPtr[0], &l_starCsr.colIdx[0], &l_starCsr.val[0],
-                        N_QUANTITIES, l_maxNzRow+1, N_QUANTITIES,
-                        0, N_ELEMENT_MODES, l_maxNzRow+1,
-                        real_base(1.0), real_base(0.0),
-                        LIBXSMM_GEMM_PREFETCH_NONE );
-
-  /*
-   * 3) surface kernels
-   */
-  // local contribution flux matrices
-  for( unsigned short l_fl = 0; l_fl < C_ENT[T_SDISC.ELEMENT].N_FACES; l_fl++ ) {
-    t_matCsc l_fluxCsc;
-
-    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxLDe[l_fl][0], l_fluxCsc, TOL.BASIS,
-                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
-                                                   l_cscFillIn );
-
-    l_internal.m_mm.add(  l_mmGr,
-                          false,
-                         &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
-                          N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
-                          N_ELEMENT_MODES, 0, N_FACE_MODES,
-                          real_base(1.0), real_base(0.0),
-                          LIBXSMM_GEMM_PREFETCH_NONE );
-  }
-
-  // neighboring contribution flux matrices
-  for( unsigned short l_fn = 0; l_fn < N_FLUXN_MATRICES; l_fn++ ) {
-    t_matCsc l_fluxCsc;
-
-    edge::linalg::Matrix::denseToCsc< real_base >( N_ELEMENT_MODES, N_FACE_MODES,
-                                                   l_fluxNDe[l_fn][0], l_fluxCsc, TOL.BASIS,
-                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
-                                                   l_cscFillIn );
-
-    l_internal.m_mm.add(  l_mmGr,
-                          false,
-                         &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
-                          N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
-                          N_ELEMENT_MODES, 0, N_FACE_MODES,
-                          real_base(1.0), real_base(0.0),
-                          LIBXSMM_GEMM_PREFETCH_NONE );
-  }
-
-  // transposed flux matrices
-  for( unsigned short l_ft = 0; l_ft < C_ENT[T_SDISC.ELEMENT].N_FACES; l_ft++ ) {
-    t_matCsc l_fluxCsc;
-
-    edge::linalg::Matrix::denseToCsc< real_base >( N_FACE_MODES, N_ELEMENT_MODES,
-                                                   l_fluxTDe[l_ft][0], l_fluxCsc, TOL.BASIS,
-                                                   std::numeric_limits< unsigned int >::max(), std::numeric_limits< unsigned int >::max(),
-                                                   l_cscFillIn );
-    l_internal.m_mm.add(  l_mmGr,
-                          false,
-                         &l_fluxCsc.colPtr[0],  &l_fluxCsc.rowIdx[0], &l_fluxCsc.val[0],
-                          N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
-                          N_FACE_MODES, 0, N_ELEMENT_MODES,
-                          real_base(1.0), real_base(1.0),
-                          LIBXSMM_GEMM_PREFETCH_NONE );
-  }
-
-  // flux solver
-  t_matCsr l_fSolvCsr;
-  edge::linalg::Matrix::denseToCsr< real_base >( N_QUANTITIES, N_QUANTITIES,
-                                                 l_fSolv[0], l_fSolvCsr, TOL.BASIS );
-  EDGE_CHECK( l_fSolvCsr.val.size() == N_QUANTITIES*N_QUANTITIES );
-
-  l_internal.m_mm.add(  l_mmGr,
-                        true,
-                       &l_fSolvCsr.rowPtr[0],  &l_fSolvCsr.colIdx[0], &l_fSolvCsr.val[0],
-                        N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
-                        0, N_FACE_MODES, N_FACE_MODES,
-                        real_base(1.0), real_base(0.0),
-                        LIBXSMM_GEMM_PREFETCH_BL2_VIA_C );
-}
-#endif
-
-#ifndef PP_T_KERNELS_XSMM
-edge::elastic::setups::MmKernels::add( T_SDISC.ELEMENT,
-                                       ORDER,
-                                       N_QUANTITIES,
-                                       N_CRUNS,
-                                       l_internal.m_mm );
-#endif
-
 // set up fault receivers
 if( l_elasticConf.m_frictionLaw != "" &&
     l_config.m_recvCrds[1].size() > 0 ) {
@@ -758,7 +522,8 @@ if( l_elasticConf.m_frictionLaw != "" ) {
 }
 
 // setup star matrices
-edge::elastic::solvers::AderDg< T_SDISC.ELEMENT,
+edge::elastic::solvers::AderDg< real_base,
+                                T_SDISC.ELEMENT,
                                 N_QUANTITIES,
                                 ORDER,
                                 ORDER,

@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2015-2018, Regents of the University of California
 # All rights reserved.
 #
@@ -111,9 +112,32 @@ if env['tests']:
     l_tests = l_tests+['impl/elastic/common.test.cpp',
                        'impl/elastic/sc/Llf.test.cpp',
                        'impl/elastic/solvers/common.test.cpp',
+                       'impl/elastic/kernels/Kernels.test.cpp',
                        'impl/elastic/setups/RuptureInit.test.cpp',
 #                       'impl/elastic/solvers/InternalBoundary.test.cpp',
                        'impl/elastic/solvers/FrictionLaws.test.cpp' ]
+
+    # seismic kernel tests are only defined for tets and FP32
+    if env['element_type'] == 'tet4' and env['precision'] == '32':
+      if env['order'] == '4':
+        l_tests += ['impl/elastic/kernels/TimePredVanilla.test.cpp']
+        l_tests += ['impl/elastic/kernels/VolIntVanilla.test.cpp']
+      if env['order'] == '3':
+        l_tests += ['impl/elastic/kernels/SurfIntVanilla.test.cpp']
+
+      if env['xsmm']:
+        if env['order'] == '4':
+          l_tests += ['impl/elastic/kernels/TimePredSingle.test.cpp']
+          l_tests += ['impl/elastic/kernels/VolIntSingle.test.cpp']
+      if env['order'] == '3':
+        l_tests += ['impl/elastic/kernels/SurfIntSingle.test.cpp']
+
+        if env['cfr'] == '16':
+          if env['order'] == '4':
+            l_tests += ['impl/elastic/kernels/TimePredFused.test.cpp']
+            l_tests += ['impl/elastic/kernels/VolIntFused.test.cpp']
+        if env['order'] == '3':
+          l_tests += ['impl/elastic/kernels/SurfIntFused.test.cpp']
 
     if env['hdf5'] != False:
       l_tests = l_tests + ['impl/elastic/setups/PointSources.test.cpp']

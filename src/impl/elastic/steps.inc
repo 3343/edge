@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -38,28 +39,21 @@ edge::sc::Steering::getExtIds( m_updatesSync,
 
 if( i_step == 0 ) {
   // ADER-DG local
-  edge::elastic::solvers::AderDg<
-    T_SDISC.ELEMENT,
-    N_QUANTITIES,
-    ORDER,
-    ORDER,
-    N_CRUNS
-  >::local( i_first,
-            i_size,
-            m_covSimTime,
-            m_dT,
-            i_enSp[0],
-            m_internal.m_elementChars,
-            m_internal.m_globalShared1[0],
-            m_internal.m_elementShared4,
-            m_internal.m_elementShared2,
-            m_internal.m_elementModePrivate1,
-            m_internal.m_globalShared6,
-            io_recvs,
-            m_internal.m_mm );
+  m_internal.m_globalShared4[0][0].local( i_first,
+                                          i_size,
+                                          m_covSimTime,
+                                          m_dT,
+                                          i_enSp[0],
+                                          m_internal.m_elementChars,
+                                          m_internal.m_elementShared4,
+                                          m_internal.m_elementShared2,
+                                          m_internal.m_elementModePrivate1,
+                                          m_internal.m_globalShared6,
+                                          io_recvs );
 }
 else if ( i_step == 1 ) {
   edge::elastic::solvers::AderDg<
+    real_base,
     T_SDISC.ELEMENT,
     N_QUANTITIES,
     ORDER,
@@ -87,37 +81,30 @@ else if ( i_step == 1 ) {
 }
 else if( i_step == 2 ) {
   // ADER-DG: neigh contrib
-  edge::elastic::solvers::AderDg<
-    T_SDISC.ELEMENT,
-    N_QUANTITIES,
-    ORDER,
-    ORDER,
-    N_CRUNS
-  >::neigh( i_first,
-            i_size,
-            i_enSp[0],
-            i_enSp[1],
-            i_enSp[2],
-            m_internal.m_globalShared1[0],
-            m_internal.m_globalShared2[0].ops.scatter,
-            m_internal.m_faceChars,
-            m_internal.m_elementChars,
-            m_internal.m_elementShared3,
-            m_internal.m_globalShared2[0].connect.faSfSc,
-            m_internal.m_globalShared2[0].connect.scDgAd,
-            m_internal.m_globalShared2[0].connect.lpFaLp,
-            m_internal.m_connect.elFa,
-            m_internal.m_connect.elFaEl,
-            m_internal.m_connect.fIdElFaEl,
-            m_internal.m_connect.vIdElFaEl,
-            m_internal.m_globalShared6,
-            m_internal.m_elementModePrivate1,
-            m_internal.m_globalShared2[0].adm[ l_admId[1] ],
-            m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
-            m_internal.m_globalShared2[0].ext[ l_extIds[1] ],
-            m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[1] ],
-            m_internal.m_mm
-          );
+  m_internal.m_globalShared4[0][0].neigh( i_first,
+                                          i_size,
+                                          i_enSp[0],
+                                          i_enSp[1],
+                                          i_enSp[2],
+                                          m_internal.m_globalShared2[0].ops.scatter,
+                                          m_internal.m_faceChars,
+                                          m_internal.m_elementChars,
+                                          m_internal.m_elementShared3,
+                                          m_internal.m_globalShared2[0].connect.faSfSc,
+                                          m_internal.m_globalShared2[0].connect.scDgAd,
+                                          m_internal.m_globalShared2[0].connect.lpFaLp,
+                                          m_internal.m_connect.elFa,
+                                          m_internal.m_connect.elFaEl,
+                                          m_internal.m_connect.fIdElFaEl,
+                                          m_internal.m_connect.vIdElFaEl,
+                                          m_internal.m_globalShared6,
+                                          m_internal.m_elementModePrivate1,
+                                          m_internal.m_globalShared2[0].adm[ l_admId[1] ],
+                                          m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
+                                          m_internal.m_globalShared2[0].ext[ l_extIds[1] ],
+                                          m_internal.m_globalShared2[0].tDofs[ l_tDofsIds[1] ],
+                                          m_internal.m_mm
+                                        );
 }
 else if( i_step == 3 ) {
 #ifdef PP_HAS_HDF5
@@ -150,7 +137,6 @@ else if( i_step == 4 ) {
       N_CRUNS > >::aPost( i_first,
                           i_size,
               (real_base) m_dT,
-                          m_internal.m_globalShared1[0].mat,
                           m_internal.m_globalShared2[0].ops,
                           m_internal.m_globalShared2[0].connect,
                           m_internal.m_globalShared2[0].iBndSu,

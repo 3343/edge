@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -201,41 +202,7 @@ class edge::sc::Limiter {
 
         TL_T_REAL (*l_scratch)[TL_N_QTS][TL_N_MDS_FA][TL_N_CRS] = parallel::g_scratchMem->tResSurf;
 
-#if defined(PP_T_EQUATIONS_ELASTIC)
-        // local
-        elastic::solvers::SurfInt< TL_T_EL,
-                                   TL_N_QTS,
-                                   TL_O_SP,
-                                   TL_O_SP,
-                                   TL_N_CRS >::neigh( i_dgMat.fluxL[i_fa],
-                                                      i_dgMat.fluxT[i_fa],
-                                                      i_fluxSolver,
-                                                      i_tDofsDgP,
-                                                      i_mm,
-                                                      l_sIntDg,
-                                                      l_scratch,
-                                                      i_tDofsDgAdP,
-                                                      i_fa,
-                                                      i_fa );
-
-        // adjacent
-        elastic::solvers::SurfInt< TL_T_EL,
-                                   TL_N_QTS,
-                                   TL_O_SP,
-                                   TL_O_SP,
-                                   TL_N_CRS >::neigh( i_dgMat.fluxN[i_fMatId],
-                                                      i_dgMat.fluxT[i_fa],
-                                                      i_fluxSolverAd,
-                                                      i_tDofsDgAdP,
-                                                      i_mm,
-                                                      l_sIntDg,
-                                                      l_scratch,
-                                                      io_dofsDg,
-                                                      i_fa,
-                                                      i_fMatId+TL_N_FAS );
-#else
-        EDGE_LOG_FATAL << "missing implementation for equations other than elastic";
-#endif
+        EDGE_LOG_FATAL << "missing implementation of DG-surface updates";
 
         // update the DOFs accordingly
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
@@ -414,7 +381,6 @@ class edge::sc::Limiter {
     static void aPost( TL_T_LID                                        i_first,
                        TL_T_LID                                        i_nLps,
                        TL_T_REAL                                       i_dt,
-                       t_dgMat                const                   &i_dgMat,
                        sc::t_ops<
                          TL_T_REAL,
                          TL_T_EL,
@@ -469,41 +435,7 @@ class edge::sc::Limiter {
             l_lpFaLi[l_fa] = std::numeric_limits< TL_T_LID >::max();
         }
 
-        // iterate over faces and replace DG surface integral with sub-cell surface integral if required
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          TL_T_LID l_liAd = l_lpFaLi[l_fa];
-          TL_T_LID l_lpAd = i_scConn.lpFaLp[l_lp][l_fa];
-
-          // only continue if the face is adjacent to a limited element
-          if( l_liAd != std::numeric_limits< TL_T_LID >::max() ) {
-            TL_T_LID l_elAd = i_elFaEl[l_el][l_fa];
-
-            // id of the face of adjacent element w.r.t. reference element
-            unsigned short l_fId = i_fIdElFaEl[l_el][l_fa];
-
-            unsigned short l_fMatId  = i_vIdElFaEl[l_el][l_fa] * TL_N_FAS;
-                           l_fMatId += i_fIdElFaEl[l_el][l_fa];
-
-            // rollback DG surface integration of the face and replace with sub-cell integral
-            surfIntRb( i_dt,
-                       l_lp,
-                       l_fa,
-                       l_fMatId,
-                       i_admC[l_liAd],
-                       i_scConn.scDgAd[ i_vIdElFaEl[l_el][l_fa] ],
-                       i_dgMat,
-                       i_scOps.sfInt[l_fa],
-                       i_fsDg[l_el][l_fa],
-                       i_fsDgAd[l_el][l_fa],
-                       i_tDofsDg[0][l_el],
-                       i_tDofsDg[0][l_elAd],
-                     *(i_tDofsScP[l_lp][l_fa]),
-                     *(i_tDofsScP[l_lpAd][l_fId]),
-                       io_dofsDg[l_el],
-                       i_mm,
-                       i_solvSc );
-          }
-        }
+        EDGE_LOG_FATAL << "missing implementation of DG rollback";
 
         /*
          * perform limiting if required

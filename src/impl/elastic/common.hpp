@@ -27,6 +27,7 @@
 #include <cmath>
 #include "constants.hpp"
 #include "monitor/instrument.hpp"
+#include "io/logging.h"
 
 namespace edge {
   namespace elastic {
@@ -273,6 +274,26 @@ class edge::elastic::common {
       o_A[2][6][5] = -T(1) / i_rho;
       o_A[2][7][4] = -T(1) / i_rho;
       o_A[2][8][2] = -T(1) / i_rho;
+    }
+
+    /**
+     * Gets the Jacobians of the elastic wave equations.
+     *
+     * @param i_rho density rho.
+     * @param i_lam Lame parameter lambda.
+     * @param i_mu Lame parameter mu.
+     * @param o_A will be set to Jacobians.
+     * @param i_nDim number of dimensions (2 or 3).
+     **/
+    template< typename TL_T_REAL >
+    static void getJac( TL_T_REAL       i_rho,
+                        TL_T_REAL       i_lam,
+                        TL_T_REAL       i_mu,
+                        TL_T_REAL     * o_A,
+                        unsigned short  i_nDim ) {
+      if( i_nDim == 2 )      getJac2D( i_rho, i_lam, i_mu, (TL_T_REAL (*)[5][5]) o_A );
+      else if( i_nDim == 3 ) getJac3D( i_rho, i_lam, i_mu, (TL_T_REAL (*)[9][9]) o_A );
+      else                   EDGE_LOG_FATAL << "dimensions not supported: " << i_nDim;
     }
 
     /**
