@@ -76,7 +76,7 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
     static unsigned short const TL_N_NZS_STAR_E = (TL_N_DIS==2) ? 10 : 24;
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[TL_O_SP-1][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
 
     //! matrix kernels
     edge::data::MmXsmmFused< TL_T_REAL > m_mm;
@@ -276,7 +276,7 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
      **/
     static void storeStiffTSparse( TL_T_REAL     const     i_stiffT[TL_N_DIS][TL_N_MDS][TL_N_MDS],
                                    data::Dynamic       &   io_dynMem,
-                                   TL_T_REAL           *   o_stiffT[TL_O_SP-1][TL_N_DIS]  ) {
+                                   TL_T_REAL           *   o_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS]  ) {
       // convert stiffness matrices to CSC (incl. possible fill-in)
       std::vector< size_t > l_maxNzCols;
       std::vector< size_t > l_offsets;

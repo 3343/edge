@@ -143,7 +143,7 @@ typedef struct {
 #elif defined PP_T_KERNELS_XSMM
   //! transposed stiffness matrices (multiplied with inverse mass matrix)
   //! for a hierarchical basis, the stiffness of orders ORDER..2 are stored.
-  real_base *stiffT[(ORDER-1)*N_DIM];
+  real_base *stiffT[CE_MAX((ORDER-1),1)*N_DIM];
   //! stiffness matrices (multiplied with inverse mass matrix)
   real_base *stiff[N_DIM];
   //! local contribution flux matrices

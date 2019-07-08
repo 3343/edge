@@ -69,7 +69,7 @@ class edge::elastic::kernels::TimePredSingle: public edge::elastic::kernels::Tim
     static unsigned short const TL_N_QTS_E = (TL_N_DIS == 2) ? 5 : 9;
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[TL_O_SP-1][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
 
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;

@@ -81,7 +81,7 @@ class edge::elastic::kernels::TimePred {
      **/
     static void storeStiffTDense( TL_T_REAL     const     i_stiffT[TL_N_DIS][TL_N_MDS][TL_N_MDS],
                                   data::Dynamic         & io_dynMem,
-                                  TL_T_REAL             * o_stiffT[TL_O_SP-1][TL_N_DIS] ) {
+                                  TL_T_REAL             * o_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS] ) {
       // allocate raw memory for the stiffness matrices
       std::size_t l_size  = TL_N_DIS * std::size_t(TL_N_MDS) * TL_N_MDS;
                   l_size *= sizeof(TL_T_REAL);

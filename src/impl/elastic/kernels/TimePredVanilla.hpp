@@ -75,7 +75,7 @@ class edge::elastic::kernels::TimePredVanilla: public edge::elastic::kernels::Ti
     edge::data::MmVanilla< TL_T_REAL > m_mm;
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[TL_O_SP-1][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
 
     /**
      * Generates the matrix kernels for the transposed stiffness matrices and star matrices.
