@@ -129,8 +129,8 @@ if env['tests']:
         if env['order'] == '4':
           l_tests += ['impl/elastic/kernels/TimePredSingle.test.cpp']
           l_tests += ['impl/elastic/kernels/VolIntSingle.test.cpp']
-      if env['order'] == '3':
-        l_tests += ['impl/elastic/kernels/SurfIntSingle.test.cpp']
+        if env['order'] == '3':
+          l_tests += ['impl/elastic/kernels/SurfIntSingle.test.cpp']
 
         if env['cfr'] == '16':
           if env['order'] == '4':
