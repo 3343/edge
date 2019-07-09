@@ -136,8 +136,8 @@ if env['tests']:
           if env['order'] == '4':
             l_tests += ['impl/elastic/kernels/TimePredFused.test.cpp']
             l_tests += ['impl/elastic/kernels/VolIntFused.test.cpp']
-        if env['order'] == '3':
-          l_tests += ['impl/elastic/kernels/SurfIntFused.test.cpp']
+          if env['order'] == '3':
+            l_tests += ['impl/elastic/kernels/SurfIntFused.test.cpp']
 
     if env['hdf5'] != False:
       l_tests = l_tests + ['impl/elastic/setups/PointSources.test.cpp']
