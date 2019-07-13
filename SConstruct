@@ -34,7 +34,7 @@ import SCons
 ##
 def getEdgeVersion():
   # check if dirty
-  l_dirty = subprocess.check_output(['git', 'diff', '--', '.', ':(exclude)submodules'])
+  l_dirty = subprocess.check_output(['git', 'diff', '--ignore-submodules=dirty'])
 
   # assemble version
   l_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
