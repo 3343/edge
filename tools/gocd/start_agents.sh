@@ -61,16 +61,16 @@ fi
 
 echo "setting server certificate"
 sudo mkdir -p /var/go
-sudo bash -c "openssl s_client -showcerts -connect deb.dial3343.org:8154 </dev/null 2>/dev/null|openssl x509 -outform PEM > /var/go/root-cert.pem"
+sudo bash -c "openssl s_client -showcerts -connect gocd.dial3343.org:8154 </dev/null 2>/dev/null|openssl x509 -outform PEM > /var/go/root-cert.pem"
 
 CUR_DIR=$(pwd)
 TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
 
 echo "downloading GoCD"
-wget https://download.gocd.org/binaries/18.12.0-8222/generic/go-agent-18.12.0-8222.zip
-unzip go-agent-18.12.0-8222.zip
-ln -s go-agent-18.12.0 go-agent
+wget https://download.gocd.org/binaries/19.5.0-9272/generic/go-agent-19.5.0-9272.zip
+unzip go-agent-19.5.0-9272.zip
+ln -s go-agent-19.5.0 go-agent
 
 cd ${CUR_DIR}
 for agent in `seq 1 ${N_AGENTS}`
@@ -80,6 +80,6 @@ do
 
   echo "starting agent #${agent}"
   cd ${ABS_PATH_TO_DIR}/agent_${agent}
-  AGENT_WORK_DIR=$(pwd) GO_SERVER_URL=https://deb.dial3343.org:8154/go nohup ${TMP_DIR}/go-agent/agent.sh &
+  AGENT_WORK_DIR=$(pwd) GO_SERVER_URL=https://gocd.dial3343.org:8154/go nohup ${TMP_DIR}/go-agent/agent.sh &
 done
 cd ${CUR_DIR}
