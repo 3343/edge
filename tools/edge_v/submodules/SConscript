@@ -89,7 +89,7 @@ if env['ucvm'] != True:
   env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/fftw/lib'] )
 
   # forward CVMs
-  for l_mo in ['cencal', 'cvmh1510', 'cvms', 'cvms426', 'cvms5' ]:
+  for l_mo in ['cencal', 'cvmh1511', 'cvms', 'cvms426', 'cvms5' ]:
     env.AppendUnique( LIBPATH=[ env['ucvm']+'/model/' + l_mo + '/lib'] )
 
   # forward UCVM
