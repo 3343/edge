@@ -109,8 +109,9 @@ fi
 # UCVM #
 ########
 git clone https://github.com/SCECcode/UCVMC.git
+cd UCVMC
 git checkout v17.1.0
-cd UCVMC/largefiles
+cd largefiles
 ./get_large_files.py
 ./check_largefiles_md5.py
 ./stage_large_files.py
