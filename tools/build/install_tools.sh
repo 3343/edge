@@ -60,7 +60,7 @@ then
   sudo yum install -y -q -e 0 GMT
   sudo yum install -y -q -e 0 ghostscript
   # EDGEv dependencies
-  sudo yum install proj-static
+  sudo yum install -y -q -e 0 proj-static
   # EDGEcut dependencies
   sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
   sudo pip install meshio > /dev/null
