@@ -26,6 +26,7 @@
     TEMPLATE_AGENT_AUTO_REGISTER_KEY
     TEMPLATE_SERVER_ID
     TEMPLATE_TOKEN_GENERATION_KEY
+    TEMPLATE_WEBHOOK_SECRET
 
     TEMPLATE_GIT_EDGE_CORE
     TEMPLATE_GIT_EDGE_OPT
@@ -33,8 +34,8 @@
     TEMPLATE_CLOUD_0_IP
     TEMPLATE_CLOUD_0_UUID
 -->
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="113">
-  <server artifactsdir="artifacts" purgeStart="80.0" purgeUpto="100.0" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="124">
+  <server artifactsdir="artifacts" purgeStart="80.0" purgeUpto="100.0" agentAutoRegisterKey="TEMPLATE_AGENT_AUTO_REGISTER_KEY" commandRepositoryLocation="default" serverId="TEMPLATE_SERVER_ID" tokenGenerationKey="TEMPLATE_TOKEN_GENERATION_KEY" webhookSecret="TEMPLATE_WEBHOOK_SECRET">
     <security>
       <!-- Authentification -->
       <authConfigs>
