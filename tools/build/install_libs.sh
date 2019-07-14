@@ -110,14 +110,15 @@ fi
 ########
 git clone https://github.com/SCECcode/UCVMC.git
 cd UCVMC
-git checkout v17.1.0
+git checkout v19.4.2
 cd largefiles
-./get_large_files.py
+# CVM-S4.26 and CVM-H
+bash -c "printf \"no\nno\nno\nno\nno\nyes\nno\nyes\n\" | ./get_large_files.py"
 ./check_largefiles_md5.py
 ./stage_large_files.py
 cd ..
 # CVM-S4.26 and CVM-H
-sudo bash -c "printf \"/usr/local/ucvm\nno\nyes\nno\nyes\nno\n\" | ./ucvm_setup.py"
+sudo bash -c "printf \"/usr/local/ucvm\nyes\nyes\n\" | ./ucvm_setup.py"
 cd ..
 
 ##########
