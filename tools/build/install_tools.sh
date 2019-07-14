@@ -65,7 +65,7 @@ then
   sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
   sudo pip install meshio > /dev/null
   # GoCD dependencies
-  sudo yum install -y -q -e 0 java
+  sudo yum install -y -q -e 0 java-latest-openjdk
 fi
 
 ########
@@ -79,7 +79,7 @@ sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 #########
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo yum install -y -q -e 0 llvm-toolset-7-clang
+  sudo yum install -y -q -e 0 llvm-toolset-7-clang llvm-toolset-7-libomp llvm-toolset-7-libomp-devel
   sudo yum install -y -q -e 0 clang
   source /opt/rh/llvm-toolset-7/enable
   echo "source /opt/rh/llvm-toolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
