@@ -928,7 +928,7 @@
               <!-- generate mesh -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>${GMSH_EXEC} -2 ${GMSH_CONFIG} -o ${MESH_FILE}</arg>
+                <arg>${GMSH_EXEC} -format msh2 -2 ${GMSH_CONFIG} -o ${MESH_FILE}</arg>
                 <runif status="passed" />
               </exec>
 
