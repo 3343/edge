@@ -90,7 +90,15 @@
 }
 
 {
-   orte_init
+   orte_init_invalid_read
+   Memcheck:Addr1
+   fun:vsscanf
+   ...
+   fun:orte_init
+}
+
+{
+   orte_init_leak
    Memcheck:Leak
    match-leak-kinds: definite
    fun:malloc
