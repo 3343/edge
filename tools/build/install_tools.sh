@@ -41,10 +41,11 @@ then
   source /opt/rh/devtoolset-7/enable
   echo "source /opt/rh/devtoolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
   # other
+  sudo yum install -y -q -e 0 hostname
   sudo yum install -y -q -e 0 wget
   sudo yum install -y -q -e 0 unzip
   sudo yum install -y -q -e 0 m4
-  sudo yum install -y -q -e 0 dh-autoreconf
+  sudo yum install -y -q -e 0 autoconf dh-autoreconf
   sudo yum install -y -q -e 0 make
   sudo yum install -y -q -e 0 cmake3
   sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
