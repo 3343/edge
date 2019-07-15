@@ -57,6 +57,7 @@ then
   sudo yum install -y -q -e 0 irqbalance
   sudo yum install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
   sudo yum install -y -q -e 0 atop
+  sudo yum install -y -q -e 0 htop
   sudo yum install -y -q -e 0 GMT
   sudo yum install -y -q -e 0 ghostscript
   # UCVM and EDGEv dependencies
