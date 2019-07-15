@@ -90,9 +90,9 @@ fi
 ###########
 # OpenMPI #
 ###########
-wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.0.tar.bz2 -O openmpi.tar.bz2
+wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.1.tar.gz -O openmpi.tar.gz
 mkdir openmpi
-tar -xjf openmpi.tar.bz2 -C openmpi --strip-components=1
+tar -xf openmpi.tar.gz -C openmpi --strip-components=1
 cd openmpi
 ./configure --enable-static=yes --enable-mpi1-compatibility > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
