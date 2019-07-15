@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2016-2018, Regents of the University of California
 # All rights reserved.
 #
@@ -19,30 +20,25 @@
 #
 # @section DESCRIPTION
 #
-# Debian bootstrap for EDGE and supporting software.
+# Bootstrap for EDGE and supporting software.
 # Build a container via: `sudo singularity build ./edge.simg ./edge.def`
 ##
-BootStrap: debootstrap
-OSVersion: stretch
-MirrorURL: http://ftp.us.debian.org/debian/
-Include:
+BootStrap: yum
+OSVersion: 7
+MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+Include: yum sudo
 
 %post
-  echo "deb http://http.us.debian.org/debian testing main non-free contrib"     >> /etc/apt/sources.list
-  echo "deb-src http://http.us.debian.org/debian testing main non-free contrib" >> /etc/apt/sources.list
-  apt-get update -qq -o=Dpkg::Use-Pty=0
-
-  apt-get install -qq -o=Dpkg::Use-Pty=0 -y sudo
-  sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y curl
-
 bash <<EOF
   bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_tools.sh)
 EOF
+  source /etc/bashrc
 
 %appinstall edge
 bash <<EOF
   bash <(curl -s https://raw.githubusercontent.com/3343/edge/develop/tools/build/install_libs.sh)
 EOF
+  source /etc/bashrc
 
   EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
 
