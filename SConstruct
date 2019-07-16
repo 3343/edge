@@ -333,6 +333,9 @@ if( env['xsmm'] ):
   if( 'elastic' not in env['equations'] ):
     warnings.warn('  Warning: LIBXSMM is not supported for equations other than elastic, continuing without' )
     env['xsmm'] = False
+  if( env['order'] == '1' ):
+    warnings.warn('  Warning: LIBXSMM is not supported finite volume settings, continuing without' )
+    env['xsmm'] = False
   if( int(env['cfr']) > 1 and ( env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512')  ):
     warnings.warn( '  Warning: LIBXSMM not supported for fused simulations and arch != (snb, hsw, knl, skx or avx512), continuing without' )
     env['xsmm'] = False
