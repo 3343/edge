@@ -91,7 +91,7 @@
 
 {
    orte_init_invalid_read
-   Memcheck:Addr1
+   Memcheck:Addr*
    fun:vsscanf
    ...
    fun:orte_init
@@ -126,7 +126,15 @@
 }
 
 {
-   ompi_mpi_finalize
+   ompi_mpi_finalize_invalid_read
+   Memcheck:Addr*
+   ...
+   fun:ompi_mpi_finalize
+   fun:*edge*parallel*Mpi*
+}
+
+{
+   ompi_mpi_finalize_leak
    Memcheck:Leak
    ...
    fun:orte_finalize
