@@ -91,7 +91,7 @@
 
 {
    orte_init_invalid_read
-   Memcheck:Addr8
+   Memcheck:Addr2
    fun:vsscanf
    ...
    fun:orte_init
@@ -127,7 +127,7 @@
 
 {
    ompi_mpi_finalize_invalid_read
-   Memcheck:Addr*
+   Memcheck:Addr8
    ...
    fun:ompi_mpi_finalize
    fun:*edge*parallel*Mpi*
