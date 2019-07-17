@@ -91,7 +91,7 @@
 
 {
    orte_init_invalid_read
-   Memcheck:Addr*
+   Memcheck:Addr8
    fun:vsscanf
    ...
    fun:orte_init
