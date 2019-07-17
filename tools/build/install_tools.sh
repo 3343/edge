@@ -146,15 +146,6 @@ cd scons
 sudo python setup.py install
 cd ..
 
-###########
-# Vagrant #
-###########
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
-then
-  wget https://releases.hashicorp.com/vagrant/2.2.0/vagrant_2.2.0_x86_64.rpm -O vagrant.rpm
-  sudo yum install -y -q -e 0 vagrant.rpm
-fi
-
 #################
 # GCP specifics #
 #################
