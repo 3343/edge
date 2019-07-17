@@ -307,24 +307,26 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C );
 
       // anelastic flux solver
-      t_matCsr l_fsCsrA;
-      FakeMats< TL_N_DIS >::fsCsrA( l_fsCsrA );
-      EDGE_CHECK_EQ( l_fsCsrA.val.size(), TL_N_QTS_M*TL_N_QTS_E );
+      if( TL_N_RMS > 0 ) {
+        t_matCsr l_fsCsrA;
+        FakeMats< TL_N_DIS >::fsCsrA( l_fsCsrA );
+        EDGE_CHECK_EQ( l_fsCsrA.val.size(), TL_N_QTS_M*TL_N_QTS_E );
 
-      m_mm.add(  3,                   // group
-                 true,                // csr
-                 &l_fsCsrA.rowPtr[0], // row pointer
-                 &l_fsCsrA.colIdx[0], // column index
-                 &l_fsCsrA.val[0],    // values
-                 TL_N_QTS_M,          // m
-                 TL_N_MDS_FA,         // n
-                 TL_N_QTS_M,          // k
-                 0,                   // ldA
-                 TL_N_MDS_FA,         // ldB
-                 TL_N_MDS_FA,         // ldC
-                 TL_T_REAL(1.0),      // alpha
-                 TL_T_REAL(0.0),      // beta
-                 LIBXSMM_GEMM_PREFETCH_NONE );
+        m_mm.add(  3,                   // group
+                   true,                // csr
+                   &l_fsCsrA.rowPtr[0], // row pointer
+                   &l_fsCsrA.colIdx[0], // column index
+                   &l_fsCsrA.val[0],    // values
+                   TL_N_QTS_M,          // m
+                   TL_N_MDS_FA,         // n
+                   TL_N_QTS_M,          // k
+                   0,                   // ldA
+                   TL_N_MDS_FA,         // ldB
+                   TL_N_MDS_FA,         // ldC
+                   TL_T_REAL(1.0),      // alpha
+                   TL_T_REAL(0.0),      // beta
+                   LIBXSMM_GEMM_PREFETCH_NONE );
+      }
     }
 
     /**

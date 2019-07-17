@@ -186,19 +186,10 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
                    l_nonZeros,
                    l_stiffCsc );
 
-      // get csr star matrices
+      // get csr elastic star matrix
       t_matCsr l_starCsrE;
       FakeMats< TL_N_DIS >::starCsrE( l_starCsrE );
       EDGE_CHECK_EQ( l_starCsrE.val.size(), TL_N_NZS_STAR_E );
-
-      t_matCsr l_starCsrA;
-      FakeMats< TL_N_DIS >::starCsrA( l_starCsrA );
-      EDGE_CHECK_EQ( l_starCsrA.val.size(), TL_N_NZS_STAR_A );
-
-      // get csr source matrix
-      t_matCsr l_srcCsrA;
-      FakeMats< TL_N_DIS >::srcCsrA( l_srcCsrA );
-      EDGE_CHECK_EQ( l_srcCsrA.val.size(), TL_N_NZS_SRC_A );
 
       // stiffness matrices
       for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
@@ -235,6 +226,16 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
                  LIBXSMM_GEMM_PREFETCH_NONE );
 
       if( TL_N_RMS > 0 ) {
+        // get csr anelastic source matrix
+        t_matCsr l_starCsrA;
+        FakeMats< TL_N_DIS >::starCsrA( l_starCsrA );
+        EDGE_CHECK_EQ( l_starCsrA.val.size(), TL_N_NZS_STAR_A );
+
+        // get csr source matrix
+        t_matCsr l_srcCsrA;
+        FakeMats< TL_N_DIS >::srcCsrA( l_srcCsrA );
+        EDGE_CHECK_EQ( l_srcCsrA.val.size(), TL_N_NZS_SRC_A );
+
         // multiplication with anelastic star matrix
         m_mm.add( 2,                     // group
                   true,                  // csr

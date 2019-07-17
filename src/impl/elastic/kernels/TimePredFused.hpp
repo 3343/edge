@@ -224,15 +224,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       FakeMats< TL_N_DIS >::starCsrE( l_starCsrE );
       EDGE_CHECK_EQ( l_starCsrE.val.size(), TL_N_NZS_STAR_E );
 
-      t_matCsr l_starCsrA;
-      FakeMats< TL_N_DIS >::starCsrA( l_starCsrA );
-      EDGE_CHECK_EQ( l_starCsrA.val.size(), TL_N_NZS_STAR_A );
-
-      // get csr source matrix
-      t_matCsr l_srcCsrA;
-      FakeMats< TL_N_DIS >::srcCsrA( l_srcCsrA );
-      EDGE_CHECK_EQ( l_srcCsrA.val.size(), TL_N_NZS_SRC_A );
-
       // derive sparse AoSoA-LIBXSMM kernels
       for( unsigned short l_de = 1; l_de < TL_O_SP; l_de++ ) {
         // transposed stiffness matrices
@@ -271,6 +262,15 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
 
       // anelastic kernels
       if( TL_N_RMS > 0 ) {
+        t_matCsr l_starCsrA;
+        FakeMats< TL_N_DIS >::starCsrA( l_starCsrA );
+        EDGE_CHECK_EQ( l_starCsrA.val.size(), TL_N_NZS_STAR_A );
+
+        // get csr source matrix
+        t_matCsr l_srcCsrA;
+        FakeMats< TL_N_DIS >::srcCsrA( l_srcCsrA );
+        EDGE_CHECK_EQ( l_srcCsrA.val.size(), TL_N_NZS_SRC_A );
+
         // anelastic star matrix
         m_mm.add( 2,                     // group
                   true,                  // csr
