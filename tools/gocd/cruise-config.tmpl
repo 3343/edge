@@ -270,53 +270,15 @@
           <!-- EDGE container -->
           <job name="EDGE">
             <tasks>
-              <!-- bootstrap Vagrant VM -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant up</arg>
-                <runif status="passed" />
-              </exec>
               <!-- build container -->
               <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
                 <arg>-c</arg>
-                <arg>vagrant ssh -c "sudo singularity build /vagrant/edge.simg /vagrant/edge.def"</arg>
-                <runif status="passed" />
-              </exec>
-              <!-- destroy VM -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant destroy -f</arg>
+                <arg>sudo singularity build edge.simg edge.def</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
             <artifacts>
               <artifact type="build" src="edge/tools/build/singularity/edge.simg" />
-            </artifacts>
-          </job>
-          <!-- GoCD agent container -->
-          <job name="GoCD">
-            <tasks>
-              <!-- bootstrap Vagrant VM -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant up</arg>
-                <runif status="passed" />
-              </exec>
-              <!-- build container -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant ssh -c "sudo singularity build /vagrant/gocd.simg /vagrant/agent.def"</arg>
-                <runif status="passed" />
-              </exec>
-              <!-- destroy VM -->
-              <exec command="/bin/bash" workingdir="edge/tools/build/singularity/">
-                <arg>-c</arg>
-                <arg>vagrant destroy -f</arg>
-                <runif status="passed" />
-              </exec>
-            </tasks>
-            <artifacts>
-              <artifact type="build" src="edge/tools/build/singularity/gocd.simg" />
             </artifacts>
           </job>
         </jobs>
