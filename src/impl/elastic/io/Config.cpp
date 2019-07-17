@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
@@ -29,6 +30,13 @@
 void edge::elastic::io::Config::print() {
   EDGE_LOG_INFO << "  printing implementation-specific config for elastics (if any)";
 
+  // print frequency specs
+  if( N_RELAXATION_MECHANISMS > 0 ) {
+    EDGE_LOG_INFO << "    attenuation frequency band:";
+    EDGE_LOG_INFO << "      central_frequency: " << m_attFreqs[0];
+    EDGE_LOG_INFO << "      frequency_ratio: " << m_attFreqs[1];
+  }
+
   // print info about the velocity model
   if( m_velDoms.size() > 0 ) {
     EDGE_LOG_INFO << "    found " << m_velDoms.size() << " velmodel-domains in the config: ";
@@ -36,7 +44,11 @@ void edge::elastic::io::Config::print() {
       EDGE_LOG_INFO << "      domain #" << l_do << ":";
       EDGE_LOG_INFO << "        rho: " << m_velVals[l_do][0] << ", "
                     <<         "lam: " << m_velVals[l_do][1] << ", "
-                    <<         "mu:  " << m_velVals[l_do][2] << ", ";
+                    <<         "mu:  " << m_velVals[l_do][2];
+      if( N_RELAXATION_MECHANISMS > 0 ) {
+        EDGE_LOG_INFO << "        qp: " << m_velVals[l_do][3] << ", "
+                      <<         "qs: " << m_velVals[l_do][4];
+      }
       std::vector< std::string > l_doStrs = m_velDoms[l_do].toString();
       for( std::size_t l_ob = 0; l_ob < l_doStrs.size(); l_ob++ ) {
         EDGE_LOG_INFO << "        object #" << l_ob << ": " << l_doStrs[l_ob];
@@ -106,6 +118,21 @@ edge::elastic::io::Config::Config( const pugi::xml_document &i_xml ) {
     EDGE_LOG_FATAL << m_ptSrcs.size() << " point source files are given in the config, not matching the " << N_CRUNS << " fused runs, aborting";
 
   /*
+   * read attenuation frequencies
+   */
+  if( N_RELAXATION_MECHANISMS > 0 ) {
+    m_attFreqs[0] = i_xml.child("edge").child("cfr").child("setups").child("attenuation").child("central_frequency").text().as_double();
+    m_attFreqs[1] = i_xml.child("edge").child("cfr").child("setups").child("attenuation").child("frequency_ratio").text().as_double();
+  }
+  else {
+    m_attFreqs[0] = std::numeric_limits< double >::max();
+    m_attFreqs[1] = std::numeric_limits< double >::max();
+  }
+
+  EDGE_CHECK(    (m_attFreqs[0] > 0)
+              && (m_attFreqs[1] > 0) ) << "found non-positive attenuation frequencies";
+
+  /*
    * read velocity model, if available
    */
   pugi::xml_node l_velMod = i_xml.child("edge").child("cfr").child("velocity_model");
@@ -118,10 +145,17 @@ edge::elastic::io::Config::Config( const pugi::xml_document &i_xml ) {
     std::vector< real_base > l_vals;
 
     // names of the values
-    std::vector< std::vector< std::string > > l_valsN(3);
+    unsigned short l_nMatPars = 3;
+    if( N_RELAXATION_MECHANISMS > 0 ) l_nMatPars = 5;
+
+    std::vector< std::vector< std::string > > l_valsN(l_nMatPars);
     l_valsN[0].push_back( "rho" );
     l_valsN[1].push_back( "lambda" );
     l_valsN[2].push_back( "mu" );
+    if( l_nMatPars > 3 ) {
+      l_valsN[3].push_back( "qp" );
+      l_valsN[4].push_back( "qs" );
+    }
 
     // parse the domain
     edge::io::ConfigDoms< N_DIM >::parse( l_do,
@@ -129,13 +163,21 @@ edge::elastic::io::Config::Config( const pugi::xml_document &i_xml ) {
                                           edge::io::ConfigDoms< N_DIM >::F64,
                                           l_vals,
                                           m_velDoms.back() );
-    EDGE_CHECK_EQ( l_valsN.size(), 3 );
+    EDGE_CHECK_EQ( l_vals.size(), l_nMatPars );
 
     // copy over velocity values
     m_velVals.resize( m_velVals.size() + 1 );
-    for( unsigned short l_va = 0; l_va < 3; l_va++ ) {
+    for( unsigned short l_va = 0; l_va < l_nMatPars; l_va++ ) {
       m_velVals.back()[l_va] = l_vals[l_va];
     }
+    if( N_RELAXATION_MECHANISMS == 0 ) {
+      m_velVals.back()[3] = std::numeric_limits< real_base >::max();
+      m_velVals.back()[4] = std::numeric_limits< real_base >::max();
+    }
+
+    // ensure positive q-factors
+    EDGE_CHECK(    (m_velVals.back()[3] > 0)
+                && (m_velVals.back()[4] > 0) ) << "found non-positive q-factors";
   }
 
   /*

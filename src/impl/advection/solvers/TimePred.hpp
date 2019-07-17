@@ -106,6 +106,7 @@ class edge::advection::solvers::TimePred {
                                          TL_N_MDS,                    // ldA
                                          TL_N_MDS,                    // ldB
                                          TL_N_MDS,                    // ldC
+                                         static_cast<real_base>(1.0), //alpha
                                          static_cast<real_base>(0.0), // beta
                                          o_der[l_de-1][0],
                                          i_stiffT[l_di][0],
@@ -119,6 +120,7 @@ class edge::advection::solvers::TimePred {
                                          1,                           // ldA
                                          TL_N_MDS,                    // ldB
                                          TL_N_MDS,                    // ldC
+                                         static_cast<real_base>(1.0), //alpha
                                          static_cast<real_base>(1.0), // beta
                                          i_star+l_di,
                                          o_scratch[0],

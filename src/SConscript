@@ -56,7 +56,8 @@ if env['moab'] != False:
   l_sources = l_sources + ['mesh/Unstructured.cpp', 'mesh/Moab.cpp']
 
 if 'elastic' in env['equations']:
-  l_sources = l_sources + ['impl/elastic/io/Config.cpp']
+  l_sources = l_sources + [ 'impl/elastic/io/Config.cpp',
+                            'impl/elastic/setups/ViscoElasticity.cpp' ]
 
 for l_source in l_sources:
   env.sources.append( env.Object( l_source ) )
@@ -112,7 +113,7 @@ if env['tests']:
     l_tests = l_tests+['impl/elastic/common.test.cpp',
                        'impl/elastic/sc/Llf.test.cpp',
                        'impl/elastic/solvers/common.test.cpp',
-                       'impl/elastic/kernels/Kernels.test.cpp',
+                       'impl/elastic/setups/ViscoElasticity.test.cpp',
                        'impl/elastic/setups/RuptureInit.test.cpp',
 #                       'impl/elastic/solvers/InternalBoundary.test.cpp',
                        'impl/elastic/solvers/FrictionLaws.test.cpp' ]

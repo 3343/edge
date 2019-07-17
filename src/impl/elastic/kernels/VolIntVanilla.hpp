@@ -31,9 +31,10 @@
 #include "data/MmVanilla.hpp"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace kernels { 
       template< typename       TL_T_REAL,
+                unsigned short TL_N_RMS,
                 t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_N_CRS >
@@ -46,15 +47,18 @@ namespace edge {
  * Quadrature-free ADER-DG volume integration for seismic wave propagation using vanilla kernels.
  *
  * @paramt TL_T_REAL floating point precision.
+ * @paramt TL_N_RMS number of relaxation mechanisms.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP spatial order.
  * @paramt TL_N_CRS number of fused simulations.
  **/
 template< typename       TL_T_REAL,
+          unsigned short TL_N_RMS,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::kernels::VolIntVanilla: edge::elastic::kernels::VolInt < TL_T_REAL,
+class edge::seismic::kernels::VolIntVanilla: edge::seismic::kernels::VolInt < TL_T_REAL,
+                                                                              TL_N_RMS,
                                                                               TL_T_EL,
                                                                               TL_O_SP,
                                                                               TL_N_CRS > {
@@ -66,7 +70,10 @@ class edge::elastic::kernels::VolIntVanilla: edge::elastic::kernels::VolInt < TL
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
     //! number of elastic quantities
-    static unsigned short const TL_N_QTS_E = (TL_N_DIS == 2) ? 5 : 9;
+    static unsigned short const TL_N_QTS_E = CE_N_QTS_E( TL_N_DIS );
+
+    //! number of quantities per relaxation mechanism
+    static unsigned short const TL_N_QTS_M = CE_N_QTS_M( TL_N_DIS );
 
     //! matrix kernels
     edge::data::MmVanilla< TL_T_REAL > m_mm;
@@ -78,7 +85,7 @@ class edge::elastic::kernels::VolIntVanilla: edge::elastic::kernels::VolInt < TL
      * Generates the matrix kernels for the stiffness matrices and star matrices.
      **/
     void generateKernels() {
-      // multiplication with stiffness matrix and star matrix
+      // stiffness matrix
       m_mm.add( 0,                                            // group
                 TL_N_QTS_E,                                   // m
                 TL_N_MDS,                                     // n
@@ -86,33 +93,71 @@ class edge::elastic::kernels::VolIntVanilla: edge::elastic::kernels::VolInt < TL
                 TL_N_MDS,                                     // ldA
                 TL_N_MDS,                                     // ldB
                 TL_N_MDS,                                     // ldC
-                static_cast<TL_T_REAL>(1.0),                  // alpha
-                static_cast<TL_T_REAL>(0.0),                  // beta
+                TL_T_REAL(1.0),                               // alpha
+                TL_T_REAL(0.0),                               // beta
                 true,                                         // fused AC
                 false,                                        // fused BC
                 TL_N_CRS );
 
-      m_mm.add( 0,                           // group
-                TL_N_QTS_E,                  // m
-                TL_N_MDS,                    // n
-                TL_N_QTS_E,                  // k
-                TL_N_QTS_E,                  // ldA
-                TL_N_MDS,                    // ldB
-                TL_N_MDS,                    // ldC
-                static_cast<TL_T_REAL>(1.0), // alpha
-                static_cast<TL_T_REAL>(1.0), // beta
-                false,                       // fused AC
-                true,                        // fused BC
+      // elastic star matrix
+      m_mm.add( 0,              // group
+                TL_N_QTS_E,     // m
+                TL_N_MDS,       // n
+                TL_N_QTS_E,     // k
+                TL_N_QTS_E,     // ldA
+                TL_N_MDS,       // ldB
+                TL_N_MDS,       // ldC
+                TL_T_REAL(1.0), // alpha
+                TL_T_REAL(1.0), // beta
+                false,          // fused AC
+                true,           // fused BC
                 TL_N_CRS );
+
+      if( TL_N_RMS > 0 ) {
+        // anelastic star matrix
+        m_mm.add( 1,              // group
+                  TL_N_QTS_M,     // m
+                  TL_N_MDS,       // n
+                  TL_N_DIS,       // k
+                  TL_N_DIS,       // ldA
+                  TL_N_MDS,       // ldB
+                  TL_N_MDS,       // ldC
+                  TL_T_REAL(1.0), // alpha
+                  TL_T_REAL(1.0), // beta
+                  false,          // fused AC
+                  true,           // fused BC
+                  TL_N_CRS );
+
+        // anelastic source matrices
+        m_mm.add( 1,              // group
+                  TL_N_QTS_M,     // m
+                  TL_N_MDS,       // n
+                  TL_N_QTS_M,     // k
+                  TL_N_QTS_M,     // ldA
+                  TL_N_MDS,       // ldB
+                  TL_N_MDS,       // ldC
+                  TL_T_REAL(1.0), // alpha
+                  TL_T_REAL(1.0), // beta
+                  false,          // fused AC
+                  true,           // fused BC
+                  TL_N_CRS );
+        }
     }
 
   public:
     /**
      * Constructor of the vanilla volume integration.
      *
+     * @param i_rfs relaxation frequencies, use nullptr if TL_N_RMS==0.
      * @param io_dynMem dynamic memory allocations.
      **/
-    VolIntVanilla( data::Dynamic & io_dynMem ) {
+    VolIntVanilla( TL_T_REAL     const * i_rfs,
+                   data::Dynamic       & io_dynMem ): VolInt< TL_T_REAL,
+                                                              TL_N_RMS,
+                                                              TL_T_EL,
+                                                              TL_O_SP,
+                                                              TL_N_CRS >( i_rfs,
+                                                                          io_dynMem ) {
       // formulation of the basis in terms of the reference element
       dg::Basis l_basis( TL_T_EL,
                          TL_O_SP );
@@ -135,26 +180,65 @@ class edge::elastic::kernels::VolIntVanilla: edge::elastic::kernels::VolInt < TL
     /**
      * Volume contribution using vanilla matrix-matrix multiplication kernels.
      *
-     * @param i_jac jacobians.
-     * @param i_tDofs time integerated DG-DOFs.
-     * @param io_dofs will be updated with local contribution of the element to the volume integral.
+     * @param i_starE elastic star matrices.
+     * @param i_starA anelastic star matrices, use nullptr if TL_N_RMS==0.
+     * @param i_tDofsE time integrated elastic DOFs.
+     * @param i_tDofsA time integrated anselastic DOFs.
+     * @param io_dofsE will be updated with local elastic contribution of the element to the volume integral.
+     * @param io_dofsA will be updated with local anelastic contribution of the element to the volume integral, use nullptr if TL_N_RMS==0.
      * @param o_scratch will be used as scratch space for the computations.
      **/
-    void apply( TL_T_REAL const i_jac[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E],
-                TL_T_REAL const i_tDofs[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL       io_dofs[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL       o_scratch[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) const {
+    void apply( TL_T_REAL const   i_starE[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E],
+                TL_T_REAL const (*i_starA)[TL_N_QTS_M*TL_N_DIS],
+                TL_T_REAL const (*i_srcA)[TL_N_QTS_M*TL_N_QTS_M],
+                TL_T_REAL const   i_tDofsE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL const (*i_tDofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL         io_dofsE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL       (*io_dofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL         o_scratch[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) const {
+      // relaxation frequencies
+      TL_T_REAL const *l_rfs = this->m_rfs;
+
+      // anelastic buffer
+      TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
+        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) l_scratch[l_qt][l_md][l_cr] = 0;
+
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         // multiply with stiffness and inverse mass matrix
-        m_mm.m_kernels[0][0]( i_tDofs[0][0],
+        m_mm.m_kernels[0][0]( i_tDofsE[0][0],
                               m_stiff[l_di],
                               o_scratch[0][0] );
 
-        // multiply with star matrix
-        m_mm.m_kernels[0][1]( i_jac[l_di][0],
+        // multiply with elastic star matrix
+        m_mm.m_kernels[0][1]( i_starE[l_di][0],
                               o_scratch[0][0],
-                              io_dofs[0][0] );
+                              io_dofsE[0][0] );
+
+        if( TL_N_RMS > 0 ) {
+          // multiply with anelastic star matrices
+          m_mm.m_kernels[1][0]( i_starA[l_di],
+                                o_scratch[TL_N_QTS_M][0],
+                                l_scratch[0][0] );
+        }
+      }
+
+      for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
+        // add contribution of source matrix
+        m_mm.m_kernels[1][1]( i_srcA[l_rm],
+                              i_tDofsA[l_rm][0][0],
+                              io_dofsE[0][0] );
+
+        // multiply with relaxation frequency and add
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              io_dofsA[l_rm][l_qt][l_md][l_cr] += l_rfs[l_rm] * ( l_scratch[l_qt][l_md][l_cr] - i_tDofsA[l_rm][l_qt][l_md][l_cr] );
+            }
+          }
+        }
       }
     }
 };

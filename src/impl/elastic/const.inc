@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -18,13 +19,116 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Compile time constants for the elatic wave equations.
+ * Compile time constants seismic simulations.
  **/
+
+/**
+ * Gets the number of elastic quantities.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of quantities.
+ **/
+constexpr unsigned short CE_N_QTS_E( unsigned short i_nDis ) {
+  return (i_nDis == 2) ? 5 : 9;
+}
+
+/**
+ * Gets the number of quantities per relaxation mechanism.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of quantities.
+ **/
+constexpr unsigned short CE_N_QTS_M( unsigned short i_nDis ) {
+  return (i_nDis == 2) ? 3 : 6;
+}
+
+/**
+ * Gets the number of entries in a dense elastic star matrix.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of entries.
+ **/
+constexpr unsigned short CE_N_ENS_STAR_E_DE( unsigned short i_nDis ) {
+  return CE_N_QTS_E(i_nDis) * CE_N_QTS_E(i_nDis);
+}
+
+/**
+ * Gets the number of non-zeros in a sparse elastic star matrix.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of non-zeros.
+ **/
+constexpr unsigned short CE_N_ENS_STAR_E_SP( unsigned short i_nDis ) {
+  return (i_nDis == 2) ? 10 : 24;
+}
+
+/**
+ * Gets the number of entries in a dense anelastic star matrix.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of entries.
+ **/
+constexpr unsigned short CE_N_ENS_STAR_A_DE( unsigned short i_nDis ) {
+  return i_nDis * CE_N_QTS_M( i_nDis );
+}
+
+/**
+ * Gets the number of non-zeros in a sparse anelastic star matrix.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of non-zeros.
+ **/
+constexpr unsigned short CE_N_ENS_STAR_A_SP( unsigned short i_nDis ) {
+  return (i_nDis == 2) ? 3 : 9;
+}
+
+/**
+ * Gets the number of entries in a dense anelastic source matrix.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of entries.
+ **/
+constexpr unsigned short CE_N_ENS_SRC_A_DE( unsigned short i_nDis ) {
+  return CE_N_QTS_M( i_nDis ) * CE_N_QTS_M( i_nDis );
+}
+
+/**
+ * Gets the number of non-zeros in a sparse anelastic source matrix.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of non-zeros.
+ **/
+constexpr unsigned short CE_N_ENS_SRC_A_SP( unsigned short i_nDis ) {
+  return (i_nDis == 2) ? 5 : 12;
+}
+
+/**
+ * Gets the number of entries in a dense elastic flux solver.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of entries.
+ **/
+constexpr unsigned short CE_N_ENS_FS_E_DE( unsigned short i_nDis ) {
+  return CE_N_QTS_E( i_nDis ) * CE_N_QTS_E( i_nDis );
+}
+
+/**
+ * Gets the number of entries in a dense anelastic flux solver.
+ *
+ * @param i_nDis number of dimensions.
+ * @return number of entries.
+ **/
+constexpr unsigned short CE_N_ENS_FS_A_DE( unsigned short i_nDis ) {
+  return CE_N_QTS_E( i_nDis ) * CE_N_QTS_M( i_nDis );
+}
 
 #include "sc/ibnd/InternalBoundary.type"
 
 // number of entries in the control flow
 const unsigned short N_ENTRIES_CONTROL_FLOW=18;
+
+// number of relaxation mechanisms
+const unsigned short N_RELAXATION_MECHANISMS=PP_N_RELAXATION_MECHANISMS;
 
 #if PP_ORDER > 9
 #error not supported
@@ -53,15 +157,11 @@ typedef enum: int_spType {
   SOURCE       = 65536 // 0b0000000000000000000000000000000000000000000000010000000000000000
 } t_spTypeElastic;
 
-#if PP_N_DIM == 2
-// two normal stress components (sigma_xx, sigma_yy), one shear stress component (sigma_xy), two particle velocites (u, v)
-const unsigned short N_QUANTITIES = 5;
-#elif PP_N_DIM == 3
-// three normal stress components (signa_xx, sigma_yy, sigmag_zz), three shear stress (sigma_xy, sigma_yz, sigma_xz), three particle velocities (u,v,w)
-const unsigned short N_QUANTITIES = 9;
-#else
-#error elastic constants for other dimensions than 2 and 3 undefined.
-#endif
+// elastic quantities
+const unsigned short N_QUANTITIES = CE_N_QTS_E(PP_N_DIM);
+
+// number of anelastic quantities
+const unsigned short N_QUANTITIES_A = N_RELAXATION_MECHANISMS * CE_N_QTS_M(PP_N_DIM);
 
 typedef struct {
   // density rho
@@ -70,6 +170,10 @@ typedef struct {
   real_base lam;
   // lame parameter mu
   real_base mu;
+  // q-factor qp
+  real_base qp;
+  // q-factor qs
+  real_base qs;
 } t_bgPars;
 
 typedef struct {

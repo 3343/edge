@@ -150,15 +150,6 @@
                     1 );
 #endif
 
-// initialize the ADER-DG kernels
-edge::elastic::solvers::AderDg< real_base,
-                                T_SDISC.ELEMENT,
-                                N_QUANTITIES,
-                                ORDER,
-                                ORDER,
-                                N_CRUNS > l_aderDg( l_dynMem );
-l_internal.m_globalShared4[0] = &l_aderDg;
-
 // init data of limiter
 #include "sc/init.inc"
 
@@ -178,13 +169,15 @@ EDGE_LOG_INFO << "    querying mesh for velocity model";
 
 #if defined PP_T_MESH_UNSTRUCTURED
 // allocate memory for velocity model
-double (*l_velMod)[3] = (double (*)[3]) new double[ l_internal.m_nElements * 3 ];
-std::string l_bgPars[3] = { "LAMBDA",
+double (*l_velMod)[5] = (double (*)[5]) new double[ l_internal.m_nElements * 5 ];
+std::string l_bgPars[5] = { "LAMBDA",
                             "MU",
-                            "RHO" };
+                            "RHO",
+                            "QP",
+                            "QS" };
 
 l_vmMesh = l_mesh.getParsDe( N_DIM,
-                             3,
+                             (N_RELAXATION_MECHANISMS == 0) ? 3 : 5,
                              l_bgPars,
                              l_velMod[0] );
 
@@ -197,10 +190,19 @@ if( l_vmMesh == 0 ) {
     EDGE_CHECK_GT( l_velMod[l_el][0], 0 ) << l_el;
     EDGE_CHECK_GT( l_velMod[l_el][1], 0 ) << l_el;
     EDGE_CHECK_GT( l_velMod[l_el][2], 0 ) << l_el;
+    // check for valid q-factors
+    if( N_RELAXATION_MECHANISMS > 0 ) {
+      EDGE_CHECK_GT( l_velMod[l_el][3], 0 ) << l_el;
+      EDGE_CHECK_GT( l_velMod[l_el][4], 0 ) << l_el;
+    }
 
     l_internal.m_elementShared1[l_el][0].lam  = l_velMod[l_el][0];
     l_internal.m_elementShared1[l_el][0].mu   = l_velMod[l_el][1];
     l_internal.m_elementShared1[l_el][0].rho  = l_velMod[l_el][2];
+    if( N_RELAXATION_MECHANISMS > 0 ) {
+      l_internal.m_elementShared1[l_el][0].qp = l_velMod[l_el][3];
+      l_internal.m_elementShared1[l_el][0].qs = l_velMod[l_el][4];
+    }
   }
 }
 
@@ -245,11 +247,18 @@ else {
                                     N_QUANTITIES*N_QUANTITIES,
                                     l_internal.m_elementShared3[0][0].solver[0] );
 
-  // DOFs
+  // elastic DOFs
   edge::parallel::Shared::numaInit( l_enLayouts[2],
                                     l_shared.m_nWrks,
                                     N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS,
                                     l_internal.m_elementModePrivate1[0][0][0] );
+  // anelastic DOFs
+#if (PP_N_RELAXATION_MECHANISMS > 0)
+  edge::parallel::Shared::numaInit( l_enLayouts[2],
+                                    l_shared.m_nWrks,
+                                    N_QUANTITIES_A*N_ELEMENT_MODES*N_CRUNS,
+                                    l_internal.m_elementModePrivate2[0][0][0] );
+#endif
 
   // tDOFs
   edge::parallel::Shared::numaInit( l_enLayouts[2],
@@ -316,6 +325,10 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
         l_internal.m_elementShared1[l_el][0].rho = l_elasticConf.m_velVals[l_do][0];
         l_internal.m_elementShared1[l_el][0].lam = l_elasticConf.m_velVals[l_do][1];
         l_internal.m_elementShared1[l_el][0].mu  = l_elasticConf.m_velVals[l_do][2];
+        if( N_RELAXATION_MECHANISMS > 0 ) {
+          l_internal.m_elementShared1[l_el][0].qp = l_elasticConf.m_velVals[l_do][3];
+          l_internal.m_elementShared1[l_el][0].qs = l_elasticConf.m_velVals[l_do][4];
+        }
         break;
       }
 
@@ -328,6 +341,30 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
   }
 }
 PP_INSTR_REG_END(dofsMat)
+
+// initialize ADER-DG solver and determine elastic material parameters
+edge::seismic::solvers::AderDg<
+ real_base,
+ N_RELAXATION_MECHANISMS,
+ T_SDISC.ELEMENT,
+ ORDER,
+ ORDER,
+ N_CRUNS,
+ MM_KERNELS_SPARSE > l_aderDg( l_internal.m_nElements,
+                               l_internal.m_nFaces,
+                               l_internal.m_connect.faEl,
+                               l_internal.m_connect.elVe,
+                               l_internal.m_connect.elFa,
+                               l_mesh.getInMap()->elMeDa.data(),
+                               l_mesh.getInMap()->elDaMe.data(),
+                               l_internal.m_vertexChars,
+                               l_internal.m_faceChars,
+                               l_internal.m_elementChars,
+                               (t_bgPars*) l_internal.m_elementShared1,
+                               l_elasticConf.m_attFreqs[0],
+                               l_elasticConf.m_attFreqs[1],
+                               l_dynMem );
+l_internal.m_globalShared4[0] = &l_aderDg;
 
 // setup point sources
 if( l_elasticConf.m_ptSrcs.size() > 0 ) {
@@ -522,12 +559,13 @@ if( l_elasticConf.m_frictionLaw != "" ) {
 }
 
 // setup star matrices
-edge::elastic::solvers::AderDg< real_base,
+edge::seismic::solvers::AderDg< real_base,
+                                N_RELAXATION_MECHANISMS,
                                 T_SDISC.ELEMENT,
-                                N_QUANTITIES,
                                 ORDER,
                                 ORDER,
-                                N_CRUNS
+                                N_CRUNS,
+                                MM_KERNELS_SPARSE
                               >::setupStarM( l_internal.m_nElements,
                                              l_internal.m_vertexChars,
                                              l_internal.m_connect.elVe,

@@ -48,17 +48,23 @@ if( i_step == 0 ) {
                                           m_internal.m_elementShared4,
                                           m_internal.m_elementShared2,
                                           m_internal.m_elementModePrivate1,
+#if (PP_N_RELAXATION_MECHANISMS > 0)
+                                          m_internal.m_elementModePrivate2[0],
+#else
+                                          nullptr,
+#endif
                                           m_internal.m_globalShared6,
                                           io_recvs );
 }
 else if ( i_step == 1 ) {
-  edge::elastic::solvers::AderDg<
+  edge::seismic::solvers::AderDg<
     real_base,
+    N_RELAXATION_MECHANISMS,
     T_SDISC.ELEMENT,
-    N_QUANTITIES,
     ORDER,
     ORDER,
-    N_CRUNS
+    N_CRUNS,
+    MM_KERNELS_SPARSE
   >::rupture( i_first,
               i_size,
               i_enSp[0],
@@ -99,6 +105,11 @@ else if( i_step == 2 ) {
                                           m_internal.m_connect.vIdElFaEl,
                                           m_internal.m_globalShared6,
                                           m_internal.m_elementModePrivate1,
+#if (PP_N_RELAXATION_MECHANISMS > 0)
+                                          m_internal.m_elementModePrivate2[0],
+#else
+                                          nullptr,
+#endif
                                           m_internal.m_globalShared2[0].adm[ l_admId[1] ],
                                           m_internal.m_globalShared2[0].ext[ l_extIds[0] ],
                                           m_internal.m_globalShared2[0].ext[ l_extIds[1] ],

@@ -244,6 +244,7 @@ class edge::elastic::solvers::InternalBoundary {
                                        TL_N_QTS, 1, TL_N_QTS,
                                        TL_N_QTS, 1, 1,
                                        static_cast<TL_T_REAL>(1.0),
+                                       static_cast<TL_T_REAL>(1.0),
                                        i_solMsJumpL[0],
                                        l_qJump[0],
                                        l_qVal[0][0] );

@@ -716,6 +716,15 @@ static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.CRUNS,
 static_assert( ALIGNMENT.FACE_MODES.PRIVATE >= ALIGNMENT.FACE_MODES.SHARED,
                "private alignment smaller than shared alignment" );
 
+/*
+ * Kernel configuration
+ */
+#ifdef PP_T_KERNELS_XSMM
+const bool MM_KERNELS_SPARSE = true;
+#else
+const bool MM_KERNELS_SPARSE = false;
+#endif
+
 /**
  * Constant expressions of the sub-cell limiter.
  **/

@@ -30,9 +30,10 @@
 #include "data/Dynamic.h"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace kernels { 
       template< typename       TL_T_REAL,
+                unsigned short TL_N_RMS,
                 t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_N_CRS >
@@ -45,15 +46,17 @@ namespace edge {
  * Quadrature-free ADER-DG volume integration for seismic wave propagation.
  *
  * @paramt TL_T_REAL floating point precision.
+ * @paramt TL_N_RMS number of relaxation mechanisms.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP spatial order.
  * @paramt TL_N_CRS number of fused simulations.
  **/
 template< typename       TL_T_REAL,
+          unsigned short TL_N_RMS,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::kernels::VolInt {
+class edge::seismic::kernels::VolInt {
   private:
     //! number of dimensions
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
@@ -62,6 +65,9 @@ class edge::elastic::kernels::VolInt {
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
   protected:
+    //! relaxation frequencies
+    TL_T_REAL * m_rfs = nullptr;
+
     /**
      * Stores the stiffness matrices as dense.
      * 
@@ -94,6 +100,24 @@ class edge::elastic::kernels::VolInt {
       // assign pointers
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         o_stiff[l_di] = l_stiffRaw + l_di * std::size_t(TL_N_MDS) * TL_N_MDS; 
+      }
+    }
+
+    /**
+     * Constructor of the volume integration.
+     *
+     * @param i_rfs relaxation frequencies, use nullptr if TL_N_RMS==0.
+     * @param io_dynMem dynamic memory allocations.
+     **/
+    VolInt( TL_T_REAL     const * i_rfs,
+            data::Dynamic       & io_dynMem ) {
+      if( TL_N_RMS > 0 ) {
+        std::size_t l_size = TL_N_RMS * sizeof(TL_T_REAL);
+        m_rfs = (TL_T_REAL *) io_dynMem.allocate( l_size );
+
+        for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
+          m_rfs[l_rm] = i_rfs[l_rm];
+        }
       }
     }
 };

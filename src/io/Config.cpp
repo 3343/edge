@@ -90,8 +90,10 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
 
 #if defined PP_T_EQUATIONS_ADVECTION
   std::string l_equations = "advection";
-#elif defined PP_T_EQUATIONS_ELASTIC
+#elif defined(PP_N_RELAXATION_MECHANISMS) && (PP_N_RELAXATION_MECHANISMS==0)
   std::string l_equations = "elastic";
+#elif defined(PP_N_RELAXATION_MECHANISMS) && (PP_N_RELAXATION_MECHANISMS>0)
+  std::string l_equations = "viscoelastic" + std::to_string(PP_N_RELAXATION_MECHANISMS);
 #elif defined PP_T_EQUATIONS_SWE
   std::string l_equations = "swe";
 #else

@@ -26,29 +26,76 @@
 #undef private
 
 
-TEST_CASE( "Volume integration using vanilla kernels.", "[VolIntVanilla][seismic]" ) {
-  edge::data::Dynamic l_dynMem;
+TEST_CASE( "Elastic volume integration using vanilla kernels.", "[elastic][VolIntVanilla]" ) {
+  // set up matrix structures
+#include "VolInt.test.inc"
 
-  edge::elastic::kernels::VolIntVanilla< float,
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::VolIntVanilla< float,
+                                         0,
                                          TET4,
                                          4,
-                                         1 > l_vol( l_dynMem );
-
-  // setup matrix structures
-  #include "VolInt.test.inc"
+                                         1 > l_volE( nullptr,
+                                                     l_dynMem );
 
   float l_scratch[9][20][1];
 
-  // compute volume integration
-  l_vol.apply(                    l_starMats,
-               (float (*)[20][1]) l_tDofs,
-               (float (*)[20][1]) l_dofs,
-                                  l_scratch );
+  // elastic volume kernel
+  l_volE.apply(                    l_starE,
+                                   nullptr,
+                                   nullptr,
+                (float (*)[20][1]) l_tDofsE,
+                                   nullptr,
+                (float (*)[20][1]) l_dofsE,
+                                   nullptr,
+                                   l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
-      REQUIRE( l_dofs[l_qt][l_md] == Approx( l_dofsRef[l_qt][l_md] ) );
+      REQUIRE( l_dofsE[l_qt][l_md] == Approx( l_refEdofs[l_qt][l_md] ) );
+    }
+  }
+}
+
+TEST_CASE( "Viscoelastic volume integration using vanilla kernels.", "[visco][VolIntVanilla]" ) {
+  // set up matrix structures
+#include "VolInt.test.inc"
+
+  float l_scratch[9][20][1];
+
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::VolIntVanilla< float,
+                                         2,
+                                         TET4,
+                                         4,
+                                         1 > l_vol( l_rfs,
+                                                     l_dynMem );
+
+  // compute solution
+  l_vol.apply(                       l_starE,
+               (float (*)     [6*3]) l_starA,
+               (float (*)     [6*6]) l_srcA,
+               (float (*)[20][1])    l_tDofsE,
+               (float (*)[6][20][1]) l_tDofsA,
+               (float (*)[20][1])    l_dofsE,
+               (float (*)[6][20][1]) l_dofsA,
+                                     l_scratch );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      REQUIRE( l_dofsE[l_qt][l_md] == Approx( l_refVdofsE[l_qt][l_md] ) );
+    }
+  }
+
+  for( unsigned short l_rm = 0; l_rm < 2; l_rm++ ) {
+    for( unsigned short l_qt = 0; l_qt < 6; l_qt++ ) {
+      for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+        REQUIRE( l_dofsA[l_rm][l_qt][l_md] == Approx( l_refVdofsA[l_rm][l_qt][l_md] ) );
+      }
     }
   }
 }

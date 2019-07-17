@@ -26,35 +26,18 @@
 #undef private
 
 
-TEST_CASE( "Optimized volume integration for fused simulations.", "[VolIntVolInt][seismic]" ) {
-  edge::data::Dynamic l_dynMem;
+TEST_CASE( "Optimized elastic volume integration for fused simulations.", "[elastic][VolIntFused]" ) {
+  // set up matrix structures
+#include "VolInt.test.inc"
 
-  edge::elastic::kernels::VolIntFused< float,
+  // set up kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::VolIntFused< float,
+                                       0,
                                        TET4,
                                        4,
-                                       16 > l_vol( l_dynMem );
-
-  // setup matrix structures
-  #include "VolInt.test.inc"
-
-  // extract sparse star-matrices (compressed columns)
-  float l_starMatsSp[3][24];
-
-  unsigned short l_nz = 0;
-  for( unsigned short l_co = 0; l_co < 9; l_co++ ) {
-    for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
-      if( l_starMats[0][l_co][l_ro] != 0.0f ) {
-        REQUIRE( l_starMats[1][l_co][l_ro] != 0.0f );
-        REQUIRE( l_starMats[2][l_co][l_ro] != 0.0f );
-
-        for( unsigned short l_di = 0; l_di < 3; l_di++ )
-          l_starMatsSp[l_di][l_nz] = l_starMats[l_di][l_co][l_ro];
-
-        l_nz++;
-      }
-    }
-  }
-  REQUIRE( l_nz == 24 );
+                                       16 > l_vol( nullptr,
+                                                   l_dynMem );
 
   float l_scratch[9][20][16];
   float l_dofsFused[9][20][16];
@@ -64,23 +47,95 @@ TEST_CASE( "Optimized volume integration for fused simulations.", "[VolIntVolInt
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofs[l_qt][l_md];
-        l_dofsFused[l_qt][l_md][l_cr] = l_dofs[l_qt][l_md];
+        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFused[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
       }
     }
   }
 
   // apply volume integration
-  l_vol.apply( l_starMatsSp,
+  l_vol.apply( l_starSpE,
+               nullptr,
+               nullptr,
                l_tDofsFused,
+               nullptr,
                l_dofsFused,
+               nullptr,
                l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_dofsRef[l_qt][l_md] ) );
+        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_refEdofs[l_qt][l_md] ) );
+      }
+    }
+  }
+}
+  
+TEST_CASE( "Optimized viscoelastic volume integration for fused simulations.", "[visco][VolIntFused]" ) {
+  // set up matrix structures
+#include "VolInt.test.inc"
+
+  float l_scratch[9][20][16];
+  float l_dersE[4][9][20][16];
+  float l_dersA[2][4][6][20][16];
+  float l_dofsFusedE[9][20][16];
+  float l_dofsFusedA[2][6][20][16];
+  float l_tDofsFusedE[9][20][16];
+  float l_tDofsFusedA[2][6][20][16];
+
+  // duplicate DOFs and tDofs for fused config
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        l_tDofsFusedE[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFusedE[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
+
+        if( l_qt < 6 ) {
+          for( unsigned short l_rm = 0; l_rm < 6; l_rm++ ) {
+            l_tDofsFusedA[l_rm][l_qt][l_md][l_cr] = l_tDofsA[l_rm][l_qt][l_md];
+            l_dofsFusedA[l_rm][l_qt][l_md][l_cr] = l_dofsA[l_rm][l_qt][l_md];
+          }
+        }
+      }
+    }
+  }
+
+  // set up kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::VolIntFused< float,
+                                       2,
+                                       TET4,
+                                       4,
+                                       16 > l_vol( l_rfs,
+                                                   l_dynMem );
+
+  // apply volume kernel
+  l_vol.apply( l_starSpE,
+               l_starSpA,
+               l_srcSpA,
+               l_tDofsFusedE,
+               l_tDofsFusedA,
+               l_dofsFusedE,
+               l_dofsFusedA,
+               l_scratch );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_dofsFusedE[l_qt][l_md][l_cr] == Approx( l_refVdofsE[l_qt][l_md] ) );
+      }
+    }
+  }
+
+  for( unsigned short l_rm = 0; l_rm < 2; l_rm++ ) {
+    for( unsigned short l_qt = 0; l_qt < 6; l_qt++ ) {
+      for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+        for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+          REQUIRE( l_dofsFusedA[l_rm][l_qt][l_md][l_cr] == Approx( l_refVdofsA[l_rm][l_qt][l_md] ) );
+        }
       }
     }
   }

@@ -26,28 +26,86 @@
 #undef private
 
 
-TEST_CASE( "Optimized ADER time prediction for single forward simulations.", "[TimePredSingle][seismic]" ) {
-  edge::data::Dynamic l_dynMem;
+TEST_CASE( "Optimized elastic ADER time prediction for single forward simulations.", "[elastic][TimePredSingle]" ) {
+  // set up matrix structures
+#include "TimePred.test.inc"
 
-  edge::elastic::kernels::TimePredSingle< float,
+  // set up kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::TimePredSingle< float,
+                                          0,
                                           TET4,
                                           4,
-                                          4 > l_pred( l_dynMem );
-
-  // setup matrix structures
-  #include "TimePred.test.inc"
-
+                                          4 > l_pred( nullptr, l_dynMem );
   float l_scratch[9][20][1];
   float l_ders[4][9][20][1];
   float l_tDofs[9][20][1];
 
   // compute time prediction
-  l_pred.ck( 0.017, l_starMats, (float (*)[20][1])  l_dofs, l_scratch, l_ders, l_tDofs );
+  l_pred.ck(                    0.017,
+                                l_starE,
+                                nullptr,
+                                nullptr,
+             (float (*)[20][1]) l_dofsE,
+                                nullptr,
+                                l_scratch,
+                                l_ders,
+                                nullptr,
+                                l_tDofs,
+                                nullptr );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
-      REQUIRE( l_tDofs[l_qt][l_md][0] == Approx( l_tDofsRef[l_qt][l_md] ) );
+      REQUIRE( l_tDofs[l_qt][l_md][0] == Approx( l_refEtDofs[l_qt][l_md] ) );
+    }
+  }
+}
+
+TEST_CASE( "Optimized viscoelastic ADER time prediction for single forward simulations.", "[visco][TimePredSingle]" ) {
+  // set up matrix structures
+#include "TimePred.test.inc"
+
+  float l_scratch[9][20][1];
+  float l_dersE[4][9][20][1];
+  float l_tDofsE[9][20][1];
+  float l_tDofsA[2][6][20][1];
+  float l_dersA[2][4][6][20][1];
+
+  // set up kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::TimePredSingle< float,
+                                          2,
+                                          TET4,
+                                          4,
+                                          4 > l_pred( l_rfs,
+                                                      l_dynMem );
+
+  // compute time prediction
+  l_pred.ck( 0.017,
+             l_starE,
+             (float (*)[18]) l_starA,
+             (float (*)[36]) l_srcA,
+             (float (*)[20][1]) l_dofsE,
+             (float (*)[6][20][1]) l_dofsA,
+             l_scratch,
+             l_dersE,
+             l_dersA,
+             l_tDofsE,
+             l_tDofsA );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      REQUIRE( l_tDofsE[l_qt][l_md][0] == Approx( l_refVtDofsE[l_qt][l_md] ) );
+    }
+  }
+
+  for( unsigned short l_rm = 0; l_rm < 2; l_rm++ ) {
+    for( unsigned short l_qt = 0; l_qt < 6; l_qt++ ) {
+      for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+        REQUIRE( l_tDofsA[l_rm][l_qt][l_md][0] == Approx( l_refVtDofsA[l_rm][l_qt][l_md] ) );
+      }
     }
   }
 }

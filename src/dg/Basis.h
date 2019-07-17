@@ -31,6 +31,36 @@
 #include "linalg/Matrix.h"
 
 namespace edge {
+  namespace pre {
+    namespace dg {
+      // mass matrix
+      extern double const * g_massRaw;
+      extern std::size_t const g_massSize;
+
+      // stiffness matrices, premultiplied by the inverse mass matrix
+      extern double const * g_stiffVRaw;
+      extern std::size_t const g_stiffVSize;
+
+      // transposed stiffness matrices, premultiplied by the inverse mass matrix (after transpose)
+      extern double const * g_stiffTRaw;
+      extern std::size_t const g_stiffTSize;
+
+      // local contribution flux matrices
+      extern double const * g_fluxLRaw;
+      extern std::size_t const g_fluxLSize;
+
+      // neighboring contribution flux matrices
+      extern double const * g_fluxNRaw;
+      extern std::size_t const g_fluxNSize;
+
+      // "transposed" flux matrices (fa -> el basis + inverse mass)
+      extern double const * g_fluxTRaw;
+      extern std::size_t const g_fluxTSize;
+    }
+  }
+}
+
+namespace edge {
   namespace dg {
     class Basis;
   }
@@ -309,10 +339,30 @@ class edge::dg::Basis {
      * @param i_nModes number of modes.
      * @param o_matrices will be set to stiffness matrices in dense storage: [ndim][nmodes][nmodes].
      * @param i_tStiff true if the stiffness matrix should be transposed before multiplication with the inverse mass matrix.
+     *
+     * @paramt TL_T_REAL floating point precision.
      **/
+    template< typename TL_T_REAL >
     void getStiffMm1Dense( int_md     i_nModes,
-                           real_base *o_matrices,
-                           bool       i_tStiff ) const;
+                           TL_T_REAL *o_matrices,
+                           bool       i_tStiff ) const {
+      if( i_tStiff == false ) {
+        // check that the size matches
+        EDGE_CHECK_EQ( pre::dg::g_stiffVSize, i_nModes*i_nModes*C_ENT[m_entType].N_DIM );
+
+        // set values
+        for( std::size_t l_va = 0; l_va < pre::dg::g_stiffVSize; l_va++ )
+          o_matrices[l_va] = pre::dg::g_stiffVRaw[l_va];
+      }
+      else {
+        // check that size matches
+        EDGE_CHECK_EQ( pre::dg::g_stiffTSize, i_nModes*i_nModes*C_ENT[m_entType].N_DIM );
+
+        // set values
+        for( std::size_t l_va = 0; l_va < pre::dg::g_stiffTSize; l_va++ )
+          o_matrices[l_va] = pre::dg::g_stiffTRaw[l_va];
+      }
+    }
 
     /**
      * Gets the flux matrices multiplied with the inverse mass matrix.
@@ -323,9 +373,33 @@ class edge::dg::Basis {
      * @param o_fluxN will be set to neighboring contribution flux matrices.
      * @param i_fluxT will be set to 2D->3D basis change, premultiplied by the inverse mass matrix.
      **/
-    void getFluxDense( real_base *o_fluxL,
-                       real_base *o_fluxN,
-                       real_base *o_fluxT ) const;
+    template< typename TL_T_REAL >
+    void getFluxDense( TL_T_REAL *o_fluxL,
+                       TL_T_REAL *o_fluxN,
+                       TL_T_REAL *o_fluxT ) const {
+      // check for reasonable sizes
+      EDGE_CHECK_EQ( pre::dg::g_fluxLSize,
+                    C_ENT[T_SDISC.ELEMENT].N_FACES * N_ELEMENT_MODES * N_FACE_MODES  );
+
+
+      EDGE_CHECK_EQ( pre::dg::g_fluxNSize,
+                    N_FLUXN_MATRICES * N_ELEMENT_MODES * N_FACE_MODES  );
+
+      EDGE_CHECK_EQ( pre::dg::g_fluxTSize,
+                    C_ENT[T_SDISC.ELEMENT].N_FACES * N_ELEMENT_MODES * N_FACE_MODES  );
+
+      // assign local
+      for( std::size_t l_va = 0; l_va < pre::dg::g_fluxLSize; l_va++ )
+        o_fluxL[l_va] = pre::dg::g_fluxLRaw[l_va];
+
+      // assign neighboring
+      for( std::size_t l_va = 0; l_va < pre::dg::g_fluxNSize; l_va++ )
+        o_fluxN[l_va] = pre::dg::g_fluxNRaw[l_va];
+
+      // assign transposed
+      for( std::size_t l_va = 0; l_va < pre::dg::g_fluxTSize; l_va++ )
+        o_fluxT[l_va] = pre::dg::g_fluxTRaw[l_va];
+    }
 };
 
 #endif

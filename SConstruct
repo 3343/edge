@@ -5,6 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2015-2019, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
@@ -155,7 +156,7 @@ vars.AddVariables(
   EnumVariable( 'equations',
                 'equations solved',
                 'elastic',
-                 allowed_values=( 'advection', 'elastic', 'swe' )
+                 allowed_values=( 'advection', 'elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5', 'swe' )
               ),
   EnumVariable( 'element_type',
                 'element type used',
@@ -328,10 +329,16 @@ if env['op_sys'] != 'macos': # not supported by mac's ld
   env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
   env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
 
+# fall back to elastics for 2D elements
+if( 'visco' in env['equations'] ):
+  if( env['element_type'] != 'hex8r' and env['element_type'] != 'tet4' ):
+    warnings.warn('  Warning: viscoelastic attenuation is only implemented for 3d setups, falling back to elastics' )
+    env['equations'] = 'elastic'
+
 # disable libxsmm if not build elastic
 if( env['xsmm'] ):
-  if( 'elastic' not in env['equations'] ):
-    warnings.warn('  Warning: LIBXSMM is not supported for equations other than elastic, continuing without' )
+  if( 'elastic' not in env['equations'] and 'visco' not in env['equations'] ):
+    warnings.warn('  Warning: LIBXSMM is not supported for equations other than elastic or viscoelastic, continuing without' )
     env['xsmm'] = False
   if( env['order'] == '1' ):
     warnings.warn('  Warning: LIBXSMM is not supported finite volume settings, continuing without' )
@@ -424,8 +431,12 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
 # forward equations to build
 if env['equations'] == 'advection':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ADVECTION']  )
-elif 'elastic' in env['equations']:
+elif 'elastic' == env['equations']:
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC'] )
+  env.Append( CPPDEFINES=['PP_N_RELAXATION_MECHANISMS=0'] )
+elif 'viscoelastic' in env['equations']:
+  env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC'] )
+  env.Append( CPPDEFINES=['PP_N_RELAXATION_MECHANISMS='+env['equations'].split('viscoelastic')[1]] )
 elif env['equations'] == 'swe':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_SWE'] )
 

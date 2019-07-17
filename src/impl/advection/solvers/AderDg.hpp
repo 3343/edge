@@ -109,12 +109,8 @@ class edge::advection::solvers::AderDg {
 // TODO: Fix preprocessor usage
 #if PP_N_DIM == 1
         l_jacInv[0][0] = 1 / l_jac[0][0];
-#elif PP_N_DIM == 2
-        linalg::Matrix::inv2x2( l_jac, l_jacInv );
-#elif PP_N_DIM == 3
-        linalg::Matrix::inv3x3( l_jac, l_jacInv );
 #else
-#error invalid dimension.
+        linalg::Matrix::inv( l_jac, l_jacInv );
 #endif
 
         // set star matrices
@@ -160,6 +156,7 @@ class edge::advection::solvers::AderDg {
                                          TL_N_MDS,                    // ldA
                                          TL_N_MDS,                    // ldB
                                          TL_N_MDS,                    // ldC
+                                         static_cast<real_base>(1.0), // alpha
                                          static_cast<real_base>(0.0), // beta
                                          i_tInt[0],                   // A
                                          i_fMat[0],                   // B
@@ -173,6 +170,7 @@ class edge::advection::solvers::AderDg {
                                           TL_N_QTS,                    // ldA
                                           TL_N_MDS,                    // ldB
                                           TL_N_MDS,                    // ldC
+                                          static_cast<real_base>(1.0), //alpha
                                           static_cast<real_base>(1.0), // beta
                                          &i_fluxSolver,                // A
                                           l_tmpProd[0][0],             // B
@@ -259,6 +257,7 @@ class edge::advection::solvers::AderDg {
                                            TL_N_MDS,                    // ldA
                                            TL_N_MDS,                    // ldB
                                            TL_N_MDS,                    // ldC
+                                           static_cast<real_base>(1.0), //alpha
                                            static_cast<real_base>(0.0), // beta
                                            o_tDofsDg[0][l_el][0][0],    // A
                                            i_dg.mat.stiff[l_di][0],     // B
@@ -272,6 +271,7 @@ class edge::advection::solvers::AderDg {
                                            TL_N_MDS,                    // ldA
                                            TL_N_MDS,                    // ldB
                                            TL_N_MDS,                    // ldC
+                                           static_cast<real_base>(1.0), //alpha
                                            static_cast<real_base>(1.0), // beta
                                            i_starM[l_el]+l_di,          // A
                                            l_tmpProd[0],                // B
@@ -296,6 +296,7 @@ class edge::advection::solvers::AderDg {
                                           TL_N_MDS,                    // ldA
                                           N_FACE_MODES,                // ldB
                                           N_FACE_MODES,                // ldC
+                                          static_cast<real_base>(1.0), //alpha
                                           static_cast<real_base>(0.0), // beta
                                           o_tDofsDg[0][l_el][0][0],    // A
                                           i_dg.mat.fluxL[l_fa][0],     // B
@@ -308,6 +309,7 @@ class edge::advection::solvers::AderDg {
                                           TL_N_QTS,                    // ldA
                                           N_FACE_MODES,                // ldB
                                           N_FACE_MODES,                // ldC
+                                          static_cast<real_base>(1.0), //alpha
                                           static_cast<real_base>(0.0), // beta
                                           i_fluxSolvers[l_el]+l_fa,    // A
                                           l_scratch[0][0],             // B
@@ -320,6 +322,7 @@ class edge::advection::solvers::AderDg {
                                           N_FACE_MODES,                // ldA
                                           TL_N_MDS,                    // ldB
                                           TL_N_MDS,                    // ldC
+                                          static_cast<real_base>(1.0), //alpha
                                           static_cast<real_base>(1.0), // beta
                                           l_scratch[1][0],             // A
                                           i_dg.mat.fluxT[l_fa][0],     // B
@@ -400,6 +403,7 @@ class edge::advection::solvers::AderDg {
                                          TL_N_MDS,                                                                         // ldA
                                          N_FACE_MODES,                                                                     // ldB
                                          N_FACE_MODES,                                                                     // ldC
+                                         static_cast<real_base>(1.0),                                                      //alpha
                                          static_cast<real_base>(0.0),                                                      // beta
                                           i_tDofs[0][l_ne][0][0],                                                          // A
                                          ( (i_faChars[l_faId].spType & OUTFLOW) != OUTFLOW ) ? i_dg.mat.fluxN[l_fId][0] :
@@ -413,6 +417,7 @@ class edge::advection::solvers::AderDg {
                                          TL_N_QTS,                          // ldA
                                          N_FACE_MODES,                      // ldB
                                          N_FACE_MODES,                      // ldC
+                                         static_cast<real_base>(1.0),       //alpha
                                          static_cast<real_base>(0.0),       // beta
                                          i_fluxSolvers[l_el] +
                                            C_ENT[TL_T_EL].N_FACES +
@@ -427,6 +432,7 @@ class edge::advection::solvers::AderDg {
                                          N_FACE_MODES,                      // ldA
                                          TL_N_MDS,                          // ldB
                                          TL_N_MDS,                          // ldC
+                                         static_cast<real_base>(1.0),       //alpha
                                          static_cast<real_base>(1.0),       // beta
                                          l_scratch[1][0],                   // A
                                          i_dg.mat.fluxT[l_fa][0],           // B

@@ -94,11 +94,20 @@ typedef struct {
 typedef t_matStar t_elementShared4;
 
 /*
- * First private element mode data are the first set of dofs.
+ * First private element mode data are the elastic DOFS.
  */
 #define PP_ELEMENT_MODE_PRIVATE_1_HUGE
 #define PP_N_ELEMENT_MODE_PRIVATE_1 N_QUANTITIES
 typedef real_base t_elementModePrivate1;
+
+/*
+ * Second private element mode data are the anelastic DOFs.
+ */
+#if (PP_N_RELAXATION_MECHANISMS > 0)
+#define PP_ELEMENT_MODE_PRIVATE_2_HUGE
+#define PP_N_ELEMENT_MODE_PRIVATE_2 N_QUANTITIES_A
+typedef real_base t_elementModePrivate2;
+#endif
 
 // flex data holding a time buffer or a time buffer and element-DOFs per entry
 #define PP_N_GLOBAL_SHARED_6 2
@@ -122,9 +131,10 @@ typedef edge::elastic::sc::UpWind< real_base,
 // ADER-DG kernels
 #include "impl/elastic/solvers/AderDg.hpp"
 #define PP_N_GLOBAL_SHARED_4 1
-typedef edge::elastic::solvers::AderDg< real_base,
+typedef edge::seismic::solvers::AderDg< real_base,
+                                        N_RELAXATION_MECHANISMS,
                                         T_SDISC.ELEMENT,
-                                        N_QUANTITIES,
                                         ORDER,
                                         ORDER,
-                                        N_CRUNS > * t_globalShared4;
+                                        N_CRUNS,
+                                        MM_KERNELS_SPARSE > * t_globalShared4;

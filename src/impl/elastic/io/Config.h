@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -52,7 +53,10 @@ class edge::elastic::io::Config {
     std::vector< linalg::Domain< real_mesh, N_DIM, edge::linalg::HalfSpace > > m_velDoms;
 
     //! values in the boxed velocity model
-    std::vector< std::array< real_base, 3 > > m_velVals;
+    std::vector< std::array< real_base, 5 > > m_velVals;
+
+    // attenuation: central frequency and frequency ratio
+    double m_attFreqs[2];
 
     //! friction law
     std::string m_frictionLaw = "";

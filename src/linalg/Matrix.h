@@ -63,8 +63,6 @@ typedef struct {
  *
  */
 typedef struct {
-  // number of non-zero values
-  unsigned int nnz;
   // non-zero values
   std::vector< real_base    > val;
   // row pointers
@@ -84,8 +82,6 @@ typedef struct {
  *
  */
 typedef struct {
-  // number of non-zero values
-  unsigned int nnz;
   // non-zero values
   std::vector< real_base    > val;
   // column pointers
@@ -190,8 +186,8 @@ class edge::linalg::Matrix {
      * @param o_inv will be set to the inverse of the matrix
      **/
     template <typename T>
-    static void inv2x2( const T i_mat[2][2],
-                              T o_inv[2][2] ) {
+    static void inv( const T i_mat[2][2],
+                           T o_inv[2][2] ) {
       T l_det = det2x2( i_mat );
       EDGE_CHECK_GT( std::abs(l_det), TOL.LINALG );
 
@@ -214,8 +210,8 @@ class edge::linalg::Matrix {
      * @param o_inv will be set to the inverse of the matrix
      **/
     template <typename T>
-    static void inv3x3( const T i_mat[3][3],
-                              T o_inv[3][3] ) {
+    static void inv( const T i_mat[3][3],
+                           T o_inv[3][3] ) {
       // get the determinant
       T l_det = det3x3( i_mat );
       EDGE_CHECK_GT( std::abs(l_det), TOL.LINALG );
@@ -288,6 +284,7 @@ class edge::linalg::Matrix {
      * @param i_ldA leading dimension of matrix A.
      * @param i_ldB leading dimension of matrix B.
      * @param i_ldC leading dimension of matrix C.
+     * @param i_alpha scalar alpha.
      * @param i_beta scalar beta.
      * @param i_a matrix A.
      * @param i_b matrix B.
@@ -303,6 +300,7 @@ class edge::linalg::Matrix {
                                      unsigned int    i_ldA,
                                      unsigned int    i_ldB,
                                      unsigned int    i_ldC,
+                                     TL_T_REAL       i_alpha,
                                      TL_T_REAL       i_beta,
                                const TL_T_REAL      *i_a,
                                const TL_T_REAL      *i_b,
@@ -320,7 +318,7 @@ class edge::linalg::Matrix {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA*i_r + l_k*i_r + l_r] * i_b[l_k*i_ldB + l_n];
+              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_alpha * i_a[l_m*i_ldA*i_r + l_k*i_r + l_r] * i_b[l_k*i_ldB + l_n];
             }
           }
         }
@@ -338,6 +336,7 @@ class edge::linalg::Matrix {
      * @param i_ldA leading dimension of matrix A.
      * @param i_ldB leading dimension of matrix B.
      * @param i_ldC leading dimension of matrix C.
+     * @param i_alpha scalar alpha.
      * @param i_beta scalar beta.
      * @param i_a matrix A.
      * @param i_b matrix B.
@@ -353,6 +352,7 @@ class edge::linalg::Matrix {
                                       unsigned int    i_ldA,
                                       unsigned int    i_ldB,
                                       unsigned int    i_ldC,
+                                      TL_T_REAL       i_alpha,
                                       TL_T_REAL       i_beta,
                                 const TL_T_REAL      *i_a,
                                 const TL_T_REAL      *i_b,
@@ -370,7 +370,7 @@ class edge::linalg::Matrix {
         for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
           for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
             for( unsigned short l_r = 0; l_r < i_r; l_r++ ) {
-              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA + l_k] * i_b[l_k*i_ldB*i_r + l_n*i_r + l_r];
+              o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_alpha * i_a[l_m*i_ldA + l_k] * i_b[l_k*i_ldB*i_r + l_n*i_r + l_r];
             }
           }
         }
@@ -613,8 +613,6 @@ class edge::linalg::Matrix {
                           const T            *i_a,
                                 t_matCrd     &o_crd,
                                 T             i_tol = T(0.000001) ) {
-      EDGE_CHECK( i_tol > 0 );
-
       // reset the matrix
       o_crd.nz.clear();
       o_crd.ro.clear();
@@ -868,8 +866,8 @@ class edge::linalg::Matrix {
      * @param i_a dense matrix in row-major storage which gets converted.
      * @param o_csr will be set to result in csr-format.
      * @param i_tol tolerance/delta which is considered to be zero for the matrix entries.
-     * @param i_subMatRows numeber of rows in the sub-matrix extracted.
-     * @param i_subMatCols numeber of cols in the sub-matrix extracted.
+     * @param i_subMatRows number of rows in the sub-matrix extracted.
+     * @param i_subMatCols number of cols in the sub-matrix extracted.
      *
      * @paramt TL_T_REAL floating point precision.
      **/

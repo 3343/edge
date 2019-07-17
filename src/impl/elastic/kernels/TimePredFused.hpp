@@ -28,12 +28,13 @@
 
 #include "TimePred.hpp"
 #include "data/MmXsmmFused.hpp"
-#include "impl/elastic/common.hpp"
+#include "FakeMats.hpp"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace kernels {
       template< typename       TL_T_REAL,
+                unsigned short TL_N_RMS,
                 t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_O_TI,
@@ -47,17 +48,20 @@ namespace edge {
  * Optimized ADER time prediction for fused seismic forward simulations.
  *
  * @paramt TL_T_REAL floating point precision.
+ * @paramt TL_N_RMS number of relaxation mechanisms.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP order in space.
  * @paramt TL_O_TI order in time.
  * @paramt TL_N_CRS number of fused simulations. 
  **/
 template< typename       TL_T_REAL,
+          unsigned short TL_N_RMS,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_O_TI,
           unsigned short TL_N_CRS >
-class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::TimePred < TL_T_REAL,
+class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::TimePred < TL_T_REAL,
+                                                                                       TL_N_RMS,
                                                                                        TL_T_EL,
                                                                                        TL_O_SP,
                                                                                        TL_O_TI,
@@ -70,10 +74,19 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
     //! number of elastic quantities
-    static unsigned short const TL_N_QTS_E = (TL_N_DIS == 2) ? 5 : 9;
+    static unsigned short const TL_N_QTS_E = CE_N_QTS_E( TL_N_DIS );
 
-    //! number of non-zeroes in the star matrices
-    static unsigned short const TL_N_NZS_STAR_E = (TL_N_DIS==2) ? 10 : 24;
+    //! number of quantities per relaxation mechanism
+    static unsigned short const TL_N_QTS_M = CE_N_QTS_M( TL_N_DIS );
+
+    //! number of non-zeros in the elastic star matrices
+    static unsigned short const TL_N_NZS_STAR_E = CE_N_ENS_STAR_E_SP( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic star matrices
+    static unsigned short const TL_N_NZS_STAR_A = CE_N_ENS_STAR_A_SP( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic source matrices
+    static unsigned short const TL_N_NZS_SRC_A = CE_N_ENS_SRC_A_SP( TL_N_DIS );
 
     //! pointers to the (possibly recursive) stiffness matrices
     TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
@@ -206,69 +219,95 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
                     l_nonZeros,
                     l_cscStiffT );
 
-      // assemble fake star matrix
-      TL_T_REAL l_star[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E];
-      edge::elastic::common::getJac( (TL_T_REAL) 1.0,
-                                     (TL_T_REAL) 1.0,
-                                     (TL_T_REAL) 1.0,
-                                                 l_star[0][0],
-                                                 TL_N_DIS );
-      for( unsigned short l_di = 1; l_di < TL_N_DIS; l_di++ ) {
-        for( int_qt l_q1 = 0; l_q1 < TL_N_QTS_E; l_q1++ ) {
-          for( int_qt l_q2 = 0; l_q2 < TL_N_QTS_E; l_q2++ ) {
-            l_star[0][l_q1][l_q2] =   std::abs(l_star[0][l_q1][l_q2])
-                                    + std::abs(l_star[l_di][l_q1][l_q2]);
-          }
-        }
-      }
+      // get csr star matrices
+      t_matCsr l_starCsrE;
+      FakeMats< TL_N_DIS >::starCsrE( l_starCsrE );
+      EDGE_CHECK_EQ( l_starCsrE.val.size(), TL_N_NZS_STAR_E );
 
-      // get csr star matrix
-      t_matCsr l_starCsr;
-      edge::linalg::Matrix::denseToCsr< TL_T_REAL >( TL_N_QTS_E,
-                                                     TL_N_QTS_E,
-                                                     l_star[0][0],
-                                                     l_starCsr,
-                                                     TOL.BASIS );
+      t_matCsr l_starCsrA;
+      FakeMats< TL_N_DIS >::starCsrA( l_starCsrA );
+      EDGE_CHECK_EQ( l_starCsrA.val.size(), TL_N_NZS_STAR_A );
+
+      // get csr source matrix
+      t_matCsr l_srcCsrA;
+      FakeMats< TL_N_DIS >::srcCsrA( l_srcCsrA );
+      EDGE_CHECK_EQ( l_srcCsrA.val.size(), TL_N_NZS_SRC_A );
 
       // derive sparse AoSoA-LIBXSMM kernels
       for( unsigned short l_de = 1; l_de < TL_O_SP; l_de++ ) {
-        // generate libxsmm kernel for transposed stiffness matrices
+        // transposed stiffness matrices
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-          m_mm.add( 0,
-                    false,
-                    &l_cscStiffT[(l_de-1)*TL_N_DIS + l_di].colPtr[0], 
-                    &l_cscStiffT[(l_de-1)*TL_N_DIS + l_di].rowIdx[0],
-                    &l_cscStiffT[(l_de-1)*TL_N_DIS + l_di].val[0],
-                    TL_N_QTS_E,
-                    l_maxNzCols[l_de-1]+1,
-                    (l_de == 1) ? TL_N_MDS : l_maxNzCols[l_de-2]+1,
-                    TL_N_MDS,
-                    0,
-                    l_maxNzCols[l_de-1]+1,
-                    TL_T_REAL(1.0),
-                    TL_T_REAL(0.0),
+          m_mm.add( 0,                                                // group
+                    false,                                            // csc
+                    &l_cscStiffT[(l_de-1)*TL_N_DIS + l_di].colPtr[0], // ptr
+                    &l_cscStiffT[(l_de-1)*TL_N_DIS + l_di].rowIdx[0], // ids
+                    &l_cscStiffT[(l_de-1)*TL_N_DIS + l_di].val[0],    // val
+                    TL_N_QTS_E,                                       // m
+                    l_maxNzCols[l_de-1]+1,                            // n
+                    (l_de == 1) ? TL_N_MDS : l_maxNzCols[l_de-2]+1,   // k
+                    TL_N_MDS,                                         // ldA
+                    0,                                                // ldB
+                    l_maxNzCols[l_de-1]+1,                            // ldC
+                    TL_T_REAL(1.0),                                   // alpha
+                    TL_T_REAL(0.0),                                   // beta
                     LIBXSMM_GEMM_PREFETCH_NONE );
         }
-        // generate libxsmm kernel for star matrix
-        m_mm.add( 1,
-                  true,
-                  &l_starCsr.rowPtr[0],
-                  &l_starCsr.colIdx[0],
-                  &l_starCsr.val[0],
-                  TL_N_QTS_E,
-                  l_maxNzCols[l_de-1]+1,
-                  TL_N_QTS_E,
-                  0,
-                  l_maxNzCols[l_de-1]+1,
-                  TL_N_MDS,
-                  TL_T_REAL(1.0),
-                  TL_T_REAL(1.0),
+        // elastic star matrix
+        m_mm.add( 1,                     // group
+                  true,                  // csr
+                  &l_starCsrE.rowPtr[0], // ptr
+                  &l_starCsrE.colIdx[0], // ids
+                  &l_starCsrE.val[0],    // val
+                  TL_N_QTS_E,            // m
+                  l_maxNzCols[l_de-1]+1, // n
+                  TL_N_QTS_E,            // k
+                  0,                     // ldA
+                  l_maxNzCols[l_de-1]+1, // ldB
+                  TL_N_MDS,              // ldC
+                  TL_T_REAL(1.0),        // alpha
+                  TL_T_REAL(1.0),        // beta
+                  LIBXSMM_GEMM_PREFETCH_NONE );
+      }
+
+      // anelastic kernels
+      if( TL_N_RMS > 0 ) {
+        // anelastic star matrix
+        m_mm.add( 2,                     // group
+                  true,                  // csr
+                  &l_starCsrA.rowPtr[0], // ptr
+                  &l_starCsrA.colIdx[0], // ids
+                  &l_starCsrA.val[0],    // val
+                  TL_N_QTS_M,            // m
+                  l_maxNzCols[0]+1,      // n
+                  TL_N_QTS_E,            // k
+                  0,                     // ldA
+                  l_maxNzCols[0]+1,      // ldB
+                  TL_N_MDS,              // ldC
+                  TL_T_REAL(1.0),        // alpha
+                  TL_T_REAL(1.0),        // beta
+                  LIBXSMM_GEMM_PREFETCH_NONE );
+
+        // anelastic source matrix
+        m_mm.add( 2,                    // group
+                  true,                 // csr
+                  &l_srcCsrA.rowPtr[0], // ptr
+                  &l_srcCsrA.colIdx[0], // ids
+                  &l_srcCsrA.val[0],    // val
+                  TL_N_QTS_M,           // m
+                  TL_N_MDS,             // n
+                  TL_N_QTS_M,           // k
+                  0,                    // ldA
+                  TL_N_MDS,             // ldB
+                  TL_N_MDS,             // ldC
+                  TL_T_REAL(1.0),       // alpha
+                  TL_T_REAL(1.0),       // beta
                   LIBXSMM_GEMM_PREFETCH_NONE );
       }
     }
 
     /**
      * Stores the transposed stiffness matrices.
+     * This includes multiplications with (-1) for kernels with support for alpha==1 only.
      * 
      * @param i_stiffT dense stiffness matrices.
      * @param io_dynMem dynamic memory management, which will be used for the respective allocations.
@@ -293,7 +332,7 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
                                                                  4096,
                                                                  true );
       for( std::size_t l_en = 0; l_en < l_nonZeros.size(); l_en++ ) {
-        l_stiffTRaw[l_en] = l_nonZeros[l_en];
+        l_stiffTRaw[l_en] = -l_nonZeros[l_en];
       }
 
       // check that we have offsets for all matrices
@@ -313,9 +352,17 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
     /**
      * Constructor of the fused time prediction.
      *
+     * @param i_rfs relaxation frequencies, use nullptr if TL_N_RMS==0.
      * @param io_dynMem dynamic memory allocations.
      **/
-    TimePredFused( data::Dynamic & io_dynMem ) {
+    TimePredFused( TL_T_REAL     const * i_rfs,
+                   data::Dynamic       & io_dynMem ): TimePred < TL_T_REAL,
+                                                                 TL_N_RMS,
+                                                                 TL_T_EL,
+                                                                 TL_O_SP,
+                                                                 TL_O_TI,
+                                                                 TL_N_CRS >( i_rfs,
+                                                                             io_dynMem ) {
       // formulation of the basis in terms of the reference element
       dg::Basis l_basis( TL_T_EL,
                          TL_O_SP );
@@ -340,39 +387,75 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
      * Applies the Cauchy–Kowalevski procedure (fused LIBXSMM version) and computes time derivatives and time integrated DOFs.
      *
      * @param i_dT time step.
-     * @param i_star star matrices.
-     * @param i_dofs DOFs.
+     * @param i_starE elastic star matrices.
+     * @param i_starA anelastic star matrices, use nullptr if TL_N_RMS==0.
+     * @param i_srcA anelastic source matrices, use nullptr if TL_N_RMS==0.
+     * @param i_dofsE elastic DOFs.
+     * @param i_dofsA anelastic DOFs, use nullptr if TL_N_RMS==0.
      * @param o_scratch will be used as scratch memory.
-     * @param o_der will be set to time derivatives.
-     * @param o_tInt will be set to time integrated DOFs.
+     * @param o_derE will be set to elastic time derivatives.
+     * @param o_derA will be set to anelastic time derivatives (ignored if TL_N_RMS==0, use nullptr).
+     * @param o_tIntE will be set to elastic time integrated DOFs.
+     * @param o_tIntA will be set to anelastic time integrated DOFS (ignored if TL_N_RMS==0, use nullptr).
      **/
-    void ck( TL_T_REAL       i_dT,
-             TL_T_REAL const i_star[TL_N_DIS][TL_N_NZS_STAR_E],
-             TL_T_REAL const i_dofs[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-             TL_T_REAL       o_scratch[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-             TL_T_REAL       o_der[TL_O_TI][TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-             TL_T_REAL       o_tInt[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) const {
+    void ck( TL_T_REAL         i_dT,
+             TL_T_REAL const   i_starE[TL_N_DIS][TL_N_NZS_STAR_E],
+             TL_T_REAL const (*i_starA)[TL_N_NZS_STAR_A],
+             TL_T_REAL const (*i_srcA)[TL_N_NZS_SRC_A],
+             TL_T_REAL const   i_dofsE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+             TL_T_REAL const (*i_dofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS],
+             TL_T_REAL         o_scratch[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+             TL_T_REAL         o_derE[TL_O_TI][TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+             TL_T_REAL       (*o_derA)[TL_O_TI][TL_N_QTS_M][TL_N_MDS][TL_N_CRS],
+             TL_T_REAL         o_tIntE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+             TL_T_REAL       (*o_tIntA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS] ) const {
+      // relaxation frequencies
+      TL_T_REAL const *l_rfs = this->m_rfs;
+
       // scalar for the time integration
       TL_T_REAL l_scalar = i_dT;
 
-      // initialize zero-derivative, reset time integrated dofs
-      for( int_qt l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-        for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+      // elastic initialize zero-derivative, reset time integrated dofs
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
 #pragma omp simd
-          for( int_cfr l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
-            o_der[0][l_qt][l_md][l_cfr] = i_dofs[l_qt][l_md][l_cfr];
-            o_tInt[l_qt][l_md][l_cfr]   = l_scalar * i_dofs[l_qt][l_md][l_cfr];
+          for( unsigned short l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
+            o_derE[0][l_qt][l_md][l_cfr] = i_dofsE[l_qt][l_md][l_cfr];
+            o_tIntE[l_qt][l_md][l_cfr]   = l_scalar * i_dofsE[l_qt][l_md][l_cfr];
+          }
+        }
+      }
+
+      // anelastic: init zero-derivative, reset tDofs
+      for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              o_derA[l_rm][0][l_qt][l_md][l_cr] = i_dofsA[l_rm][l_qt][l_md][l_cr];
+              o_tIntA[l_rm][l_qt][l_md][l_cr] = l_scalar * i_dofsA[l_rm][l_qt][l_md][l_cr];
+            }
           }
         }
       }
 
       // iterate over time derivatives
       for( unsigned int l_de = 1; l_de < TL_O_TI; l_de++ ) {
-        // reset this derivative
-        for( int_qt l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-          for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ )
+        // recursive id for the non-zero blocks
+        unsigned short l_re = (TL_N_RMS == 0) ? l_de : 1;
+
+        // elastic: reset this derivative
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
 #pragma omp simd
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_der[l_de][l_qt][l_md][l_cr] = 0;
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_derE[l_de][l_qt][l_md][l_cr] = 0;
+
+        // scratch memory for viscoelastic part
+        TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#pragma omp simd
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) l_scratch[l_qt][l_md][l_cr] = 0;
 
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
@@ -383,24 +466,53 @@ class edge::elastic::kernels::TimePredFused: public edge::elastic::kernels::Time
           }
 
           // multiply with transposed stiffness matrices and inverse mass matrix
-          m_mm.m_kernels[0][(l_de-1)*(TL_N_DIS)+l_di]( o_der[l_de-1][0][0],
-                                                       m_stiffT[l_de-1][l_di],
+          m_mm.m_kernels[0][(l_re-1)*(TL_N_DIS)+l_di]( o_derE[l_de-1][0][0],
+                                                       m_stiffT[l_re-1][l_di],
                                                        o_scratch[0][0] );
           // multiply with star matrices
-          m_mm.m_kernels[1][l_de-1]( i_star[l_di],
+          m_mm.m_kernels[1][l_re-1]( i_starE[l_di],
                                      o_scratch[0][0],
-                                     o_der[l_de][0][0] );
+                                     o_derE[l_de][0][0] );
+
+          if( TL_N_RMS > 0 ) {
+            // multiply with anelastic star matrices
+            m_mm.m_kernels[2][0]( i_starA[l_di],
+                                  o_scratch[0][0],
+                                  l_scratch[0][0] );
+          }
         }
 
         // update scalar
-        l_scalar *= -i_dT / (l_de+1);
+        l_scalar *= i_dT / (l_de+1);
 
-        // update time integrated dofs
-        for( int_qt l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-          for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
+        // anelastic: update derivatives and time integrated DOFs
+        for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
+          // add contribution of source matrix
+          m_mm.m_kernels[2][1]( i_srcA[l_rm],
+                                o_derA[l_rm][l_de-1][0][0],
+                                o_derE[l_de][0][0] );
+
+          // multiply with relaxation frequency and add
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
 #pragma omp simd
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-              o_tInt[l_qt][l_md][l_cr] += l_scalar * o_der[l_de][l_qt][l_md][l_cr];
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                o_derA[l_rm][l_de][l_qt][l_md][l_cr] = l_rfs[l_rm] * ( l_scratch[l_qt][l_md][l_cr] + o_derA[l_rm][l_de-1][l_qt][l_md][l_cr] );
+                o_tIntA[l_rm][l_qt][l_md][l_cr] += l_scalar * o_derA[l_rm][l_de][l_qt][l_md][l_cr];
+              }
+            }
+          }
+        }
+
+        // elastic: update time integrated DOFs
+        unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
+
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+          for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ ) {
+#pragma omp simd
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              o_tIntE[l_qt][l_md][l_cr] += l_scalar * o_derE[l_de][l_qt][l_md][l_cr];
+            }
           }
         }
       }

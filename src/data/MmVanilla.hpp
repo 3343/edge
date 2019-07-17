@@ -71,6 +71,9 @@ class edge::data::MmVanilla {
         //! leading dimension of column-major C
         const unsigned int m_ldC;
 
+        //! alpha parameter
+        const TL_T_REAL m_alpha;
+
         //! beta parameter
         const TL_T_REAL m_beta;
 
@@ -104,6 +107,7 @@ class edge::data::MmVanilla {
                  unsigned int   i_ldA,
                  unsigned int   i_ldB,
                  unsigned int   i_ldC,
+                 TL_T_REAL      i_alpha,
                  TL_T_REAL      i_beta,
                  bool           i_fusedAC,
                  bool           i_fusedBC,
@@ -113,6 +117,7 @@ class edge::data::MmVanilla {
                                           m_ldA( i_ldA ),
                                           m_ldB( i_ldB ),
                                           m_ldC( i_ldC ),
+                                          m_alpha( i_alpha ),
                                           m_beta( i_beta ),
                                           m_fusedAC( i_fusedAC ),
                                           m_fusedBC( i_fusedBC ),
@@ -132,14 +137,14 @@ class edge::data::MmVanilla {
               linalg::Matrix::matMulFusedAC( m_nCrs,
                                              m_m,   m_n,   m_k,
                                              m_ldA, m_ldB, m_ldC,
-                                             m_beta,
+                                             m_alpha, m_beta,
                                              i_a,   i_b,   io_c );
             }
             else if( m_fusedBC ) {
               linalg::Matrix::matMulFusedBC( m_nCrs,
                                              m_m,   m_n,   m_k,
                                              m_ldA, m_ldB, m_ldC,
-                                             m_beta,
+                                             m_alpha, m_beta,
                                              i_a,   i_b,   io_c );
             }
             else EDGE_LOG_FATAL << "matrix structure not supported";
@@ -161,7 +166,7 @@ class edge::data::MmVanilla {
      * @param i_ldA leading dimension of column-major A.
      * @param i_ldB leading dimension of column-major B.
      * @param i_ldC leading dimension of column-major C.
-     * @param i_alpha parameter alpha, ignored.
+     * @param i_alpha parameter alpha.
      * @param i_beta parameter beta, needs to be TL_T_REAL(0) or TL_T_REAL(1) for now.
      * @param i_fusedAC true if matrices A and C are fused.
      * @param i_fusedBC true if matrices B and C are fused.
@@ -195,6 +200,7 @@ class edge::data::MmVanilla {
       // add kernel
       m_kernels[i_group].push_back( Vanilla( i_m, i_n, i_k,
                                              i_ldA, i_ldB, i_ldC,
+                                             i_alpha,
                                              i_beta,
                                              i_fusedAC,
                                              i_fusedBC,

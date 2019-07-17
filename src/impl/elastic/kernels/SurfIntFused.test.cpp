@@ -26,16 +26,18 @@
 #undef private
 
 
-TEST_CASE( "Local surface integration for fused simulations.", "[SurfIntLocalFused][seismic]" ) {
-  edge::data::Dynamic l_dynMem;
+TEST_CASE( "Local elastic surface integration for fused simulations.", "[elastic][SurfIntLocalFused]" ) {
+  // set up matrix structures
+#include "SurfInt.test.inc"
 
-  edge::elastic::kernels::SurfIntFused< float,
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::SurfIntFused< float,
+                                        0,
                                         TET4,
                                         3,
-                                        16 > l_surf( l_dynMem );
-
-  // setup matrix structures
-#include "SurfInt.test.inc"
+                                        16 > l_surf( nullptr,
+                                                     l_dynMem );
 
   float l_scratch[2][9][6][16];
   float l_dofsFused[9][10][16];
@@ -45,39 +47,42 @@ TEST_CASE( "Local surface integration for fused simulations.", "[SurfIntLocalFus
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofs[l_qt][l_md];
-        l_dofsFused[l_qt][l_md][l_cr] = l_dofs[l_qt][l_md];
+        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFused[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
       }
     }
   }
 
   // compute local surface integration
-  l_surf.local( l_fSolv,
+  l_surf.local( l_fSolvE,
+                nullptr,
                 l_tDofsFused,
                 l_dofsFused,
+                nullptr,
                 l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_dofsLocalRef[l_qt][l_md] ) );
+        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_refEdofs[l_qt][l_md] ) );
       }
     }
   }
 }
 
+TEST_CASE( "Neighboring elastic surface integration for fused simulations.", "[elastic][SurfIntNeighFused]" ) {
+  // set up matrix structures
+#include "SurfInt.test.inc"
 
-TEST_CASE( "Neighboring surface integration for fused simulations.", "[SurfIntNeighFused][seismic]" ) {
+  // kernel
   edge::data::Dynamic l_dynMem;
-
-  edge::elastic::kernels::SurfIntFused< float,
+  edge::seismic::kernels::SurfIntFused< float,
+                                        0,
                                         TET4,
                                         3,
-                                        16 > l_surf( l_dynMem );
-
-  // setup matrix structures
-#include "SurfInt.test.inc"
+                                        16 > l_surf( nullptr,
+                                                     l_dynMem );
 
   float l_scratch[2][9][6][16];
   float l_dofsFused[9][10][16];
@@ -87,8 +92,8 @@ TEST_CASE( "Neighboring surface integration for fused simulations.", "[SurfIntNe
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofs[l_qt][l_md];
-        l_dofsFused[l_qt][l_md][l_cr] = l_dofs[l_qt][l_md];
+        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFused[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
       }
     }
   }
@@ -98,32 +103,36 @@ TEST_CASE( "Neighboring surface integration for fused simulations.", "[SurfIntNe
   l_surf.neigh( 3,
                 1,
                 2,
-                l_fSolv[0],
+                l_fSolvE[0],
+                nullptr,
                 l_tDofsFused,
                 l_dofsFused,
+                nullptr,
                 l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_dofsNeighRef[l_qt][l_md] ) );
+        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_refEneighDofs[l_qt][l_md] ) );
       }
     }
   }
 }
 
 
-TEST_CASE( "Neighboring surface integration in the presence of a free surface for used simulations.", "[SurfIntNeighFsFused][seismic]" ) {
-  edge::data::Dynamic l_dynMem;
+TEST_CASE( "Neighboring elastic surface integration in the presence of a free surface for used simulations.", "[elastic][SurfIntNeighFsFused]" ) {
+  // set up matrix structures
+#include "SurfInt.test.inc"
 
-  edge::elastic::kernels::SurfIntFused< float,
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::SurfIntFused< float,
+                                        0,
                                         TET4,
                                         3,
-                                        16 > l_surf( l_dynMem );
-
-  // setup matrix structures
-#include "SurfInt.test.inc"
+                                        16 > l_surf( nullptr,
+                                                     l_dynMem );
 
   float l_scratch[2][9][6][16];
   float l_dofsFused[9][10][16];
@@ -133,8 +142,8 @@ TEST_CASE( "Neighboring surface integration in the presence of a free surface fo
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofs[l_qt][l_md];
-        l_dofsFused[l_qt][l_md][l_cr] = l_dofs[l_qt][l_md];
+        l_tDofsFused[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFused[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
       }
     }
   }
@@ -143,16 +152,200 @@ TEST_CASE( "Neighboring surface integration in the presence of a free surface fo
   l_surf.neigh( 2,
                 std::numeric_limits< unsigned short >::max(),
                 std::numeric_limits< unsigned short >::max(),
-                l_fSolv[0],
+                l_fSolvE[0],
+                nullptr,
                 l_tDofsFused,
                 l_dofsFused,
+                nullptr,
                 l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_dofsNeighFfRef[l_qt][l_md] ) );
+        REQUIRE( l_dofsFused[l_qt][l_md][l_cr] == Approx( l_refEneighFdofs[l_qt][l_md] ) );
+      }
+    }
+  }
+}
+
+TEST_CASE( "Local viscoelastic surface integration for fused simulations.", "[visco][SurfIntLocalFused]" ) {
+  // set up matrix structures
+#include "SurfInt.test.inc"
+
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::SurfIntFused< float,
+                                        3,
+                                        TET4,
+                                        3,
+                                        16 > l_surf( l_rfs,
+                                                     l_dynMem );
+
+  float l_scratch[2][9][6][16];
+  float l_dofsFusedE[9][10][16];
+  float l_dofsFusedA[3][6][10][16];
+  float l_tDofsFusedE[9][10][16];
+
+  // duplicate DOFs and tDofs for fused config
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        l_tDofsFusedE[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFusedE[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
+
+        if( l_qt < 6 ) {
+          for( unsigned short l_rm = 0; l_rm < 3; l_rm++ ) {
+            l_dofsFusedA[l_rm][l_qt][l_md][l_cr] = l_dofsA[l_rm][l_qt][l_md];
+          }
+        }
+      }
+    }
+  }
+
+  // compute local surface integration
+  l_surf.local(                       l_fSolvE,
+                (float (*)     [6*9]) l_fSolvA,
+                                      l_tDofsFusedE,
+                                      l_dofsFusedE,
+                                      l_dofsFusedA,
+                                      l_scratch );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_dofsFusedE[l_qt][l_md][l_cr] == Approx( l_refEdofs[l_qt][l_md] ) );
+
+        if( l_qt < 6) {
+          for( unsigned short l_rm = 0; l_rm < 3; l_rm++ ) {
+            REQUIRE( l_dofsFusedA[l_rm][l_qt][l_md][l_cr] == Approx( l_refVdofsA[l_rm][l_qt][l_md] ) );
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST_CASE( "Neighboring viscoelastic surface integration for fused simulations.", "[visco][SurfIntNeighFused]" ) {
+  // set up matrix structures
+#include "SurfInt.test.inc"
+
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::SurfIntFused< float,
+                                        3,
+                                        TET4,
+                                        3,
+                                        16 > l_surf( l_rfs,
+                                                     l_dynMem );
+
+  float l_scratch[2][9][6][16];
+  float l_dofsFusedE[9][10][16];
+  float l_upsFusedA[6][10][16];
+  float l_tDofsFusedE[9][10][16];
+
+  // duplicate DOFs and tDofs for fused config
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        l_tDofsFusedE[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFusedE[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
+
+        if( l_qt < 6 ) {
+          l_upsFusedA[l_qt][l_md][l_cr] = 0;
+        }
+      }
+    }
+  }
+
+  // compute neighboring surface integration
+  l_surf.neigh( 3,
+                1,
+                2,
+                l_fSolvE[0],
+                l_fSolvA[0][0],
+                l_tDofsFusedE,
+                l_dofsFusedE,
+                l_upsFusedA,
+                l_scratch );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_dofsFusedE[l_qt][l_md][l_cr] == Approx( l_refEneighDofs[l_qt][l_md] ) );
+      }
+    }
+  }
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 6; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_upsFusedA[l_qt][l_md][l_cr] == Approx( l_refVneighDofsA[l_qt][l_md] ) );
+      }
+    }
+  }
+}
+
+TEST_CASE( "Neighboring viscoelastic surface integration in the presence of a free surface for fused simulations.", "[visco][SurfIntNeighFsFused]" ) {
+  // set up matrix structures
+#include "SurfInt.test.inc"
+
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::SurfIntFused< float,
+                                        3,
+                                        TET4,
+                                        3,
+                                        16 > l_surf( l_rfs,
+                                                     l_dynMem );
+
+  float l_scratch[2][9][6][16];
+  float l_dofsFusedE[9][10][16];
+  float l_upsFusedA[6][10][16];
+  float l_tDofsFusedE[9][10][16];
+
+  // duplicate DOFs and tDofs for fused config
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        l_tDofsFusedE[l_qt][l_md][l_cr] = l_tDofsE[l_qt][l_md];
+        l_dofsFusedE[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
+
+        if( l_qt < 6 ) {
+          l_upsFusedA[l_qt][l_md][l_cr] = 0;
+        }
+      }
+    }
+  }
+
+  // compute neighboring surface integration
+  l_surf.neigh( 2,
+                std::numeric_limits< unsigned short >::max(),
+                std::numeric_limits< unsigned short >::max(),
+                l_fSolvE[0],
+                l_fSolvA[0][0],
+                l_tDofsFusedE,
+                l_dofsFusedE,
+                l_upsFusedA,
+                l_scratch );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_dofsFusedE[l_qt][l_md][l_cr] == Approx( l_refEneighFdofs[l_qt][l_md] ) );
+      }
+    }
+  }
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 6; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 10; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_upsFusedA[l_qt][l_md][l_cr] == Approx( l_refVneighFdofsA[l_qt][l_md] ) );
       }
     }
   }

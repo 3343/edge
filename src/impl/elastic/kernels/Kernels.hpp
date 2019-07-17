@@ -45,9 +45,10 @@
 
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace kernels {
       template< typename       TL_T_REAL,
+                unsigned short TL_N_RMS,
                 t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_O_TI,
@@ -61,56 +62,67 @@ namespace edge {
  * Time, volume and surface kernels.
  *
  * @paramt TL_T_REAL floating point precision.
+ * @paramt TL_N_RMS number of relaxation mechanisms.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP order in space.
  * @paramt TL_O_TI order in time.
  * @paramt TL_N_CRS number of fused simulations. 
  **/
 template< typename       TL_T_REAL,
+          unsigned short TL_N_RMS,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_O_TI,
           unsigned short TL_N_CRS >
-class edge::elastic::kernels::Kernels {
+class edge::seismic::kernels::Kernels {
   public:
 #if defined(PP_T_KERNELS_VANILLA)
     TimePredVanilla< TL_T_REAL,
+                     TL_N_RMS,
                      TL_T_EL,
                      TL_O_SP,
                      TL_O_TI,
                      TL_N_CRS > m_time;
     VolIntVanilla< TL_T_REAL,
+                   TL_N_RMS,
                    TL_T_EL,
                    TL_O_SP,
                    TL_N_CRS > m_volInt;
     SurfIntVanilla< TL_T_REAL,
+                    TL_N_RMS,
                     TL_T_EL,
                     TL_O_SP,
                     TL_N_CRS > m_surfInt;
 #elif defined(PP_T_KERNELS_XSMM_DENSE_SINGLE)
     static_assert( TL_N_CRS == 1, "trying to build single kernels in fused setting" );
     TimePredSingle< TL_T_REAL,
+                    TL_N_RMS,
                     TL_T_EL,
                     TL_O_SP,
                     TL_O_TI > m_time;
     VolIntSingle< TL_T_REAL,
+                  TL_N_RMS,
                   TL_T_EL,
                   TL_O_SP> m_volInt;
     SurfIntSingle< TL_T_REAL,
+                   TL_N_RMS,
                    TL_T_EL,
                    TL_O_SP > m_surfInt;
 #elif defined(PP_T_KERNELS_XSMM)
 static_assert( TL_N_CRS != 1, "trying to build fused kernels in single setting" );
     TimePredFused< TL_T_REAL,
+                   TL_N_RMS,
                    TL_T_EL,
                    TL_O_SP,
                    TL_O_TI,
                    TL_N_CRS > m_time;
     VolIntFused< TL_T_REAL,
+                 TL_N_RMS,
                  TL_T_EL,
                  TL_O_SP,
                  TL_N_CRS > m_volInt;
     SurfIntFused< TL_T_REAL,
+                  TL_N_RMS,
                   TL_T_EL,
                   TL_O_SP,
                   TL_N_CRS > m_surfInt;
@@ -123,9 +135,10 @@ static_assert( TL_N_CRS != 1, "trying to build fused kernels in single setting" 
      *
      * @param io_dynMem dynamic memory allocations.
      **/
-    Kernels( data::Dynamic & io_dynMem ): m_time( io_dynMem ),
-                                          m_volInt( io_dynMem ),
-                                          m_surfInt( io_dynMem ) {};
+    Kernels( TL_T_REAL     const * i_rfs,
+             data::Dynamic        & io_dynMem ): m_time(    i_rfs, io_dynMem ),
+                                                 m_volInt(  i_rfs, io_dynMem ),
+                                                 m_surfInt( i_rfs, io_dynMem ) {};
 };
 
 #endif

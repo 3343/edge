@@ -26,36 +26,19 @@
 #undef private
 
 
-TEST_CASE( "Optimized ADER time prediction for fused forward simulations.", "[TimePredFused][seismic]" ) {
-  edge::data::Dynamic l_dynMem;
+TEST_CASE( "Optimized elastic ADER time prediction for fused forward simulations.", "[elastic][TimePredFused]" ) {
+  // set up matrix structures
+#include "TimePred.test.inc"
 
-  edge::elastic::kernels::TimePredFused< float,
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::TimePredFused< float,
+                                         0,
                                          TET4,
                                          4,
                                          4,
-                                         16 > l_pred( l_dynMem );
-
-  // setup matrix structures
-  #include "TimePred.test.inc"
-
-  // extract sparse star-matrices (compressed columns)
-  float l_starMatsSp[3][24];
-
-  unsigned short l_nz = 0;
-  for( unsigned short l_co = 0; l_co < 9; l_co++ ) {
-    for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
-      if( l_starMats[0][l_co][l_ro] != 0.0f ) {
-        REQUIRE( l_starMats[1][l_co][l_ro] != 0.0f );
-        REQUIRE( l_starMats[2][l_co][l_ro] != 0.0f );
-
-        for( unsigned short l_di = 0; l_di < 3; l_di++ )
-          l_starMatsSp[l_di][l_nz] = l_starMats[l_di][l_co][l_ro];
-
-        l_nz++;
-      }
-    }
-  }
-  REQUIRE( l_nz == 24 );
+                                         16 > l_pred( nullptr,
+                                                      l_dynMem );
 
   float l_scratch[9][20][16];
   float l_ders[4][9][20][16];
@@ -66,19 +49,99 @@ TEST_CASE( "Optimized ADER time prediction for fused forward simulations.", "[Ti
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        l_dofsFused[l_qt][l_md][l_cr] = l_dofs[l_qt][l_md];
+        l_dofsFused[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
       }
     }
   }
 
   // compute time prediction
-  l_pred.ck( 0.017, l_starMatsSp, l_dofsFused, l_scratch, l_ders, l_tDofs );
+  l_pred.ck( 0.017,
+             l_starSpE,
+             nullptr,
+             nullptr,
+             l_dofsFused,
+             nullptr,
+             l_scratch,
+             l_ders,
+             nullptr,
+             l_tDofs,
+             nullptr );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
     for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        REQUIRE( l_tDofs[l_qt][l_md][l_cr] == Approx( l_tDofsRef[l_qt][l_md] ) );
+        REQUIRE( l_tDofs[l_qt][l_md][l_cr] == Approx( l_refEtDofs[l_qt][l_md] ) );
+      }
+    }
+  }
+}
+
+TEST_CASE( "Optimized viscoelastic ADER time prediction for fused forward simulations.", "[visco][TimePredFused]" ) {
+  // set up matrix structures
+#include "TimePred.test.inc"
+
+  float l_scratch[9][20][16];
+  float l_dersE[4][9][20][16];
+  float l_dersA[2][4][6][20][16];
+  float l_dofsFusedE[9][20][16];
+  float l_dofsFusedA[2][6][20][16];
+  float l_tDofsE[9][20][16];
+  float l_tDofsA[2][6][20][16];
+
+  // duplicate DOFs for fused config
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        l_dofsFusedE[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
+
+        if( l_qt < 6) {
+          for( unsigned short l_rm = 0; l_rm < 2; l_rm++ ) {
+            l_dofsFusedA[l_rm][l_qt][l_md][l_cr] = l_dofsA[l_rm][l_qt][l_md];
+          }
+        }
+      }
+    }
+  }
+
+  // kernel
+  edge::data::Dynamic l_dynMem;
+  edge::seismic::kernels::TimePredFused< float,
+                                         2,
+                                         TET4,
+                                         4,
+                                         4,
+                                         16 > l_pred( l_rfs,
+                                                      l_dynMem );
+
+  // compute time prediction
+  l_pred.ck( 0.017,
+             l_starSpE,
+             l_starSpA,
+             l_srcSpA,
+             l_dofsFusedE,
+             l_dofsFusedA,
+             l_scratch,
+             l_dersE,
+             l_dersA,
+             l_tDofsE,
+             l_tDofsA );
+
+  // check the results
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+        REQUIRE( l_tDofsE[l_qt][l_md][l_cr] == Approx( l_refVtDofsE[l_qt][l_md] ) );
+      }
+    }
+  }
+
+  for( unsigned short l_rm = 0; l_rm < 2; l_rm++ ) {
+    for( unsigned short l_qt = 0; l_qt < 6; l_qt++ ) {
+      for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+        for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
+          REQUIRE( l_tDofsA[l_rm][l_qt][l_md][l_cr] == Approx( l_refVtDofsA[l_rm][l_qt][l_md] ) );
+        }
       }
     }
   }

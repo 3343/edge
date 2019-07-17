@@ -32,9 +32,10 @@
 #include "dg/Basis.h"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace kernels {
       template< typename       TL_T_REAL,
+                unsigned short TL_N_RMS,
                 t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_O_TI,
@@ -50,17 +51,19 @@ namespace edge {
  *   2) Evaluation of time prediction at specific points in time.
  *
  * @paramt TL_T_REAL floating point precision of the solver.
+ * @paramt TL_N_RMS number of relaxation mechanisms.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP order in space.
  * @paramt TL_O_TI order in time.
  * @paramt TL_N_CRS number of concurrent forward runs (fused simulations)
  **/
 template< typename       TL_T_REAL,
+          unsigned short TL_N_RMS,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_O_TI,
           unsigned short TL_N_CRS >
-class edge::elastic::kernels::TimePred {
+class edge::seismic::kernels::TimePred {
   private:
     //! dimension of the element
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
@@ -69,11 +72,15 @@ class edge::elastic::kernels::TimePred {
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
     //! number of elastic quantities
-    static unsigned short const TL_N_QTS_E = (TL_N_DIS == 2) ? 5 : 9;
+    static unsigned short const TL_N_QTS_E = CE_N_QTS_E( TL_N_DIS );
 
   protected:
+    //! relaxation frequencies
+    TL_T_REAL * m_rfs = nullptr;
+
     /**
      * Stores the transposed stiffness matrices as dense.
+     * This includes multiplications with (-1) for kernels with support for alpha==1 only.
      * 
      * @param i_stiffT dense stiffness matrices.
      * @param io_dynMem dynamic memory management, which will be used for the respective allocations.
@@ -95,7 +102,7 @@ class edge::elastic::kernels::TimePred {
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         for( unsigned short l_m0 = 0; l_m0 < TL_N_MDS; l_m0++ ) {
           for( unsigned short l_m1 = 0; l_m1 < TL_N_MDS; l_m1++ ) {
-            l_stiffTRaw[l_en] = i_stiffT[l_di][l_m0][l_m1];
+            l_stiffTRaw[l_en] = -i_stiffT[l_di][l_m0][l_m1];
             l_en++;
           }
         }
@@ -110,6 +117,24 @@ class edge::elastic::kernels::TimePred {
     }
 
   public:
+    /**
+     * Constructor of the time prediction.
+     *
+     * @param i_rfs relaxation frequencies, use nullptr if TL_N_RMS==0.
+     * @param io_dynMem dynamic memory allocations.
+     **/
+    TimePred( TL_T_REAL     const * i_rfs,
+              data::Dynamic       & io_dynMem ) {
+      if( TL_N_RMS > 0 ) {
+        std::size_t l_size = TL_N_RMS * sizeof(TL_T_REAL);
+        m_rfs = (TL_T_REAL *) io_dynMem.allocate( l_size );
+
+        for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
+          m_rfs[l_rm] = i_rfs[l_rm];
+        }
+      }
+    }
+
     /**
      * Evaluates the time prediction, given by the time derivatives at the given points in time.
      * The points are relative to the time at which the time prediction was obtained.
@@ -141,7 +166,7 @@ class edge::elastic::kernels::TimePred {
         // iterate over derivatives
         for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
           // update scalar
-          l_scalar *= -i_pts[l_pt] / l_de;
+          l_scalar *= i_pts[l_pt] / l_de;
 
           for( int_qt l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
             for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
