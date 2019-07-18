@@ -93,7 +93,7 @@ TEST_CASE( "Optimized viscoelastic volume integration for fused simulations.", "
         l_dofsFusedE[l_qt][l_md][l_cr] = l_dofsE[l_qt][l_md];
 
         if( l_qt < 6 ) {
-          for( unsigned short l_rm = 0; l_rm < 6; l_rm++ ) {
+          for( unsigned short l_rm = 0; l_rm < 2; l_rm++ ) {
             l_tDofsFusedA[l_rm][l_qt][l_md][l_cr] = l_tDofsA[l_rm][l_qt][l_md];
             l_dofsFusedA[l_rm][l_qt][l_md][l_cr] = l_dofsA[l_rm][l_qt][l_md];
           }
