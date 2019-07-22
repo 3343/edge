@@ -390,7 +390,7 @@ before_install:
 script:
   # do static code analysis
   - cppcheck --version
-  - cppcheck src/ --suppress=*:submodules/include/easylogging++.h --force --error-exitcode=1
+  - cppcheck src/ --template=gcc --suppress=*:submodules/include/easylogging++.h --suppressions-list=tools/build/cppcheck.supp --force --error-exitcode=1
 
   # disable advanced exprtk features to speedup compilation
   - export CXXFLAGS=-Dexprtk_disable_enhanced_features
