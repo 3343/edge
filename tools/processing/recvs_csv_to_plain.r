@@ -5,6 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2016-2017, Regents of the University of California
 # All rights reserved.
 #
@@ -58,7 +59,7 @@ for(  fileIn in recvs  ) {
   
   # read receiver data
   fileIn  <- paste( dir, fileIn, sep='/')
-  recv <- read.csv(fileIn)
+  recv <- read.csv(fileIn, comment.char='#')
   
   # process receiver
   qs <- names(recv)
