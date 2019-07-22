@@ -296,11 +296,11 @@ class edge::advection::solvers::common {
         if( l_exL == true ) l_jL = l_jacL[0][0];
         if( l_exR == true ) l_jR = l_jacR[0][0];
 #elif PP_N_DIM == 2
-        if( l_exL == true ) l_jL = linalg::Matrix::det2x2( l_jacL );
-        if( l_exR == true ) l_jR = linalg::Matrix::det2x2( l_jacR );
+        if( l_exL == true ) l_jL = linalg::Matrix::det( l_jacL );
+        if( l_exR == true ) l_jR = linalg::Matrix::det( l_jacR );
 #elif PP_N_DIM == 3
-        if( l_exL == true ) l_jL = linalg::Matrix::det3x3( l_jacL );
-        if( l_exR == true ) l_jR = linalg::Matrix::det3x3( l_jacR );
+        if( l_exL == true ) l_jL = linalg::Matrix::det( l_jacL );
+        if( l_exR == true ) l_jR = linalg::Matrix::det( l_jacR );
 #else
 #error number of dimensions not supported.
 #endif

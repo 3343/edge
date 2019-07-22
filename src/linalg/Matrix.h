@@ -105,7 +105,7 @@ class edge::linalg::Matrix {
      * @return determinant of the matrix.
      **/
     template <typename T>
-    static T det2x2( const T i_mat[2][2] ) {
+    static T det( const T i_mat[2][2] ) {
       return i_mat[0][0]*i_mat[1][1] - i_mat[0][1]*i_mat[1][0];
     }
 
@@ -116,7 +116,7 @@ class edge::linalg::Matrix {
      * @return determinant of the matrix.
      **/
     template <typename T>
-    static T det3x3( const T i_mat[3][3] ) {
+    static T det( const T i_mat[3][3] ) {
       return   i_mat[0][0] * (i_mat[1][1]*i_mat[2][2] - i_mat[1][2]*i_mat[2][1])
              - i_mat[0][1] * (i_mat[1][0]*i_mat[2][2] - i_mat[1][2]*i_mat[2][0])
              + i_mat[0][2] * (i_mat[1][0]*i_mat[2][1] - i_mat[1][1]*i_mat[2][0]);
@@ -129,7 +129,7 @@ class edge::linalg::Matrix {
      * @return determinant of the matrix.
      **/
     template <typename T>
-    static T det4x4( const T i_mat[4][4] ) {
+    static T det( const T i_mat[4][4] ) {
       // determinant of the 4x4
       T l_det4x4 = 0;
 
@@ -151,7 +151,7 @@ class edge::linalg::Matrix {
         }
 
         // add effect of minor determinant
-        T l_det3x3 = det3x3( l_minor );
+        T l_det3x3 = det( l_minor );
         if( l_expRo % 2 == 0 ) l_det4x4 -= i_mat[l_expRo][3] * l_det3x3;
         else                   l_det4x4 += i_mat[l_expRo][3] * l_det3x3;
       }
@@ -171,9 +171,9 @@ class edge::linalg::Matrix {
                   const T              *i_mat ) {
       T l_det = 0;
 
-      if(      i_dim == 2 ) l_det = det2x2(  (T(*)[2]) i_mat );
-      else if( i_dim == 3 ) l_det = det3x3(  (T(*)[3]) i_mat );
-      else if( i_dim == 4 ) l_det = det4x4(  (T(*)[4]) i_mat );
+      if(      i_dim == 2 ) l_det = det(  (T(*)[2]) i_mat );
+      else if( i_dim == 3 ) l_det = det(  (T(*)[3]) i_mat );
+      else if( i_dim == 4 ) l_det = det(  (T(*)[4]) i_mat );
       else EDGE_LOG_FATAL;
 
       return l_det;
@@ -188,7 +188,7 @@ class edge::linalg::Matrix {
     template <typename T>
     static void inv( const T i_mat[2][2],
                            T o_inv[2][2] ) {
-      T l_det = det2x2( i_mat );
+      T l_det = det( i_mat );
       EDGE_CHECK_GT( std::abs(l_det), TOL.LINALG );
 
       o_inv[0][0] =  i_mat[1][1];
@@ -213,7 +213,7 @@ class edge::linalg::Matrix {
     static void inv( const T i_mat[3][3],
                            T o_inv[3][3] ) {
       // get the determinant
-      T l_det = det3x3( i_mat );
+      T l_det = det( i_mat );
       EDGE_CHECK_GT( std::abs(l_det), TOL.LINALG );
 
       // compute the inverse

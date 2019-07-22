@@ -79,7 +79,7 @@ constexpr unsigned short CE_N_ENS_STAR_A_DE( unsigned short i_nDis ) {
  * @return number of non-zeros.
  **/
 constexpr unsigned short CE_N_ENS_STAR_A_SP( unsigned short i_nDis ) {
-  return (i_nDis == 2) ? 3 : 9;
+  return (i_nDis == 2) ? 4 : 9;
 }
 
 /**

@@ -142,6 +142,100 @@ class edge::seismic::solvers::AderDgInit {
     }
 
     /**
+     * Sets up the two-dimensional flux solvers for a single face.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoL density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param i_nx x-component of the face-normal.
+     * @param i_ny y-component of the face-normal.
+     * @param o_fsAl will be set to anelastic flux solver, applied to the left element's DOFs.
+     * @param o_fsAr will be set to anelastic flux solver, applied to the right element's DOFs.
+     * @param i_freeSurface true if free surface boundary conditions are applied to the right element.
+     *
+     * @paramt TL_T_REAL floating point type.
+     **/
+    template< typename TL_T_REAL >
+    static void setUpFs( TL_T_REAL i_rhoL,
+                         TL_T_REAL i_rhoR,
+                         TL_T_REAL i_lamL,
+                         TL_T_REAL i_lamR,
+                         TL_T_REAL i_muL,
+                         TL_T_REAL i_muR,
+                         double    i_nx,
+                         double    i_ny,
+                         TL_T_REAL o_fsAl[3*5],
+                         TL_T_REAL o_fsAr[3*5],
+                         bool      i_freeSurface ) {
+      // intermediate matrices
+      TL_T_REAL l_tE[5][5];
+      TL_T_REAL l_tA[3][3];
+      TL_T_REAL l_tm1[5][5];
+      TL_T_REAL l_fsMidA[2][3][5];
+      TL_T_REAL l_tmp[2][3][5];
+
+      // compute trafos
+      elastic::common::setupTrafo2d( i_nx, i_ny, l_tE );
+
+      // extract "anelastic" back-rotation (stresses only)
+      for( unsigned short l_q0 = 0; l_q0 < 3; l_q0++ )
+        for( unsigned short l_q1 = 0; l_q1 < 3; l_q1++ )
+          l_tA[l_q0][l_q1] = l_tE[l_q0][l_q1];
+
+      elastic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
+
+      // compute mid part of the solver
+      seismic::setups::ViscoElasticity::fsMid( i_rhoL,
+                                               i_rhoR,
+                                               i_lamL,
+                                               i_lamR,
+                                               i_muL,
+                                               i_muR,
+                                               l_fsMidA[0],
+                                               l_fsMidA[1] );
+
+      // apply back-rotation to face-aligned coordinate system and mid part
+      for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+        linalg::Matrix::matMulB0( 3, 5, 3,
+                                  l_tA[0],
+                                  l_fsMidA[l_sd][0],
+                                  l_tmp[l_sd][0] );
+      }
+
+      // rotate left solver to face-aligned coordinates (element exists per definition of our boundary conditions)
+      linalg::Matrix::matMulB0( 3, 5, 5,
+                                l_tmp[0][0],
+                                l_tm1[0],
+                                o_fsAl );
+
+      /**
+       * Free surface boundary conditions mirror (rotated) x-components of the stress tensor.
+       * Reference: Eq. (51) in
+       *            Martin Kaeser and Michael Dumbser
+       *            An arbitrary high-order discontinuous Galerkin method for elastic
+       *            waves on unstructured meshes – I. The two-dimensional isotropic
+       *            case with external source terms
+       **/
+      if( i_freeSurface == true ) {
+        // multiply tmpR with diag( -1, 1, -1, 1, 1 ) from the right.
+        //                           0      2
+        for( unsigned short l_ro = 0; l_ro < 3; l_ro++ ) {
+          l_tmp[1][l_ro][0] *= -1;
+          l_tmp[1][l_ro][2] *= -1;
+        }
+      }
+
+      // rotate right solver to face-aligned coordinates
+      linalg::Matrix::matMulB0( 3, 5, 5,
+                                l_tmp[1][0],
+                                l_tm1[0],
+                                o_fsAr );
+    }
+
+    /**
      * Sets up the three-dimensional flux solvers for a single face.
      *
      * @param i_rhoL density of the left element.
@@ -166,24 +260,24 @@ class edge::seismic::solvers::AderDgInit {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void setUpFs3d( TL_T_REAL i_rhoL,
-                           TL_T_REAL i_rhoR,
-                           TL_T_REAL i_lamL,
-                           TL_T_REAL i_lamR,
-                           TL_T_REAL i_muL, 
-                           TL_T_REAL i_muR,
-                           double i_nx,
-                           double i_ny,
-                           double i_nz,
-                           double i_sx,
-                           double i_sy,
-                           double i_sz,
-                           double i_tx,
-                           double i_ty,
-                           double i_tz,
-                           TL_T_REAL o_fsAl[6*9],
-                           TL_T_REAL o_fsAr[6*9],
-                           bool      i_freeSurface ) {
+    static void setUpFs( TL_T_REAL i_rhoL,
+                         TL_T_REAL i_rhoR,
+                         TL_T_REAL i_lamL,
+                         TL_T_REAL i_lamR,
+                         TL_T_REAL i_muL,
+                         TL_T_REAL i_muR,
+                         double    i_nx,
+                         double    i_ny,
+                         double    i_nz,
+                         double    i_sx,
+                         double    i_sy,
+                         double    i_sz,
+                         double    i_tx,
+                         double    i_ty,
+                         double    i_tz,
+                         TL_T_REAL o_fsAl[6*9],
+                         TL_T_REAL o_fsAr[6*9],
+                         bool      i_freeSurface ) {
       // intermediate matrices
       TL_T_REAL l_tE[9][9];
       TL_T_REAL l_tA[6][6];
@@ -353,47 +447,68 @@ class edge::seismic::solvers::AderDgInit {
           l_rhoR = i_bgPars[l_elL].rho; l_lamR = i_bgPars[l_elL].lam; l_muR = i_bgPars[l_elL].mu;
         }
 
-        if( TL_N_DIS == 2 ) EDGE_LOG_FATAL;
-        else if( TL_N_DIS == 3 ) {
-          // compute solvers for the left element
-          if( l_exL ) {
-            setUpFs3d( l_rhoL, l_rhoR,
-                       l_lamL, l_lamR,
-                       l_muL,  l_muR,
-                       i_faChars[l_fa].outNormal[0],
-                       i_faChars[l_fa].outNormal[1],
-                       i_faChars[l_fa].outNormal[2],
-                       i_faChars[l_fa].tangent0[0],
-                       i_faChars[l_fa].tangent0[1],
-                       i_faChars[l_fa].tangent0[2],
-                       i_faChars[l_fa].tangent1[0],
-                       i_faChars[l_fa].tangent1[1],
-                       i_faChars[l_fa].tangent1[2],
-                       o_fsA[0][l_elL][l_fIdL],
-                       o_fsA[1][l_elL][l_fIdL],
-                       (i_faChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
+        // compute solvers for the left element
+        if( l_exL ) {
+          if( TL_N_DIS == 2 ) {
+            setUpFs( l_rhoL, l_rhoR,
+                     l_lamL, l_lamR,
+                     l_muL,  l_muR,
+                     i_faChars[l_fa].outNormal[0],
+                     i_faChars[l_fa].outNormal[1],
+                     o_fsA[0][l_elL][l_fIdL],
+                     o_fsA[1][l_elL][l_fIdL],
+                     (i_faChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
           }
+          else if( TL_N_DIS == 3 ) {
+            setUpFs( l_rhoL, l_rhoR,
+                     l_lamL, l_lamR,
+                     l_muL,  l_muR,
+                     i_faChars[l_fa].outNormal[0],
+                     i_faChars[l_fa].outNormal[1],
+                     i_faChars[l_fa].outNormal[2],
+                     i_faChars[l_fa].tangent0[0],
+                     i_faChars[l_fa].tangent0[1],
+                     i_faChars[l_fa].tangent0[2],
+                     i_faChars[l_fa].tangent1[0],
+                     i_faChars[l_fa].tangent1[1],
+                     i_faChars[l_fa].tangent1[2],
+                     o_fsA[0][l_elL][l_fIdL],
+                     o_fsA[1][l_elL][l_fIdL],
+                     (i_faChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
+          }
+        }
 
-          // compute solvers for the right element
-          if( l_exR ) {
-            // boundary conditions have the element on the left-side per definition
-            EDGE_CHECK_NE( (i_faChars[l_fa].spType & FREE_SURFACE), FREE_SURFACE );
+        // compute solvers for the right element
+        if( l_exR ) {
+          // boundary conditions have the element on the left-side per definition
+          EDGE_CHECK_NE( (i_faChars[l_fa].spType & FREE_SURFACE), FREE_SURFACE );
 
-            setUpFs3d(   l_rhoR, l_rhoL,
-                         l_lamR, l_lamL,
-                         l_muR,  l_muL,
-                        -i_faChars[l_fa].outNormal[0],
-                        -i_faChars[l_fa].outNormal[1],
-                        -i_faChars[l_fa].outNormal[2],
-                         i_faChars[l_fa].tangent0[0],
-                         i_faChars[l_fa].tangent0[1],
-                         i_faChars[l_fa].tangent0[2],
-                         i_faChars[l_fa].tangent1[0],
-                         i_faChars[l_fa].tangent1[1],
-                         i_faChars[l_fa].tangent1[2],
-                         o_fsA[0][l_elR][l_fIdR],
-                         o_fsA[1][l_elR][l_fIdR],
-                         false );
+          if( TL_N_DIS == 2 ) {
+            setUpFs(  l_rhoR, l_rhoL,
+                      l_lamR, l_lamL,
+                      l_muR,  l_muL,
+                     -i_faChars[l_fa].outNormal[0],
+                     -i_faChars[l_fa].outNormal[1],
+                      o_fsA[0][l_elR][l_fIdR],
+                      o_fsA[1][l_elR][l_fIdR],
+                      false );
+          }
+          else if( TL_N_DIS == 3 ) {
+            setUpFs(  l_rhoR, l_rhoL,
+                      l_lamR, l_lamL,
+                      l_muR,  l_muL,
+                     -i_faChars[l_fa].outNormal[0],
+                     -i_faChars[l_fa].outNormal[1],
+                     -i_faChars[l_fa].outNormal[2],
+                      i_faChars[l_fa].tangent0[0],
+                      i_faChars[l_fa].tangent0[1],
+                      i_faChars[l_fa].tangent0[2],
+                      i_faChars[l_fa].tangent1[0],
+                      i_faChars[l_fa].tangent1[1],
+                      i_faChars[l_fa].tangent1[2],
+                      o_fsA[0][l_elR][l_fIdR],
+                      o_fsA[1][l_elR][l_fIdR],
+                      false );
           }
         }
 
@@ -415,17 +530,14 @@ class edge::seismic::solvers::AderDgInit {
         // compute determinant of the mapping's jacobian
         TL_T_REAL l_jDet[2] = { std::numeric_limits< TL_T_REAL >::max(), std::numeric_limits< TL_T_REAL >::max() };
 
-        if( TL_N_DIS == 2 ) EDGE_LOG_FATAL;
-        else if( TL_N_DIS == 3 ) {
-          TL_T_REAL l_jac[3][3];
-          if( l_exL ) {
-            linalg::Mappings::evalJac( TL_T_EL, l_veCrds[0][0], l_jac[0] );
-            l_jDet[0] = linalg::Matrix::det3x3( l_jac );
-          }
-          if( l_exR ) {
-            linalg::Mappings::evalJac( TL_T_EL, l_veCrds[1][0], l_jac[0] );
-            l_jDet[1] = linalg::Matrix::det3x3( l_jac );
-          }
+        TL_T_REAL l_jac[TL_N_DIS][TL_N_DIS];
+        if( l_exL ) {
+          linalg::Mappings::evalJac( TL_T_EL, l_veCrds[0][0], l_jac[0] );
+          l_jDet[0] = linalg::Matrix::det( l_jac );
+        }
+        if( l_exR ) {
+          linalg::Mappings::evalJac( TL_T_EL, l_veCrds[1][0], l_jac[0] );
+          l_jDet[1] = linalg::Matrix::det( l_jac );
         }
 
         // ensure positive determinants

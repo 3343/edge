@@ -333,7 +333,7 @@ class edge::linalg::Geom {
         // determinant is six times the volume of the det
         T l_jac[3][3];
         Mappings::evalJac( TET4, i_vertices, l_jac[0] );
-        T l_det = linalg::Matrix::det3x3( l_jac );
+        T l_det = linalg::Matrix::det( l_jac );
 
         // det might be negative since we call this in general before enforcing counterclockwise tets
         l_volume = std::abs(l_det) / (T) 6;
@@ -691,10 +691,10 @@ class edge::linalg::Geom {
 
           TL_T_REAL l_det = 0;
           if( l_nFaVesRed == 2 ) {
-            l_det = Matrix::det2x2( (TL_T_REAL (*)[2]) l_directed );
+            l_det = Matrix::det( (TL_T_REAL (*)[2]) l_directed );
           }
           else if( l_nFaVesRed == 3 ) {
-            l_det = Matrix::det3x3( (TL_T_REAL (*)[3]) l_directed );
+            l_det = Matrix::det( (TL_T_REAL (*)[3]) l_directed );
           }
           else EDGE_LOG_FATAL;
           l_inside  = l_inside  && ( l_det >  TOL.LINALG );

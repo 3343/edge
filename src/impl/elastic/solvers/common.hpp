@@ -529,11 +529,11 @@ class edge::elastic::solvers::common {
         real_mesh l_jL=std::numeric_limits<real_mesh>::max();
         real_mesh l_jR=std::numeric_limits<real_mesh>::max();
 #if PP_N_DIM == 2
-        if( l_exL ) l_jL = linalg::Matrix::det2x2( l_jacL );
-        if( l_exR ) l_jR = linalg::Matrix::det2x2( l_jacR );
+        if( l_exL ) l_jL = linalg::Matrix::det( l_jacL );
+        if( l_exR ) l_jR = linalg::Matrix::det( l_jacR );
 #elif PP_N_DIM == 3
-        if( l_exL ) l_jL = linalg::Matrix::det3x3( l_jacL );
-        if( l_exR ) l_jR = linalg::Matrix::det3x3( l_jacR );
+        if( l_exL ) l_jL = linalg::Matrix::det( l_jacL );
+        if( l_exR ) l_jR = linalg::Matrix::det( l_jacR );
 #else
 #error number of dimensions not supported.
 #endif

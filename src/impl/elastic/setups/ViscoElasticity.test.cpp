@@ -251,7 +251,136 @@ TEST_CASE( "Derivation of anelastic coefficients, lame-version", "[ViscoElastici
   REQUIRE( l_coeffs1[3+2] == Approx(0.00532171233332960)  );
 }
 
-TEST_CASE( "Derivation of the source matrix in 3D", "[ViscoElasticity][src]" ) {
+TEST_CASE( "Derivation of the source matrix in 2D", "[ViscoElasticity][src2d]" ) {
+  double l_srcElastic[3][3*3];
+  double l_lameE[2] = {-1, -1};
+
+  edge::seismic::setups::ViscoElasticity::src( 3,
+                                               2,
+                                               10,
+                                               2000*0.1,
+                                               2000*0.1*1.5,
+                                               20.8E9,
+                                               10.4E9,
+                                               l_lameE[0],
+                                               l_lameE[1],
+                                               l_srcElastic );
+
+  REQUIRE( l_lameE[0] == Approx(21031265249.9435) );
+  REQUIRE( l_lameE[1] == Approx(10457744636.3789) );
+
+  REQUIRE( l_srcElastic[0][0] == Approx(-330629718.304332) );
+  REQUIRE( l_srcElastic[0][1] == Approx(-220201479.284256) );
+  REQUIRE( l_srcElastic[0][2] == Approx(0                ) );
+
+  REQUIRE( l_srcElastic[0][3] == Approx(-220201479.284256) );
+  REQUIRE( l_srcElastic[0][4] == Approx(-330629718.304332) );
+  REQUIRE( l_srcElastic[0][5] == Approx(0                ) );
+
+  REQUIRE( l_srcElastic[0][6] == Approx(0                ) );
+  REQUIRE( l_srcElastic[0][7] == Approx(0                ) );
+  REQUIRE( l_srcElastic[0][8] == Approx(-110428239.020076) );
+
+
+  REQUIRE( l_srcElastic[1][0] == Approx(-26574526.2087753) );
+  REQUIRE( l_srcElastic[1][1] == Approx(-17713604.1258692) );
+  REQUIRE( l_srcElastic[1][2] == Approx(0                ) );
+
+  REQUIRE( l_srcElastic[1][3] == Approx(-17713604.1258692) );
+  REQUIRE( l_srcElastic[1][4] == Approx(-26574526.2087753) );
+  REQUIRE( l_srcElastic[1][5] == Approx(0                ) );
+
+  REQUIRE( l_srcElastic[1][6] == Approx(0                ) );
+  REQUIRE( l_srcElastic[1][7] == Approx(0                ) );
+  REQUIRE( l_srcElastic[1][8] == Approx(-8860922.08290611) );
+
+
+  REQUIRE( l_srcElastic[2][0] == Approx(-334580569.994195) );
+  REQUIRE( l_srcElastic[2][1] == Approx(-223274352.773737) );
+  REQUIRE( l_srcElastic[2][2] == Approx(0                ) );
+
+  REQUIRE( l_srcElastic[2][3] == Approx(-223274352.773737) );
+  REQUIRE( l_srcElastic[2][4] == Approx(-334580569.994195) );
+  REQUIRE( l_srcElastic[2][5] == Approx(0                ) );
+
+  REQUIRE( l_srcElastic[2][6] == Approx(0                ) );
+  REQUIRE( l_srcElastic[2][7] == Approx(0                ) );
+  REQUIRE( l_srcElastic[2][8] == Approx(-111306217.220458) );
+}
+
+TEST_CASE( "Derivation of the viscoelastic part of the star matrix in 2D", "[ViscoElasticity][starMatrix2d]" ) {
+  float l_jacInv[2][2] = { { 4, 8 },
+                           { 2, 8 } };
+  float l_starA[2][3 * 2];
+
+  edge::seismic::setups::ViscoElasticity::star( l_jacInv,
+                                                l_starA );
+
+  REQUIRE( l_starA[0][0*2 + 3 - 3] == Approx( -1.0 * 4 ) );
+  REQUIRE( l_starA[0][2*2 + 4 - 3] == Approx( -0.5 * 4 ) );
+
+  REQUIRE( l_starA[0][1*2 + 4 - 3] == Approx( -1.0 * 2 ) );
+  REQUIRE( l_starA[0][2*2 + 3 - 3] == Approx( -0.5 * 2 ) );
+
+  REQUIRE( l_starA[1][0*2 + 3 - 3] == Approx( -1.0 * 8 ) );
+  REQUIRE( l_starA[1][2*2 + 4 - 3] == Approx( -0.5 * 8 ) );
+
+  REQUIRE( l_starA[1][1*2 + 4 - 3] == Approx( -1.0 * 8 ) );
+  REQUIRE( l_starA[1][2*2 + 3 - 3] == Approx( -0.5 * 8 ) );
+}
+
+TEST_CASE( "Derivation of the viscoelastic part of the flux solvers in 2D", "[ViscoElasticity][fluxSolver2d]" ) {
+  double l_rhoL1 =  1.2E3;
+  double l_rhoR1 =  1.1E3;
+  double l_lamL1 = 20.8E9;
+  double l_lamR1 = 19.4E9;
+  double l_muL1  = 10.4E9;
+  double l_muR1  = 13.1E9;
+
+  float l_fsMidL1[3][5];
+  float l_fsMidR1[3][5];
+
+  edge::seismic::setups::ViscoElasticity::fsMid( l_rhoL1, l_rhoR1,
+                                                 l_lamL1, l_lamR1,
+                                                 l_muL1,  l_muR1,
+                                                 l_fsMidL1,
+                                                 l_fsMidR1 );
+
+  REQUIRE( l_fsMidL1[0][0] == Approx( 7.06824616167993E-8) );
+  REQUIRE( l_fsMidL1[0][1] == 0                            );
+  REQUIRE( l_fsMidL1[0][2] == 0                            );
+  REQUIRE( l_fsMidL1[0][3] == Approx(-0.499400478754375  ) );
+  REQUIRE( l_fsMidL1[0][4] == 0                            );
+
+  for( unsigned short l_co = 0; l_co < 5; l_co++ ) {
+    REQUIRE( l_fsMidL1[1][l_co] == 0 );
+  }
+
+  REQUIRE( l_fsMidL1[2][0] == 0                            );
+  REQUIRE( l_fsMidL1[2][1] == 0                            );
+  REQUIRE( l_fsMidL1[2][2] == Approx( 6.82244126138142E-8) );
+  REQUIRE( l_fsMidL1[2][3] == 0                            );
+  REQUIRE( l_fsMidL1[2][4] == Approx(-0.241016678980355)   );
+
+
+  REQUIRE( l_fsMidR1[0][0] == Approx(-7.06824616167993E-8) );
+  REQUIRE( l_fsMidR1[0][1] == 0                            );
+  REQUIRE( l_fsMidR1[0][2] == 0                            );
+  REQUIRE( l_fsMidR1[0][3] == Approx(-0.500599521245625  ) );
+  REQUIRE( l_fsMidR1[0][4] == 0                            );
+
+  for( unsigned short l_co = 0; l_co < 5; l_co++ ) {
+    REQUIRE( l_fsMidL1[1][l_co] == 0 );
+  }
+
+  REQUIRE( l_fsMidR1[2][0] == 0                            );
+  REQUIRE( l_fsMidR1[2][1] == 0                            );
+  REQUIRE( l_fsMidR1[2][2] == Approx(-6.82244126138142E-8) );
+  REQUIRE( l_fsMidR1[2][3] == 0                            );
+  REQUIRE( l_fsMidR1[2][4] == Approx(-0.258983321019645)   );
+}
+
+TEST_CASE( "Derivation of the source matrix in 3D", "[ViscoElasticity][src3d]" ) {
   double l_srcElastic[3][6*6];
   double l_lameE[2] = {-1, -1};
 

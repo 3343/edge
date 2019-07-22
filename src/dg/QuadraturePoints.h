@@ -329,7 +329,7 @@ class edge::dg::QuadraturePoints {
         // determine weights
         TL_T_REAL_MESH l_jac[2][2];
         linalg::Mappings::evalJac( TRIA3, i_veCoords[0], l_jac[0] );
-        TL_T_REAL_MESH l_det = linalg::Matrix::det2x2( l_jac );
+        TL_T_REAL_MESH l_det = linalg::Matrix::det( l_jac );
         assert( l_det > TOL.MESH );
 
         o_weights[l_qp] = l_weights[l_qp] * l_det;
@@ -382,7 +382,7 @@ class edge::dg::QuadraturePoints {
             // determine weights
             TL_T_REAL_MESH l_jac[3][3];
             linalg::Mappings::evalJac( HEX8R, i_veCoords[0], l_jac[0] );
-            TL_T_REAL_MESH l_det = linalg::Matrix::det3x3( l_jac );
+            TL_T_REAL_MESH l_det = linalg::Matrix::det( l_jac );
             assert( l_det > TOL.MESH );
 
             o_ptsWeight.push_back( l_weights1D[l_p1] * l_weights1D[l_p2] * l_weights1D[l_p3] * l_det );
@@ -504,7 +504,7 @@ class edge::dg::QuadraturePoints {
         // determine adjusted weights (physical coords)
         TL_T_REAL_MESH l_jac[3][3];
         linalg::Mappings::evalJac( TET4, i_veCoords[0], l_jac[0] );
-        TL_T_REAL_MESH l_det = linalg::Matrix::det3x3( l_jac );
+        TL_T_REAL_MESH l_det = linalg::Matrix::det( l_jac );
         assert( l_det > TOL.MESH );
 
         o_weights[l_qp] = l_wgts[l_qp] * l_det;

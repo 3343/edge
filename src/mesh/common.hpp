@@ -445,7 +445,7 @@ class edge::mesh::common {
         }
 
         // compute determinant
-        real_mesh l_det = linalg::Matrix::det3x3( l_directed );
+        real_mesh l_det = linalg::Matrix::det( l_directed );
 
         // assert non-planar vertices
         assert( std::abs( l_det ) > TOL.MESH );

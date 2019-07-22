@@ -329,12 +329,6 @@ if env['op_sys'] != 'macos': # not supported by mac's ld
   env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
   env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
 
-# fall back to elastics for 2D elements
-if( 'visco' in env['equations'] ):
-  if( env['element_type'] != 'hex8r' and env['element_type'] != 'tet4' ):
-    warnings.warn('  Warning: viscoelastic attenuation is only implemented for 3d setups, falling back to elastics' )
-    env['equations'] = 'elastic'
-
 # disable libxsmm if not build elastic
 if( env['xsmm'] ):
   if( 'elastic' not in env['equations'] and 'visco' not in env['equations'] ):
