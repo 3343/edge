@@ -60,6 +60,7 @@ if env['xsmm'] != False:
   else:
     warnings.warn('  Warning: Could not find libxsmm, continuing without.' )
     env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )
+    env['xsmm'] = False
 else:
   env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )
 
