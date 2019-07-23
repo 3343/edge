@@ -787,11 +787,7 @@ class edge::seismic::solvers::AderDg {
                 TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
                 unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
                 unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
-#ifndef __INTEL_COMPILER
-                TL_T_REAL      const (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
-#else
-                TL_T_REAL                          (**i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
-#endif
+                TL_T_REAL            (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                          (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                          (* io_dofsA)[TL_N_MDS][TL_N_CRS],
                 bool                               (* io_admC)[TL_N_CRS],

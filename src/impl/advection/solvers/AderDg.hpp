@@ -370,7 +370,7 @@ class edge::advection::solvers::AderDg {
                        TL_T_LID       const                  (*i_elFaEl)[TL_N_FAS],
                        unsigned short const                  (*i_fIdElFaEl)[TL_N_FAS],
                        unsigned short const                  (*i_vIdElFaEl)[TL_N_FAS],
-                       TL_T_REAL      const (* const * const   i_tDofs[2])[TL_N_MDS][TL_N_CRS],
+                       TL_T_REAL            (* const * const   i_tDofs[2])[TL_N_MDS][TL_N_CRS],
                        TL_T_REAL                             (*io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
       // iterate over elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
