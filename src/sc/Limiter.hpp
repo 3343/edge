@@ -457,7 +457,7 @@ class edge::sc::Limiter {
               l_spTypes[l_fa] = i_charsFa[l_adFa].spType;
 
               // TODO: replace with generic ibnd sp-type
-#if defined(PP_T_EQUATIONS_ELASTIC)
+#if defined(PP_T_EQUATIONS_SEISMIC)
               if( ( l_spTypes[l_fa] & t_spTypeElastic::RUPTURE ) == t_spTypeElastic::RUPTURE ) {
                 l_netUpSc[l_fa] = *(i_tDofsScP[l_lp][l_fa]);
               }

@@ -57,7 +57,7 @@ INITIALIZE_EASYLOGGINGPP
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/setup_dep.inc"
 #include "impl/advection/fin_dep.inc"
-#elif defined PP_T_EQUATIONS_ELASTIC
+#elif defined PP_T_EQUATIONS_SEISMIC
 #include "impl/seismic/setup_dep.inc"
 #include "impl/seismic/fin_dep.inc"
 #elif defined PP_T_EQUATIONS_SWE
@@ -207,7 +207,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   PP_INSTR_REG_BEG(equSpe,"eq_spec_setup")
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/setup.inc"
-#elif defined PP_T_EQUATIONS_ELASTIC
+#elif defined PP_T_EQUATIONS_SEISMIC
 #include "impl/seismic/setup.inc"
 #elif defined PP_T_EQUATIONS_SWE
 #include "impl/swe/setup.inc"
@@ -268,7 +268,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
                     l_internal.m_globalShared2[0].limSync );
   }
 
-#if defined(PP_T_EQUATIONS_ELASTIC)
+#if defined(PP_T_EQUATIONS_SEISMIC)
   if( l_config.m_iBndInt > TOL.TIME ) {
     EDGE_LOG_INFO << "  writing internal boundary #0";
     l_rupWriter.write( 0,
@@ -335,7 +335,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
       l_stepWf++;
     }
 
-#if defined(PP_T_EQUATIONS_ELASTIC)
+#if defined(PP_T_EQUATIONS_SEISMIC)
     if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
       EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
       l_rupWriter.write( 0,
@@ -374,7 +374,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
 
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/fin.inc"
-#elif defined PP_T_EQUATIONS_ELASTIC
+#elif defined PP_T_EQUATIONS_SEISMIC
 #include "impl/seismic/fin.inc"
 #endif
 

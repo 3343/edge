@@ -29,7 +29,7 @@
 //#include "impl/advection/internal.inc"
 #endif
 
-#ifdef PP_T_EQUATIONS_ELASTIC
+#ifdef PP_T_EQUATIONS_SEISMIC
 #include "impl/seismic/internal.inc"
 #endif
 

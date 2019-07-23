@@ -426,10 +426,10 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
 if env['equations'] == 'advection':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_ADVECTION']  )
 elif 'elastic' == env['equations']:
-  env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC'] )
+  env.Append( CPPDEFINES=['PP_T_EQUATIONS_SEISMIC'] )
   env.Append( CPPDEFINES=['PP_N_RELAXATION_MECHANISMS=0'] )
 elif 'viscoelastic' in env['equations']:
-  env.Append( CPPDEFINES=['PP_T_EQUATIONS_ELASTIC'] )
+  env.Append( CPPDEFINES=['PP_T_EQUATIONS_SEISMIC'] )
   env.Append( CPPDEFINES=['PP_N_RELAXATION_MECHANISMS='+env['equations'].split('viscoelastic')[1]] )
 elif env['equations'] == 'swe':
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_SWE'] )
