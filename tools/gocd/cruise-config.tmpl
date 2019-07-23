@@ -5,6 +5,7 @@
   @author Alexander Breuer (anbreuer AT ucsd.edu)
 
   @section LICENSE
+  Copyright (c) 2019, Alexander Breuer
   Copyright (c) 2017-2018, Regents of the University of California
   All rights reserved.
 
@@ -2812,13 +2813,13 @@
             <value>g++</value>
         </variable>
         <variable name="N_BUILD_PROC">
-            <value>24</value>
+            <value>8</value>
         </variable>
         <variable name="HUGETLB_VERBOSE">
             <value>0</value>
         </variable>
         <variable name="OMP_NUM_THREADS">
-            <value>24</value>
+            <value>16</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>mpiexec -n 8</value>
@@ -2866,13 +2867,13 @@
             <value>mpiicpc</value>
         </variable>
         <variable name="N_BUILD_PROC">
-            <value>64</value>
+            <value>8</value>
         </variable>
         <variable name="HUGETLB_VERBOSE">
             <value>0</value>
         </variable>
         <variable name="OMP_NUM_THREADS">
-            <value>64</value>
+            <value>16</value>
         </variable>
         <variable name="MPI_EXEC">
             <value>eval nr=1; rd=inspxe_results_${nr}; while [ -d $rd.$HOSTNAME ]; do nr=`expr $nr + 1`; rd=inspxe_results_${nr};  done; mpiexec --oversubscribe -n 8</value>
@@ -2881,7 +2882,7 @@
             <value>norespect,granularity=fine,compact,1,2</value>
         </variable>
         <variable name="EDGE_ARCH_DEBUG">
-            <value>knl</value>
+            <value>avx512</value>
         </variable>
         <variable name="DEBUGGER">
             <value>inspxe-cl --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
@@ -2890,7 +2891,7 @@
             <value>inspxe-cl --result-dir=$rd --collect=mi2 --suppression-file="tools/build/inspxe.supp" --</value>
         </variable>
         <variable name="EDGE_ARCH_RELEASE">
-            <value>knl</value>
+            <value>avx512</value>
         </variable>
       </environmentvariables>
       <agents>
