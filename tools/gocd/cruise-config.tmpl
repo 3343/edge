@@ -520,7 +520,6 @@
             <tasks>
               <exec command="cppcheck" workingdir="edge">
                 <arg>--template=gcc</arg>
-                <arg>--suppress=*:submodules/*</arg>
                 <arg>--suppressions-list=tools/build/cppcheck.supp</arg>
                 <arg>--force</arg>
                 <arg>--error-exitcode=1</arg>

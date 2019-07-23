@@ -25,3 +25,6 @@
 arrayIndexOutOfBounds:src/data/Dynamic.test.cpp:91
 arrayIndexOutOfBounds:src/data/Dynamic.test.cpp:114 
 arrayIndexOutOfBounds:src/data/Dynamic.test.cpp:117
+
+// ignore submodules
+*:submodules/*
