@@ -47,7 +47,7 @@
 }
 
 {
-   gomp_pthread_create
+   gomp_pthread_create_edge
    Memcheck:Leak
    match-leak-kinds: possible
    fun:calloc
@@ -57,6 +57,19 @@
    fun:GOMP_parallel
    fun:*edge*parallel*Shared*init*
    fun:main
+}
+
+{
+   gomp_pthread_create_tests
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:pthread_create*
+   ...
+   fun:GOMP_parallel
+   ...
+   fun:*Catch*TestCase*invoke*
 }
 
 {
