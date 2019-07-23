@@ -60,13 +60,23 @@
 }
 
 {
-   iomp_sched_setaffinity
+   iomp_sched_setaffinity_edge
    Memcheck:Param
    sched_setaffinity(mask)
    ...
    fun:*kmpc_*
    ...
    fun:main
+}
+
+{
+   iomp_sched_setaffinity_tests
+   Memcheck:Param
+   sched_setaffinity(mask)
+   ...
+   fun:*kmpc_*
+   ...
+   fun:*Catch*TestCase*invoke*
 }
 
 {
