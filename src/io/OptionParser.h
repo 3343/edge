@@ -30,7 +30,7 @@
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
-#include <submodules/include/optionparser.h>
+#include "submodules/optionparser/optionparser.h"
 #pragma GCC diagnostic pop
 
 #include "logging.h"

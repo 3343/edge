@@ -29,7 +29,7 @@
 #include "FileSystem.hpp"
 #include "linalg/Mappings.hpp"
 #include "sc/SubGrid.hpp"
-#include "submodules/include/visit_writer.h"
+#include "submodules/visit_writer/visit_writer.h"
 
 namespace edge {
   namespace io {

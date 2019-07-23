@@ -29,7 +29,7 @@
 #include <array>
 #include "linalg/Domain.hpp"
 #include "linalg/HalfSpace.hpp"
-#include "submodules/include/pugixml.hpp"
+#include "submodules/pugixml/src/pugixml.hpp"
 
 namespace edge {
   namespace io {

@@ -23,7 +23,7 @@
 
 #include "ErrorNorms.h"
 #include <io/logging.h>
-#include "submodules/include/pugixml.hpp"
+#include "submodules/pugixml/src/pugixml.hpp"
 
 void edge::io::ErrorNorms::print( const double i_errorNorms[3][N_QUANTITIES][N_CRUNS] ) {
   EDGE_LOG_INFO << "fasten your seat belts, error norms cming next.";

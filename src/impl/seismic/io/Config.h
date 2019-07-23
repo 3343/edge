@@ -27,7 +27,7 @@
 #include "constants.hpp"
 #include <vector>
 #include <array>
-#include "submodules/include/pugixml.hpp"
+#include "submodules/pugixml/src/pugixml.hpp"
 #include "linalg/HalfSpace.hpp"
 #include "linalg/Domain.hpp"
 

@@ -23,7 +23,7 @@
 
 #include "Vtk.h"
 #include "data/common.hpp"
-#include "submodules/include/visit_writer.h"
+#include "submodules/visit_writer/visit_writer.h"
 
 void edge::io::Vtk::init(       int_el                 i_nVe,
                           const std::vector< int_el > &i_elPrint,
