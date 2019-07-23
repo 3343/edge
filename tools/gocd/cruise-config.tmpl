@@ -115,6 +115,9 @@
         <variable name="EDGE_EXEC">
             <value>./build/edge</value>
         </variable>
+        <variable name="EDGE_TESTS">
+            <value>./build/tests</value>
+        </variable>
       </environmentvariables>
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
@@ -138,6 +141,9 @@
         <variable name="EDGE_EXEC">
             <value>./build/edge</value>
         </variable>
+        <variable name="EDGE_TESTS">
+            <value>./build/tests</value>
+        </variable>
       </environmentvariables>
       <materials>
         <pipeline pipelineName="deps_#{toolchain}" stageName="moab" materialName="deps" />
@@ -160,6 +166,9 @@
         </variable>
         <variable name="EDGE_EXEC">
             <value>./build/edge</value>
+        </variable>
+        <variable name="EDGE_TESTS">
+            <value>./build/tests</value>
         </variable>
       </environmentvariables>
       <materials>
@@ -574,6 +583,39 @@
             </tasks>
           </job>
 
+          <!-- Unit Tests -->
+          <job name="unit_tests">
+            <environmentvariables>
+              <variable name="EDGE_CONFIG">
+                  <value>cont/unit_tests/elastic/tet4_reg.xml</value>
+              </variable>
+            </environmentvariables>
+            <tasks>
+              <!-- o=3 -->
+              <exec command="/bin/bash" workingdir="edge">
+                <arg>-c</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} tests=1 -j ${N_BUILD_PROC}</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge">
+                <arg>-c</arg>
+                <arg>${DEBUGGER} ${EDGE_TESTS}</arg>
+                <runif status="passed" />
+              </exec>
+              <!-- o=4 -->
+              <exec command="/bin/bash" workingdir="edge">
+                <arg>-c</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} tests=1 -j ${N_BUILD_PROC}</arg>
+                <runif status="passed" />
+              </exec>
+              <exec command="/bin/bash" workingdir="edge">
+                <arg>-c</arg>
+                <arg>${DEBUGGER} ${EDGE_TESTS}</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+
           <!-- Advection equation, line -->
           <job name="advection_line">
             <environmentvariables>
@@ -585,7 +627,7 @@
               <!-- debugger, o=1,..5, cfr=4 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=1 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=1 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -595,7 +637,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=2 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=2 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -605,7 +647,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=3 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -615,7 +657,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=4 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -625,7 +667,7 @@
               </exec>
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons  xml=${EDGE_CONFIG} order=5 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=5 cfr=4 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
