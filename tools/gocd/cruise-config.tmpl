@@ -504,7 +504,10 @@
            **************************** -->
       <stage name="sanity_seq" fetchMaterials="false">
         <environmentvariables>
-          <!-- zlib, HDF5, and MOAB -->
+          <!-- libxsmm, zlib, HDF5, and MOAB -->
+          <variable name="EDGE_XSMM">
+            <value>libs/libxsmm</value>
+          </variable>
           <variable name="EDGE_ZLIB">
               <value>libs/zlib</value>
           </variable>
@@ -593,7 +596,7 @@
               <!-- o=3 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} tests=1 -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} xsmm=${EDGE_XSMM} tests=1 -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
@@ -604,7 +607,7 @@
               <!-- o=4 -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} tests=1 -j ${N_BUILD_PROC}</arg>
+                <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} xsmm=${EDGE_XSMM} tests=1 -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
               <exec command="/bin/bash" workingdir="edge">
