@@ -44,7 +44,7 @@
 * *viscoelastic (2D)*
 
   Solves the two-dimensional elastic wave equations with frequency-independent attenuation.
-  The vector of quantities ```q(x,y,t)=(sigma_xx, sigma_yy, sigma_xy, u, v, m_11, ..., m_13, ..., m_n1, ..., m_n3)``` contains the elastic quantities and additional memory variables ```m_11, ..., m_n3```.
+  The vector of quantities ```q(x,y,t)=(sigma_xx, sigma_yy, sigma_xy, u, v, m_11, m_12, m_13, ..., m_n1, m_n2, m_n3)``` contains the elastic quantities and additional memory variables ```m_11, ..., m_n3```.
   ```n``` gives the number of relaxation mechanisms with three quantities per mechanism.
   The Jacobians ```A(x,y)``` and ```B(x,y)``` are allowed to be set per element and summarize the material parameters.
   The matrix ```E(x,y)``` is the reactive source term.
