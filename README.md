@@ -27,7 +27,7 @@
 
 * *elastic (2D)*:
 
-  Solves the two-dimensional elastic wave equations. The vector of quantities ```q(x,y,t)=(sigma_xx, sigma_yy, sigma_xy, u, v )``` contains the normal stress components ```sigma_xx``` and ```sigma_yy```, the shear stress ```sigma_xy``` and the two particle velocities ```u``` and ```v``` in ```x-``` and ```y-```direction respectively. The Jacobians ```A(x,y)``` and ```B(x,y)``` are allowed to be set per element and summarize the material parameters.
+  Solves the two-dimensional elastic wave equations. The vector of quantities ```q(x,y,t)=(sigma_xx, sigma_yy, sigma_xy, u, v)``` contains the normal stress components ```sigma_xx``` and ```sigma_yy```, the shear stress ```sigma_xy``` and the two particle velocities ```u``` and ```v``` in ```x-``` and ```y-```direction respectively. The Jacobians ```A(x,y)``` and ```B(x,y)``` are allowed to be set per element and summarize the material parameters.
 
   ```
   q_t + A q_x + B q_y = 0
@@ -35,16 +35,28 @@
   
 * *elastic (3D)*:
 
-  Solves the three-dimensional elastic wave equations. The vector of quantities ```q(x,y,z,t)=(sigma_xx, sigma_yy, sigma_zz, sigma_xy, sigma_xz, sigma_yz, u, v, w )``` contains the normal stress components ```sigma_xx```, ```sigma_yy``` and ```sigma_zz```, the shear stresses ```sigma_xy```, ```sigma_xz``` and ```sigma_yz``` and the three particle velocities ```u```, ```v``` ```w```  in ```x-```, ```y-``` and ```z-```direction respectively. The Jacobians ```A(x,y,z)```, ```B(x,y,z)``` and ```C(x,y,z)``` are allowed to be set per element and summarize the material parameters.
+  Solves the three-dimensional elastic wave equations. The vector of quantities ```q(x,y,z,t)=(sigma_xx, sigma_yy, sigma_zz, sigma_xy, sigma_xz, sigma_yz, u, v, w)``` contains the normal stress components ```sigma_xx```, ```sigma_yy``` and ```sigma_zz```, the shear stresses ```sigma_xy```, ```sigma_xz``` and ```sigma_yz``` and the three particle velocities ```u```, ```v``` ```w```  in ```x-```, ```y-``` and ```z-```direction respectively. The Jacobians ```A(x,y,z)```, ```B(x,y,z)``` and ```C(x,y,z)``` are allowed to be set per element and summarize the material parameters.
 
   ```
   q_t + A q_x + B q_y + C q_z = 0
   ```
 
+* *viscoelastic (2D)*
+
+  Solves the two-dimensional elastic wave equations with frequency-independent attenuation.
+  The vector of quantities ```q(x,y,t)=(sigma_xx, sigma_yy, sigma_xy, u, v, m_11, ..., m_13, ..., m_n1, ..., m_n3)``` contains the elastic quantities and additional memory variables ```m_11, ..., m_n3```.
+  ```n``` gives the number of relaxation mechanisms with three quantities per mechanism.
+  The Jacobians ```A(x,y)``` and ```B(x,y)``` are allowed to be set per element and summarize the material parameters.
+  The matrix ```E(x,y)``` is the reactive source term.
+
+  ```
+  q_t + A  q_x + B q_y = E
+  ```
+
 * *viscoelastic (3D)*
 
   Solves the three-dimensional elastic wave equations with frequency-independent attenuation.
-  The vector of quantities ```q(x,y,z,t)=(sigma_xx, sigma_yy, sigma_zz, sigma_xy, sigma_xz, sigma_yz, u, v, w, m_11, ..., m_16, ..., m_n1, ..., m_n6 )``` contains the elastic quantities and additional memory variables ```m_11, ..., m_n6```.
+  The vector of quantities ```q(x,y,z,t)=(sigma_xx, sigma_yy, sigma_zz, sigma_xy, sigma_xz, sigma_yz, u, v, w, m_11, ..., m_16, ..., m_n1, ..., m_n6)``` contains the elastic quantities and additional memory variables ```m_11, ..., m_n6```.
   ```n``` gives the number of relaxation mechanisms with six quantities per mechanism.
   The Jacobians ```A(x,y,z)```, ```B(x,y,z)``` and ```C(x,y,z)``` are allowed to be set per element and summarize the material parameters.
   The matrix ```E(x,y,z)``` is the reactive source term.
@@ -108,7 +120,7 @@ Based on the equations and the element type, the following table shows the imple
 |--------------|:--------------------------------:|:---:|:--:|:-------:|:-------:|
 | advection    | line, quad4r, tria3, hex8r, tet4 |  x  |  x |    x    |         |
 | elastic      | quad4r, tria3, hex8r, tet4       |  x  |  x |    x    |    x    |
-| viscoelastic | hex8r, tet4                      |  x  |  x |    x    |    x    |
+| viscoelastic | quad4r, tria3, hex8r, tet4       |  x  |  x |    x    |    x    |
 | swe          | line, quad4r, tria3              |  x  |  x |         |         |
 
 ## High Performance Support
