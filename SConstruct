@@ -466,6 +466,10 @@ if 'omp' in env['parallel']:
     env.Append( CPPFLAGS = ['-fopenmp'] )
     env.Append( LINKFLAGS = ['-fopenmp'] )
 
+# fix braces issues in clang with versions below 6 (https://bugs.llvm.org/show_bug.cgi?id=21629)
+if compilers == 'clang':
+  env.Append( CPPFLAGS = ['-Wno-missing-braces'] )
+
 # fix clang's confusion with old libstdc++ at runtime (no proper automatic rpath)
 if compilers == 'clang':
   try:
