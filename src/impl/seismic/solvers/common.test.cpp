@@ -30,7 +30,7 @@ TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[solversCommon][el
   double l_fL[5][5];
   double l_fR[5][5];
 
-  edge::elastic::solvers::common::setupSolver2d( 1.0, 1.0,
+  edge::seismic::solvers::common::setupSolver2d( 1.0, 1.0,
                                                  2.0, 2.0,
                                                  1.0, 1.0,
                                                  -0.2, std::sqrt(1-0.04),
@@ -68,7 +68,7 @@ TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[solversCommon][el
   REQUIRE( l_fL[3][4] == Approx(-0.0979795897113271)  );
   REQUIRE( l_fL[4][4] == Approx( 0.98)                );
 
-  edge::elastic::solvers::common::setupSolver2d( 1.0, 1.0,
+  edge::seismic::solvers::common::setupSolver2d( 1.0, 1.0,
                                                  2.0, 2.0,
                                                  1.0, 1.0,
                                                  0.5, -std::sqrt(0.75),
@@ -106,7 +106,7 @@ TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[solversCommon][el
   REQUIRE( l_fL[3][4] == Approx(-0.21650635094611)   );
   REQUIRE( l_fL[4][4] == Approx( 0.875)              );
 
-  edge::elastic::solvers::common::setupSolver2d( 1.0, 1.0,
+  edge::seismic::solvers::common::setupSolver2d( 1.0, 1.0,
                                                  2.0, 2.0,
                                                  1.0, 1.0,
                                                  1/std::sqrt(2), 1/std::sqrt(2),

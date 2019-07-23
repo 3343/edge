@@ -120,7 +120,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 2D.", "
   bool l_per[1];
 
   // get solution through our solver
-  edge::elastic::solvers::FrictionLaws< 2, 1 >::linSlipWeak( l_dt,
+  edge::seismic::solvers::FrictionLaws< 2, 1 >::linSlipWeak( l_dt,
                                                              l_csDmuM, l_csDmuP,
                                                              l_mus, l_mud, l_dcInv,
                                                              l_sn0, l_co0, l_ss0,
@@ -255,7 +255,7 @@ TEST_CASE( "Perturbation of middle states through linear slip weaking in 3D.", "
   double l_sr[2][1], l_tr[2][1], l_st[1];
   bool l_per[1];
 
-  edge::elastic::solvers::FrictionLaws<
+  edge::seismic::solvers::FrictionLaws<
     3,
     1
    >::linSlipWeak( l_dt,

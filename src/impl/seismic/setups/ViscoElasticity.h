@@ -367,18 +367,18 @@ class edge::seismic::setups::ViscoElasticity {
                       TL_T_REAL o_fsMidL[3][5],
                       TL_T_REAL o_fsMidR[3][5] ) {
       // compute wave speeds
-      double l_cpL = edge::elastic::common::getVelP( i_rhoL,
+      double l_cpL = edge::seismic::common::getVelP( i_rhoL,
                                                     i_lamL,
                                                     i_muL );
 
-      double l_cpR = edge::elastic::common::getVelP( i_rhoR,
+      double l_cpR = edge::seismic::common::getVelP( i_rhoR,
                                                     i_lamR,
                                                     i_muR );
 
-      double l_csL = edge::elastic::common::getVelS( i_rhoL,
+      double l_csL = edge::seismic::common::getVelS( i_rhoL,
                                                     i_muL );
 
-      double l_csR = edge::elastic::common::getVelS( i_rhoR,
+      double l_csR = edge::seismic::common::getVelS( i_rhoR,
                                                     i_muR );
 
       // init matrices
@@ -693,18 +693,18 @@ class edge::seismic::setups::ViscoElasticity {
                      TL_T_REAL o_fsMidL[6][9],
                      TL_T_REAL o_fsMidR[6][9] ) {
     // compute wave speeds
-    double l_cpL = edge::elastic::common::getVelP( i_rhoL,
+    double l_cpL = edge::seismic::common::getVelP( i_rhoL,
                                                    i_lamL,
                                                    i_muL );
 
-    double l_cpR = edge::elastic::common::getVelP( i_rhoR,
+    double l_cpR = edge::seismic::common::getVelP( i_rhoR,
                                                    i_lamR,
                                                    i_muR );
 
-    double l_csL = edge::elastic::common::getVelS( i_rhoL,
+    double l_csL = edge::seismic::common::getVelS( i_rhoL,
                                                    i_muL );
 
-    double l_csR = edge::elastic::common::getVelS( i_rhoR,
+    double l_csR = edge::seismic::common::getVelS( i_rhoR,
                                                    i_muR );
 
     // init matrices

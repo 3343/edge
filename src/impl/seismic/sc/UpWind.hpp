@@ -32,7 +32,7 @@
 #include "linalg/Geom.hpp"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace sc {
       template< unsigned short N_DIS >
       class UpWindSolver;
@@ -56,7 +56,7 @@ namespace edge {
  * Sets up the face-local matrices for the two-dimensional upwind flux solver.
  **/
 template<>
-class edge::elastic::sc::UpWindSolver< 2 > {
+class edge::seismic::sc::UpWindSolver< 2 > {
   public:
     /**
      * Initializes the upwind flux solvers.
@@ -100,18 +100,18 @@ class edge::elastic::sc::UpWindSolver< 2 > {
                                       o_upR[1] );
 
       // determine maximum signal speed of both sides
-      TL_T_REAL l_mssEl =           elastic::common::getVelP( i_mpL[2], i_mpL[0], i_mpL[1] );
-                l_mssEl = std::max( elastic::common::getVelP( i_mpR[2], i_mpR[0], i_mpR[1] ),
+      TL_T_REAL l_mssEl =           seismic::common::getVelP( i_mpL[2], i_mpL[0], i_mpL[1] );
+                l_mssEl = std::max( seismic::common::getVelP( i_mpR[2], i_mpR[0], i_mpR[1] ),
                                     l_mssEl );
 
       // get the trafos
       TL_T_REAL l_t[5][5];
       TL_T_REAL l_tm1[5][5];
 
-      elastic::common::setupTrafo2d(  i_n[0],  i_n[1],
+      seismic::common::setupTrafo2d(  i_n[0],  i_n[1],
                                       l_t );
 
-      elastic::common::setupTrafoInv2d( i_n[0],  i_n[1],
+      seismic::common::setupTrafoInv2d( i_n[0],  i_n[1],
                                         l_tm1 );
 
       // derive scaling for artificial viscosity for zero-speed wave
@@ -157,7 +157,7 @@ class edge::elastic::sc::UpWindSolver< 2 > {
  * Sets up the face-local matrices for the three-dimensional upwind flux solver.
  **/
 template<>
-class edge::elastic::sc::UpWindSolver< 3 > {
+class edge::seismic::sc::UpWindSolver< 3 > {
   public:
     /**
      * Initializes the upwind flux solvers.
@@ -204,20 +204,20 @@ class edge::elastic::sc::UpWindSolver< 3 > {
                                       o_upR[1] );
 
       // determine maximum signal speed of both sides
-      TL_T_REAL l_mssEl =           elastic::common::getVelP( i_mpL[2], i_mpL[0], i_mpL[1] );
-                l_mssEl = std::max( elastic::common::getVelP( i_mpR[2], i_mpR[0], i_mpR[1] ),
+      TL_T_REAL l_mssEl =           seismic::common::getVelP( i_mpL[2], i_mpL[0], i_mpL[1] );
+                l_mssEl = std::max( seismic::common::getVelP( i_mpR[2], i_mpR[0], i_mpR[1] ),
                                     l_mssEl );
 
       // get the trafos
       TL_T_REAL l_t[9][9];
       TL_T_REAL l_tm1[9][9];
 
-      elastic::common::setupTrafo3d(  i_n[0],  i_n[1],  i_n[2],
+      seismic::common::setupTrafo3d(  i_n[0],  i_n[1],  i_n[2],
                                       i_t0[0], i_t0[1], i_t0[2],
                                       i_t1[0], i_t1[1], i_t1[2],
                                       l_t );
 
-      elastic::common::setupTrafoInv3d( i_n[0],  i_n[1],  i_n[2],
+      seismic::common::setupTrafoInv3d( i_n[0],  i_n[1],  i_n[2],
                                         i_t0[0], i_t0[1], i_t0[2],
                                         i_t1[0], i_t1[1], i_t1[2],
                                         l_tm1 );
@@ -274,7 +274,7 @@ template< typename       TL_T_REAL,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::sc::UpWind {
+class edge::seismic::sc::UpWind {
   private:
     //! number of dimensions
     static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;

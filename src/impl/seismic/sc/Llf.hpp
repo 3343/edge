@@ -31,7 +31,7 @@
 #include "linalg/Geom.hpp"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace sc {
       template< unsigned short N_DIS >
       class LlfSolver;
@@ -55,7 +55,7 @@ namespace edge {
  * Sets up the face-local central flux matrices for the two-dimensional local Lax-Friedrichs solver.
  **/
 template<>
-class edge::elastic::sc::LlfSolver< 2 > {
+class edge::seismic::sc::LlfSolver< 2 > {
   public:
     /**
      * Initializes the left element's contribution to the central flux solver.
@@ -74,15 +74,15 @@ class edge::elastic::sc::LlfSolver< 2 > {
                           TL_T_REAL        o_cenL[5][5] ) {
       // compute trafos
       TL_T_REAL l_t[5][5];
-      elastic::common::setupTrafo2d( i_n[0], i_n[1],
+      seismic::common::setupTrafo2d( i_n[0], i_n[1],
                                      l_t );
       TL_T_REAL l_tm1[5][5];
-      elastic::common::setupTrafoInv2d( i_n[0], i_n[1],
+      seismic::common::setupTrafoInv2d( i_n[0], i_n[1],
                                         l_tm1 );
 
       // compute the jacobians of the left element
       TL_T_REAL l_ab[2][5][5];
-      elastic::common::getJac2D( i_matL[2],
+      seismic::common::getJac2D( i_matL[2],
                                  i_matL[0],
                                  i_matL[1],
                                  l_ab );
@@ -105,7 +105,7 @@ class edge::elastic::sc::LlfSolver< 2 > {
  * Sets up the face-local matrices for the three-dimensional central flux solver.
  **/
 template<>
-class edge::elastic::sc::LlfSolver< 3 > {
+class edge::seismic::sc::LlfSolver< 3 > {
   public:
     /**
      * Initializes the left element's contribution to the central flux solver.
@@ -126,19 +126,19 @@ class edge::elastic::sc::LlfSolver< 3 > {
                           TL_T_REAL       o_cenL[9][9] ) {
       // compute trafos
       TL_T_REAL l_t[9][9];
-      elastic::common::setupTrafo3d( i_n[0],  i_n[1],  i_n[2],
+      seismic::common::setupTrafo3d( i_n[0],  i_n[1],  i_n[2],
                                      i_t0[0], i_t0[1], i_t0[2],
                                      i_t1[0], i_t1[1], i_t1[2],
                                      l_t );
       TL_T_REAL l_tm1[9][9];
-      elastic::common::setupTrafoInv3d( i_n[0],  i_n[1],  i_n[2],
+      seismic::common::setupTrafoInv3d( i_n[0],  i_n[1],  i_n[2],
                                         i_t0[0], i_t0[1], i_t0[2],
                                         i_t1[0], i_t1[1], i_t1[2],
                                         l_tm1 );
 
       // compute the jacobians of the left element
       TL_T_REAL l_abc[3][9][9];
-      elastic::common::getJac3D( i_matL[2],
+      seismic::common::getJac3D( i_matL[2],
                                  i_matL[0],
                                  i_matL[1],
                                  l_abc );
@@ -169,7 +169,7 @@ template< typename       TL_T_REAL,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::sc::Llf {
+class edge::seismic::sc::Llf {
   private:
     //! number of dimensions
     static const unsigned short TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
@@ -297,7 +297,7 @@ class edge::elastic::sc::Llf {
         l_mpEl[2] = i_matPars[l_el].rho;
 
         // element's maximum signal speed (p-wave velocity)
-        TL_T_REAL l_mssEl = elastic::common::getVelP( l_mpEl[2], l_mpEl[0], l_mpEl[1] );
+        TL_T_REAL l_mssEl = seismic::common::getVelP( l_mpEl[2], l_mpEl[0], l_mpEl[1] );
 
         // assemble normals, tangents and face areas
         TL_T_REAL l_n[TL_N_TYSF][TL_N_DIS];
@@ -376,7 +376,7 @@ class edge::elastic::sc::Llf {
                                              m_cen[l_lp][TL_N_TYSF+l_ty] );
 
             // adjacent element's maximum signal speed (p-wave velocity)
-            TL_T_REAL l_mssElAd = elastic::common::getVelP( l_mpElAd[2], l_mpElAd[0], l_mpElAd[1] );
+            TL_T_REAL l_mssElAd = seismic::common::getVelP( l_mpElAd[2], l_mpElAd[0], l_mpElAd[1] );
 
 
             // set heterogeneous viscosity for left element's contribution

@@ -30,12 +30,12 @@
 #include "io/logging.h"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     class common;
   }
 }
 
-class edge::elastic::common {
+class edge::seismic::common {
   public:
     /**
      * Gets the p-wave velocity for the given parameters.

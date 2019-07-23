@@ -36,7 +36,7 @@ TEST_CASE( "Trafo3D", "[elasticCommon][trafo3D]" ) {
   l_sx = std::sqrt(2.0); l_sy = std::sqrt(2.0); l_sz = 0.0;
   l_tx = 0; l_ty = 0; l_tz = 1;
 
-  edge::elastic::common::setupTrafo3d( l_nx, l_ny, l_nz,
+  edge::seismic::common::setupTrafo3d( l_nx, l_ny, l_nz,
                                        l_sx, l_sy, l_sz,
                                        l_tx, l_ty, l_tz,
                                        l_tI );
@@ -146,7 +146,7 @@ TEST_CASE( "TrafoInv3D", "[elasticCommon][trafoInv3D]" ) {
   l_sx = std::sqrt(2.0); l_sy = std::sqrt(2.0); l_sz = 0.0;
   l_tx = 0; l_ty = 0; l_tz = 1;
 
-  edge::elastic::common::setupTrafoInv3d( l_nx, l_ny, l_nz,
+  edge::seismic::common::setupTrafoInv3d( l_nx, l_ny, l_nz,
                                           l_sx, l_sy, l_sz,
                                           l_tx, l_ty, l_tz,
                                           l_tI );

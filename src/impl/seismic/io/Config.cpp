@@ -27,7 +27,7 @@
 #include "io/logging.h"
 #include <string>
 
-void edge::elastic::io::Config::print() {
+void edge::seismic::io::Config::print() {
   EDGE_LOG_INFO << "  printing implementation-specific config for elastics (if any)";
 
   // print frequency specs
@@ -101,7 +101,7 @@ void edge::elastic::io::Config::print() {
   }
 }
 
-edge::elastic::io::Config::Config( const pugi::xml_document &i_xml ) {
+edge::seismic::io::Config::Config( const pugi::xml_document &i_xml ) {
   pugi::xml_node l_setups = i_xml.child("edge").child("cfr").child("setups");
 
   /*

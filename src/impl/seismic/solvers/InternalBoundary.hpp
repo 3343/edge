@@ -31,7 +31,7 @@
 #include "common.hpp"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace solvers {
       template< t_entityType   TL_T_EL,
                 unsigned short TL_N_QTS,
@@ -76,7 +76,7 @@ template< t_entityType   TL_T_EL,
           unsigned short TL_N_QTS,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::solvers::InternalBoundary {
+class edge::seismic::solvers::InternalBoundary {
   private:
     //! number of sub-faces
     static unsigned short const TL_N_SFS = CE_N_SUB_FACES( TL_T_EL, TL_O_SP );
@@ -282,7 +282,7 @@ class edge::elastic::solvers::InternalBoundary {
 };
 
 template< t_entityType TL_T_EL >
-class edge::elastic::solvers::InternalBoundaryTypes {
+class edge::seismic::solvers::InternalBoundaryTypes {
   private:
     //! number of vertices per element
     static unsigned short const TL_N_EL_VE = C_ENT[T_SDISC.ELEMENT].N_VERTICES;
@@ -378,7 +378,7 @@ class edge::elastic::solvers::InternalBoundaryTypes {
  **/
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP >
-class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 > {
+class edge::seismic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 > {
   //! #vertices of the elements
   static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
 
@@ -541,7 +541,7 @@ class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 > {
             l_dir[1] *= -1;
           }
 
-          edge::elastic::common::setupTrafoInv2d( l_dir[0],
+          edge::seismic::common::setupTrafoInv2d( l_dir[0],
                                                   l_dir[1],
                                                   o_solversSp[l_spId][0] );
 
@@ -614,7 +614,7 @@ class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 2 > {
  **/
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP >
-class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 > {
+class edge::seismic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 > {
   //! #vertices of the elements
   static unsigned short const TL_N_EL_VE = C_ENT[TL_T_EL].N_VERTICES;
 
@@ -833,7 +833,7 @@ class edge::elastic::solvers::InternalBoundarySolvers< TL_T_EL, TL_O_SP, 3 > {
           l_el[0] = (l_el[0] != std::numeric_limits< TL_T_INT_LID >::max() ) ? l_el[0] : l_el[1];
           l_el[1] = (l_el[1] != std::numeric_limits< TL_T_INT_LID >::max() ) ? l_el[1] : l_el[0];
 
-          edge::elastic::common::setupTrafoInv3d( l_faCrds[0][0],
+          edge::seismic::common::setupTrafoInv3d( l_faCrds[0][0],
                                                   l_faCrds[0][1],
                                                   l_faCrds[0][2],
                                                   l_faCrds[1][0],

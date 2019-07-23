@@ -30,7 +30,7 @@
 #include "data/Dynamic.h"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace setups {
       template< t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
@@ -50,7 +50,7 @@ namespace edge {
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::setups::RuptureInit {
+class edge::seismic::setups::RuptureInit {
   private:
     //! number of dimensions
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;

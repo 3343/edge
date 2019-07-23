@@ -28,7 +28,7 @@
 #include <cmath>
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace solvers {
       template< unsigned short TL_N_DIM, unsigned short TL_N_CRUNS >
       class FrictionLaws;
@@ -46,7 +46,7 @@ namespace edge {
  * Support for 2D friction laws.
  **/
 template< unsigned short TL_N_CRUNS >
-class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
+class edge::seismic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
   private:
     /**
      * Applies the linear slip weakening friction law in two dimensions.
@@ -258,7 +258,7 @@ class edge::elastic::solvers::FrictionLaws< 2, TL_N_CRUNS > {
  * Support for 3D friction laws.
  **/
 template< unsigned short TL_N_CRUNS >
-class edge::elastic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
+class edge::seismic::solvers::FrictionLaws< 3, TL_N_CRUNS > {
   private:
     /**
      * Applies the linear slip weakening friction law in three dimensions.

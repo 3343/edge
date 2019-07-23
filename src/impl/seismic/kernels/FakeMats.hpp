@@ -53,7 +53,7 @@ class edge::seismic::kernels::FakeMats {
     static void starCsrE( t_matCsr & o_starCsrE ) {
       // assemble fake star matrices
       double l_starE[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E];
-      edge::elastic::common::getJac( 1.0,
+      edge::seismic::common::getJac( 1.0,
                                      1.0,
                                      1.0,
                                      l_starE[0][0],

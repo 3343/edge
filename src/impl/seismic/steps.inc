@@ -142,7 +142,7 @@ else if( i_step == 4 ) {
     ORDER,
     N_QUANTITIES,
     N_CRUNS,
-    edge::elastic::sc::Boundary<
+    edge::seismic::sc::Boundary<
       T_SDISC.ELEMENT,
       ORDER,
       N_CRUNS > >::aPost( i_first,

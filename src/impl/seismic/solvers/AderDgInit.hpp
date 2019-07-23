@@ -178,14 +178,14 @@ class edge::seismic::solvers::AderDgInit {
       TL_T_REAL l_tmp[2][3][5];
 
       // compute trafos
-      elastic::common::setupTrafo2d( i_nx, i_ny, l_tE );
+      seismic::common::setupTrafo2d( i_nx, i_ny, l_tE );
 
       // extract "anelastic" back-rotation (stresses only)
       for( unsigned short l_q0 = 0; l_q0 < 3; l_q0++ )
         for( unsigned short l_q1 = 0; l_q1 < 3; l_q1++ )
           l_tA[l_q0][l_q1] = l_tE[l_q0][l_q1];
 
-      elastic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
+      seismic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
 
       // compute mid part of the solver
       seismic::setups::ViscoElasticity::fsMid( i_rhoL,
@@ -286,7 +286,7 @@ class edge::seismic::solvers::AderDgInit {
       TL_T_REAL l_tmp[2][6][9];
 
       // compute trafos
-      elastic::common::setupTrafo3d( i_nx, i_ny, i_nz,
+      seismic::common::setupTrafo3d( i_nx, i_ny, i_nz,
                                      i_sx, i_sy, i_sz,
                                      i_tx, i_ty, i_tz,
                                      l_tE );
@@ -296,7 +296,7 @@ class edge::seismic::solvers::AderDgInit {
         for( unsigned short l_q1 = 0; l_q1 < 6; l_q1++ )
           l_tA[l_q0][l_q1] = l_tE[l_q0][l_q1];
 
-      elastic::common::setupTrafoInv3d( i_nx, i_ny, i_nz,
+      seismic::common::setupTrafoInv3d( i_nx, i_ny, i_nz,
                                         i_sx, i_sy, i_sz,
                                         i_tx, i_ty, i_tz,
                                         l_tm1 );

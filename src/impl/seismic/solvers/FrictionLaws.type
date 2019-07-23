@@ -25,7 +25,7 @@
 #define EDGE_SEISMIC_FRICTION_LAWS_TYPE
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace solvers {
       template< typename       TL_T_REAL,
                 unsigned short TL_N_CRS >
@@ -56,7 +56,7 @@ namespace edge {
  * @paramt TL_N_CRS number of fused simulations.
  **/
 template< typename TL_T_REAL, unsigned short TL_N_CRS >
-struct edge::elastic::solvers::t_LinSlipWeakGlobal {
+struct edge::seismic::solvers::t_LinSlipWeakGlobal {
   //! friction coefficients
   TL_T_REAL mus[TL_N_CRS];
   //! dynamic friction coefficients
@@ -71,7 +71,7 @@ struct edge::elastic::solvers::t_LinSlipWeakGlobal {
  * @paramt TL_T_REAL floating point type.
  **/
 template < typename TL_T_REAL >
-struct edge::elastic::solvers::t_LinSlipWeakFace {
+struct edge::seismic::solvers::t_LinSlipWeakFace {
   //! true if the left element is equivalent to the minus side, false otherwise
   bool lEqM;
   //! shear wave speed divided by Lame parameter mu for the minus-side element
@@ -90,7 +90,7 @@ struct edge::elastic::solvers::t_LinSlipWeakFace {
 template< typename       TL_T_REAL,
           unsigned short TL_N_DIS,
           unsigned short TL_N_CRS >
-struct edge::elastic::solvers::t_LinSlipWeakSubFace {
+struct edge::seismic::solvers::t_LinSlipWeakSubFace {
   //! initial normal stress
   TL_T_REAL sn0[TL_N_CRS];
   //! cohesion
@@ -123,7 +123,7 @@ template< typename       TL_T_REAL,
           t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-struct edge::elastic::solvers::t_LinSlipWeak {
+struct edge::seismic::solvers::t_LinSlipWeak {
   //! number of dimensions
   static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;
 

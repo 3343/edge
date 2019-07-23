@@ -154,7 +154,7 @@
 #include "sc/init.inc"
 
 // parse config specific to elastics
-edge::elastic::io::Config l_elasticConf( l_config.m_doc );
+edge::seismic::io::Config l_elasticConf( l_config.m_doc );
 
 // setup initial DOFs
 EDGE_LOG_INFO << "  setting up material parameters and initial DOFs";
@@ -472,7 +472,7 @@ if( l_elasticConf.m_frictionLaw != "" ) {
                                                     l_internal.m_globalShared7[0].connect );
 
   // set up ibnd face chars
-  edge::elastic::solvers::InternalBoundaryTypes<
+  edge::seismic::solvers::InternalBoundaryTypes<
     T_SDISC.ELEMENT
   >::initFaces( l_enLayouts[1].nEnts,
                 l_enLayouts[2].nEnts,
@@ -485,7 +485,7 @@ if( l_elasticConf.m_frictionLaw != "" ) {
                 l_internal.m_globalShared7[0].bfChars );
 
   // set up rupture solvers
-  edge::elastic::solvers::InternalBoundarySolvers<
+  edge::seismic::solvers::InternalBoundarySolvers<
     T_SDISC.ELEMENT,
     ORDER
   >::init( l_enLayouts[1].nEnts,
@@ -527,7 +527,7 @@ if( l_elasticConf.m_frictionLaw != "" ) {
 
   // set up rupture physics
   EDGE_LOG_INFO << "  setting up rupture physics";
-   edge::elastic::setups::RuptureInit<
+   edge::seismic::setups::RuptureInit<
     T_SDISC.ELEMENT,
     ORDER,
     N_CRUNS >::alloc(
@@ -535,7 +535,7 @@ if( l_elasticConf.m_frictionLaw != "" ) {
       l_dynMem,
       l_internal.m_globalShared5[0] );
 
-  edge::elastic::setups::RuptureInit<
+  edge::seismic::setups::RuptureInit<
     T_SDISC.ELEMENT,
     ORDER,
     N_CRUNS >::linSlipWeak( l_enLayouts[1].nEnts,
@@ -573,7 +573,7 @@ edge::seismic::solvers::AderDg< real_base,
                                              l_internal.m_elementShared4 );
 
 // setup solvers
-edge::elastic::solvers::common::setupSolvers( l_internal.m_nElements,
+edge::seismic::solvers::common::setupSolvers( l_internal.m_nElements,
                                               l_internal.m_nFaces,
                                               l_mesh.getInMap()->elMeDa,
                                               l_mesh.getInMap()->elDaMe,
@@ -604,7 +604,7 @@ l_internal.m_globalShared8[0].init(   0,
                                       l_internal.m_elementShared1[0] );
 
 // get time step stats
-edge::elastic::common::getTimeStepStatsCFL( l_internal.m_nElements,
+edge::seismic::common::getTimeStepStatsCFL( l_internal.m_nElements,
                                             l_internal.m_elementChars,
                                             l_internal.m_elementShared1,
                                             l_dT[0], l_dT[1], l_dT[2] );

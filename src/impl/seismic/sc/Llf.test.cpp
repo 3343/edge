@@ -115,7 +115,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Initialization", "[elasticScL
   } l_charsVe[1] = { { {0,0,0} } };
 
   // wrapper for the LLF solvers
-  edge::elastic::sc::Llf< double,
+  edge::seismic::sc::Llf< double,
                           TRIA3,
                           4,
                           8 > l_llf;
@@ -360,7 +360,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   // heterogeneous
   //
   // type 0
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 0 , l_llfIds );
@@ -370,7 +370,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 3     );
 
   // type 1
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 1 , l_llfIds );
@@ -380,7 +380,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 4     );
 
   // type 2
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 2 , l_llfIds );
@@ -390,7 +390,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 5     );
 
   // type 3
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 3 , l_llfIds );
@@ -400,7 +400,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 3     );
 
   // type 4
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 4 , l_llfIds );
@@ -410,7 +410,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 4     );
 
   // type 5
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 5 , l_llfIds );
@@ -423,7 +423,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   // homogeneous
   //
   // type 0
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 6 , l_llfIds );
@@ -433,7 +433,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 0     );
 
   // type 1
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 7 , l_llfIds );
@@ -443,7 +443,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 1     );
 
   // type 2
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 8 , l_llfIds );
@@ -453,7 +453,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 2     );
 
   // type 3
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds( 9 , l_llfIds );
@@ -463,7 +463,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 0     );
 
   // type 4
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds(10 , l_llfIds );
@@ -473,7 +473,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 1     );
 
   // type 5
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TRIA3,
                                    2,
                                    3 >::llfIds(11 , l_llfIds );
@@ -492,7 +492,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   // heterogeneous
   //
   // type 0
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 0, l_llfIds );
@@ -502,7 +502,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 6     );
 
   // type 1
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 1, l_llfIds );
@@ -512,7 +512,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 7     );
 
   // type 2
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 2, l_llfIds );
@@ -522,7 +522,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 8     );
 
   // type 3
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 3, l_llfIds );
@@ -532,7 +532,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 9     );
 
   // type 4
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 4, l_llfIds );
@@ -542,7 +542,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 6     );
 
   // type 5
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 5, l_llfIds );
@@ -552,7 +552,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 7     );
 
   // type 6
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 6, l_llfIds );
@@ -562,7 +562,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 8     );
 
   // type 7
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 7, l_llfIds );
@@ -575,7 +575,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   // homogeneous
   //
   // type 8
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 8, l_llfIds );
@@ -585,7 +585,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 0     );
 
   // type 9
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 9, l_llfIds );
@@ -595,7 +595,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 1     );
 
   // type 10
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 10, l_llfIds );
@@ -605,7 +605,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 2     );
 
   // type 11
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 11, l_llfIds );
@@ -615,7 +615,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 3     );
 
   // type 12
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 12, l_llfIds );
@@ -625,7 +625,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 4     );
 
   // type 13
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 13, l_llfIds );
@@ -635,7 +635,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 5     );
 
   // type 14
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 14, l_llfIds );
@@ -645,7 +645,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 0     );
 
   // type 15
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 15, l_llfIds );
@@ -655,7 +655,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 1     );
 
   // type 16
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 16, l_llfIds );
@@ -665,7 +665,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 2     );
 
   // type 17
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 17, l_llfIds );
@@ -675,7 +675,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 3     );
 
   // type 18
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 18, l_llfIds );
@@ -685,7 +685,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Is of the LLF solvers", "[ela
   REQUIRE( l_llfIds[1] == 4     );
 
   // type 19
-  l_left = edge::elastic::sc::Llf< double,
+  l_left = edge::seismic::sc::Llf< double,
                                    TET4,
                                    2,
                                    3 >::llfIds( 19, l_llfIds );
@@ -876,7 +876,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Time Step", "[elasticScLlf][t
   } l_charsVe[1] = { { {0,0,0} } };
 
   // wrapper for the LLF solvers
-  edge::elastic::sc::Llf< double,
+  edge::seismic::sc::Llf< double,
                           TRIA3,
                           2,
                           3 > l_llf;
@@ -1253,7 +1253,7 @@ TEST_CASE( "Sub-cell elastic local Lax-Friedrichs: Net-updates at DG-face", "[el
   } l_charsVe[1] = { { {0,0,0} } };
 
   // wrapper for the LLF solvers
-  edge::elastic::sc::Llf< double,
+  edge::seismic::sc::Llf< double,
                           TRIA3,
                           2,
                           3 > l_llf;

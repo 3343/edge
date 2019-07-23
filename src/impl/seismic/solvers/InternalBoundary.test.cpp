@@ -93,7 +93,7 @@ TEST_CASE( "Internal Boundary: Middle state jump 3D.", "[intBnd][jump3D]" ) {
 
   double l_msJump1[9][9];
 
-  edge::elastic::solvers::InternalBoundarySolvers<TET4>::solvMsJumpL( l_lam, l_lam,
+  edge::seismic::solvers::InternalBoundarySolvers<TET4>::solvMsJumpL( l_lam, l_lam,
                                                                       l_mu,  l_mu,
                                                                       l_rho, l_rho,
                                                                       l_msJump1 );
@@ -136,13 +136,13 @@ TEST_CASE( "Internal Boundary: 2D solvers with middle state perturbation.", "[in
   double l_rho = 2670;
 
   // get the solvers
-  edge::elastic::solvers::InternalBoundarySolvers<
+  edge::seismic::solvers::InternalBoundarySolvers<
     TRIA3 >::solvMsJumpL( l_lam, l_lam,
                           l_mu,  l_mu,
                           l_rho, l_rho,
                           l_msJ );
 
-  edge::elastic::solvers::InternalBoundarySolvers<
+  edge::seismic::solvers::InternalBoundarySolvers<
     TRIA3 >::solvMsFlux( 1.0, 0.0, // no trafo
                          l_lam, l_mu, l_rho,
                          l_msF );
@@ -274,9 +274,9 @@ TEST_CASE( "Internal Boundary: 2D solvers with middle state perturbation.", "[in
   double l_dofsL[5][1][1] = { {{ 1.0E2}}, {{-2.0E3}}, {{-4.0E5}}, {{10.0}}, {{-15.0}} };
   double l_dofsR[5][1][1] = { {{-0.1E2}}, {{-0.9E3}}, {{ 5.0E5}}, {{ 4.0}}, {{  5.0}} };
 
-  edge::elastic::solvers::t_LinSlipWeakGlobal<double,1>      l_gl;
-  edge::elastic::solvers::t_LinSlipWeakFace<double>          l_fa;
-  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 1> l_sf[1];
+  edge::seismic::solvers::t_LinSlipWeakGlobal<double,1>      l_gl;
+  edge::seismic::solvers::t_LinSlipWeakFace<double>          l_fa;
+  edge::seismic::solvers::t_LinSlipWeakSubFace<double, 2, 1> l_sf[1];
 
   // assign the values of our example
   l_gl.mus[0]   = 0.677;
@@ -294,9 +294,9 @@ TEST_CASE( "Internal Boundary: 2D solvers with middle state perturbation.", "[in
 
   // generate a struct out of it
   struct {
-    edge::elastic::solvers::t_LinSlipWeakGlobal<double,1>       *gl;
-    edge::elastic::solvers::t_LinSlipWeakFace<double>           *fa;
-    edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 1> (*sf)[1];
+    edge::seismic::solvers::t_LinSlipWeakGlobal<double,1>       *gl;
+    edge::seismic::solvers::t_LinSlipWeakFace<double>           *fa;
+    edge::seismic::solvers::t_LinSlipWeakSubFace<double, 2, 1> (*sf)[1];
   } l_faData;
   l_faData.gl = &l_gl;
   l_faData.fa = &l_fa;
@@ -307,13 +307,13 @@ TEST_CASE( "Internal Boundary: 2D solvers with middle state perturbation.", "[in
   double l_netUpsR[5][1][1];
   bool l_per[1][1];
 
-  edge::elastic::solvers::InternalBoundary<
+  edge::seismic::solvers::InternalBoundary<
     TRIA3,
     5,
     1,
     1 >::netUpdates<
            double,
-           edge::elastic::solvers::FrictionLaws< 2, 1 >
+           edge::seismic::solvers::FrictionLaws< 2, 1 >
          > (  l_tm1,
               l_msJ,
               l_msF,
@@ -352,21 +352,21 @@ TEST_CASE( "Internal Boundary: 3D solvers with middle state perturbation.", "[in
   double l_rhoR = 2600;
 
   // get the solvers
-  edge::elastic::solvers::InternalBoundarySolvers<
+  edge::seismic::solvers::InternalBoundarySolvers<
     TET4
   >::solvMsJumpL( l_lamL, l_lamR,
                   l_muL,  l_muR,
                   l_rhoL, l_rhoR,
                   l_msJ );
 
-  edge::elastic::solvers::InternalBoundarySolvers<
+  edge::seismic::solvers::InternalBoundarySolvers<
     TET4
    >::solvMsFlux( 1.0, 0.0, 0.0,
                   0.0, 1.0, 0.0,
                   0.0, 0.0, 1.0,
                   l_lamL, l_muL, l_rhoL,
                   l_msFL );
-  edge::elastic::solvers::InternalBoundarySolvers<
+  edge::seismic::solvers::InternalBoundarySolvers<
     TET4
    >::solvMsFlux( 1.0, 0.0, 0.0,
                   0.0, 1.0, 0.0,
@@ -560,9 +560,9 @@ TEST_CASE( "Internal Boundary: 3D solvers with middle state perturbation.", "[in
                               {{ 2.0E6}}, {{ 3.4E6}}, {{ 9.3E5}},
                               {{   1.2}}, {{   0.3}}, {{  -0.3}} };
 
-  edge::elastic::solvers::t_LinSlipWeakGlobal<double,1>      l_gl;
-  edge::elastic::solvers::t_LinSlipWeakFace<double>          l_fa;
-  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 3, 1> l_sf[1];
+  edge::seismic::solvers::t_LinSlipWeakGlobal<double,1>      l_gl;
+  edge::seismic::solvers::t_LinSlipWeakFace<double>          l_fa;
+  edge::seismic::solvers::t_LinSlipWeakSubFace<double, 3, 1> l_sf[1];
 
 
   // assign the values of our example
@@ -585,9 +585,9 @@ TEST_CASE( "Internal Boundary: 3D solvers with middle state perturbation.", "[in
 
   // generate a struct out of that
   struct {
-    edge::elastic::solvers::t_LinSlipWeakGlobal<double,1>       *gl;
-    edge::elastic::solvers::t_LinSlipWeakFace<double>           *fa;
-    edge::elastic::solvers::t_LinSlipWeakSubFace<double, 3, 1> (*sf)[1];
+    edge::seismic::solvers::t_LinSlipWeakGlobal<double,1>       *gl;
+    edge::seismic::solvers::t_LinSlipWeakFace<double>           *fa;
+    edge::seismic::solvers::t_LinSlipWeakSubFace<double, 3, 1> (*sf)[1];
   } l_faData;
   l_faData.gl = &l_gl;
   l_faData.fa = &l_fa;
@@ -598,13 +598,13 @@ TEST_CASE( "Internal Boundary: 3D solvers with middle state perturbation.", "[in
   double l_netUpsR[9][1][1];
   bool l_per[1][1];
 
-  edge::elastic::solvers::InternalBoundary<
+  edge::seismic::solvers::InternalBoundary<
     TET4,
     9,
     1,
     1 >::netUpdates<
            double,
-           edge::elastic::solvers::FrictionLaws< 3, 1 >
+           edge::seismic::solvers::FrictionLaws< 3, 1 >
          > (  l_tm1,
               l_msJ,
               l_msFL,

@@ -314,7 +314,7 @@ class edge::seismic::solvers::AderDg {
 
         EDGE_CHECK( i_bgPars[l_el][0].rho > TOL.SOLVER );
 
-        elastic::common::getJac( i_bgPars[l_el][0].rho,
+        seismic::common::getJac( i_bgPars[l_el][0].rho,
                                  i_bgPars[l_el][0].lam,
                                  i_bgPars[l_el][0].mu,
                                  l_A[0][0],
@@ -630,13 +630,13 @@ class edge::seismic::solvers::AderDg {
         TL_T_REAL (*l_netUps)[TL_N_QTS_E][TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa+2;
 
         // call the rupture solver
-        edge::elastic::solvers::InternalBoundary<
+        edge::seismic::solvers::InternalBoundary<
           TL_T_EL,
           TL_N_QTS_E,
           TL_O_SP,
           TL_N_CRS >::template netUpdates<
             TL_T_REAL, TL_T_MM, 
-            edge::elastic::solvers::FrictionLaws< TL_N_DIS, TL_N_CRS >
+            edge::seismic::solvers::FrictionLaws< TL_N_DIS, TL_N_CRS >
           > (  i_iBnd.mss[l_bf][0],
                i_iBnd.mss[l_bf][1],
                i_iBnd.mss[l_bf][2],

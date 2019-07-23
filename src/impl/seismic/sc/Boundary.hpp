@@ -27,7 +27,7 @@
 #include "io/logging.h"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace sc {
       template< t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
@@ -47,7 +47,7 @@ namespace edge {
 template< t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_N_CRS >
-class edge::elastic::sc::Boundary {
+class edge::seismic::sc::Boundary {
   private:
     //! number of dimensions
     static unsigned short const TL_N_DIS = C_ENT[TL_T_EL].N_DIM;

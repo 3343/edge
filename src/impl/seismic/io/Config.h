@@ -32,14 +32,14 @@
 #include "linalg/Domain.hpp"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace io {
       class Config;
     }
   }
 }
 
-class edge::elastic::io::Config {
+class edge::seismic::io::Config {
     /**
      * Prints the configuration.
      **/

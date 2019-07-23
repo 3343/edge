@@ -30,14 +30,14 @@
 #include "linalg/Matrix.h"
 
 namespace edge {
-  namespace elastic {
+  namespace seismic {
     namespace solvers {
       class common;
     }
   }
 }
 
-class edge::elastic::solvers::common {
+class edge::seismic::solvers::common {
   public:
     /**
      * Computes the left side's contribution to the Riemann solution in face-aligned coordinates.
@@ -190,9 +190,9 @@ class edge::elastic::solvers::common {
       TL_T_REAL l_tmpR[5][5];
 
       // setup the intermediate matrices
-      elastic::common::setupTrafo2d( i_nx, i_ny, l_t );
+      seismic::common::setupTrafo2d( i_nx, i_ny, l_t );
 
-      elastic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
+      seismic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
 
       if( i_muL > TOL.SOLVER && i_muR > TOL.SOLVER ) {
         setupFlMidElastic2d( i_rhoL, i_rhoR,
@@ -286,12 +286,12 @@ class edge::elastic::solvers::common {
       real_base l_tmpR[9][9];
 
       // setup the intermediate matrices
-      elastic::common::setupTrafo3d( i_nx, i_ny, i_nz,
+      seismic::common::setupTrafo3d( i_nx, i_ny, i_nz,
                                      i_sx, i_sy, i_sz,
                                      i_tx, i_ty, i_tz,
                                      l_t );
 
-      elastic::common::setupTrafoInv3d( i_nx, i_ny, i_nz,
+      seismic::common::setupTrafoInv3d( i_nx, i_ny, i_nz,
                                         i_sx, i_sy, i_sz,
                                         i_tx, i_ty, i_tz,
                                         l_tm1 );

@@ -213,9 +213,9 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
   double l_faultCrds[2][2] = { {0, 1}, {1, 0} };
 
   // output
-  edge::elastic::solvers::t_LinSlipWeakFace<double>            l_lswFace[3];
-  edge::elastic::solvers::t_LinSlipWeakSubFace<double, 2, 8>   l_lswSf[3][5];
-  edge::elastic::solvers::t_LinSlipWeak< double, TRIA3, 3, 8 > l_lsw;
+  edge::seismic::solvers::t_LinSlipWeakFace<double>            l_lswFace[3];
+  edge::seismic::solvers::t_LinSlipWeakSubFace<double, 2, 8>   l_lswSf[3][5];
+  edge::seismic::solvers::t_LinSlipWeak< double, TRIA3, 3, 8 > l_lsw;
   l_lsw.fa = l_lswFace;
   l_lsw.sf = l_lswSf;
 
@@ -225,7 +225,7 @@ TEST_CASE( "Init of rupture physics.", "[RuptureInit][LSW2D]" ) {
       l_scDgAd[l_ve][l_sf] = 0;
 
   // init the rupture physics
-  edge::elastic::setups::RuptureInit< TRIA3, 3, 8>::linSlipWeak( l_nFaces,
+  edge::seismic::setups::RuptureInit< TRIA3, 3, 8>::linSlipWeak( l_nFaces,
                                                                  1234,
                                                                  l_scDgAd,
                                                                  l_faVe,

@@ -45,7 +45,7 @@ typedef edge::seismic::setups::PointSources< real_base,
  * Rupture physics
  */
 #define PP_N_GLOBAL_SHARED_5 1
-typedef edge::elastic::solvers::t_LinSlipWeak< real_base,
+typedef edge::seismic::solvers::t_LinSlipWeak< real_base,
                                                T_SDISC.ELEMENT,
                                                ORDER,
                                                N_CRUNS> t_globalShared5;
@@ -123,7 +123,7 @@ typedef edge::sc::ibnd::t_InternalBoundary< int_el,
 //#include "impl/seismic/sc/Llf.hpp"
 #include "impl/seismic/sc/UpWind.hpp"
 #define PP_N_GLOBAL_SHARED_8 1
-typedef edge::elastic::sc::UpWind< real_base,
+typedef edge::seismic::sc::UpWind< real_base,
                                    T_SDISC.ELEMENT,
                                    ORDER,
                                    N_CRUNS > t_globalShared8;
