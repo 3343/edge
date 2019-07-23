@@ -21,5 +21,5 @@
  * Dependencies of the elastic computations in a static time cluster.
  **/
 
-#include "impl/elastic/solvers/AderDg.hpp"
+#include "impl/seismic/solvers/AderDg.hpp"
 #include "sc/Boundary.hpp"

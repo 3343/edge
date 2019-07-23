@@ -205,4 +205,4 @@ struct scratchMem {
 };
 typedef scratchMem t_scratchMem;
 
-#include "src/impl/elastic/solvers/FrictionLaws.type"
+#include "src/impl/seismic/solvers/FrictionLaws.type"

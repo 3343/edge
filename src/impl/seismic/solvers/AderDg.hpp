@@ -29,7 +29,7 @@
 #include <limits>
 #include "constants.hpp"
 #include "mesh/common.hpp"
-#include "impl/elastic/common.hpp"
+#include "impl/seismic/common.hpp"
 #include "linalg/Matrix.h"
 #include "linalg/Mappings.hpp"
 #include "../kernels/Kernels.hpp"

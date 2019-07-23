@@ -57,7 +57,7 @@ class edge::elastic::solvers::common {
                                      TL_T_REAL i_lamL, TL_T_REAL i_lamR,
                                      TL_T_REAL i_muL,  TL_T_REAL i_muR,
                                      TL_T_REAL o_flMid[5][5] ) {
-#include "impl/elastic/generated/FlMidElastic2D.inc"
+#include "impl/seismic/generated/FlMidElastic2D.inc"
     }
 
     /**
@@ -78,7 +78,7 @@ class edge::elastic::solvers::common {
                                      TL_T_REAL i_lamL, TL_T_REAL i_lamR,
                                      TL_T_REAL i_muL,  TL_T_REAL i_muR,
                                      TL_T_REAL o_frMid[5][5] ) {
-#include "impl/elastic/generated/FrMidElastic2D.inc"
+#include "impl/seismic/generated/FrMidElastic2D.inc"
     }
 
     /**
@@ -97,7 +97,7 @@ class edge::elastic::solvers::common {
     static void setupFlMidAcoustic2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
                                       TL_T_REAL i_lamL, TL_T_REAL i_lamR,
                                       TL_T_REAL o_flMid[5][5] ) {
-#include "impl/elastic/generated/FlMidAcoustic2D.inc"
+#include "impl/seismic/generated/FlMidAcoustic2D.inc"
     }
 
     /**
@@ -116,7 +116,7 @@ class edge::elastic::solvers::common {
     static void setupFrMidAcoustic2d( TL_T_REAL i_rhoL, TL_T_REAL i_rhoR,
                                       TL_T_REAL i_lamL, TL_T_REAL i_lamR,
                                       TL_T_REAL o_frMid[5][5] ) {
-#include "impl/elastic/generated/FrMidAcoustic2D.inc"
+#include "impl/seismic/generated/FrMidAcoustic2D.inc"
     }
 
     /**
@@ -134,7 +134,7 @@ class edge::elastic::solvers::common {
                                      real_base i_lamL, real_base i_lamR,
                                      real_base i_muL,  real_base i_muR,
                                      real_base o_flMid[9][9] ) {
-#include "impl/elastic/generated/FlMid3D.inc"
+#include "impl/seismic/generated/FlMid3D.inc"
     }
 
     /**
@@ -152,7 +152,7 @@ class edge::elastic::solvers::common {
                                      real_base i_lamL, real_base i_lamR,
                                      real_base i_muL,  real_base i_muR,
                                      real_base o_frMid[9][9] ) {
-#include "impl/elastic/generated/FrMid3D.inc"
+#include "impl/seismic/generated/FrMid3D.inc"
     }
 
     /**

@@ -58,8 +58,8 @@ INITIALIZE_EASYLOGGINGPP
 #include "impl/advection/setup_dep.inc"
 #include "impl/advection/fin_dep.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/setup_dep.inc"
-#include "impl/elastic/fin_dep.inc"
+#include "impl/seismic/setup_dep.inc"
+#include "impl/seismic/fin_dep.inc"
 #elif defined PP_T_EQUATIONS_SWE
 #include "impl/swe/setup_dep.inc"
 #else
@@ -208,7 +208,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/setup.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/setup.inc"
+#include "impl/seismic/setup.inc"
 #elif defined PP_T_EQUATIONS_SWE
 #include "impl/swe/setup.inc"
 #endif
@@ -375,7 +375,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/fin.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/fin.inc"
+#include "impl/seismic/fin.inc"
 #endif
 
   // shutdown internal structure

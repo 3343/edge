@@ -30,7 +30,7 @@
 #endif
 
 #ifdef PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/internal.inc"
+#include "impl/seismic/internal.inc"
 #endif
 
 #ifdef PP_T_EQUATIONS_SWE

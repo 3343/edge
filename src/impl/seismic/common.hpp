@@ -316,7 +316,7 @@ class edge::elastic::common {
                               TL_T_MESH i_sx, TL_T_MESH i_sy, TL_T_MESH i_sz,
                               TL_T_MESH i_tx, TL_T_MESH i_ty, TL_T_MESH i_tz,
                               TL_T_TRAFO o_t[9][9] ) {
-#include "impl/elastic/generated/Trafo3D.inc"
+#include "impl/seismic/generated/Trafo3D.inc"
     }
 
     /**
@@ -339,7 +339,7 @@ class edge::elastic::common {
                                  TL_T_MESH i_sx, TL_T_MESH i_sy, TL_T_MESH i_sz,
                                  TL_T_MESH i_tx, TL_T_MESH i_ty, TL_T_MESH i_tz,
                                  TL_T_TRAFO o_tm1[9][9] ) {
-#include "impl/elastic/generated/TrafoInv3D.inc"
+#include "impl/seismic/generated/TrafoInv3D.inc"
     }
 
     /**
@@ -353,7 +353,7 @@ class edge::elastic::common {
     template <typename TL_T_MESH, typename TL_T_TRAFO>
     static void setupTrafo2d( TL_T_MESH i_nx, TL_T_MESH i_ny,
                               TL_T_TRAFO o_t[5][5] ) {
-#include "impl/elastic/generated/TrafoElastic2D.inc"
+#include "impl/seismic/generated/TrafoElastic2D.inc"
     }
 
     /**
@@ -367,7 +367,7 @@ class edge::elastic::common {
     template <typename TL_T_MESH, typename TL_T_TRAFO>
     static void setupTrafoInv2d( TL_T_MESH i_nx, TL_T_MESH i_ny,
                                  TL_T_TRAFO o_tm1[5][5] ) {
-#include "impl/elastic/generated/TrafoInvElastic2D.inc"
+#include "impl/seismic/generated/TrafoInvElastic2D.inc"
     }
 };
 

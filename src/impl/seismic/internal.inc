@@ -32,7 +32,7 @@ typedef setupChars t_globalPrivate1;
 
 // point sources
 #ifdef PP_HAS_HDF5
-#include "impl/elastic/setups/PointSources.hpp"
+#include "impl/seismic/setups/PointSources.hpp"
 #define PP_N_GLOBAL_SHARED_3 1
 typedef edge::seismic::setups::PointSources< real_base,
                                              int_el,
@@ -120,8 +120,8 @@ typedef edge::sc::ibnd::t_InternalBoundary< int_el,
                                             T_SDISC.ELEMENT,
                                             N_QUANTITIES > t_globalShared7;
 
-//#include "impl/elastic/sc/Llf.hpp"
-#include "impl/elastic/sc/UpWind.hpp"
+//#include "impl/seismic/sc/Llf.hpp"
+#include "impl/seismic/sc/UpWind.hpp"
 #define PP_N_GLOBAL_SHARED_8 1
 typedef edge::elastic::sc::UpWind< real_base,
                                    T_SDISC.ELEMENT,
@@ -129,7 +129,7 @@ typedef edge::elastic::sc::UpWind< real_base,
                                    N_CRUNS > t_globalShared8;
 
 // ADER-DG kernels
-#include "impl/elastic/solvers/AderDg.hpp"
+#include "impl/seismic/solvers/AderDg.hpp"
 #define PP_N_GLOBAL_SHARED_4 1
 typedef edge::seismic::solvers::AderDg< real_base,
                                         N_RELAXATION_MECHANISMS,

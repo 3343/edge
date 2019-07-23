@@ -22,20 +22,20 @@
  **/
 
 #include "setups/InitialDofs.hpp"
-#include "impl/elastic/io/Config.h"
-#include "impl/elastic/solvers/AderDg.hpp"
-#include "impl/elastic/solvers/common.hpp"
+#include "impl/seismic/io/Config.h"
+#include "impl/seismic/solvers/AderDg.hpp"
+#include "impl/seismic/solvers/common.hpp"
 #ifdef PP_HAS_HDF5
-#include "impl/elastic/setups/PointSources.hpp"
+#include "impl/seismic/setups/PointSources.hpp"
 #endif
 
 // rupture boundaries
-#include "impl/elastic/solvers/InternalBoundary.hpp"
+#include "impl/seismic/solvers/InternalBoundary.hpp"
 #include "sc/ibnd/Memory.hpp"
 #include "sc/ibnd/Init.hpp"
-#include "impl/elastic/setups/RuptureInit.hpp"
+#include "impl/seismic/setups/RuptureInit.hpp"
 #include "io/InternalBoundary.hpp"
 
 // sub-cell solver
 #include "sc/Memory.hpp"
-#include "impl/elastic/sc/Llf.hpp"
+#include "impl/seismic/sc/Llf.hpp"

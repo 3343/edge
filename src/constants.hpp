@@ -738,7 +738,7 @@ const bool MM_KERNELS_SPARSE = false;
 #endif
 
 #ifdef PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/const.inc"
+#include "impl/seismic/const.inc"
 #endif
 
 #ifdef PP_T_EQUATIONS_SWE

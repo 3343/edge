@@ -27,7 +27,7 @@
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/ts_dep.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/ts_dep.inc"
+#include "impl/seismic/ts_dep.inc"
 #elif defined PP_T_EQUATIONS_SWE
 #include "impl/swe/ts_dep.inc"
 #endif
@@ -98,7 +98,7 @@ void edge::time::TimeGroupStatic::computeStep( unsigned short                   
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/inc/time/tgs_steps.inc"
 #elif defined PP_T_EQUATIONS_ELASTIC
-#include "impl/elastic/steps.inc"
+#include "impl/seismic/steps.inc"
 #elif defined PP_T_EQUATIONS_SWE
 #include "impl/swe/inc/time/tgs_steps.inc"
 #else
