@@ -28,7 +28,10 @@
 
 TEST_CASE( "Optimized elastic ADER time prediction for fused forward simulations.", "[elastic][TimePredFused]" ) {
   // set up matrix structures
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #include "TimePred.test.inc"
+#pragma GCC diagnostic pop
 
   // kernel
   edge::data::Dynamic l_dynMem;
