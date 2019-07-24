@@ -75,6 +75,15 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
     //! number of quantities per relaxation mechanism
     static unsigned short const TL_N_QTS_M = CE_N_QTS_M( TL_N_DIS );
 
+    //! number of non-zeros in the elastic star matrices
+    static unsigned short const TL_N_ENS_STAR_E = CE_N_ENS_STAR_E_DE( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic star matrices
+    static unsigned short const TL_N_ENS_STAR_A = CE_N_ENS_STAR_A_DE( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic source matrices
+    static unsigned short const TL_N_ENS_SRC_A = CE_N_ENS_SRC_A_DE( TL_N_DIS );
+
     //! pointers to the (possibly recursive) stiffness matrices
     TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
 
@@ -191,9 +200,9 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
      * @param o_tIntA will be set to anelastic time integrated DOFS (ignored if TL_N_RMS==0, use nullptr).
      **/
     void ck( TL_T_REAL         i_dT,
-             TL_T_REAL const   i_starE[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E],
-             TL_T_REAL const (*i_starA)[TL_N_QTS_M*TL_N_DIS],
-             TL_T_REAL const (*i_srcA)[TL_N_QTS_M*TL_N_QTS_M],
+             TL_T_REAL const   i_starE[TL_N_DIS][TL_N_ENS_STAR_E],
+             TL_T_REAL const (*i_starA)[TL_N_ENS_STAR_A],
+             TL_T_REAL const (*i_srcA)[TL_N_ENS_SRC_A],
              TL_T_REAL const   i_dofsE[TL_N_QTS_E][TL_N_MDS][1],
              TL_T_REAL const (*i_dofsA)[TL_N_QTS_M][TL_N_MDS][1],
              TL_T_REAL         o_scratch[TL_N_QTS_E][TL_N_MDS][1],
@@ -254,7 +263,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
                                      o_scratch[0][0] );
           // multiply with star matrices
           m_mm.m_kernels[1][l_re-1]( o_scratch[0][0],
-                                     i_starE[l_di][0],
+                                     i_starE[l_di],
                                      o_derE[l_de][0][0] );
 
           if( TL_N_RMS > 0 ) {

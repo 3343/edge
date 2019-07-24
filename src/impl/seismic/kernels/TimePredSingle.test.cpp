@@ -43,7 +43,7 @@ TEST_CASE( "Optimized elastic ADER time prediction for single forward simulation
 
   // compute time prediction
   l_pred.ck(                    0.017,
-                                l_starE,
+             (float (*)[81])    l_starE,
                                 nullptr,
                                 nullptr,
              (float (*)[20][1]) l_dofsE,
@@ -82,17 +82,17 @@ TEST_CASE( "Optimized viscoelastic ADER time prediction for single forward simul
                                                       l_dynMem );
 
   // compute time prediction
-  l_pred.ck( 0.017,
-             l_starE,
-             (float (*)[18]) l_starA,
-             (float (*)[36]) l_srcA,
-             (float (*)[20][1]) l_dofsE,
+  l_pred.ck(                       0.017,
+             (float (*)[81])       l_starE,
+             (float (*)[18])       l_starA,
+             (float (*)[36])       l_srcA,
+             (float (*)[20][1])    l_dofsE,
              (float (*)[6][20][1]) l_dofsA,
-             l_scratch,
-             l_dersE,
-             l_dersA,
-             l_tDofsE,
-             l_tDofsA );
+                                   l_scratch,
+                                   l_dersE,
+                                   l_dersA,
+                                   l_tDofsE,
+                                   l_tDofsA );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {

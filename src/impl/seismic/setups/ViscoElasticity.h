@@ -21,9 +21,8 @@
  * @section DESCRIPTION
  * Viscoelastic attenuation.
  **/
-
-#ifndef EDGE_SEISMIC_SETUPS_VISCO_ELASTICITY_HPP
-#define EDGE_SEISMIC_SETUPS_VISCO_ELASTICITY_HPP
+#ifndef EDGE_SEISMIC_SETUPS_VISCO_ELASTICITY_H
+#define EDGE_SEISMIC_SETUPS_VISCO_ELASTICITY_H
 
 #include <cmath>
 #include "io/logging.h"
@@ -111,6 +110,49 @@ class edge::seismic::setups::ViscoElasticity {
                                     double         & o_lamElastic,
                                     double         & o_muElastic,
                                     double         * o_coeffs );
+
+    /**
+     * Computes the two-dimensional anelastic flux solvers for a single face in face-aligned coordinates.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoR density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param o_fsMidL will be set to matrix for left element's contribution.
+     * @param o_fsMidR will be set to matrix for right element's contribution.
+     **/
+    static void fsMid( double i_rhoL,
+                       double i_rhoR,
+                       double i_lamL,
+                       double i_lamR,
+                       double i_muL,
+                       double i_muR,
+                       double o_fsMidL[3][5],
+                       double o_fsMidR[3][5] );
+
+    /**
+     * Computes the three-dimensional anelastic flux solvers for a single face in face-aligned coordinates.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoR density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param o_fsMidL will be set to matrix for left element's contribution.
+     * @param o_fsMidR will be set to matrix for right element's contribution.
+     **/
+    static void fsMid( double i_rhoL,
+                       double i_rhoR,
+                       double i_lamL,
+                       double i_lamR,
+                       double i_muL,
+                       double i_muR,
+                       double o_fsMidL[6][9],
+                       double o_fsMidR[6][9] );
+
   public:
     /**
      * @brief Computes the relaxation frequencies.
@@ -276,48 +318,9 @@ class edge::seismic::setups::ViscoElasticity {
      *
      * @param i_jacInv inverse jacobian matrix of the element.
      * @param o_starA will be set to assembled star matrix.
-     *
-     * @paramt TL_T_REAL floating point precision.
      **/
-    template< typename TL_T_REAL >
-    static void star( const TL_T_REAL i_jacInv[2][2],
-                            TL_T_REAL o_starA[2][3 * 2] ) {
-      /*
-       * The viscoelastic Jacobians are given as
-       *
-       *   0    0     0    -1     0 -- 0
-       *   0    0     0     0     0 -- 1
-       *
-       *   0    0     0     0  -1/2 -- 2
-       *   |    |     |     |     |
-       *   0    1     2     3     4
-       *
-       *
-       *
-       *   0    0     0     0     0 -- 0
-       *   0    0     0     0    -1 -- 1
-       *
-       *   0    0     0   -1/2    0 -- 2
-       *   |    |     |     |     |
-       *   0    1     2     3     4
-       */
-      // init to zero
-      for( unsigned short l_di = 0; l_di < 2; l_di++ )
-        for( unsigned short l_m0 = 0; l_m0 < 3; l_m0++ )
-          for( unsigned short l_m1 = 0; l_m1 < 2; l_m1++ )
-            o_starA[l_di][l_m0*2 + l_m1] = 0;
-
-      // iterate over reference dimension
-      for( unsigned short l_di = 0; l_di < 2; l_di++ ) {
-        // set non-zero values corresponding to first Jacobian
-        o_starA[l_di][0*2 + 3 - 3] += -1.0 * i_jacInv[0][l_di];
-        o_starA[l_di][2*2 + 4 - 3] += -0.5 * i_jacInv[0][l_di];
-
-        // set non-zero values corresponding to second Jacobian
-        o_starA[l_di][1*2 + 4 - 3] += -1.0 * i_jacInv[1][l_di];
-        o_starA[l_di][2*2 + 3 - 3] += -0.5 * i_jacInv[1][l_di];
-      }
-    }
+    static void star( double const i_jacInv[2][2],
+                      double       o_starA[2][3 * 2] );
 
     /**
      * Computes the anelastic part of the two-dimensional star matrices, excluding the scaling with the relaxation frequencies.
@@ -325,96 +328,29 @@ class edge::seismic::setups::ViscoElasticity {
      *
      * @param i_jacInv inverse jacobian matrix of the element.
      * @param o_starA will be set to assembled star matrix.
-     *
-     * @paramt TL_T_REAL floating point precision.
      **/
-    template< typename TL_T_REAL >
-    static void star( const TL_T_REAL i_jacInv[2][2],
-                            TL_T_REAL o_starA[2][4] ) {
-      // get dense star matrices
-      TL_T_REAL l_starA[2][3 * 2];
-      star( i_jacInv,
-            l_starA );
-
-      // extract potential (depends on jacobians) non-zeros
-      for( unsigned short l_di = 0; l_di < 2; l_di++ ) {
-        o_starA[l_di][0] = l_starA[l_di][0*2 + 3 - 3];
-        o_starA[l_di][1] = l_starA[l_di][1*2 + 4 - 3];
-        o_starA[l_di][2] = l_starA[l_di][2*2 + 3 - 3];
-        o_starA[l_di][3] = l_starA[l_di][2*2 + 4 - 3];
-      }
-    }
+    static void star( double const i_jacInv[2][2],
+                      double       o_starA[2][4] );
 
     /**
-     * Computes the two-dimensional anelastic flux solvers for a single face in face-aligned coordinates.
+     * Computes the anelastic part of the three-dimensional star matrices, excluding the scaling with the relaxation frequencies.
+     * Only the last three columns are set.
      *
-     * @param i_rhoL density of the left element.
-     * @param i_rhoR density of the right element.
-     * @param i_lamL Lame parameter lambda of the left element.
-     * @param i_lamR Lame parameter lambda of the right element.
-     * @param i_muL Lame parameter mu of the left element.
-     * @param i_muR Lame parameter mu of the right element.
-     * @param o_fsMidL will be set to matrix for left element's contribution.
-     * @param o_fsMidR will be set to matrix for right element's contribution.
+     * @param i_jacInv inverse jacobian matrix of the element.
+     * @param o_starA will be set to assembled star matrix.
      **/
-    template< typename TL_T_REAL >
-    static void fsMid( double    i_rhoL,
-                      double    i_rhoR,
-                      double    i_lamL,
-                      double    i_lamR,
-                      double    i_muL, 
-                      double    i_muR,
-                      TL_T_REAL o_fsMidL[3][5],
-                      TL_T_REAL o_fsMidR[3][5] ) {
-      // compute wave speeds
-      double l_cpL = edge::seismic::common::getVelP( i_rhoL,
-                                                    i_lamL,
-                                                    i_muL );
+    static void star( double const i_jacInv[3][3],
+                      double       o_starA[3][6 * 3] );
 
-      double l_cpR = edge::seismic::common::getVelP( i_rhoR,
-                                                    i_lamR,
-                                                    i_muR );
-
-      double l_csL = edge::seismic::common::getVelS( i_rhoL,
-                                                    i_muL );
-
-      double l_csR = edge::seismic::common::getVelS( i_rhoR,
-                                                    i_muR );
-
-      // init matrices
-      for( unsigned short l_ro = 0; l_ro < 3; l_ro++ ) {
-        for( unsigned short l_co = 0; l_co < 5; l_co++ ) {
-          o_fsMidL[l_ro][l_co] = 0;
-          o_fsMidR[l_ro][l_co] = 0;
-        }
-      }
-
-      // set non-zeros of left flux solver
-      o_fsMidL[0][0]  = l_cpL;
-      o_fsMidL[0][0] /= i_lamL + 2*i_muL + i_rhoR*l_cpL*l_cpR;
-
-      o_fsMidL[0][3]  = -(i_lamL + 2*i_muL);
-      o_fsMidL[0][3] /= i_lamL + 2*i_muL + i_rhoR * l_cpL * l_cpR;
-
-      o_fsMidL[2][2]  = l_csL * l_csR;
-      o_fsMidL[2][2] /= 2*i_muL*l_csR + 2*i_muR*l_csL;
-
-      o_fsMidL[2][4]  = -i_muL * l_csR;
-      o_fsMidL[2][4] /= 2*i_muL*l_csR + 2*i_muR*l_csL;
-
-      // set non-zeros of right flux solver
-      o_fsMidR[0][0]  = -l_cpL;
-      o_fsMidR[0][0] /= i_lamL + 2*i_muL + i_rhoR*l_cpL*l_cpR;
-
-      o_fsMidR[0][3]  = -l_cpL * ( i_lamR + 2*i_muR );
-      o_fsMidR[0][3] /= l_cpR * ( i_lamL + 2*i_muL + i_rhoR * l_cpL * l_cpR );
-
-      o_fsMidR[2][2]  = -l_csL * l_csR;
-      o_fsMidR[2][2] /= 2*i_muL*l_csR + 2*i_muR*l_csL;
-
-      o_fsMidR[2][4]  = -i_muR * l_csL;
-      o_fsMidR[2][4] /= 2*i_muL * l_csR + 2*i_muR * l_csL;
-    }
+    /**
+     * Computes the anelastic part of the three-dimensional star matrices, excluding the scaling with the relaxation frequencies.
+     * Only non-zeros are set (compressed sparse rows).
+     *
+     * @param i_jacInv inverse jacobian matrix of the element.
+     * @param o_starA will be set to assembled star matrix.
+     **/
+    static void star( double const i_jacInv[3][3],
+                      double       o_starA[3][9] );
 
     /**
      * Computes the dense three-dimensional anelastic source matrix.
@@ -565,195 +501,58 @@ class edge::seismic::setups::ViscoElasticity {
     }
 
     /**
-     * Computes the anelastic part of the three-dimensional star matrices, excluding the scaling with the relaxation frequencies.
-     * Only the last three columns are set.
+     * Sets up the two-dimensional flux solvers for a single face.
      *
-     * @param i_jacInv inverse jacobian matrix of the element.
-     * @param o_starA will be set to assembled star matrix.
-     *
-     * @paramt TL_T_REAL floating point precision.
+     * @param i_rhoL density of the left element.
+     * @param i_rhoL density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param i_tA transformation of stresses from face-aligned coordinates to Cartesian.
+     * @param i_tm1 transformation of elastic quantities from Cartesian coordinates to face-aligned.
+     * @param o_fsAl will be set to anelastic flux solver, applied to the left element's DOFs.
+     * @param o_fsAr will be set to anelastic flux solver, applied to the right element's DOFs.
+     * @param i_freeSurface true if free surface boundary conditions are applied to the right element.
      **/
-    template< typename TL_T_REAL >
-    static void star( const TL_T_REAL i_jacInv[3][3],
-                            TL_T_REAL o_starA[3][6 * 3] ) {
-      /*
-       * The viscoelastic Jacobians are given as (see Kaeser et. al, 2007):
-       *
-       *   0    0    0     0    0    0    -1     0    0 -- 0
-       *   0    0    0     0    0    0     0     0    0 -- 1
-       *   0    0    0     0    0    0     0     0    0 -- 2
-       *
-       *   0    0    0     0    0    0     0  -1/2    0 -- 3
-       *   0    0    0     0    0    0     0     0    0 -- 4
-       *   0    0    0     0    0    0     0     0 -1/2 -- 5
-       *   |    |    |     |    |    |     |     |    |
-       *   0    1    2     3    4    5     6     7    8
-       *
-       *
-       *
-       *   0    0    0     0    0    0     0     0    0 -- 0
-       *   0    0    0     0    0    0     0    -1    0 -- 1
-       *   0    0    0     0    0    0     0     0    0 -- 2
-       *
-       *   0    0    0     0    0    0   -1/2    0    0 -- 3
-       *   0    0    0     0    0    0     0     0 -1/2 -- 4
-       *   0    0    0     0    0    0     0     0    0 -- 5
-       *   |    |    |     |    |    |     |     |    |
-       *   0    1    2     3    4    5     6     7    8
-       *
-       *
-       *
-       *   0    0    0     0    0    0     0     0    0 -- 0
-       *   0    0    0     0    0    0     0     0    0 -- 1
-       *   0    0    0     0    0    0     0     0   -1 -- 2
-       *
-       *   0    0    0     0    0    0     0     0    0 -- 3
-       *   0    0    0     0    0    0     0  -1/2    0 -- 4
-       *   0    0    0     0    0    0  -1/2     0    0 -- 5
-       *   |    |    |     |    |    |     |     |    |
-       *   0    1    2     3    4    5     6     7    8
-       */
-      // init to zero
-      for( unsigned short l_di = 0; l_di < 3; l_di++ )
-        for( unsigned short l_m0 = 0; l_m0 < 6; l_m0++ )
-          for( unsigned short l_m1 = 0; l_m1 < 3; l_m1++ )
-            o_starA[l_di][l_m0*3 + l_m1] = 0;
+    static void fs( double       i_rhoL,
+                    double       i_rhoR,
+                    double       i_lamL,
+                    double       i_lamR,
+                    double       i_muL,
+                    double       i_muR,
+                    double const i_tA[3][3],
+                    double const i_tm1[5][5],
+                    double       o_fsAl[3*5],
+                    double       o_fsAr[3*5],
+                    bool         i_freeSurface );
 
-      // iterate over reference dimension
-      for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-        // set non-zero values corresponding to first Jacobian
-        o_starA[l_di][0*3 + 6 - 6] += -1.0 * i_jacInv[0][l_di];
-        o_starA[l_di][3*3 + 7 - 6] += -0.5 * i_jacInv[0][l_di];
-        o_starA[l_di][5*3 + 8 - 6] += -0.5 * i_jacInv[0][l_di];
-
-        // set non-zero values corresponding to second Jacobian
-        o_starA[l_di][1*3 + 7 - 6] += -1.0 * i_jacInv[1][l_di];
-        o_starA[l_di][3*3 + 6 - 6] += -0.5 * i_jacInv[1][l_di];
-        o_starA[l_di][4*3 + 8 - 6] += -0.5 * i_jacInv[1][l_di];
-
-        // set non-zero values corresponding to third Jacobian
-        o_starA[l_di][2*3 + 8 - 6] += -1.0 * i_jacInv[2][l_di];
-        o_starA[l_di][4*3 + 7 - 6] += -0.5 * i_jacInv[2][l_di];
-        o_starA[l_di][5*3 + 6 - 6] += -0.5 * i_jacInv[2][l_di];
-    }
-  }
-
-  /**
-   *  Computes the anelastic part of the three-dimensional star matrices, excluding the scaling with the relaxation frequencies.
-   *  Only non-zeros are set (compressed sparse rows).
-   *        
-   * @param i_jacInv inverse jacobian matrix of the element.
-   * @param o_starA will be set to assembled star matrix.
-   *
-   * @paramt TL_T_REAL floating point precision.
-   **/
-  template< typename TL_T_REAL >
-  static void star( const TL_T_REAL i_jacInv[3][3],
-                          TL_T_REAL o_starA[3][9] ) {
-    // get dense star matrices
-    TL_T_REAL l_starA[3][6 * 3];
-    star( i_jacInv,
-          l_starA );
-
-    // extract potential (depends on jacobians) non-zeros
-    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-      o_starA[l_di][0] = l_starA[l_di][0*3 + 6 - 6];
-      o_starA[l_di][1] = l_starA[l_di][1*3 + 7 - 6];
-      o_starA[l_di][2] = l_starA[l_di][2*3 + 8 - 6];
-      o_starA[l_di][3] = l_starA[l_di][3*3 + 6 - 6];
-      o_starA[l_di][4] = l_starA[l_di][3*3 + 7 - 6];
-      o_starA[l_di][5] = l_starA[l_di][4*3 + 7 - 6];
-      o_starA[l_di][6] = l_starA[l_di][4*3 + 8 - 6];
-      o_starA[l_di][7] = l_starA[l_di][5*3 + 6 - 6];
-      o_starA[l_di][8] = l_starA[l_di][5*3 + 8 - 6];
-    }
-  }
-
-  /**
-   * Computes the three-dimensional anelastic flux solvers for a single face in face-aligned coordinates.
-   *
-   * @param i_rhoL density of the left element.
-   * @param i_rhoR density of the right element.
-   * @param i_lamL Lame parameter lambda of the left element.
-   * @param i_lamR Lame parameter lambda of the right element.
-   * @param i_muL Lame parameter mu of the left element.
-   * @param i_muR Lame parameter mu of the right element.
-   * @param o_fsMidL will be set to matrix for left element's contribution.
-   * @param o_fsMidR will be set to matrix for right element's contribution.
-   *
-   * @paramt TL_T_REAL real type.
-   **/
-  template< typename TL_T_REAL >
-  static void fsMid( double    i_rhoL,
-                     double    i_rhoR,
-                     double    i_lamL,
-                     double    i_lamR,
-                     double    i_muL, 
-                     double    i_muR,
-                     TL_T_REAL o_fsMidL[6][9],
-                     TL_T_REAL o_fsMidR[6][9] ) {
-    // compute wave speeds
-    double l_cpL = edge::seismic::common::getVelP( i_rhoL,
-                                                   i_lamL,
-                                                   i_muL );
-
-    double l_cpR = edge::seismic::common::getVelP( i_rhoR,
-                                                   i_lamR,
-                                                   i_muR );
-
-    double l_csL = edge::seismic::common::getVelS( i_rhoL,
-                                                   i_muL );
-
-    double l_csR = edge::seismic::common::getVelS( i_rhoR,
-                                                   i_muR );
-
-    // init matrices
-    for( unsigned short l_ro = 0; l_ro < 6; l_ro++ ) {
-      for( unsigned short l_co = 0; l_co < 9; l_co++ ) {
-        o_fsMidL[l_ro][l_co] = 0;
-        o_fsMidR[l_ro][l_co] = 0;
-      }
-    }
-
-    // set non-zeros of left flux solver
-    o_fsMidL[0][0]  = l_cpL * l_cpR;
-    o_fsMidL[0][0] /= i_lamL * l_cpR + i_lamR * l_cpL + 2 * i_muL * l_cpR + 2 * i_muR * l_cpL;
-
-    o_fsMidL[0][6]  = -l_cpR * ( i_lamL + 2 * i_muL);
-    o_fsMidL[0][6] /= i_lamL * l_cpR + i_lamR * l_cpL + 2 * i_muL * l_cpR + 2 * i_muR * l_cpL;
-
-    o_fsMidL[3][3]  = l_csL * l_csR;
-    o_fsMidL[3][3] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    o_fsMidL[3][7]  = -i_muL * l_csR;
-    o_fsMidL[3][7] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    o_fsMidL[5][5]  = l_csL * l_csR;
-    o_fsMidL[5][5] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    o_fsMidL[5][8]  = -i_muL * l_csR;
-    o_fsMidL[5][8] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    // set non-zeros of right flux solver
-    o_fsMidR[0][0]  = -l_cpL * l_cpR;
-    o_fsMidR[0][0] /= i_lamL * l_cpR + i_lamR * l_cpL + 2 * i_muL * l_cpR + 2 * i_muR * l_cpL;
-
-    o_fsMidR[0][6]  = -l_cpL * ( i_lamR + 2 * i_muR);
-    o_fsMidR[0][6] /= i_lamL * l_cpR + i_lamR * l_cpL + 2 * i_muL * l_cpR + 2 * i_muR * l_cpL;
-
-    o_fsMidR[3][3]  = -l_csL * l_csR;
-    o_fsMidR[3][3] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    o_fsMidR[3][7]  = -i_muR * l_csL;
-    o_fsMidR[3][7] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    o_fsMidR[5][5]  = -l_csL * l_csR;
-    o_fsMidR[5][5] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-
-    o_fsMidR[5][8]  = -i_muR * l_csL;
-    o_fsMidR[5][8] /= 2 * i_muL * l_csR + 2 * i_muR * l_csL;
-  }
+    /**
+     * Sets up the three-dimensional flux solvers for a single face.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoL density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param i_tA transformation of stresses from face-aligned coordinates to Cartesian.
+     * @param i_tm1 transformation of elastic quantities from Cartesian coordinates to face-aligned.
+     * @param o_fsAl will be set to anelastic flux solver, applied to the left element's DOFs.
+     * @param o_fsAr will be set to anelastic flux solver, applied to the right element's DOFs.
+     * @param i_freeSurface true if free surface boundary conditions are applied to the right element.
+     **/
+    static void fs( double       i_rhoL,
+                    double       i_rhoR,
+                    double       i_lamL,
+                    double       i_lamR,
+                    double       i_muL,
+                    double       i_muR,
+                    double const i_tA[6][6],
+                    double const i_tm1[9][9],
+                    double       o_fsAl[6*9],
+                    double       o_fsAr[6*9],
+                    bool         i_freeSurface );
 };
-
 
 #endif

@@ -72,6 +72,15 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
     //! number of quantities per relaxation mechanism
     static unsigned short const TL_N_QTS_M = CE_N_QTS_M( TL_N_DIS );
 
+    //! number of non-zeros in the elastic star matrices
+    static unsigned short const TL_N_ENS_STAR_E = CE_N_ENS_STAR_E_DE( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic star matrices
+    static unsigned short const TL_N_ENS_STAR_A = CE_N_ENS_STAR_A_DE( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic source matrices
+    static unsigned short const TL_N_ENS_SRC_A = CE_N_ENS_SRC_A_DE( TL_N_DIS );
+
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
 
@@ -177,9 +186,9 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
      * @param io_dofsA will be updated with local anelastic contribution of the element to the volume integral, use nullptr if TL_N_RMS==0.
      * @param o_scratch will be used as scratch space for the computations.
      **/
-    void apply( TL_T_REAL const   i_starE[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E],
-                TL_T_REAL const (*i_starA)[TL_N_QTS_M*TL_N_DIS],
-                TL_T_REAL const (*i_srcA)[TL_N_QTS_M*TL_N_QTS_M],
+    void apply( TL_T_REAL const   i_starE[TL_N_DIS][TL_N_ENS_STAR_E],
+                TL_T_REAL const (*i_starA)[TL_N_ENS_STAR_A],
+                TL_T_REAL const (*i_srcA)[TL_N_ENS_SRC_A],
                 TL_T_REAL const   i_tDofsE[TL_N_QTS_E][TL_N_MDS][1],
                 TL_T_REAL const (*i_tDofsA)[TL_N_QTS_M][TL_N_MDS][1],
                 TL_T_REAL         io_dofsE[TL_N_QTS_E][TL_N_MDS][1],
@@ -202,7 +211,7 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
         // star matrix
         m_mm.m_kernels[0][1]( o_scratch[0][0],
-                              i_starE[l_di][0],
+                              i_starE[l_di],
                               io_dofsE[0][0] );
 
         if( TL_N_RMS > 0 ) {

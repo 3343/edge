@@ -20,6 +20,10 @@
  * @section DESCRIPTION
  * Initialization of the ADER-DG data structures.
  **/
+#ifndef EDGE_SEISMIC_SOLVERS_ADER_DG_INIT_HPP
+#define EDGE_SEISMIC_SOLVERS_ADER_DG_INIT_HPP
+
+#include "../setups/Elasticity.h"
 #include "../setups/ViscoElasticity.h"
 
 namespace edge {
@@ -50,6 +54,10 @@ class edge::seismic::solvers::AderDgInit {
 
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
+
+    //! number of entries in the elastic star matrices
+    static unsigned short const TL_N_ENS_STAR_E = (TL_MATS_SP) ? CE_N_ENS_STAR_E_SP( TL_N_DIS )
+                                                               : CE_N_ENS_STAR_E_DE( TL_N_DIS );
 
     //! number of entries in the anelastic source matrices
     static unsigned short const TL_N_ENS_SRC_A = (TL_MATS_SP) ? CE_N_ENS_SRC_A_SP( TL_N_DIS )
@@ -111,6 +119,7 @@ class edge::seismic::solvers::AderDgInit {
      * @param i_elVe vertices adjacent to elements.
      * @param i_veChars vertex characteristics.
      * @param i_bgPars background parameters.
+     * @param o_starE will be set to elastic star matrices.
      * @param o_starA will be set to anelastic star matrices.
      **/
     template< typename TL_T_LID,
@@ -119,25 +128,44 @@ class edge::seismic::solvers::AderDgInit {
                           TL_T_LID      const (* i_elVe)[TL_N_VES_EL],
                           t_vertexChars const  * i_veChars,
                           t_bgPars      const  * i_bgPars,
+                          TL_T_REAL           (* o_starE)[TL_N_DIS][TL_N_ENS_STAR_E],
                           TL_T_REAL           (* o_starA)[TL_N_DIS][TL_N_ENS_STAR_A] ) {
       for( TL_T_LID l_el = 0; l_el < i_nEls; l_el++ ) {
         // derive vertex coords
-        TL_T_REAL l_veCrds[TL_N_DIS][TL_N_VES_EL];
+        double l_veCrds[TL_N_DIS][TL_N_VES_EL];
         mesh::common< TL_T_EL >::getElVeCrds( l_el,
                                               i_elVe,
                                               i_veChars,
                                               l_veCrds );
 
         // jacobian
-        TL_T_REAL l_jac[TL_N_DIS][TL_N_DIS];
-        TL_T_REAL l_jacInv[TL_N_DIS][TL_N_DIS];
+        double l_jac[TL_N_DIS][TL_N_DIS];
+        double l_jacInv[TL_N_DIS][TL_N_DIS];
         linalg::Mappings::evalJac( TL_T_EL, l_veCrds[0], l_jac[0] );
 
         // get inverse jacobian
         linalg::Matrix::inv( l_jac, l_jacInv );
 
-        seismic::setups::ViscoElasticity::star( l_jacInv,
-                                                o_starA[l_el] );
+        // init elastic star matrices
+        double l_starE[TL_N_DIS][TL_N_ENS_STAR_E];
+        seismic::setups::Elasticity::star( i_bgPars[l_el].rho,
+                                           i_bgPars[l_el].lam,
+                                           i_bgPars[l_el].mu,
+                                           l_jacInv,
+                                           l_starE );
+        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+          for( unsigned short l_en = 0; l_en < TL_N_ENS_STAR_E; l_en++ )
+            o_starE[l_el][l_di][l_en] = l_starE[l_di][l_en];
+
+        // init anelastic star matrices
+        if( o_starA != nullptr ) {
+          double l_starA[TL_N_DIS][TL_N_ENS_STAR_A];
+          seismic::setups::ViscoElasticity::star( l_jacInv,
+                                                  l_starA );
+          for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ )
+            for( unsigned short l_en = 0; l_en < TL_N_ENS_STAR_A; l_en++ )
+              o_starA[l_el][l_di][l_en] = l_starA[l_di][l_en];
+        }
       }
     }
 
@@ -159,23 +187,21 @@ class edge::seismic::solvers::AderDgInit {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void setUpFs( TL_T_REAL i_rhoL,
-                         TL_T_REAL i_rhoR,
-                         TL_T_REAL i_lamL,
-                         TL_T_REAL i_lamR,
-                         TL_T_REAL i_muL,
-                         TL_T_REAL i_muR,
+    static void setUpFs( double    i_rhoL,
+                         double    i_rhoR,
+                         double    i_lamL,
+                         double    i_lamR,
+                         double    i_muL,
+                         double    i_muR,
                          double    i_nx,
                          double    i_ny,
                          TL_T_REAL o_fsAl[3*5],
                          TL_T_REAL o_fsAr[3*5],
                          bool      i_freeSurface ) {
       // intermediate matrices
-      TL_T_REAL l_tE[5][5];
-      TL_T_REAL l_tA[3][3];
-      TL_T_REAL l_tm1[5][5];
-      TL_T_REAL l_fsMidA[2][3][5];
-      TL_T_REAL l_tmp[2][3][5];
+      double l_tE[5][5];
+      double l_tA[3][3];
+      double l_tm1[5][5];
 
       // compute trafos
       seismic::common::setupTrafo2d( i_nx, i_ny, l_tE );
@@ -187,52 +213,26 @@ class edge::seismic::solvers::AderDgInit {
 
       seismic::common::setupTrafoInv2d( i_nx, i_ny, l_tm1 );
 
-      // compute mid part of the solver
-      seismic::setups::ViscoElasticity::fsMid( i_rhoL,
-                                               i_rhoR,
-                                               i_lamL,
-                                               i_lamR,
-                                               i_muL,
-                                               i_muR,
-                                               l_fsMidA[0],
-                                               l_fsMidA[1] );
+      if( o_fsAl != nullptr && o_fsAr != nullptr ) {
+        double l_fsA[2][3*5];
+        setups::ViscoElasticity::fs( i_rhoL,
+                                     i_rhoR,
+                                     i_lamL,
+                                     i_lamR,
+                                     i_muL,
+                                     i_muR,
+                                     l_tA,
+                                     l_tm1,
+                                     l_fsA[0],
+                                     l_fsA[1],
+                                     i_freeSurface );
 
-      // apply back-rotation to face-aligned coordinate system and mid part
-      for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-        linalg::Matrix::matMulB0( 3, 5, 3,
-                                  l_tA[0],
-                                  l_fsMidA[l_sd][0],
-                                  l_tmp[l_sd][0] );
-      }
-
-      // rotate left solver to face-aligned coordinates (element exists per definition of our boundary conditions)
-      linalg::Matrix::matMulB0( 3, 5, 5,
-                                l_tmp[0][0],
-                                l_tm1[0],
-                                o_fsAl );
-
-      /**
-       * Free surface boundary conditions mirror (rotated) x-components of the stress tensor.
-       * Reference: Eq. (51) in
-       *            Martin Kaeser and Michael Dumbser
-       *            An arbitrary high-order discontinuous Galerkin method for elastic
-       *            waves on unstructured meshes – I. The two-dimensional isotropic
-       *            case with external source terms
-       **/
-      if( i_freeSurface == true ) {
-        // multiply tmpR with diag( -1, 1, -1, 1, 1 ) from the right.
-        //                           0      2
-        for( unsigned short l_ro = 0; l_ro < 3; l_ro++ ) {
-          l_tmp[1][l_ro][0] *= -1;
-          l_tmp[1][l_ro][2] *= -1;
+        // store results
+        for( unsigned short l_en = 0; l_en < 3*5; l_en++ ) {
+          o_fsAl[l_en] = l_fsA[0][l_en];
+          o_fsAr[l_en] = l_fsA[1][l_en];
         }
       }
-
-      // rotate right solver to face-aligned coordinates
-      linalg::Matrix::matMulB0( 3, 5, 5,
-                                l_tmp[1][0],
-                                l_tm1[0],
-                                o_fsAr );
     }
 
     /**
@@ -260,12 +260,12 @@ class edge::seismic::solvers::AderDgInit {
      * @paramt TL_T_REAL floating point type.
      **/
     template< typename TL_T_REAL >
-    static void setUpFs( TL_T_REAL i_rhoL,
-                         TL_T_REAL i_rhoR,
-                         TL_T_REAL i_lamL,
-                         TL_T_REAL i_lamR,
-                         TL_T_REAL i_muL,
-                         TL_T_REAL i_muR,
+    static void setUpFs( double    i_rhoL,
+                         double    i_rhoR,
+                         double    i_lamL,
+                         double    i_lamR,
+                         double    i_muL,
+                         double    i_muR,
                          double    i_nx,
                          double    i_ny,
                          double    i_nz,
@@ -279,11 +279,9 @@ class edge::seismic::solvers::AderDgInit {
                          TL_T_REAL o_fsAr[6*9],
                          bool      i_freeSurface ) {
       // intermediate matrices
-      TL_T_REAL l_tE[9][9];
-      TL_T_REAL l_tA[6][6];
-      TL_T_REAL l_tm1[9][9];
-      TL_T_REAL l_fsMidA[2][6][9];
-      TL_T_REAL l_tmp[2][6][9];
+      double l_tE[9][9];
+      double l_tA[6][6];
+      double l_tm1[9][9];
 
       // compute trafos
       seismic::common::setupTrafo3d( i_nx, i_ny, i_nz,
@@ -301,53 +299,26 @@ class edge::seismic::solvers::AderDgInit {
                                         i_tx, i_ty, i_tz,
                                         l_tm1 );
 
-      // compute mid part of the solver
-      seismic::setups::ViscoElasticity::fsMid( i_rhoL,
-                                               i_rhoR,
-                                               i_lamL,
-                                               i_lamR,
-                                               i_muL,
-                                               i_muR,
-                                               l_fsMidA[0],
-                                               l_fsMidA[1] );
+      if( o_fsAl != nullptr && o_fsAr != nullptr ) {
+        double l_fsA[2][6*9];
+        setups::ViscoElasticity::fs( i_rhoL,
+                                     i_rhoR,
+                                     i_lamL,
+                                     i_lamR,
+                                     i_muL,
+                                     i_muR,
+                                     l_tA,
+                                     l_tm1,
+                                     l_fsA[0],
+                                     l_fsA[1],
+                                     i_freeSurface );
 
-      // apply back-rotation to face-aligned coordinate system and mid part
-      for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-        linalg::Matrix::matMulB0( 6, 9, 6,
-                                  l_tA[0],
-                                  l_fsMidA[l_sd][0],
-                                  l_tmp[l_sd][0] );
-      }
-
-      // rotate left solver to face-aligned coordinates (element exists per definition of our boundary conditions)
-      linalg::Matrix::matMulB0( 6, 9, 9,
-                                l_tmp[0][0],
-                                l_tm1[0],
-                                o_fsAl );
-
-      /*
-      * Free surface boundary conditions mirror (rotated) x-components of the stress tensor.
-      * Reference: Eq. (41) in
-      *            Dumbser, Michael, and Martin Kaeser.
-      *            "An arbitrary high-order discontinuous Galerkin method for elastic waves on
-      *            unstructured meshes—II. The three-dimensional isotropic case."
-      *            Geophysical Journal International 167.1 (2006): 319-336.
-      */
-      if( i_freeSurface == true ) {
-        // multiply right side with diag (-1, 1, 1, -1, 1, -1, 1, 1, 1 ) from the right.
-        //                                 0         3      5
-        for( unsigned short l_ro = 0; l_ro < 6; l_ro++ ) {
-          l_tmp[1][l_ro][0] *= -1;
-          l_tmp[1][l_ro][3] *= -1;
-          l_tmp[1][l_ro][5] *= -1;
+        // store results
+        for( unsigned short l_en = 0; l_en < 6*9; l_en++ ) {
+          o_fsAl[l_en] = l_fsA[0][l_en];
+          o_fsAr[l_en] = l_fsA[1][l_en];
         }
       }
-
-      // rotate right solver to face-aligned coordinates
-      linalg::Matrix::matMulB0( 6, 9, 9,
-                                l_tmp[1][0],
-                                l_tm1[0],
-                                o_fsAr );
     }
 
     /**
@@ -390,8 +361,11 @@ class edge::seismic::solvers::AderDgInit {
       for( TL_T_LID l_el = 0; l_el < i_nEls; l_el++ ) {
         for( TL_T_LID l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
           for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-            for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
-              o_fsA[l_sd][l_el][l_fa][l_en] = std::numeric_limits< TL_T_REAL >::max();
+            // init anelastic flux solver
+            if( o_fsA[0] != nullptr && o_fsA[1] != nullptr ) {
+              for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
+                o_fsA[l_sd][l_el][l_fa][l_en] = std::numeric_limits< TL_T_REAL >::max();
+              }
             }
           }
         }
@@ -455,8 +429,8 @@ class edge::seismic::solvers::AderDgInit {
                      l_muL,  l_muR,
                      i_faChars[l_fa].outNormal[0],
                      i_faChars[l_fa].outNormal[1],
-                     o_fsA[0][l_elL][l_fIdL],
-                     o_fsA[1][l_elL][l_fIdL],
+                     (o_fsA[0] != nullptr) ? o_fsA[0][l_elL][l_fIdL] : nullptr,
+                     (o_fsA[1] != nullptr) ? o_fsA[1][l_elL][l_fIdL] : nullptr,
                      (i_faChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
           }
           else if( TL_N_DIS == 3 ) {
@@ -472,8 +446,8 @@ class edge::seismic::solvers::AderDgInit {
                      i_faChars[l_fa].tangent1[0],
                      i_faChars[l_fa].tangent1[1],
                      i_faChars[l_fa].tangent1[2],
-                     o_fsA[0][l_elL][l_fIdL],
-                     o_fsA[1][l_elL][l_fIdL],
+                     (o_fsA[0] != nullptr) ? o_fsA[0][l_elL][l_fIdL] : nullptr,
+                     (o_fsA[1] != nullptr) ? o_fsA[1][l_elL][l_fIdL] : nullptr,
                      (i_faChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE );
           }
         }
@@ -489,8 +463,8 @@ class edge::seismic::solvers::AderDgInit {
                       l_muR,  l_muL,
                      -i_faChars[l_fa].outNormal[0],
                      -i_faChars[l_fa].outNormal[1],
-                      o_fsA[0][l_elR][l_fIdR],
-                      o_fsA[1][l_elR][l_fIdR],
+                      (o_fsA[0] != nullptr) ? o_fsA[0][l_elR][l_fIdR] : nullptr,
+                      (o_fsA[1] != nullptr) ? o_fsA[1][l_elR][l_fIdR] : nullptr,
                       false );
           }
           else if( TL_N_DIS == 3 ) {
@@ -506,8 +480,8 @@ class edge::seismic::solvers::AderDgInit {
                       i_faChars[l_fa].tangent1[0],
                       i_faChars[l_fa].tangent1[1],
                       i_faChars[l_fa].tangent1[2],
-                      o_fsA[0][l_elR][l_fIdR],
-                      o_fsA[1][l_elR][l_fIdR],
+                      (o_fsA[0] != nullptr) ? o_fsA[0][l_elR][l_fIdR] : nullptr,
+                      (o_fsA[1] != nullptr) ? o_fsA[1][l_elR][l_fIdR] : nullptr,
                       false );
           }
         }
@@ -557,21 +531,22 @@ class edge::seismic::solvers::AderDgInit {
         }
 
         // scale solvers and double-check, that we didn't mess up
-        for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
-          EDGE_CHECK( !l_exL || o_fsA[0][l_elL][l_fIdL][l_en] != std::numeric_limits< TL_T_REAL >::max() );
-          EDGE_CHECK( !l_exR || o_fsA[0][l_elR][l_fIdR][l_en] != std::numeric_limits< TL_T_REAL >::max() );
-          EDGE_CHECK( !l_exL || o_fsA[1][l_elL][l_fIdL][l_en] != std::numeric_limits< TL_T_REAL >::max() );
-          EDGE_CHECK( !l_exR || o_fsA[1][l_elR][l_fIdR][l_en] != std::numeric_limits< TL_T_REAL >::max() );
+        if( o_fsA[0] != nullptr && o_fsA[1] != nullptr ) {
+          for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
+            EDGE_CHECK( !l_exL || o_fsA[0][l_elL][l_fIdL][l_en] != std::numeric_limits< TL_T_REAL >::max() );
+            EDGE_CHECK( !l_exR || o_fsA[0][l_elR][l_fIdR][l_en] != std::numeric_limits< TL_T_REAL >::max() );
+            EDGE_CHECK( !l_exL || o_fsA[1][l_elL][l_fIdL][l_en] != std::numeric_limits< TL_T_REAL >::max() );
+            EDGE_CHECK( !l_exR || o_fsA[1][l_elR][l_fIdR][l_en] != std::numeric_limits< TL_T_REAL >::max() );
 
-          // scale left elements' solvers
-          if( l_exL ) o_fsA[0][l_elL][l_fIdL][l_en] *= l_sca[0];
-          if( l_exL ) o_fsA[1][l_elL][l_fIdL][l_en] *= l_sca[0];
+            // scale left elements' solvers
+            if( l_exL ) o_fsA[0][l_elL][l_fIdL][l_en] *= l_sca[0];
+            if( l_exL ) o_fsA[1][l_elL][l_fIdL][l_en] *= l_sca[0];
 
-          // scale right elements' solvers
-          if( l_exR ) o_fsA[0][l_elR][l_fIdR][l_en] *= l_sca[1];
-          if( l_exR ) o_fsA[1][l_elR][l_fIdR][l_en] *= l_sca[1];
+            // scale right elements' solvers
+            if( l_exR ) o_fsA[0][l_elR][l_fIdR][l_en] *= l_sca[1];
+            if( l_exR ) o_fsA[1][l_elR][l_fIdR][l_en] *= l_sca[1];
+          }
         }
-
       }
 
 #ifdef PP_USE_OMP
@@ -583,12 +558,16 @@ class edge::seismic::solvers::AderDgInit {
         TL_T_LID l_elDo = i_elMeDa[ i_elDaMe[l_el] ];
 
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
+          if( o_fsA[0] != nullptr && o_fsA[1] != nullptr ) {
+            for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
               o_fsA[0][l_el][l_fa][l_en] = o_fsA[0][l_elDo][l_fa][l_en];
               o_fsA[1][l_el][l_fa][l_en] = o_fsA[1][l_elDo][l_fa][l_en];
+            }
           }
         }
       }
     }
 
 };
+
+#endif

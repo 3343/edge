@@ -45,7 +45,6 @@ if( i_step == 0 ) {
                                           m_dT,
                                           i_enSp[0],
                                           m_internal.m_elementChars,
-                                          m_internal.m_elementShared4,
                                           m_internal.m_elementShared2,
                                           m_internal.m_elementModePrivate1,
 #if (PP_N_RELAXATION_MECHANISMS > 0)
@@ -73,7 +72,6 @@ else if ( i_step == 1 ) {
               m_internal.m_globalShared2[0].connect.scDgAd,
               m_internal.m_globalShared2[0].connect.liDoLiDu,
               m_internal.m_globalShared2[0].connect.liLp,
-              m_internal.m_elementShared4,
               m_internal.m_globalShared7[0],
               m_internal.m_globalShared5[0].gl,
               m_internal.m_globalShared5[0].fa,

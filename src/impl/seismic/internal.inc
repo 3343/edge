@@ -73,26 +73,6 @@ typedef t_fluxSolver t_elementShared2;
 #define PP_N_ELEMENT_SHARED_3 C_ENT[T_SDISC.ELEMENT].N_FACES
 typedef t_fluxSolver t_elementShared3;
 
-// setup number of entries in the star matrices
-#if defined PP_T_KERNELS_XSMM
-const unsigned short N_MAT_STAR = (N_DIM==2) ? 10 : 24;
-#endif
-
-/*
- * Fourth shared element data are the star matrices.
- */
-typedef struct {
-#if defined PP_T_KERNELS_XSMM
-  real_base mat[N_MAT_STAR];
-#else
-  real_base mat[N_QUANTITIES][N_QUANTITIES];
-#endif
-} t_matStar;
-
-#define PP_ELEMENT_SHARED_4_HUGE
-#define PP_N_ELEMENT_SHARED_4 N_DIM
-typedef t_matStar t_elementShared4;
-
 /*
  * First private element mode data are the elastic DOFS.
  */

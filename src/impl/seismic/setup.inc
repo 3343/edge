@@ -223,19 +223,6 @@ else {
 #pragma omp parallel
 #endif
 {
-  // star matrix
-#if defined PP_T_KERNELS_XSMM
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
-                                    l_shared.m_nWrks,
-                                    N_MAT_STAR,
-                                    l_internal.m_elementShared4[0][0].mat );
-#else
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
-                                    l_shared.m_nWrks,
-                                    N_QUANTITIES*N_QUANTITIES,
-                                    l_internal.m_elementShared4[0][0].mat[0] );
-#endif
-
   // flux solver own
   edge::parallel::Shared::numaInit( l_enLayouts[2],
                                     l_shared.m_nWrks,
@@ -557,20 +544,6 @@ if( l_elasticConf.m_frictionLaw != "" ) {
 
   delete[] l_faultData;
 }
-
-// setup star matrices
-edge::seismic::solvers::AderDg< real_base,
-                                N_RELAXATION_MECHANISMS,
-                                T_SDISC.ELEMENT,
-                                ORDER,
-                                ORDER,
-                                N_CRUNS,
-                                MM_KERNELS_SPARSE
-                              >::setupStarM( l_internal.m_nElements,
-                                             l_internal.m_vertexChars,
-                                             l_internal.m_connect.elVe,
-                                             l_internal.m_elementShared1,
-                                             l_internal.m_elementShared4 );
 
 // setup solvers
 edge::seismic::solvers::common::setupSolvers( l_internal.m_nElements,

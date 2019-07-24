@@ -40,7 +40,7 @@ TEST_CASE( "Optimized elastic volume integration for single forward simulations.
   float l_scratch[9][20][1];
 
   // compute volume integration
-  l_vol.apply(                    l_starE,
+  l_vol.apply( (float (*)[81])    l_starE,
                                   nullptr,
                                   nullptr,
                (float (*)[20][1]) l_tDofsE,
@@ -72,9 +72,9 @@ TEST_CASE( "Optimized viscoelastic volume integration for single forward simulat
                                                    l_dynMem );
 
   // compute solution
-  l_vol.apply(                       l_starE,
-               (float (*)     [6*3]) l_starA,
-               (float (*)     [6*6]) l_srcA,
+  l_vol.apply( (float (*)[81])       l_starE,
+               (float (*)[6*3])      l_starA,
+               (float (*)[6*6])      l_srcA,
                (float (*)[20][1])    l_tDofsE,
                (float (*)[6][20][1]) l_tDofsA,
                (float (*)[20][1])    l_dofsE,

@@ -57,6 +57,7 @@ if env['moab'] != False:
 
 if 'elastic' in env['equations']:
   l_sources = l_sources + [ 'impl/seismic/io/Config.cpp',
+                            'impl/seismic/setups/Elasticity.cpp',
                             'impl/seismic/setups/ViscoElasticity.cpp' ]
 
 for l_source in l_sources:
@@ -113,6 +114,7 @@ if env['tests']:
     l_tests = l_tests+['impl/seismic/common.test.cpp',
                        'impl/seismic/sc/Llf.test.cpp',
                        'impl/seismic/solvers/common.test.cpp',
+                       'impl/seismic/setups/Elasticity.test.cpp',
                        'impl/seismic/setups/ViscoElasticity.test.cpp',
                        'impl/seismic/setups/RuptureInit.test.cpp',
 #                       'impl/seismic/solvers/InternalBoundary.test.cpp',

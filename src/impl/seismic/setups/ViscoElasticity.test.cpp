@@ -309,9 +309,9 @@ TEST_CASE( "Derivation of the source matrix in 2D", "[ViscoElasticity][src2d]" )
 }
 
 TEST_CASE( "Derivation of the viscoelastic part of the star matrix in 2D", "[ViscoElasticity][starMatrix2d]" ) {
-  float l_jacInv[2][2] = { { 4, 8 },
-                           { 2, 8 } };
-  float l_starA[2][3 * 2];
+  double l_jacInv[2][2] = { { 4, 8 },
+                            { 2, 8 } };
+  double l_starA[2][3 * 2];
 
   edge::seismic::setups::ViscoElasticity::star( l_jacInv,
                                                 l_starA );
@@ -337,8 +337,8 @@ TEST_CASE( "Derivation of the viscoelastic part of the flux solvers in 2D", "[Vi
   double l_muL1  = 10.4E9;
   double l_muR1  = 13.1E9;
 
-  float l_fsMidL1[3][5];
-  float l_fsMidR1[3][5];
+  double l_fsMidL1[3][5];
+  double l_fsMidR1[3][5];
 
   edge::seismic::setups::ViscoElasticity::fsMid( l_rhoL1, l_rhoR1,
                                                  l_lamL1, l_lamR1,
@@ -528,10 +528,10 @@ TEST_CASE( "Derivation of the source matrix in 3D", "[ViscoElasticity][src3d]" )
 }
 
 TEST_CASE( "Derivation of the viscoelastic part of the star matrix in 3D", "[ViscoElasticity][starMatrix3d]" ) {
-  float l_jacInv[3][3] = { { 4, 8, 0 },
-                           { 2, 8, 4 },
-                           { 8, 0, 4 } };
-  float l_starA[3][6 * 3];
+  double l_jacInv[3][3] = { { 4, 8, 0 },
+                            { 2, 8, 4 },
+                            { 8, 0, 4 } };
+  double l_starA[3][6 * 3];
 
   edge::seismic::setups::ViscoElasticity::star( l_jacInv,
                                                 l_starA );
@@ -557,8 +557,8 @@ TEST_CASE( "Derivation of the viscoelastic part of the flux solvers in 3D", "[Vi
   double l_muL1  = 10.4E9;
   double l_muR1  = 13.1E9;
 
-  float l_fsMidL1[6][9];
-  float l_fsMidR1[6][9];
+  double l_fsMidL1[6][9];
+  double l_fsMidR1[6][9];
 
   edge::seismic::setups::ViscoElasticity::fsMid( l_rhoL1, l_rhoR1,
                                                  l_lamL1, l_lamR1,

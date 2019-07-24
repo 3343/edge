@@ -78,6 +78,15 @@ class edge::seismic::kernels::TimePredVanilla: public edge::seismic::kernels::Ti
     //! number of quantities per relaxation mechanism
     static unsigned short const TL_N_QTS_M = CE_N_QTS_M( TL_N_DIS );
 
+    //! number of non-zeros in the elastic star matrices
+    static unsigned short const TL_N_ENS_STAR_E = CE_N_ENS_STAR_E_DE( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic star matrices
+    static unsigned short const TL_N_ENS_STAR_A = CE_N_ENS_STAR_A_DE( TL_N_DIS );
+
+    //! number of non-zeros in the anelastic source matrices
+    static unsigned short const TL_N_ENS_SRC_A = CE_N_ENS_SRC_A_DE( TL_N_DIS );
+
     //! matrix kernels
     edge::data::MmVanilla< TL_T_REAL > m_mm;
 
@@ -201,9 +210,9 @@ class edge::seismic::kernels::TimePredVanilla: public edge::seismic::kernels::Ti
      * @param o_tIntA will be set to anelastic time integrated DOFS (ignored if TL_N_RMS==0, use nullptr).
      **/
     void ck( TL_T_REAL         i_dT,
-             TL_T_REAL const   i_starE[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E],
-             TL_T_REAL const (*i_starA)[TL_N_QTS_M*TL_N_DIS],
-             TL_T_REAL const (*i_srcA)[TL_N_QTS_M*TL_N_QTS_M],
+             TL_T_REAL const   i_starE[TL_N_DIS][TL_N_ENS_STAR_E],
+             TL_T_REAL const (*i_starA)[TL_N_ENS_STAR_A],
+             TL_T_REAL const (*i_srcA)[TL_N_ENS_SRC_A],
              TL_T_REAL const   i_dofsE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
              TL_T_REAL const (*i_dofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS],
              TL_T_REAL         o_scratch[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
@@ -262,7 +271,7 @@ class edge::seismic::kernels::TimePredVanilla: public edge::seismic::kernels::Ti
                                      m_stiffT[l_re-1][l_di],
                                      o_scratch[0][0] );
           // multiply with elastic star matrices
-          m_mm.m_kernels[1][l_re-1]( i_starE[l_di][0],
+          m_mm.m_kernels[1][l_re-1]( i_starE[l_di],
                                      o_scratch[0][0],
                                      o_derE[l_de][0][0] );
 

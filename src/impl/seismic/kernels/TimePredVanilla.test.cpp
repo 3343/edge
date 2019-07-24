@@ -46,17 +46,17 @@ TEST_CASE( "Elastic ADER time prediction using vanilla kernels.", "[elastic][Tim
                                                               l_dynMem );
 
   // compute time prediction
-  l_predElastic.ck( 0.017,
-                    l_starE,
-                    nullptr,
-                    nullptr,
+  l_predElastic.ck(                    0.017,
+                    (float (*)[81])    l_starE,
+                                       nullptr,
+                                       nullptr,
                     (float (*)[20][1]) l_dofsE,
-                    nullptr,
-                    l_scratch,
-                    l_dersE,
-                    nullptr,
-                    l_tDofsE,
-                    nullptr );
+                                       nullptr,
+                                       l_scratch,
+                                       l_dersE,
+                                       nullptr,
+                                       l_tDofsE,
+                                       nullptr );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
@@ -87,17 +87,17 @@ TEST_CASE( "Viscoelastic ADER time prediction using vanilla kernels.", "[visco][
                                                        l_dynMem );
 
   // compute time prediction
-  l_pred.ck( 0.017,
-             l_starE,
-             (float (*)[18]) l_starA,
-             (float (*)[36]) l_srcA,
-             (float (*)[20][1]) l_dofsE,
+  l_pred.ck(                       0.017,
+             (float (*)[81])       l_starE,
+             (float (*)[18])       l_starA,
+             (float (*)[36])       l_srcA,
+             (float (*)[20][1])    l_dofsE,
              (float (*)[6][20][1]) l_dofsA,
-             l_scratch,
-             l_dersE,
-             l_dersA,
-             l_tDofsE,
-             l_tDofsA );
+                                   l_scratch,
+                                   l_dersE,
+                                   l_dersA,
+                                   l_tDofsE,
+                                   l_tDofsA );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {

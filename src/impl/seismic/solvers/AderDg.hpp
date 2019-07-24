@@ -102,6 +102,11 @@ class edge::seismic::solvers::AderDg {
     //! number of subcells per DG-element
     static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
+    //! elastic star matrices
+    static unsigned short const TL_N_ENS_STAR_E = (TL_MATS_SP) ? CE_N_ENS_STAR_E_SP( TL_N_DIS )
+                                                               : CE_N_ENS_STAR_E_DE( TL_N_DIS );
+    TL_T_REAL (*m_starE)[TL_N_DIS][TL_N_ENS_STAR_E] = nullptr;
+
     //! anelastic source matrices
     static unsigned short const TL_N_ENS_SRC_A = (TL_MATS_SP) ? CE_N_ENS_SRC_A_SP( TL_N_DIS )
                                                               : CE_N_ENS_SRC_A_DE( TL_N_DIS );
@@ -137,9 +142,19 @@ class edge::seismic::solvers::AderDg {
       // size of the allocs in byte
       std::size_t l_size = std::numeric_limits< size_t >::max();
 
+      // elastic star matrices
+      l_size = i_nEls * std::size_t(TL_N_DIS) * TL_N_ENS_STAR_E;
+      l_size *= sizeof(TL_T_REAL);
+
+      m_starE = ( TL_T_REAL (*) [TL_N_DIS][TL_N_ENS_STAR_E] ) io_dynMem.allocate( l_size,
+                                                                                  i_align,
+                                                                                  false,
+                                                                                  true );
+
+      // anelastic part
       if( TL_N_RMS > 0 ) {
         // anelastic source matrices
-        l_size = i_nEls * std::size_t(TL_N_RMS) * TL_N_ENS_SRC_A ;
+        l_size = i_nEls * std::size_t(TL_N_RMS) * TL_N_ENS_SRC_A;
         l_size *= sizeof(TL_T_REAL);
 
         m_srcA = ( TL_T_REAL (*) [TL_N_ENS_SRC_A ] ) io_dynMem.allocate( l_size,
@@ -233,9 +248,8 @@ class edge::seismic::solvers::AderDg {
              ALIGNMENT.BASE.HEAP,
              io_dynMem );
 
-      // init constant data
+      // init anelastic source matrices and compute elastic Lame parameters in viscoelastic settings
       if( TL_N_RMS > 0 ) {
-        // init sources and replace lame parameters with elastic ones
         AderDgInit< TL_T_EL,
                     TL_MATS_SP >::initSrcA( i_nEls,
                                             TL_N_RMS,
@@ -243,30 +257,31 @@ class edge::seismic::solvers::AderDg {
                                             i_freqRat,
                                             io_bgPars,
                                             m_srcA );
-
-        // init star matrices
-        AderDgInit< TL_T_EL,
-                    TL_MATS_SP >::initStar( i_nEls,
-                                            i_elVe,
-                                            i_veChars,
-                                            io_bgPars,
-                                            m_starA );
-
-        // init flux solvers
-        AderDgInit< TL_T_EL,
-                    TL_MATS_SP >::initFs( i_nEls,
-                                          i_nFas,
-                                          i_faEl,
-                                          i_elVe,
-                                          i_elFa,
-                                          i_elMeDa,
-                                          i_elDaMe,
-                                          i_veChars,
-                                          i_faChars,
-                                          i_elChars,
-                                          io_bgPars,
-                                          m_fsA );
       }
+
+      // init star matrices
+      AderDgInit< TL_T_EL,
+                  TL_MATS_SP >::initStar( i_nEls,
+                                          i_elVe,
+                                          i_veChars,
+                                          io_bgPars,
+                                          m_starE,
+                                          m_starA );
+
+      // init flux solvers
+      AderDgInit< TL_T_EL,
+                  TL_MATS_SP >::initFs( i_nEls,
+                                        i_nFas,
+                                        i_faEl,
+                                        i_elVe,
+                                        i_elFa,
+                                        i_elMeDa,
+                                        i_elDaMe,
+                                        i_veChars,
+                                        i_faChars,
+                                        i_elChars,
+                                        io_bgPars,
+                                        m_fsA );
     }
 
     /**
@@ -274,122 +289,6 @@ class edge::seismic::solvers::AderDg {
      **/
     ~AderDg() {
       delete m_kernels;
-    }
-
-    /**
-     * Sets up the star matrices, which are a linear combination of the Jacobians.
-     *
-     * @param i_nElements number of elements.
-     * @param i_vertexChars vertex characteristics.
-     * @parma i_elVe vertices adjacent to the elements.
-     * @param i_bgPars background parameters.
-     * @param o_starMatrices will be set to star matrices.
-     **/
-    static void setupStarM(       int_el           i_nElements,
-                            const t_vertexChars   *i_vertexChars,
-                            const int_el         (*i_elVe)[TL_N_VES_EL],
-                            const t_bgPars       (*i_bgPars)[1],
-                                  t_matStar      (*o_starMatrices)[TL_N_DIS] ) {
-      PP_INSTR_FUN("star_matrices")
-
-      // iterate over elements
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-      for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
-        // derive jacobians of the pdes
-        real_base l_A[TL_N_DIS][TL_N_QTS_E][TL_N_QTS_E];
-
-        for( unsigned int l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-#if defined PP_T_KERNELS_XSMM
-          for( int_qt l_nz = 0; l_nz < N_MAT_STAR; l_nz++ ) o_starMatrices[l_el][l_di].mat[l_nz] = 0;
-#else
-          for( int_qt l_qt1 = 0; l_qt1 < TL_N_QTS_E; l_qt1++ ) {
-            for( int_qt l_qt2 = 0; l_qt2 < TL_N_QTS_E; l_qt2++ ) {
-              o_starMatrices[l_el][l_di].mat[l_qt1][l_qt2] = 0;
-            }
-          }
-#endif
-        }
-
-        EDGE_CHECK( i_bgPars[l_el][0].rho > TOL.SOLVER );
-
-        seismic::common::getJac( i_bgPars[l_el][0].rho,
-                                 i_bgPars[l_el][0].lam,
-                                 i_bgPars[l_el][0].mu,
-                                 l_A[0][0],
-                                 TL_N_DIS );
-
-        // derive vertex coords
-        real_mesh l_veCoords[TL_N_DIS][TL_N_VES_EL];
-        mesh::common< TL_T_EL >::getElVeCrds( l_el, i_elVe, i_vertexChars, l_veCoords );
-
-        // get inverse jacobian
-        real_mesh l_jac[TL_N_DIS][TL_N_DIS];
-        linalg::Mappings::evalJac( TL_T_EL, l_veCoords[0], l_jac[0] );
-
-        real_mesh l_jacInv[TL_N_DIS][TL_N_DIS];
-        linalg::Matrix::inv( l_jac, l_jacInv );
-
-        // set star matrices
-        // iterate over reference dimensions
-        for( unsigned int l_d1 = 0; l_d1 < TL_N_DIS; l_d1++ ) {
-#if defined PP_T_KERNELS_XSMM
-
-#if PP_N_DIM == 2
-          o_starMatrices[l_el][l_d1].mat[0] += l_A[0][0][3] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[2] += l_A[0][1][3] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[5] += l_A[0][2][4] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[6] += l_A[0][3][0] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[9] += l_A[0][4][2] * l_jacInv[0][l_d1];
-
-          o_starMatrices[l_el][l_d1].mat[1] += l_A[1][0][4] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[3] += l_A[1][1][4] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[4] += l_A[1][2][3] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[7] += l_A[1][3][2] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[8] += l_A[1][4][1] * l_jacInv[1][l_d1];
-#elif PP_N_DIM == 3
-          o_starMatrices[l_el][l_d1].mat[ 0] += l_A[0][0][6] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 3] += l_A[0][1][6] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 6] += l_A[0][2][6] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[10] += l_A[0][3][7] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[14] += l_A[0][5][8] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[15] += l_A[0][6][0] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[19] += l_A[0][7][3] * l_jacInv[0][l_d1];
-          o_starMatrices[l_el][l_d1].mat[23] += l_A[0][8][5] * l_jacInv[0][l_d1];
-
-          o_starMatrices[l_el][l_d1].mat[ 1] += l_A[1][0][7] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 4] += l_A[1][1][7] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 7] += l_A[1][2][7] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 9] += l_A[1][3][6] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[12] += l_A[1][4][8] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[16] += l_A[1][6][3] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[18] += l_A[1][7][1] * l_jacInv[1][l_d1];
-          o_starMatrices[l_el][l_d1].mat[22] += l_A[1][8][4] * l_jacInv[1][l_d1];
-
-          o_starMatrices[l_el][l_d1].mat[ 2] += l_A[2][0][8] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 5] += l_A[2][1][8] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[ 8] += l_A[2][2][8] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[11] += l_A[2][4][7] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[13] += l_A[2][5][6] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[17] += l_A[2][6][5] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[20] += l_A[2][7][4] * l_jacInv[2][l_d1];
-          o_starMatrices[l_el][l_d1].mat[21] += l_A[2][8][2] * l_jacInv[2][l_d1];
-#else
-#error not defined
-#endif
-
-#else
-          for( unsigned int l_d2 = 0; l_d2 < TL_N_DIS; l_d2++ ) {
-            for( int_qt l_qt1 = 0; l_qt1 < TL_N_QTS_E; l_qt1++ ) {
-              for( int_qt l_qt2 = 0; l_qt2 < TL_N_QTS_E; l_qt2++ ) {
-                o_starMatrices[l_el][l_d1].mat[l_qt1][l_qt2] += l_A[l_d2][l_qt1][l_qt2] * l_jacInv[l_d2][l_d1];
-               }
-             }
-           }
-#endif
-         }
-      }
     }
 
     /**
@@ -401,7 +300,6 @@ class edge::seismic::solvers::AderDg {
      * @param i_dt time step.
      * @param i_firstSpRe first sparse receiver entity.
      * @param i_elChars element characteristics.
-     * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers for the local element's contribution.
      * @param io_dofsE elastic DOFs.
      * @param io_dofsA anelastic DOFs.
@@ -417,7 +315,6 @@ class edge::seismic::solvers::AderDg {
                 double                               i_dt,
                 TL_T_LID                             i_firstSpRe,
                 t_elementChars              const  * i_elChars,
-                t_matStar                   const (* i_starM)[TL_N_DIS],
                 t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
                 TL_T_REAL                         (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                         (* io_dofsA)[TL_N_MDS][TL_N_CRS],
@@ -452,7 +349,7 @@ class edge::seismic::solvers::AderDg {
 
         // compute ADER time integration
         m_kernels->m_time.ck( (TL_T_REAL)  i_dt,
-                                         &(i_starM[l_el][0].mat), // TODO: fix struct
+                                           m_starE[l_el],
                                            m_starA[l_el],
                                            m_srcA+l_el*std::size_t(TL_N_RMS),
                                            io_dofsE[l_el],
@@ -485,14 +382,14 @@ class edge::seismic::solvers::AderDg {
         }
 
         // compute volume integral
-        m_kernels->m_volInt.apply( & i_starM[l_el][0].mat, // TODO: fix struct
-                                     m_starA[l_el],
-                                     m_srcA+l_el*std::size_t(TL_N_RMS),
-                                     o_tDofsDg[0][l_el],
-                                     l_tDofsA,
-                                     io_dofsE[l_el],
-                                     l_dofsA,
-                                     l_tmp );
+        m_kernels->m_volInt.apply( m_starE[l_el],
+                                   m_starA[l_el],
+                                   m_srcA+l_el*std::size_t(TL_N_RMS),
+                                   o_tDofsDg[0][l_el],
+                                   l_tDofsA,
+                                   io_dofsE[l_el],
+                                   l_dofsA,
+                                   l_tmp );
 
         // prefetches for next iteration
         const TL_T_REAL (* l_preDofs)[TL_N_MDS][TL_N_CRS] = nullptr;
@@ -534,7 +431,6 @@ class edge::seismic::solvers::AderDg {
      * @param i_dt time step of the two adjacent elements.
      * @param i_scDgAd adjacency of sub-cells at the faces of face-adjacent elements.
      * @parma i_liDoLiDu possibly duplicated limited elements, adjacent to an the dominant one.
-     * @param i_starM star matrices.
      * @param i_iBnd internal boundary data.
      * @param i_frictionGlobal global data of the friction law.
      * @param i_frictionFa face-local data of the friction law.
@@ -568,7 +464,6 @@ class edge::seismic::solvers::AderDg {
                          unsigned short                      const      i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                          TL_T_LID                            const   (* i_liDoLiDu)[TL_N_FAS],
                          TL_T_LID                            const   (* i_liLp),
-                         t_matStar                           const   (* i_starM)[TL_N_DIS],
                          edge::sc::ibnd::t_InternalBoundary<
                            TL_T_LID,
                            TL_T_REAL,
