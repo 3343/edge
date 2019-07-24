@@ -151,7 +151,7 @@ if 'xml' in env:
 vars.AddVariables(
   EnumVariable( 'cfr',
                 'concurrent forward runs',
-                '16',
+                '1',
                  allowed_values=( '1', '2', '4', '8', '16' )
               ),
   EnumVariable( 'equations',
@@ -176,7 +176,7 @@ vars.AddVariables(
               ),
   EnumVariable( 'arch',
                 'architecture to compile for',
-                'avx512',
+                'hsw',
                  allowed_values=('snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
