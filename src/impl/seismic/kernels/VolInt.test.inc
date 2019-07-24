@@ -218,6 +218,9 @@ printCStyle( l_dofsVUpdated[0] )
 print( 'dofsVUpdated 1' )
 printCStyle( l_dofsVUpdated[1] )
 */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 float l_rfs[2] = {0.012, 0.052};
 
 float l_starE[3][9][9] = {
@@ -461,3 +464,5 @@ for( unsigned short l_ro = 0; l_ro < 6; l_ro++ ) {
   }
 }
 EDGE_CHECK_EQ( l_nz, 12 );
+
+#pragma GCC diagnostic pop

@@ -237,6 +237,8 @@ printCStyle( l_tDofsV[0] )
 print( 'tDofsV 1' )
 printCStyle( l_tDofsV[1] )
 */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 
 float l_rfs[2] = {0.012, 0.052};
 
@@ -450,3 +452,5 @@ for( unsigned short l_ro = 0; l_ro < 6; l_ro++ ) {
   }
 }
 EDGE_CHECK_EQ( l_nz, 12 );
+
+#pragma GCC diagnostic pop
