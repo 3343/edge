@@ -175,7 +175,7 @@ vars.AddVariables(
               ),
   EnumVariable( 'arch',
                 'architecture to compile for',
-                'snb',
+                'avx512',
                  allowed_values=('snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
