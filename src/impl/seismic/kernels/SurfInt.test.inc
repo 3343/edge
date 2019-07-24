@@ -209,7 +209,9 @@ print( 'dofsNeighFsA')
 printCStyle( l_dofsNeighFsA )
 */
 #pragma GCC diagnostic push
+#if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 
 float l_rfs[3] = {0.0142, 0.0512, 0.252};
 
