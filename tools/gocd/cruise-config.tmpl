@@ -599,9 +599,16 @@
                 <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=3 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} xsmm=${EDGE_XSMM} tests=1 -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
+              <!-- run all tests without debugger -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>${DEBUGGER} ${EDGE_TESTS}</arg>
+                <arg>${EDGE_TESTS}</arg>
+                <runif status="passed" />
+              </exec>
+              <!-- run with debugger, but exclude CPU-tests (broken in valgrind) -->
+              <exec command="/bin/bash" workingdir="edge">
+                <arg>-c</arg>
+                <arg>${DEBUGGER} ${EDGE_TESTS} exclude:[Cpu]</arg>
                 <runif status="passed" />
               </exec>
               <!-- o=4 -->
@@ -610,9 +617,10 @@
                 <arg>CXX=${CXX_SEQ} scons xml=${EDGE_CONFIG} order=4 cfr=16 mode=${EDGE_MODE_DEBUG} arch=${EDGE_ARCH_DEBUG} xsmm=${EDGE_XSMM} tests=1 -j ${N_BUILD_PROC}</arg>
                 <runif status="passed" />
               </exec>
+              <!-- run with debugger, but exclude CPU-tests (broken in valgrind) -->
               <exec command="/bin/bash" workingdir="edge">
                 <arg>-c</arg>
-                <arg>${DEBUGGER} ${EDGE_TESTS}</arg>
+                <arg>${DEBUGGER} ${EDGE_TESTS} exclude:[Cpu]</arg>
                 <runif status="passed" />
               </exec>
             </tasks>
