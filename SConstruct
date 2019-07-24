@@ -39,6 +39,7 @@ def getEdgeVersion():
 
   # assemble version
   l_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+  l_version = str( l_version )
   if( l_dirty != '' ):
     l_version = l_version + '_dirty'
 
@@ -304,6 +305,7 @@ env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
 # detect compilers
 try:
   compVer = subprocess.check_output( [env['CXX'], "--version"] )
+  compVer = str( compVer )
 except:
   compVer = 'unknown'
 if( 'g++' in compVer ):
