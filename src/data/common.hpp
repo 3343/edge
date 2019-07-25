@@ -213,7 +213,7 @@ class edge::data::common {
      *       only high bandwith memory will be returned silently (ignoring the huge pages flag).
      *
      * @param i_size size in bytes.
-     * @param i_alignment alignment of the base pointer.
+     * @param i_alignment alignment of the base pointer (ignored when using huge pages).
      * @param i_hbw if true, high bandwidth memory is allocated (if available).
      * @param i_huge if true, the huge pages are used for the allocation (if available) with systems default huge page size.
      *

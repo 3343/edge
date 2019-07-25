@@ -211,6 +211,9 @@ vars.AddVariables(
   PackageVariable( 'moab',
                    'Enables the use of MOAB (The Mesh-Oriented datABase) and thus support for unstructured meshes if set. Otherwise regular meshes are used.',
                    'no' ),
+  PackageVariable( 'hugetlbfs',
+                   'Enables the use of libhugetlbfs.',
+                   'no' ),
   BoolVariable( 'easylogging',
                 'Enables the use of Easylogging.',
                 True ),
@@ -266,7 +269,7 @@ env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
-for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab' ]:
+for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab', 'hugetlbfs' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler
@@ -390,8 +393,12 @@ if( env['xsmm'] ):
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 
 # enable libhugetlbfs if available (dynamic because static misses functions, e.g., gethugepagesize())
-if( conf.CheckLibWithHeaderFlags('hugetlbfs', '', 'CXX', [], [], True) ):
-  env.AppendUnique( CPPDEFINES =['PP_USE_HUGETLBFS'] )
+if( env['hugetlbfs'] ):
+  if( conf.CheckLibWithHeaderFlags('hugetlbfs', '', 'CXX', [], [], True) ):
+    env.AppendUnique( CPPDEFINES =['PP_USE_HUGETLBFS'] )
+  else:
+    warnings.warn('  Warning: libhugetlbfs not found, continuing without' )
+    env['hugetlbfs'] = False
 
 # enable libnuma if available
 if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
