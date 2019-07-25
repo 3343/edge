@@ -116,8 +116,6 @@ if env['tests']:
                        'impl/seismic/setups/Elasticity.test.cpp',
                        'impl/seismic/setups/ViscoElasticity.test.cpp',
                        'impl/seismic/solvers/AderDgInit.test.cpp',
-                       'impl/seismic/setups/RuptureInit.test.cpp',
-#                       'impl/seismic/solvers/InternalBoundary.test.cpp',
                        'impl/seismic/solvers/FrictionLaws.test.cpp' ]
 
     # seismic kernel tests are only defined for tets and FP32
