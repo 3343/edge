@@ -68,6 +68,20 @@ suppression = {
 }
 
 ##
+# LIBXSMM
+##
+suppression = {
+	name = "Suppression"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=libxsmm_create_xcsr_soa;
+		}
+	}
+}
+
+##
 # Easylogging
 ##
 suppression = {
