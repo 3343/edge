@@ -54,12 +54,12 @@ TEST_CASE( "Local elastic surface integration for fused simulations.", "[elastic
   }
 
   // compute local surface integration
-  l_surf.local( l_fSolvE,
-                nullptr,
-                l_tDofsFused,
-                l_dofsFused,
-                nullptr,
-                l_scratch );
+  l_surf.local( (float (*)[9*9]) l_fSolvE,
+                                 nullptr,
+                                 l_tDofsFused,
+                                 l_dofsFused,
+                                 nullptr,
+                                 l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
@@ -103,7 +103,7 @@ TEST_CASE( "Neighboring elastic surface integration for fused simulations.", "[e
   l_surf.neigh( 3,
                 1,
                 2,
-                l_fSolvE[0],
+                l_fSolvE[0][0],
                 nullptr,
                 l_tDofsFused,
                 l_dofsFused,
@@ -152,7 +152,7 @@ TEST_CASE( "Neighboring elastic surface integration in the presence of a free su
   l_surf.neigh( 2,
                 std::numeric_limits< unsigned short >::max(),
                 std::numeric_limits< unsigned short >::max(),
-                l_fSolvE[0],
+                l_fSolvE[0][0],
                 nullptr,
                 l_tDofsFused,
                 l_dofsFused,
@@ -204,12 +204,12 @@ TEST_CASE( "Local viscoelastic surface integration for fused simulations.", "[vi
   }
 
   // compute local surface integration
-  l_surf.local(                       l_fSolvE,
-                (float (*)     [6*9]) l_fSolvA,
-                                      l_tDofsFusedE,
-                                      l_dofsFusedE,
-                                      l_dofsFusedA,
-                                      l_scratch );
+  l_surf.local( (float (*) [9*9]) l_fSolvE,
+                (float (*) [6*9]) l_fSolvA,
+                                  l_tDofsFusedE,
+                                  l_dofsFusedE,
+                                  l_dofsFusedA,
+                                  l_scratch );
 
   // check the results
   for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
@@ -263,7 +263,7 @@ TEST_CASE( "Neighboring viscoelastic surface integration for fused simulations."
   l_surf.neigh( 3,
                 1,
                 2,
-                l_fSolvE[0],
+                l_fSolvE[0][0],
                 l_fSolvA[0][0],
                 l_tDofsFusedE,
                 l_dofsFusedE,
@@ -325,7 +325,7 @@ TEST_CASE( "Neighboring viscoelastic surface integration in the presence of a fr
   l_surf.neigh( 2,
                 std::numeric_limits< unsigned short >::max(),
                 std::numeric_limits< unsigned short >::max(),
-                l_fSolvE[0],
+                l_fSolvE[0][0],
                 l_fSolvA[0][0],
                 l_tDofsFusedE,
                 l_dofsFusedE,
