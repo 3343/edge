@@ -355,7 +355,7 @@ suppression = {
   stacks = {
     {
       ...;
-      mod=edge,func=__kmp_get_global_thread_id_reg;
+      func=__kmp_get_global_thread_id_reg;
     }
   }
 }
