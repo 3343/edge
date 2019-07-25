@@ -71,7 +71,7 @@ suppression = {
 # LIBXSMM
 ##
 suppression = {
-	name = "Suppression"
+	name = "libxsmm"
 	type = {unreachable_memory_leak}
 	stacks = {
 		allocation={
@@ -90,8 +90,16 @@ suppression = {
   stacks = {
     {
       !!!;
-      mod=edge,src=easylogging++.cc,func=replaceFirstWithEscape;
+      src=easylogging++.cc,func=replaceFirstWithEscape;
     }
+  	{
+			!!!;
+			src=easylogging++.cc,func=ltrim;
+		}
+  	{
+			!!!;
+			src=easylogging++.cc,func=processDispatch;
+		}
   }
 }
 
