@@ -80,22 +80,45 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "libxsmm"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=libxsmm_create_xcsc_soa;
+		}
+	}
+}
 
 ##
 # Easylogging
 ##
 suppression = {
-  name = "easy_logging"
+  name = "easy_logging_0"
   type = {invalid_call}
   stacks = {
     {
       !!!;
       src=easylogging++.cc,func=replaceFirstWithEscape;
     }
+  }
+}
+suppression = {
+  name = "easy_logging_1"
+  type = {invalid_call}
+  stacks = {
   	{
 			!!!;
 			src=easylogging++.cc,func=ltrim;
 		}
+  }
+}
+
+suppression = {
+  name = "easy_logging_2"
+  type = {invalid_call}
+  stacks = {
   	{
 			!!!;
 			src=easylogging++.cc,func=processDispatch;
