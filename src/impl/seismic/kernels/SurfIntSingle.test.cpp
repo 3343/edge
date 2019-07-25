@@ -40,7 +40,7 @@ TEST_CASE( "Local surface integration for single seismic simulations.", "[elasti
   float l_scratch[2][9][6][1];
 
   // compute local surface integration
-  l_surf.local(                    l_fSolvE,
+  l_surf.local( (float (*)[81])    l_fSolvE,
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
                 (float (*)[10][1]) l_dofsE,
@@ -73,7 +73,7 @@ TEST_CASE( "Neighboring surface integration for single seismic forward simulatio
   l_surf.neigh(                    3,
                                    1,
                                    2,
-                                   l_fSolvE[0],
+                (float (*))        l_fSolvE[0],
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
                 (float (*)[10][1]) l_dofsE,
@@ -106,7 +106,7 @@ TEST_CASE( "Neighboring surface integration in the presence of a free surface fo
   l_surf.neigh(                    2,
                                    std::numeric_limits< unsigned short >::max(),
                                    std::numeric_limits< unsigned short >::max(),
-                                   l_fSolvE[0],
+                (float (*))        l_fSolvE[0],
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
                 (float (*)[10][1]) l_dofsE,
@@ -136,7 +136,7 @@ TEST_CASE( "Viscoelastic local surface integration for single forward simulation
   float l_scratch[2][9][6][1];
 
   // compute local surface integration
-  l_surf.local(                       l_fSolvE,
+  l_surf.local( (float (*)      [81]) l_fSolvE,
                 (float (*)     [6*9]) l_fSolvA,
                 (float (*)   [10][1]) l_tDofsE,
                 (float (*)   [10][1]) l_dofsE,
@@ -182,7 +182,7 @@ TEST_CASE( "Viscoelastic neighboring surface integration in the presence of a fr
   l_surf.neigh(                    2,
                                    std::numeric_limits< unsigned short >::max(),
                                    std::numeric_limits< unsigned short >::max(),
-                                   l_fSolvE[0],
+                (float (*))        l_fSolvE[0],
                                    l_fSolvA[0][0],
                 (float (*)[10][1]) l_tDofsE,
                 (float (*)[10][1]) l_dofsE,

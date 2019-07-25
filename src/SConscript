@@ -113,9 +113,9 @@ if env['tests']:
   if 'elastic' in env['equations']:
     l_tests = l_tests+['impl/seismic/common.test.cpp',
                        'impl/seismic/sc/Llf.test.cpp',
-                       'impl/seismic/solvers/common.test.cpp',
                        'impl/seismic/setups/Elasticity.test.cpp',
                        'impl/seismic/setups/ViscoElasticity.test.cpp',
+                       'impl/seismic/solvers/AderDgInit.test.cpp',
                        'impl/seismic/setups/RuptureInit.test.cpp',
 #                       'impl/seismic/solvers/InternalBoundary.test.cpp',
                        'impl/seismic/solvers/FrictionLaws.test.cpp' ]

@@ -33,6 +33,82 @@ namespace edge {
 }
 
 class edge::seismic::setups::Elasticity {
+  private:
+    /**
+     * Computes the left side's contribution to the two-dimensional Riemann solution in face-aligned coordinates.
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param i_muL left element's Lame parameter mu.
+     * @param i_muR right element's Lame parameter mu.
+     * @param o_flMid will be set to matrix for the left element's contribution.
+     **/
+    static void setupFlMid( double i_rhoL,
+                            double i_rhoR,
+                            double i_lamL,
+                            double i_lamR,
+                            double i_muL,
+                            double i_muR,
+                            double o_flMid[5][5] );
+
+    /**
+     * Computes the right side's contribution to the two-dimensional Riemann solution in face-aligned coordinates.
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param i_muL left element's Lame parameter mu.
+     * @param i_muR right element's Lame parameter mu.
+     * @param o_frMid will be set to matrix for the right element's contribution.
+     **/
+    static void setupFrMid( double i_rhoL,
+                            double i_rhoR,
+                            double i_lamL,
+                            double i_lamR,
+                            double i_muL,
+                            double i_muR,
+                            double o_frMid[5][5] );
+
+    /**
+     * Computes the left side's contribution to the three-dimensional Riemann solution in face-aligned coordinates.
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param i_muL left element's Lame parameter mu.
+     * @param i_muR right element's Lame parameter mu.
+     * @param o_flMid will be set to matrix for the left element's contribution.
+     **/
+    static void setupFlMid( double i_rhoL,
+                            double i_rhoR,
+                            double i_lamL,
+                            double i_lamR,
+                            double i_muL,
+                            double i_muR,
+                            double o_flMid[9][9] );
+
+    /**
+     * Computes the right side's contribution to the three-dimensional Riemann solution in face-aligned coordinates.
+     *
+     * @param i_rhoL left element's density rho.
+     * @param i_rhoR right element's density rho.
+     * @param i_lamL left element's Lame parameter lambda.
+     * @param i_lamR right element's Lame parameter lambda.
+     * @param i_muL left element's Lame parameter mu.
+     * @param i_muR right element's Lame parameter mu.
+     * @param o_frMid will be set to matrix for the right element's contribution.
+     **/
+    static void setupFrMid( double i_rhoL,
+                            double i_rhoR,
+                            double i_lamL,
+                            double i_lamR,
+                            double i_muL,
+                            double i_muR,
+                            double o_frMid[9][9] );
   public:
     /**
      * Computes the elastic part of the two-dimensional star matrices.
@@ -95,6 +171,60 @@ class edge::seismic::setups::Elasticity {
                       double       i_mu, 
                       double const i_jacInv[3][3],
                       double       o_starE[3][24] );
+
+    /**
+     * Sets up the two-dimensional flux solvers for a single face.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoL density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param i_t transformation of stresses from face-aligned coordinates to Cartesian.
+     * @param i_tm1 transformation of elastic quantities from Cartesian coordinates to face-aligned.
+     * @param o_fsEl will be set to elastic flux solver, applied to the left element's DOFs.
+     * @param o_fsEr will be set to elastic flux solver, applied to the right element's DOFs.
+     * @param i_freeSurface true if free surface boundary conditions are applied to the right element.
+     **/
+    static void fs( double       i_rhoL,
+                    double       i_rhoR,
+                    double       i_lamL,
+                    double       i_lamR,
+                    double       i_muL,
+                    double       i_muR,
+                    double const i_t[5][5],
+                    double const i_tm1[5][5],
+                    double       o_fsEl[5*5],
+                    double       o_fsEr[5*5],
+                    bool         i_freeSurface );
+
+    /**
+     * Sets up the three-dimensional flux solvers for a single face.
+     *
+     * @param i_rhoL density of the left element.
+     * @param i_rhoL density of the right element.
+     * @param i_lamL Lame parameter lambda of the left element.
+     * @param i_lamR Lame parameter lambda of the right element.
+     * @param i_muL Lame parameter mu of the left element.
+     * @param i_muR Lame parameter mu of the right element.
+     * @param i_t transformation of stresses from face-aligned coordinates to Cartesian.
+     * @param i_tm1 transformation of elastic quantities from Cartesian coordinates to face-aligned.
+     * @param o_fsl will be set to elastic flux solver, applied to the left element's DOFs.
+     * @param o_fsr will be set to elastic flux solver, applied to the right element's DOFs.
+     * @param i_freeSurface true if free surface boundary conditions are applied to the right element.
+     **/
+    static void fs( double       i_rhoL,
+                    double       i_rhoR,
+                    double       i_lamL,
+                    double       i_lamR,
+                    double       i_muL,
+                    double       i_muR,
+                    double const i_t[9][9],
+                    double const i_tm1[9][9],
+                    double       o_fsEl[9*9],
+                    double       o_fsEr[9*9],
+                    bool         i_freeSurface );
 };
 
 #endif

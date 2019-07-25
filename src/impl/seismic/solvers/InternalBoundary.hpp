@@ -28,7 +28,6 @@
 #include "io/logging.h"
 #include "linalg/Matrix.h"
 #include "linalg/Geom.hpp"
-#include "common.hpp"
 
 namespace edge {
   namespace seismic {

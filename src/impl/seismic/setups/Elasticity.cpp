@@ -22,10 +22,69 @@
  * Elasticity.
  **/
 #include "Elasticity.h"
+#include <cmath>
+#include "io/logging.h"
+#include "linalg/Matrix.h"
+
+void edge::seismic::setups::Elasticity::setupFlMid( double i_rhoL,
+                                                    double i_rhoR,
+                                                    double i_lamL,
+                                                    double i_lamR,
+                                                    double i_muL,
+                                                    double i_muR,
+                                                    double o_flMid[5][5] ) {
+  if( i_muL > 0 && i_muR > 0 ) {
+#include "impl/seismic/generated/FlMidElastic2D.inc"
+  }
+  else if( i_muL == 0 && i_muR == 0 ) {
+#include "impl/seismic/generated/FlMidAcoustic2D.inc"
+  }
+  else {
+    EDGE_LOG_FATAL;
+  }
+}
+
+void edge::seismic::setups::Elasticity::setupFrMid( double i_rhoL,
+                                                    double i_rhoR,
+                                                    double i_lamL,
+                                                    double i_lamR,
+                                                    double i_muL,
+                                                    double i_muR,
+                                                    double o_frMid[5][5] ) {
+  if( i_muL > 0 && i_muR > 0 ) {
+#include "impl/seismic/generated/FrMidElastic2D.inc"
+  }
+  else if( i_muL == 0 && i_muR == 0 ) {
+#include "impl/seismic/generated/FrMidAcoustic2D.inc"
+  }
+  else {
+    EDGE_LOG_FATAL;
+  }
+}
+
+void edge::seismic::setups::Elasticity::setupFlMid( double i_rhoL,
+                                                    double i_rhoR,
+                                                    double i_lamL,
+                                                    double i_lamR,
+                                                    double i_muL,
+                                                    double i_muR,
+                                                    double o_flMid[9][9] ) {
+#include "impl/seismic/generated/FlMid3D.inc"
+}
+
+void edge::seismic::setups::Elasticity::setupFrMid( double i_rhoL,
+                                                    double i_rhoR,
+                                                    double i_lamL,
+                                                    double i_lamR,
+                                                    double i_muL,
+                                                    double i_muR,
+                                                    double o_frMid[9][9] ) {
+#include "impl/seismic/generated/FrMid3D.inc"
+}
 
 void edge::seismic::setups::Elasticity::star( double       i_rho,
                                               double       i_lam,
-                                              double       i_mu, 
+                                              double       i_mu,
                                               double const i_jacInv[2][2],
                                               double       o_starE[2][5 * 5] ) {
   /*
@@ -238,4 +297,144 @@ void edge::seismic::setups::Elasticity::star( double       i_rho,
     o_starE[l_di][22] = l_starE[l_di][8*9 + 4];
     o_starE[l_di][23] = l_starE[l_di][8*9 + 5];
   }
+}
+void edge::seismic::setups::Elasticity::fs( double       i_rhoL,
+                                            double       i_rhoR,
+                                            double       i_lamL,
+                                            double       i_lamR,
+                                            double       i_muL,
+                                            double       i_muR,
+                                            double const i_t[5][5],
+                                            double const i_tm1[5][5],
+                                            double       o_fsEl[5*5],
+                                            double       o_fsEr[5*5],
+                                            bool         i_freeSurface ) {
+  // intermediate matrices
+  double l_fsMid[2][5][5];
+  double l_tmp[2][5][5];
+
+  // compute mid parts
+  setupFlMid( i_rhoL,
+              i_rhoR,
+              i_lamL,
+              i_lamR,
+              i_muL,
+              i_muR,
+              l_fsMid[0] );
+
+  setupFrMid( i_rhoL,
+              i_rhoR,
+              i_lamL,
+              i_lamR,
+              i_muL,
+              i_muR,
+              l_fsMid[1] );
+
+  // apply back-rotation to face-aligned coordinate system and mid part
+  for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+    linalg::Matrix::matMulB0( 5, 5, 5,
+                              i_t[0],
+                              l_fsMid[l_sd][0],
+                              l_tmp[l_sd][0] );
+  }
+
+  // rotate left solver to face-aligned coordinates (element exists per definition of our boundary conditions)
+  linalg::Matrix::matMulB0( 5, 5, 5,
+                            l_tmp[0][0],
+                            i_tm1[0],
+                            o_fsEl );
+
+  /**
+   * Free surface boundary conditions mirror (rotated) x-components of the stress tensor.
+   * Reference: Eq. (51) in
+   *            Martin Kaeser and Michael Dumbser
+   *            An arbitrary high-order discontinuous Galerkin method for elastic
+   *            waves on unstructured meshes – I. The two-dimensional isotropic
+   *            case with external source terms
+   **/
+  if( i_freeSurface == true ) {
+    // multiply tmpR with diag( -1, 1, -1, 1, 1 ) from the right.
+    //                           0      2
+    for( unsigned short l_ro = 0; l_ro < 5; l_ro++ ) {
+      l_tmp[1][l_ro][0] *= -1;
+      l_tmp[1][l_ro][2] *= -1;
+    }
+  }
+
+  // rotate right solver to face-aligned coordinates
+  linalg::Matrix::matMulB0( 5, 5, 5,
+                            l_tmp[1][0],
+                            i_tm1[0],
+                            o_fsEr );
+}
+
+void edge::seismic::setups::Elasticity::fs( double       i_rhoL,
+                                            double       i_rhoR,
+                                            double       i_lamL,
+                                            double       i_lamR,
+                                            double       i_muL,
+                                            double       i_muR,
+                                            double const i_t[9][9],
+                                            double const i_tm1[9][9],
+                                            double       o_fsEl[9*9],
+                                            double       o_fsEr[9*9],
+                                            bool         i_freeSurface ) {
+  // intermediate matrices
+  double l_fsMid[2][9][9];
+  double l_tmp[2][9][9];
+
+  // compute mid parts
+  setupFlMid( i_rhoL,
+              i_rhoR,
+              i_lamL,
+              i_lamR,
+              i_muL,
+              i_muR,
+              l_fsMid[0] );
+
+  setupFrMid( i_rhoL,
+              i_rhoR,
+              i_lamL,
+              i_lamR,
+              i_muL,
+              i_muR,
+              l_fsMid[1] );
+
+  // apply back-rotation to face-aligned coordinate system and mid part
+  for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+    linalg::Matrix::matMulB0( 9, 9, 9,
+                              i_t[0],
+                              l_fsMid[l_sd][0],
+                              l_tmp[l_sd][0] );
+  }
+
+  // rotate left solver to face-aligned coordinates (element exists per definition of our boundary conditions)
+  linalg::Matrix::matMulB0( 9, 9, 9,
+                            l_tmp[0][0],
+                            i_tm1[0],
+                            o_fsEl );
+
+  /*
+   * Free surface boundary conditions mirror (rotated) x-components of the stress tensor.
+   * Reference: Eq. (41) in
+   *            Dumbser, Michael, and Martin Kaeser.
+   *            "An arbitrary high-order discontinuous Galerkin method for elastic waves on
+   *            unstructured meshes—II. The three-dimensional isotropic case."
+   *            Geophysical Journal International 167.1 (2006): 319-336.
+   */
+  if( i_freeSurface == true ) {
+    // multiply right side with diag (-1, 1, 1, -1, 1, -1, 1, 1, 1 ) from the right.
+    //                                 0         3      5
+    for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
+      l_tmp[1][l_ro][0] *= -1;
+      l_tmp[1][l_ro][3] *= -1;
+      l_tmp[1][l_ro][5] *= -1;
+    }
+  }
+
+  // rotate right solver to face-aligned coordinates
+  linalg::Matrix::matMulB0( 9, 9, 9,
+                            l_tmp[1][0],
+                            i_tm1[0],
+                            o_fsEr );
 }

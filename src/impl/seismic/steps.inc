@@ -45,7 +45,6 @@ if( i_step == 0 ) {
                                           m_dT,
                                           i_enSp[0],
                                           m_internal.m_elementChars,
-                                          m_internal.m_elementShared2,
                                           m_internal.m_elementModePrivate1,
 #if (PP_N_RELAXATION_MECHANISMS > 0)
                                           m_internal.m_elementModePrivate2[0],
@@ -93,7 +92,6 @@ else if( i_step == 2 ) {
                                           m_internal.m_globalShared2[0].ops.scatter,
                                           m_internal.m_faceChars,
                                           m_internal.m_elementChars,
-                                          m_internal.m_elementShared3,
                                           m_internal.m_globalShared2[0].connect.faSfSc,
                                           m_internal.m_globalShared2[0].connect.scDgAd,
                                           m_internal.m_globalShared2[0].connect.lpFaLp,
@@ -150,8 +148,8 @@ else if( i_step == 4 ) {
                           m_internal.m_globalShared2[0].connect,
                           m_internal.m_globalShared2[0].iBndSu,
                           m_internal.m_faceChars,
-    (real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) m_internal.m_elementShared2, // TODO: fix type
-    (real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) m_internal.m_elementShared3, // TODO: fix type
+    (real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) nullptr, // TODO: fix type
+    (real_base (*)[C_ENT[T_SDISC.ELEMENT].N_FACES][N_QUANTITIES][N_QUANTITIES]) nullptr, // TODO: fix type
                           m_internal.m_connect.elFa,
                           m_internal.m_connect.elFaEl,
                           m_internal.m_connect.vIdElFaEl,

@@ -107,6 +107,10 @@ class edge::seismic::solvers::AderDg {
                                                                : CE_N_ENS_STAR_E_DE( TL_N_DIS );
     TL_T_REAL (*m_starE)[TL_N_DIS][TL_N_ENS_STAR_E] = nullptr;
 
+    //! elastic flux solvers
+    static unsigned short const TL_N_ENS_FS_E = CE_N_ENS_FS_E_DE( TL_N_DIS );
+    TL_T_REAL (*m_fsE[2])[TL_N_FAS][TL_N_ENS_FS_E] = { nullptr, nullptr };
+
     //! anelastic source matrices
     static unsigned short const TL_N_ENS_SRC_A = (TL_MATS_SP) ? CE_N_ENS_SRC_A_SP( TL_N_DIS )
                                                               : CE_N_ENS_SRC_A_DE( TL_N_DIS );
@@ -150,6 +154,17 @@ class edge::seismic::solvers::AderDg {
                                                                                   i_align,
                                                                                   false,
                                                                                   true );
+
+      // elastic flux solvers
+      l_size = i_nEls * std::size_t(TL_N_FAS) * TL_N_ENS_FS_E;
+      l_size *= sizeof(TL_T_REAL);
+
+      for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+        m_fsE[l_sd] = ( TL_T_REAL (*) [TL_N_FAS][TL_N_ENS_FS_E] ) io_dynMem.allocate( l_size,
+                                                                                      i_align,
+                                                                                      false,
+                                                                                      true );
+      }
 
       // anelastic part
       if( TL_N_RMS > 0 ) {
@@ -281,6 +296,7 @@ class edge::seismic::solvers::AderDg {
                                         i_faChars,
                                         i_elChars,
                                         io_bgPars,
+                                        m_fsE,
                                         m_fsA );
     }
 
@@ -300,7 +316,6 @@ class edge::seismic::solvers::AderDg {
      * @param i_dt time step.
      * @param i_firstSpRe first sparse receiver entity.
      * @param i_elChars element characteristics.
-     * @param i_fluxSolvers flux solvers for the local element's contribution.
      * @param io_dofsE elastic DOFs.
      * @param io_dofsA anelastic DOFs.
      * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
@@ -315,7 +330,6 @@ class edge::seismic::solvers::AderDg {
                 double                               i_dt,
                 TL_T_LID                             i_firstSpRe,
                 t_elementChars              const  * i_elChars,
-                t_fluxSolver                const (* i_fluxSolvers)[TL_N_FAS],
                 TL_T_REAL                         (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                         (* io_dofsA)[TL_N_MDS][TL_N_CRS],
                 TL_T_REAL        (* const * const    o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
@@ -410,7 +424,7 @@ class edge::seismic::solvers::AderDg {
         // reuse derivative buffer
         TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
         // call kernel
-        m_kernels->m_surfInt.local( ( TL_T_REAL (*)[TL_N_QTS_E][TL_N_QTS_E] ) ( i_fluxSolvers[l_el][0].solver[0] ), // TODO: fix struct
+        m_kernels->m_surfInt.local( m_fsE[0][l_el],
                                     m_fsA[0][l_el],
                                     o_tDofsDg[0][l_el],
                                     io_dofsE[l_el],
@@ -648,7 +662,6 @@ class edge::seismic::solvers::AderDg {
      * @param i_scatter scatter opterators (DG -> sub-cells).
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
-     * @param i_fluxSolvers flux solvers for the neighboring elements' contribution.
      * @param i_lpFaLp limited plus elements adjacent to limited plus (faces as bridge).
      * @param i_elFa elements' adjacent faces.
      * @param i_elFaEl face-neighboring elements.
@@ -674,7 +687,6 @@ class edge::seismic::solvers::AderDg {
                 TL_T_REAL      const                  i_scatter[TL_N_MDS][TL_N_SCS],
                 t_faceChars    const                * i_faChars,
                 t_elementChars const                * i_elChars,
-                t_fluxSolver   const               (* i_fluxSolvers)[TL_N_FAS],
                 unsigned short const                  i_faSfSc[TL_N_FAS][TL_N_SFS],
                 unsigned short const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
                 TL_T_LID       const               (* i_lpFaLp)[TL_N_FAS],
@@ -757,7 +769,7 @@ class edge::seismic::solvers::AderDg {
             m_kernels->m_surfInt.neigh( l_fa,
                                         l_vId,
                                         l_fId,
-                                        ( TL_T_REAL (*)[TL_N_QTS_E] )  ( i_fluxSolvers[l_el][l_fa].solver[0] ), // TODO: fix struct
+                                        m_fsE[1][l_el][l_fa],
                                         m_fsA[1][l_el][l_fa],
                                         i_tDofsDg[0][l_ne],
                                         io_dofsE[l_el],

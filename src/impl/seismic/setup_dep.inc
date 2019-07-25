@@ -24,7 +24,6 @@
 #include "setups/InitialDofs.hpp"
 #include "impl/seismic/io/Config.h"
 #include "impl/seismic/solvers/AderDg.hpp"
-#include "impl/seismic/solvers/common.hpp"
 #ifdef PP_HAS_HDF5
 #include "impl/seismic/setups/PointSources.hpp"
 #endif

@@ -81,6 +81,12 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
     //! number of quantities per relaxation mechanism
     static unsigned short const TL_N_QTS_M = CE_N_QTS_M( TL_N_DIS );
 
+    //! number of entries in the elastic flux solvers
+    static unsigned short const TL_N_ENS_FS_E = CE_N_ENS_FS_E_DE( TL_N_DIS );
+
+    //! number of entries in the anelastic flux solvers
+    static unsigned short const TL_N_ENS_FS_A = CE_N_ENS_FS_A_DE( TL_N_DIS );
+
     //! pointers to the local flux matrices
     TL_T_REAL *m_fIntLN[TL_N_FAS+TL_N_FMNS];
 
@@ -204,8 +210,8 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
      * @param i_dofsP DOFs for prefetching (not used).
      * @param i_tDofsP time integrated DOFs for prefetching (not used).
      **/
-    void local( TL_T_REAL const   i_fsE[TL_N_FAS][TL_N_QTS_E][TL_N_QTS_E],
-                TL_T_REAL const (*i_fsA)[TL_N_QTS_M*TL_N_QTS_E],
+    void local( TL_T_REAL const   i_fsE[TL_N_FAS][TL_N_ENS_FS_E],
+                TL_T_REAL const (*i_fsA)[TL_N_ENS_FS_A],
                 TL_T_REAL const   i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
                 TL_T_REAL         io_dofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
                 TL_T_REAL       (*io_dofsA)[TL_N_QTS_M][TL_N_MDS_EL][1],
@@ -235,7 +241,7 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
 
         // multiply with flux solver
         m_mm.m_kernels[0][1]( o_scratch[0][0][0],
-                              i_fsE[l_fa][0],
+                              i_fsE[l_fa],
                               o_scratch[1][0][0] );
 
         // multiply with second face integration matrix
@@ -280,8 +286,8 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
     void neigh( unsigned short       i_fa,
                 unsigned short       i_vId,
                 unsigned short       i_fId,
-                TL_T_REAL      const i_fsE[TL_N_QTS_E][TL_N_QTS_E],
-                TL_T_REAL      const i_fsA[TL_N_QTS_M*TL_N_QTS_E],
+                TL_T_REAL      const i_fsE[TL_N_ENS_FS_E],
+                TL_T_REAL      const i_fsA[TL_N_ENS_FS_A],
                 TL_T_REAL      const i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
                 TL_T_REAL            io_dofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
                 TL_T_REAL            io_dofsA[TL_N_QTS_M][TL_N_MDS_EL][1],
@@ -306,7 +312,7 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
 
       // multiply with flux solver
       m_mm.m_kernels[0][1]( o_scratch[0][0][0],
-                            i_fsE[0],
+                            i_fsE,
                             o_scratch[1][0][0] );
 
       // multiply with second face integration matrix

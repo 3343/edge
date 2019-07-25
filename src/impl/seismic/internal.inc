@@ -60,20 +60,6 @@ typedef real_base t_elementSparseShared3[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS]
 typedef t_bgPars t_elementShared1;
 
 /*
- * Second shared element data are the flux solvers for the element's own contribution.
- */
-#define PP_ELEMENT_SHARED_2_HUGE
-#define PP_N_ELEMENT_SHARED_2 C_ENT[T_SDISC.ELEMENT].N_FACES
-typedef t_fluxSolver t_elementShared2;
-
-/*
- * Third shared element data are the flux solvers for the neighboring elements' contribution.
- */
-#define PP_ELEMENT_SHARED_3_HUGE
-#define PP_N_ELEMENT_SHARED_3 C_ENT[T_SDISC.ELEMENT].N_FACES
-typedef t_fluxSolver t_elementShared3;
-
-/*
  * First private element mode data are the elastic DOFS.
  */
 #define PP_ELEMENT_MODE_PRIVATE_1_HUGE
@@ -100,13 +86,12 @@ typedef edge::sc::ibnd::t_InternalBoundary< int_el,
                                             T_SDISC.ELEMENT,
                                             N_QUANTITIES > t_globalShared7;
 
-//#include "impl/seismic/sc/Llf.hpp"
-#include "impl/seismic/sc/UpWind.hpp"
+#include "impl/seismic/sc/Llf.hpp"
 #define PP_N_GLOBAL_SHARED_8 1
-typedef edge::seismic::sc::UpWind< real_base,
-                                   T_SDISC.ELEMENT,
-                                   ORDER,
-                                   N_CRUNS > t_globalShared8;
+typedef edge::seismic::sc::Llf< real_base,
+                                T_SDISC.ELEMENT,
+                                ORDER,
+                                N_CRUNS > t_globalShared8;
 
 // ADER-DG kernels
 #include "impl/seismic/solvers/AderDg.hpp"

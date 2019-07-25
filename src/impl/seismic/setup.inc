@@ -223,17 +223,6 @@ else {
 #pragma omp parallel
 #endif
 {
-  // flux solver own
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
-                                    l_shared.m_nWrks,
-                                    N_QUANTITIES*N_QUANTITIES,
-                                    l_internal.m_elementShared2[0][0].solver[0] );
-  // flux solver neigh
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
-                                    l_shared.m_nWrks,
-                                    N_QUANTITIES*N_QUANTITIES,
-                                    l_internal.m_elementShared3[0][0].solver[0] );
-
   // elastic DOFs
   edge::parallel::Shared::numaInit( l_enLayouts[2],
                                     l_shared.m_nWrks,
@@ -545,21 +534,6 @@ if( l_elasticConf.m_frictionLaw != "" ) {
   delete[] l_faultData;
 }
 
-// setup solvers
-edge::seismic::solvers::common::setupSolvers( l_internal.m_nElements,
-                                              l_internal.m_nFaces,
-                                              l_mesh.getInMap()->elMeDa,
-                                              l_mesh.getInMap()->elDaMe,
-                                              l_internal.m_connect.elVe,
-                                              l_internal.m_connect.faEl,
-                                              l_internal.m_connect.elFa,
-                                              l_internal.m_vertexChars,
-                                              l_internal.m_faceChars,
-                                              l_internal.m_elementChars,
-                                              l_internal.m_elementShared1,
-                                              l_internal.m_elementShared2,
-                                              l_internal.m_elementShared3 );
-
 // set up sub-cell local solvers
 EDGE_CHECK_EQ( l_enLayouts[l_limPlusLayout].timeGroups.size(), 1 );
 l_internal.m_globalShared8[0].alloc( l_enLayouts[l_limPlusLayout].timeGroups[0].nEntsOwn,
@@ -567,7 +541,6 @@ l_internal.m_globalShared8[0].alloc( l_enLayouts[l_limPlusLayout].timeGroups[0].
 l_internal.m_globalShared8[0].init(   0,
                                       l_enLayouts[l_limPlusLayout].timeGroups[0].nEntsOwn,
                                       l_internal.m_globalShared2[0].connect.lpEl,
-                                     &l_gIdsEl[0],
                                       l_internal.m_connect.elVe,
                                       l_internal.m_connect.elFa,
                                       l_internal.m_connect.elFaEl,
