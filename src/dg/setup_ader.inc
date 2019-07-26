@@ -45,11 +45,3 @@ edge::dg::QuadratureEval<T_SDISC.ELEMENT, ORDER, ORDER>::faces( l_internal.m_glo
     }
   }
 }
-
-#if defined PP_T_KERNELS_VANILLA
-l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiffT, true  );
-l_basis.getStiffMm1Dense( N_ELEMENT_MODES, (real_base *) l_internal.m_globalShared1[0].mat.stiff,  false );
-l_basis.getFluxDense( (real_base *) l_internal.m_globalShared1[0].mat.fluxL,
-                      (real_base *) l_internal.m_globalShared1[0].mat.fluxN,
-(real_base *) l_internal.m_globalShared1[0].mat.fluxT );
-#endif

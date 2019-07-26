@@ -31,7 +31,6 @@ if( i_step == 0 ) {
   m_internal.m_globalShared4[0]->local(  i_first,
                                          i_size,
                                          m_dT,
-                                         m_internal.m_globalShared1[0],
                                          m_internal.m_elementChars,
                                          m_internal.m_elementShared2,
                                          m_internal.m_elementShared3,
@@ -50,7 +49,6 @@ else if( i_step == 1 ) {
 #else
   m_internal.m_globalShared4[0]->neigh( i_first,
                                         i_size,
-                                        m_internal.m_globalShared1[0],
                                         m_internal.m_faceChars,
                                         m_internal.m_elementChars,
                                         m_internal.m_elementShared3,

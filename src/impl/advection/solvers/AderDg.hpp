@@ -188,7 +188,6 @@ class edge::advection::solvers::AderDg {
      * @param i_first first element considered.
      * @param i_nEls number of elements.
      * @param i_dt time step.
-     * @param i_dg constant DG data.
      * @param i_elChars element characteristics.
      * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers.
@@ -203,7 +202,6 @@ class edge::advection::solvers::AderDg {
     void local( TL_T_LID                                i_first,
                 TL_T_LID                                i_nEls,
                 double                                  i_dt,
-                t_dg           const                   &i_dg,
                 TL_T_CHARS_EL  const                   *i_elChars,
                 TL_T_REAL      const                  (*i_starM)[TL_N_DIS],
                 TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
@@ -236,7 +234,6 @@ class edge::advection::solvers::AderDg {
      *
      * @param i_first first element considered.
      * @param i_nEls number of elements.
-     * @param i_dg constant DG data.
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_fluxSolvers flux solvers.
@@ -256,7 +253,6 @@ class edge::advection::solvers::AderDg {
               typename TL_T_CHARS_EL >
     void neigh( TL_T_LID                                i_first,
                 TL_T_LID                                i_nEls,
-                t_dg           const                   &i_dg,
                 TL_T_CHARS_FA  const                   *i_faChars,
                 TL_T_CHARS_EL  const                   *i_elChars,
                 TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
