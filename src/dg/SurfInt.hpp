@@ -22,8 +22,10 @@
  **/
 #ifndef EDGE_DG_SURF_INT_HPP
 #define EDGE_DG_SURF_INT_HPP
+
 #include "constants.hpp"
 #include "data/Dynamic.h"
+#include "Basis.h"
 
 namespace edge {
   namespace dg {
