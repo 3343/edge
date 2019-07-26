@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -20,16 +21,17 @@
  * @section DESCRIPTION
  * ADER time prediction for the advection equation.
  **/
-#ifndef EDGE_ADVECTION_TIME_PRED_HPP
-#define EDGE_ADVECTION_TIME_PRED_HPP
+#ifndef EDGE_ADVECTION_KERNELS_TIME_PRED_HPP
+#define EDGE_ADVECTION_KERNELS_TIME_PRED_HPP
 
 #include "constants.hpp"
 #include "linalg/Matrix.h"
 
 namespace edge {
   namespace advection {
-    namespace solvers {
-      template< t_entityType   TL_T_EL,
+    namespace kernels {
+      template< typename       TL_T_REAL,
+                t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_O_TI,
                 unsigned short TL_N_CRS >
@@ -41,16 +43,18 @@ namespace edge {
 /**
  * ADER time predictions for the advection equation.
  *
+ * @param TL_T_REAL real type.
  * @param TL_T_EL element typ.
  * @param TL_O_SP order in space.
  * @param TL_O_TI order in time.
  * @param TL_N_CRS number of fused simulations
  **/
-template< t_entityType   TL_T_EL,
+template< typename       TL_T_REAL,
+          t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_O_TI,
           unsigned short TL_N_CRS >
-class edge::advection::solvers::TimePred {
+class edge::advection::kernels::TimePred {
   private:
     //! number of dimensions
     static unsigned short const TL_N_DIM = C_ENT[TL_T_EL].N_DIM;
@@ -69,17 +73,14 @@ class edge::advection::solvers::TimePred {
      * @param o_scratch will be used as scratch memory.
      * @param o_der will be set to time derivatives.
      * @param o_tInt will be set to time integrated DOFs.
-     *
-     * @paramt TL_T_REAL float point precision.
      **/
-    template< typename TL_T_REAL >
-    static void inline ckVanilla( double          i_dT,
-                                  TL_T_REAL const i_stiffT[TL_N_DIM][TL_N_MDS][TL_N_MDS],
-                                  TL_T_REAL const i_star[TL_N_DIM],
-                                  TL_T_REAL const i_dofs[TL_N_MDS][TL_N_CRS],
-                                  TL_T_REAL       o_scratch[TL_N_MDS][TL_N_CRS],
-                                  TL_T_REAL       o_der[TL_O_TI][TL_N_MDS][TL_N_CRS],
-                                  TL_T_REAL       o_tInt[TL_N_MDS][TL_N_CRS] ) {
+    static void inline ck( TL_T_REAL       i_dT,
+                           TL_T_REAL const i_stiffT[TL_N_DIM][TL_N_MDS][TL_N_MDS],
+                           TL_T_REAL const i_star[TL_N_DIM],
+                           TL_T_REAL const i_dofs[TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL       o_scratch[TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL       o_der[TL_O_TI][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL       o_tInt[TL_N_MDS][TL_N_CRS] ) {
       // scalar coefficients in taylor expansion
       TL_T_REAL l_scalar = i_dT;
 

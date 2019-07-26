@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -28,7 +29,7 @@
 #include "linalg/Matrix.h"
 #include "linalg/Mappings.hpp"
 #include "linalg/Matrix.h"
-#include "TimePred.hpp"
+#include "../kernels/TimePred.hpp"
 #include "sc/Kernels.hpp"
 #include "sc/Detections.hpp"
 
@@ -229,17 +230,17 @@ class edge::advection::solvers::AderDg {
         TL_T_REAL l_derBuffer[TL_O_TI][TL_N_MDS][TL_N_CRS];
 
 #if defined PP_T_KERNELS_VANILLA
-        TimePred<
-          TL_T_EL,
-          TL_O_SP,
-          TL_O_TI,
-          TL_N_CRS >::ckVanilla( i_dt,
-                                 i_dg.mat.stiffT,
-                                 i_starM[l_el],
-                                 io_dofsDg[l_el][0],
-                                 l_tmpProd,
-                                 l_derBuffer,
-                                 o_tDofsDg[0][l_el][0] );
+        kernels::TimePred< TL_T_REAL,
+                           TL_T_EL,
+                           TL_O_SP,
+                           TL_O_TI,
+                           TL_N_CRS >::ck( i_dt,
+                                           i_dg.mat.stiffT,
+                                           i_starM[l_el],
+                                           io_dofsDg[l_el][0],
+                                           l_tmpProd,
+                                           l_derBuffer,
+                                           o_tDofsDg[0][l_el][0] );
 #else
         EDGE_LOG_FATAL << "not implemented;"
 #endif
