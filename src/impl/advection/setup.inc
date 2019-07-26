@@ -125,7 +125,7 @@ edge::advection::solvers::AderDg< real_base,
                                   T_SDISC.ELEMENT,
                                   ORDER,
                                   ORDER,
-                                  N_CRUNS > l_aderDg;
+                                  N_CRUNS > l_aderDg( l_dynMem );
 l_internal.m_globalShared4[0] = &l_aderDg;
 
 // set up star "matrices"

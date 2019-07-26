@@ -83,7 +83,36 @@ class edge::advection::solvers::AderDg {
     //! number of subcells per DG-element
     static unsigned short const TL_N_SCS = CE_N_SUB_CELLS( TL_T_EL, TL_O_SP );
 
+    //! time prediction kernel
+    kernels::TimePred< TL_T_REAL,
+                       TL_T_EL,
+                       TL_O_SP,
+                       TL_O_TI,
+                       TL_N_CRS > * m_time;
+
   public:
+    /**
+     * Constructor.
+     *
+     * @param io_dynMem dynamic memory management, which will be used for the respective allocations.
+     **/
+    AderDg( data::Dynamic & io_dynMem ) {
+      // init kernels
+      m_time = new kernels::TimePred< TL_T_REAL,
+                                      TL_T_EL,
+                                      TL_O_SP,
+                                      TL_O_TI,
+                                      TL_N_CRS >( io_dynMem );
+    }
+
+    /**
+     *  Destructor
+     **/
+    ~AderDg() {
+      // free memory
+      delete m_time;
+    }
+
     /**
      * Sets up the star matrices, which are a linear combination of the Jacobians.
      *
@@ -199,15 +228,15 @@ class edge::advection::solvers::AderDg {
      **/
     template< typename TL_T_LID,
               typename TL_T_CHARS_EL >
-    static void local( TL_T_LID                                i_first,
-                       TL_T_LID                                i_nEls,
-                       double                                  i_dt,
-                       t_dg           const                   &i_dg,
-                       TL_T_CHARS_EL  const                   *i_elChars,
-                       TL_T_REAL      const                  (*i_starM)[TL_N_DIM],
-                       TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
-                       TL_T_REAL                             (*io_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                       TL_T_REAL            (* const * const   o_tDofsDg[2])[TL_N_MDS][TL_N_CRS] ) {
+    void local( TL_T_LID                                i_first,
+                TL_T_LID                                i_nEls,
+                double                                  i_dt,
+                t_dg           const                   &i_dg,
+                TL_T_CHARS_EL  const                   *i_elChars,
+                TL_T_REAL      const                  (*i_starM)[TL_N_DIM],
+                TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
+                TL_T_REAL                             (*io_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL            (* const * const   o_tDofsDg[2])[TL_N_MDS][TL_N_CRS] ) {
       // iterate over all elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // store DOFs where required
@@ -218,30 +247,20 @@ class edge::advection::solvers::AderDg {
               o_tDofsDg[1][l_el][0][l_md][l_cr] = io_dofsDg[l_el][0][l_md][l_cr];
         }
 
-        // temporary product for two-way mult
-        TL_T_REAL l_tmpProd[TL_N_MDS][TL_N_CRS];
-
         /*
          * compute ader time integration
          */
         // buffer for derivatives
         TL_T_REAL l_derBuffer[TL_O_TI][TL_N_MDS][TL_N_CRS];
 
-#if defined PP_T_KERNELS_VANILLA
-        kernels::TimePred< TL_T_REAL,
-                           TL_T_EL,
-                           TL_O_SP,
-                           TL_O_TI,
-                           TL_N_CRS >::ck( i_dt,
-                                           i_dg.mat.stiffT,
-                                           i_starM[l_el],
-                                           io_dofsDg[l_el][0],
-                                           l_tmpProd,
-                                           l_derBuffer,
-                                           o_tDofsDg[0][l_el][0] );
-#else
-        EDGE_LOG_FATAL << "not implemented;"
-#endif
+        m_time->ck( i_dt,
+                    i_starM[l_el],
+                    io_dofsDg[l_el][0],
+                    l_derBuffer,
+                    o_tDofsDg[0][l_el][0] );
+
+        // temporary product for two-way mult
+        TL_T_REAL l_tmpProd[TL_N_MDS][TL_N_CRS];
 
         /*
          * compute volume contribution
