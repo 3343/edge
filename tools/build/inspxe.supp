@@ -141,6 +141,37 @@ suppression = {
 	}
 }
 
+##
+# ExpressionTk
+##
+suppression = {
+	name = "expression_tk_0"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="simplify<std::allocator<exprtk::details::expression_node<float>*>, std::allocator<bool>, std::vector>";
+		}
+		allocation={
+			...;
+			func=compile,src=exprtk.hpp;
+		}
+	}
+}
+suppression = {
+	name = "expression_tk_1"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=parse_symbol,src=exprtk.hpp;
+		}
+		allocation={
+			...;
+			func=parse_symbol,src=exprtk.hpp;
+		}
+	}
+}
 
 ##
 # Memkind
