@@ -87,7 +87,7 @@ class edge::seismic::kernels::VolIntVanilla: edge::seismic::kernels::VolInt < TL
     //! matrix kernels
     edge::data::MmVanilla< TL_T_REAL > m_mm;
 
-    //! pointers to the (possibly recursive) stiffness matrices
+    //! pointers to the stiffness matrices
     TL_T_REAL *m_stiff[TL_N_DIS];
 
     /**
