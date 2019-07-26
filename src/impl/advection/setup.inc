@@ -120,8 +120,17 @@ edge::advection::setups::Convergence::setConstantSpeed( l_internal.m_nElements,
                                                         -1 ); // ignored for #dim!=3
 
 #if PP_ORDER > 1
+// initialize ADER-DG solver
+edge::advection::solvers::AderDg< real_base,
+                                  T_SDISC.ELEMENT,
+                                  ORDER,
+                                  ORDER,
+                                  N_CRUNS > l_aderDg;
+l_internal.m_globalShared4[0] = &l_aderDg;
+
 // set up star "matrices"
 edge::advection::solvers::AderDg<
+    real_base,
     T_SDISC.ELEMENT,
     ORDER,
     ORDER,

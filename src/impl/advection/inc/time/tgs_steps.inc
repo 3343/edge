@@ -28,19 +28,15 @@ if( i_step == 0 ) {
                                                    m_internal.m_elementModePrivate1,
                                                    m_internal.m_globalShared3[0] );
 #else
-  edge::advection::solvers::AderDg<
-    T_SDISC.ELEMENT,
-    ORDER,
-    ORDER,
-    N_CRUNS >::local(  i_first,
-                       i_size,
-                       m_dT,
-                       m_internal.m_globalShared1[0],
-                       m_internal.m_elementChars,
-                       m_internal.m_elementShared2,
-                       m_internal.m_elementShared3,
-                       m_internal.m_elementModePrivate1,
-                       m_internal.m_globalShared3 );
+  m_internal.m_globalShared4[0]->local(  i_first,
+                                         i_size,
+                                         m_dT,
+                                         m_internal.m_globalShared1[0],
+                                         m_internal.m_elementChars,
+                                         m_internal.m_elementShared2,
+                                         m_internal.m_elementShared3,
+                                         m_internal.m_elementModePrivate1,
+                                         m_internal.m_globalShared3 );
 #endif
 }
 else if( i_step == 1 ) {
@@ -52,22 +48,18 @@ else if( i_step == 1 ) {
                                                   m_internal.m_globalShared3[0],
                                                   m_internal.m_elementModePrivate1 );
 #else
-  edge::advection::solvers::AderDg<
-    T_SDISC.ELEMENT,
-    ORDER,
-    ORDER,
-    N_CRUNS >::neigh( i_first,
-                      i_size,
-                      m_internal.m_globalShared1[0],
-                      m_internal.m_faceChars,
-                      m_internal.m_elementChars,
-                      m_internal.m_elementShared3,
-                      m_internal.m_connect.elFa,
-                      m_internal.m_connect.elFaEl,
-                      m_internal.m_connect.fIdElFaEl,
-                      m_internal.m_connect.vIdElFaEl,
-                      m_internal.m_globalShared3,
-                      m_internal.m_elementModePrivate1 );
+  m_internal.m_globalShared4[0]->neigh( i_first,
+                                        i_size,
+                                        m_internal.m_globalShared1[0],
+                                        m_internal.m_faceChars,
+                                        m_internal.m_elementChars,
+                                        m_internal.m_elementShared3,
+                                        m_internal.m_connect.elFa,
+                                        m_internal.m_connect.elFaEl,
+                                        m_internal.m_connect.fIdElFaEl,
+                                        m_internal.m_connect.vIdElFaEl,
+                                        m_internal.m_globalShared3,
+                                        m_internal.m_elementModePrivate1 );
 #endif
 }
 else EDGE_LOG_FATAL << "step not supported in advection implementation: " << i_step;

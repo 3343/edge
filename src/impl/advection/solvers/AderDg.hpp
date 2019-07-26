@@ -36,7 +36,8 @@
 namespace edge {
   namespace advection {
     namespace solvers {
-      template< t_entityType   TL_T_EL,
+      template< typename       TL_T_REAL,
+                t_entityType   TL_T_EL,
                 unsigned short TL_O_SP,
                 unsigned short TL_O_TI,
                 unsigned short TL_N_CRS >
@@ -48,12 +49,14 @@ namespace edge {
 /**
  * ADER-DG solver for the advection equation split into local and neighboring updates.
  *
+ * @paramt TL_T_REAL real type.
  * @paramt TL_T_EL element type.
  * @paramt TL_O_SP spatial order.
  * @paramt TL_O_TI temporal order.
  * @paramt TL_N_CRS number of fused simulations.
  **/
-template< t_entityType   TL_T_EL,
+template< typename       TL_T_REAL,
+          t_entityType   TL_T_EL,
           unsigned short TL_O_SP,
           unsigned short TL_O_TI,
           unsigned short TL_N_CRS >
@@ -137,10 +140,7 @@ class edge::advection::solvers::AderDg {
      * @param i_fluxSolver flux solver.
      * @param i_tInt time integrated DOFs.
      * @param io_dofs will be updated with face's local/neigh contribution to the surface integral.
-     *
-     * @paramt TL_T_REAL floating point precision.
-     */
-    template< typename TL_T_REAL >
+     **/
     static void surfInt( TL_T_REAL const i_fMat[TL_N_MDS][TL_N_MDS],
                          TL_T_REAL const i_fluxSolver,
                          TL_T_REAL const i_tInt[TL_N_MDS][TL_N_CRS],
@@ -195,11 +195,9 @@ class edge::advection::solvers::AderDg {
      * @param o_tDofsDg temporary DG DOFs (buffers or DOFs and buffers), which will be updated.
      *
      * @paramt TL_T_LID integral type of local ids.
-     * @paramt TL_T_REAL floating point type.
      * @paramt TL_T_CHARS_EL element characteristics, offering sparse type .spType.
      **/
     template< typename TL_T_LID,
-              typename TL_T_REAL,
               typename TL_T_CHARS_EL >
     static void local( TL_T_LID                                i_first,
                        TL_T_LID                                i_nEls,
@@ -353,12 +351,10 @@ class edge::advection::solvers::AderDg {
      * @param io_dofs DOFs which will be updated with neighboring elements' contribution.
      *
      * @paramt TL_T_LID integral type of local ids.
-     * @paramt TL_T_REAL floating point type.
      * @paramt TL_T_CHARS_FA face characteristics, offering sparse type .spType.
      * @paramt TL_T_CHARS_EL element characteristics, offering sparse type .spType.
      **/
     template< typename TL_T_LID,
-              typename TL_T_REAL,
               typename TL_T_CHARS_FA,
               typename TL_T_CHARS_EL >
     static void neigh( TL_T_LID                                i_first,

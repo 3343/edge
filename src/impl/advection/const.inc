@@ -91,23 +91,3 @@ typedef struct {
   real_base c;
 #endif
 } t_bgPars;
-
-// DOFs
-#define PP_N_ELEMENT_MODE_PRIVATE_1 1
-typedef real_base t_elementModePrivate1;
-
-// flex data holding a time buffer or a time buffer and element-DOFs per entry
-#define PP_N_GLOBAL_SHARED_3 3
-typedef real_base (**t_globalShared3)[N_ELEMENT_MODES][N_CRUNS];
-
-// parameters a, b, c
-#define PP_N_ELEMENT_SHARED_1 1
-typedef t_bgPars t_elementShared1;
-
-// star matrices in xi-, eta- and zeta-direction
-#define PP_N_ELEMENT_SHARED_2 N_DIM
-typedef real_base t_elementShared2;
-
-// flux solvers
-#define PP_N_ELEMENT_SHARED_3 (C_ENT[T_SDISC.ELEMENT].N_FACES*2)
-typedef real_base t_elementShared3;
