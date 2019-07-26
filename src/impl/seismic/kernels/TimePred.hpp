@@ -29,7 +29,7 @@
 
 #include "constants.hpp"
 #include "data/Dynamic.h"
-#include "dg/Basis.h"
+#include "dg/TimePred.hpp"
 
 namespace edge {
   namespace seismic {
@@ -80,40 +80,16 @@ class edge::seismic::kernels::TimePred {
 
     /**
      * Stores the transposed stiffness matrices as dense.
-     * This includes multiplications with (-1) for kernels with support for alpha==1 only.
      * 
-     * @param i_stiffT dense stiffness matrices.
      * @param io_dynMem dynamic memory management, which will be used for the respective allocations.
      * @param o_stiffT will contain pointers to memory for the individual matrices.
      **/
-    static void storeStiffTDense( TL_T_REAL     const     i_stiffT[TL_N_DIS][TL_N_MDS][TL_N_MDS],
-                                  data::Dynamic         & io_dynMem,
+    static void storeStiffTDense( data::Dynamic         & io_dynMem,
                                   TL_T_REAL             * o_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS] ) {
-      // allocate raw memory for the stiffness matrices
-      std::size_t l_size  = TL_N_DIS * std::size_t(TL_N_MDS) * TL_N_MDS;
-                  l_size *= sizeof(TL_T_REAL);
-      TL_T_REAL* l_stiffTRaw = (TL_T_REAL*) io_dynMem.allocate( l_size,
-                                                                4096,
-                                                                false,
-                                                                true );
-
-      // copy data
-      std::size_t l_en = 0;
-      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-        for( unsigned short l_m0 = 0; l_m0 < TL_N_MDS; l_m0++ ) {
-          for( unsigned short l_m1 = 0; l_m1 < TL_N_MDS; l_m1++ ) {
-            l_stiffTRaw[l_en] = -i_stiffT[l_di][l_m0][l_m1];
-            l_en++;
-          }
-        }
-      }
-
-      // assign pointers
-      for( unsigned short l_de = 0; l_de < TL_O_SP-1; l_de++ ) {
-        for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-          o_stiffT[l_de][l_di] = l_stiffTRaw + l_di * std::size_t(TL_N_MDS) * TL_N_MDS; 
-        }
-      }
+      dg::TimePred< TL_T_EL,
+                    TL_O_SP,
+                    TL_O_TI >::storeStiffTDense( io_dynMem,
+                                                 o_stiffT );
     }
 
   public:

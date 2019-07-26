@@ -174,20 +174,8 @@ class edge::seismic::kernels::TimePredVanilla: public edge::seismic::kernels::Ti
                                                                   TL_O_TI,
                                                                   TL_N_CRS >( i_rfs,
                                                                               io_dynMem ) {
-      // formulation of the basis in terms of the reference element
-      dg::Basis l_basis( TL_T_EL,
-                         TL_O_SP );
-
-      // get stiffness matrices
-      TL_T_REAL l_stiffT[TL_N_DIS][TL_N_MDS][TL_N_MDS];
-      l_basis.getStiffMm1Dense( TL_N_MDS,
-                                l_stiffT[0][0],
-                                true );
-
-
       // store stiffness matrices dense
-      this->storeStiffTDense( l_stiffT,
-                              io_dynMem,
+      this->storeStiffTDense( io_dynMem,
                               m_stiffT );
 
       // generate kernels
