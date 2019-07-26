@@ -30,6 +30,7 @@
 #include "linalg/Mappings.hpp"
 #include "linalg/Matrix.h"
 #include "../kernels/TimePred.hpp"
+#include "../kernels/VolInt.hpp"
 #include "sc/Kernels.hpp"
 #include "sc/Detections.hpp"
 
@@ -90,6 +91,12 @@ class edge::advection::solvers::AderDg {
                        TL_O_TI,
                        TL_N_CRS > * m_time;
 
+    //! volume kernel
+    kernels::VolInt< TL_T_REAL,
+                     TL_T_EL,
+                     TL_O_SP,
+                     TL_N_CRS > * m_volInt;
+
   public:
     /**
      * Constructor.
@@ -103,6 +110,11 @@ class edge::advection::solvers::AderDg {
                                       TL_O_SP,
                                       TL_O_TI,
                                       TL_N_CRS >( io_dynMem );
+
+      m_volInt = new kernels::VolInt< TL_T_REAL,
+                                      TL_T_EL,
+                                      TL_O_SP,
+                                      TL_N_CRS >( io_dynMem );
     }
 
     /**
@@ -111,6 +123,7 @@ class edge::advection::solvers::AderDg {
     ~AderDg() {
       // free memory
       delete m_time;
+      delete m_volInt;
     }
 
     /**
@@ -247,57 +260,18 @@ class edge::advection::solvers::AderDg {
               o_tDofsDg[1][l_el][0][l_md][l_cr] = io_dofsDg[l_el][0][l_md][l_cr];
         }
 
-        /*
-         * compute ader time integration
-         */
-        // buffer for derivatives
+        // compute ader time prediction
         TL_T_REAL l_derBuffer[TL_O_TI][TL_N_MDS][TL_N_CRS];
-
         m_time->ck( i_dt,
                     i_starM[l_el],
                     io_dofsDg[l_el][0],
                     l_derBuffer,
                     o_tDofsDg[0][l_el][0] );
 
-        // temporary product for two-way mult
-        TL_T_REAL l_tmpProd[TL_N_MDS][TL_N_CRS];
-
-        /*
-         * compute volume contribution
-         */
-         for( unsigned int l_di = 0; l_di < N_DIM; l_di++ ) {
-#if defined PP_T_KERNELS_VANILLA
-            // multiply with stiffness and inverse mass matrix
-            linalg::Matrix::matMulFusedAC( TL_N_CRS,                    // #fused
-                                           TL_N_QTS,                    // m
-                                           TL_N_MDS,                    // n
-                                           TL_N_MDS,                    // k
-                                           TL_N_MDS,                    // ldA
-                                           TL_N_MDS,                    // ldB
-                                           TL_N_MDS,                    // ldC
-                                           static_cast<real_base>(1.0), //alpha
-                                           static_cast<real_base>(0.0), // beta
-                                           o_tDofsDg[0][l_el][0][0],    // A
-                                           i_dg.mat.stiff[l_di][0],     // B
-                                           l_tmpProd[0]  );             // C
-
-            // multiply with star "matrix"
-            linalg::Matrix::matMulFusedBC( TL_N_CRS,                    // #fused
-                                           TL_N_QTS,                    // m
-                                           TL_N_MDS,                    // n
-                                           TL_N_QTS,                    // k
-                                           TL_N_MDS,                    // ldA
-                                           TL_N_MDS,                    // ldB
-                                           TL_N_MDS,                    // ldC
-                                           static_cast<real_base>(1.0), //alpha
-                                           static_cast<real_base>(1.0), // beta
-                                           i_starM[l_el]+l_di,          // A
-                                           l_tmpProd[0],                // B
-                                           io_dofsDg[l_el][0][0] );     // C
-#else
-          EDGE_LOG_FATAL << "not implemented;"
-#endif
-        }
+        // compute volume contribution
+        m_volInt->apply( i_starM[l_el],
+                         o_tDofsDg[0][l_el],
+                         io_dofsDg[l_el] );
 
          /*
           * compute local surface contribution
