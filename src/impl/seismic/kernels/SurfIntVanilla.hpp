@@ -188,23 +188,8 @@ class edge::seismic::kernels::SurfIntVanilla: public edge::seismic::kernels::Sur
                                                                 TL_O_SP,
                                                                 TL_N_CRS >( i_rfs,
                                                                             io_dynMem ) {
-      // formulation of the basis in terms of the reference element
-      dg::Basis l_basis( TL_T_EL,
-                         TL_O_SP );
-
-      // get flux matrices
-      TL_T_REAL l_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA];
-      TL_T_REAL l_fIntN[TL_N_FMNS][TL_N_MDS_EL][TL_N_MDS_FA];
-      TL_T_REAL l_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL];
-      l_basis.getFluxDense( l_fIntL[0][0],
-                            l_fIntN[0][0],
-                            l_fIntT[0][0] );
-
       // store flux matrices dense
-      this->storeFluxDense( l_fIntL,
-                            l_fIntN,
-                            l_fIntT,
-                            io_dynMem,
+      this->storeFluxDense( io_dynMem,
                             m_fIntLN,
                             m_fIntT );
 

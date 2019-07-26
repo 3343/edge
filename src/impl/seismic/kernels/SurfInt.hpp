@@ -25,8 +25,10 @@
  **/
 #ifndef EDGE_SEISMIC_KERNELS_SURF_INT_HPP
 #define EDGE_SEISMIC_KERNELS_SURF_INT_HPP
+
 #include "constants.hpp"
 #include "data/Dynamic.h"
+#include "dg/SurfInt.hpp"
 
 namespace edge {
   namespace seismic {
@@ -81,72 +83,18 @@ class edge::seismic::kernels::SurfInt {
   protected:
     /**
      * Stores the flux matrices as dense.
-     * 
-     * @param i_fIntL local flux matrices.
-     * @param i_fIntN neighboring flux matrices.
-     * @param i_fIntT transposed flux matrices.
+     *
      * @param io_dynMem dynamic memory management, which will be used for the respective allocations.
      * @param o_fIntLN will contain pointers to memory for the local and neighboring flux matrices.
      * @param o_fIntT will contain pointers to memory for the transposed flux matrices.
      **/
-    static void storeFluxDense( TL_T_REAL     const   i_fIntL[TL_N_FAS][TL_N_MDS_EL][TL_N_MDS_FA],
-                                TL_T_REAL     const   i_fIntN[TL_N_FMNS][TL_N_MDS_EL][TL_N_MDS_FA],
-                                TL_T_REAL     const   i_fIntT[TL_N_FAS][TL_N_MDS_FA][TL_N_MDS_EL],
-                                data::Dynamic       & io_dynMem,
+    static void storeFluxDense( data::Dynamic       & io_dynMem,
                                 TL_T_REAL           * o_fIntLN[TL_N_FAS+TL_N_FMNS],
                                 TL_T_REAL           * o_fIntT[TL_N_FAS] ) {
-      // allocate raw memory for the flux integration matrices
-      std::size_t l_size  = TL_N_FAS  * std::size_t(TL_N_MDS_EL) * TL_N_MDS_FA;
-                  l_size += TL_N_FMNS * std::size_t(TL_N_MDS_EL) * TL_N_MDS_FA;
-                  l_size += TL_N_FAS  * std::size_t(TL_N_MDS_FA) * TL_N_MDS_EL;
-                  l_size *= sizeof(TL_T_REAL);
-      TL_T_REAL * l_fIntRaw = (TL_T_REAL*) io_dynMem.allocate( l_size,
-                                                               4096,
-                                                               false,
-                                                               true );
-
-      // local
-      std::size_t l_en = 0;
-      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-        // set pointer
-        o_fIntLN[l_fa] = l_fIntRaw + l_en;
-
-        // set data
-        for( unsigned short l_m0 = 0; l_m0 < TL_N_MDS_EL; l_m0++ ) {
-          for( unsigned short l_m1 = 0; l_m1 < TL_N_MDS_FA; l_m1++ ) {
-            l_fIntRaw[l_en] = i_fIntL[l_fa][l_m0][l_m1];
-            l_en++;
-          }
-        }
-      }
-
-      // neighboring
-      for( unsigned short l_ne = 0; l_ne < TL_N_FMNS; l_ne++ ) {
-        // set pointer
-        o_fIntLN[TL_N_FAS + l_ne] = l_fIntRaw + l_en;
-
-        // set data
-        for( unsigned short l_m0 = 0; l_m0 < TL_N_MDS_EL; l_m0++ ) {
-          for( unsigned short l_m1 = 0; l_m1 < TL_N_MDS_FA; l_m1++ ) {
-            l_fIntRaw[l_en] = i_fIntN[l_ne][l_m0][l_m1];
-            l_en++;
-          }
-        }
-      }
-
-      // transposed
-      for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-        // set pointer
-        o_fIntT[l_fa] = l_fIntRaw + l_en;
-
-        // set data
-        for( unsigned short l_m0 = 0; l_m0 < TL_N_MDS_FA; l_m0++ ) {
-          for( unsigned short l_m1 = 0; l_m1 < TL_N_MDS_EL; l_m1++ ) {
-            l_fIntRaw[l_en] = i_fIntT[l_fa][l_m0][l_m1];
-            l_en++;
-          }
-        }
-      }
+      dg::SurfInt< TL_T_EL,
+                   TL_O_SP >::storeFluxDense( io_dynMem,
+                                              o_fIntLN,
+                                              o_fIntT );
     }
 
     /**
