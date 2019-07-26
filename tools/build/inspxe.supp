@@ -71,7 +71,7 @@ suppression = {
 # LIBXSMM
 ##
 suppression = {
-	name = "libxsmm"
+	name = "libxsmm_leak_0"
 	type = {unreachable_memory_leak}
 	stacks = {
 		allocation={
@@ -81,12 +81,57 @@ suppression = {
 	}
 }
 suppression = {
-	name = "libxsmm"
+	name = "libxsmm_leak_1"
 	type = {unreachable_memory_leak}
 	stacks = {
 		allocation={
 			...;
 			func=libxsmm_create_xcsc_soa;
+		}
+	}
+}
+# see https://github.com/hfp/libxsmm/issues/341
+suppression = {
+	name = "libxsmm_invalid_0"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=local,src=SurfIntSingle.hpp,line=247,func_line=49;
+		}
+		allocation={
+			...;
+			func=allocate,src=common.hpp,line=253,func_line=31;
+			...;
+			func=storeFluxDense,src=SurfInt.hpp,line=94,func_line=3;
+		}
+	}
+}
+suppression = {
+	name = "libxsmm_invalid_1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=local,src=SurfIntSingle.hpp,func_line=35;
+		}
+		allocation={
+			...;
+			func=storeFluxDense,src=SurfInt.hpp,func_line=3;
+		}
+	}
+}
+suppression = {
+	name = "libxsmm_invalid_2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=neigh,src=SurfIntSingle.hpp,func_line=33;
+		}
+		allocation={
+			...;
+			func=storeFluxDense,src=SurfInt.hpp,func_line=3;
 		}
 	}
 }
