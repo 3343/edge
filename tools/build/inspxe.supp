@@ -126,6 +126,22 @@ suppression = {
   }
 }
 
+suppression = {
+	name = "easy_logging_3"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=CustomFormatSpecifier,src=easylogging++.h;
+		}
+		allocation={
+			...;
+			func=installCustomFormatSpecifier,src=easylogging++.cc;
+		}
+	}
+}
+
+
 ##
 # Memkind
 ##
