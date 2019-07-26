@@ -362,17 +362,17 @@ class edge::seismic::solvers::AderDg {
         TL_T_REAL l_derA[CE_MAX(int(TL_N_RMS),1)][TL_O_SP][TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
 
         // compute ADER time integration
-        m_kernels->m_time.ck( (TL_T_REAL)  i_dt,
-                                           m_starE[l_el],
-                                           m_starA[l_el],
-                                           m_srcA+l_el*std::size_t(TL_N_RMS),
-                                           io_dofsE[l_el],
-                                           l_dofsA,
-                                           l_tmp,
-                                           l_derBuffer,
-                                           l_derA,
-                                           o_tDofsDg[0][l_el],
-                                           l_tDofsA );
+        m_kernels->m_time.ck( i_dt,
+                              m_starE[l_el],
+                              m_starA[l_el],
+                              m_srcA+l_el*std::size_t(TL_N_RMS),
+                              io_dofsE[l_el],
+                              l_dofsA,
+                              l_tmp,
+                              l_derBuffer,
+                              l_derA,
+                              o_tDofsDg[0][l_el],
+                              l_tDofsA );
 
         // write receivers (if required)
         if( !( (i_elChars[l_el].spType & RECEIVER) == RECEIVER) ) {} // no receivers in the current element
