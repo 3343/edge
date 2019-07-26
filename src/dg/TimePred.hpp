@@ -69,7 +69,7 @@ class edge::dg::TimePred {
     template< typename TL_T_REAL >
     static void storeStiffTDense( TL_T_REAL     const     i_stiffT[TL_N_DIS][TL_N_MDS][TL_N_MDS],
                                   data::Dynamic         & io_dynMem,
-                                  TL_T_REAL             * o_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS] ) {
+                                  TL_T_REAL             * o_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS] ) {
       // allocate raw memory for the stiffness matrices
       std::size_t l_size  = TL_N_DIS * std::size_t(TL_N_MDS) * TL_N_MDS;
                   l_size *= sizeof(TL_T_REAL);
@@ -90,7 +90,7 @@ class edge::dg::TimePred {
       }
 
       // assign pointers
-      for( unsigned short l_de = 0; l_de < TL_O_SP-1; l_de++ ) {
+      for( unsigned short l_de = 0; l_de < TL_O_TI-1; l_de++ ) {
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
           o_stiffT[l_de][l_di] = l_stiffTRaw + l_di * std::size_t(TL_N_MDS) * TL_N_MDS; 
         }
@@ -109,7 +109,7 @@ class edge::dg::TimePred {
      **/
     template< typename TL_T_REAL >
     static void storeStiffTDense( data::Dynamic & io_dynMem,
-                                  TL_T_REAL     * o_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS] ) {
+                                  TL_T_REAL     * o_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS] ) {
       // formulation of the basis in terms of the reference element
       dg::Basis l_basis( TL_T_EL,
                          TL_O_SP );

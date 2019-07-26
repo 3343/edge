@@ -89,7 +89,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
     static unsigned short const TL_N_NZS_SRC_A = CE_N_ENS_SRC_A_SP( TL_N_DIS );
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS];
 
     //! matrix kernels
     edge::data::MmXsmmFused< TL_T_REAL > m_mm;
@@ -154,7 +154,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       l_nzBl[0][0][0] = l_nzBl[0][1][0] = 0;
       l_nzBl[0][0][1] = l_nzBl[0][1][1] = TL_N_MDS-1;
 
-      for( unsigned short l_de = 1; l_de < TL_O_SP; l_de++ ) {
+      for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         // determine non-zero block for the next iteration
         unsigned int l_maxNzCol = 0;
 
@@ -225,7 +225,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       EDGE_CHECK_EQ( l_starCsrE.val.size(), TL_N_NZS_STAR_E );
 
       // derive sparse AoSoA-LIBXSMM kernels
-      for( unsigned short l_de = 1; l_de < TL_O_SP; l_de++ ) {
+      for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         // transposed stiffness matrices
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
           m_mm.add( 0,                                                // group
@@ -315,7 +315,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
      **/
     static void storeStiffTSparse( TL_T_REAL     const     i_stiffT[TL_N_DIS][TL_N_MDS][TL_N_MDS],
                                    data::Dynamic       &   io_dynMem,
-                                   TL_T_REAL           *   o_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS]  ) {
+                                   TL_T_REAL           *   o_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS]  ) {
       // convert stiffness matrices to CSC (incl. possible fill-in)
       std::vector< size_t > l_maxNzCols;
       std::vector< size_t > l_offsets;
@@ -336,7 +336,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       }
 
       // check that we have offsets for all matrices
-      EDGE_CHECK_EQ( l_offsets.size(), (TL_O_SP-1)*TL_N_DIS+1 );
+      EDGE_CHECK_EQ( l_offsets.size(), (TL_O_TI-1)*TL_N_DIS+1 );
 
       // set the pointers
       unsigned short l_mat = 0;

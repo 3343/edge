@@ -91,14 +91,14 @@ class edge::seismic::kernels::TimePredVanilla: public edge::seismic::kernels::Ti
     edge::data::MmVanilla< TL_T_REAL > m_mm;
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[CE_MAX(TL_O_SP-1,1)][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS];
 
     /**
      * Generates the matrix kernels for the transposed stiffness matrices and star matrices.
      **/
     void generateKernels() {
       // (O-1)*2 kernels for time integration
-      for( unsigned short l_de = 1; l_de < TL_O_SP; l_de++ ) {
+      for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         // transposed stiffness matrix
         m_mm.add( 0,                                                 // group
                   TL_N_QTS_E,                                        // m
