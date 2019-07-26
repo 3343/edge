@@ -156,22 +156,11 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                                                              TL_O_SP,
                                                              1 >( i_rfs,
                                                                   io_dynMem ) {
-      // formulation of the basis in terms of the reference element
-      dg::Basis l_basis( TL_T_EL,
-                         TL_O_SP );
-
-      // get stiffness matrices
-      TL_T_REAL l_stiff[TL_N_DIS][TL_N_MDS][TL_N_MDS];
-      l_basis.getStiffMm1Dense( TL_N_MDS,
-                                l_stiff[0][0],
-                                false );
-
       // store stiffness matrices dense
-      this->storeStiffDense( l_stiff,
-                             io_dynMem,
+      this->storeStiffDense( io_dynMem,
                              m_stiff );
 
-
+      // generate matrix kernels
       generateKernels();
     }
 

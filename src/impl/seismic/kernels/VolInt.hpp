@@ -28,6 +28,7 @@
 
 #include "constants.hpp"
 #include "data/Dynamic.h"
+#include "dg/VolInt.hpp"
 
 namespace edge {
   namespace seismic {
@@ -71,36 +72,14 @@ class edge::seismic::kernels::VolInt {
     /**
      * Stores the stiffness matrices as dense.
      * 
-     * @param i_stiff dense stiffness matrices.
      * @param io_dynMem dynamic memory management, which will be used for the respective allocations.
      * @param o_stiff will contain pointers to memory for the individual matrices.
      **/
-    static void storeStiffDense( TL_T_REAL     const     i_stiff[TL_N_DIS][TL_N_MDS][TL_N_MDS],
-                                 data::Dynamic         & io_dynMem,
-                                 TL_T_REAL             * o_stiff[TL_N_DIS] ) {
-      // allocate raw memory for the stiffness matrices
-      std::size_t l_size  = TL_N_DIS * std::size_t(TL_N_MDS) * TL_N_MDS;
-                  l_size *= sizeof(TL_T_REAL);
-      TL_T_REAL * l_stiffRaw = (TL_T_REAL*) io_dynMem.allocate( l_size,
-                                                                4096,
-                                                                false,
-                                                                true );
-
-      // copy data
-      std::size_t l_en = 0;
-      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-        for( unsigned short l_m0 = 0; l_m0 < TL_N_MDS; l_m0++ ) {
-          for( unsigned short l_m1 = 0; l_m1 < TL_N_MDS; l_m1++ ) {
-            l_stiffRaw[l_en] = i_stiff[l_di][l_m0][l_m1];
-            l_en++;
-          }
-        }
-      }
-
-      // assign pointers
-      for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
-        o_stiff[l_di] = l_stiffRaw + l_di * std::size_t(TL_N_MDS) * TL_N_MDS; 
-      }
+    static void storeStiffDense( data::Dynamic & io_dynMem,
+                                 TL_T_REAL     * o_stiff[TL_N_DIS] ) {
+      dg::VolInt< TL_T_EL,
+                  TL_O_SP >::storeStiffDense( io_dynMem,
+                                              o_stiff );
     }
 
     /**
