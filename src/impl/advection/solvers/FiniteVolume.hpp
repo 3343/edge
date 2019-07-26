@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -51,15 +52,9 @@ class edge::advection::solvers::FiniteVolume {
                                double      i_dT,
                          const real_base (*i_dofs)[1][N_ELEMENT_MODES][N_CRUNS],
                                real_base (**o_tInt)[N_ELEMENT_MODES][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(o_tInt, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
       // compute time integated DOFs
       for( int_el l_element = i_first; l_element < i_first+i_nElements; l_element++ ) {
         for( int_md l_mode = 0; l_mode < N_ELEMENT_MODES; l_mode++ ) {
-#pragma omp simd
           for( int_cfr l_run = 0; l_run < N_CRUNS; l_run++ ) {
             o_tInt[l_element][0][l_mode][l_run] = i_dT * i_dofs[l_element][0][l_mode][l_run];
           }
@@ -83,12 +78,6 @@ class edge::advection::solvers::FiniteVolume {
                         const t_elementShared2 (*i_fluxSolvers)[ C_ENT[T_SDISC.ELEMENT].N_FACES*2 ],
                               real_base        (**i_tInt)[1][N_CRUNS],
                               real_base        (*io_dofs)[1][1][N_CRUNS] ) {
-#if __has_builtin(__builtin_assume_aligned)
-      // share alignment with compiler
-      (void) __builtin_assume_aligned(i_tInt,  ALIGNMENT.ELEMENT_MODES.PRIVATE);
-      (void) __builtin_assume_aligned(io_dofs, ALIGNMENT.ELEMENT_MODES.PRIVATE);
-#endif
-
       // iterate over elements
       for( int_el l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
           // fluxes
