@@ -504,7 +504,7 @@ if compilers != 'intel':
   env.Append( CXXFLAGS = ["-Wundef"] ) # intel compiler gets this flag back if we can define system headers as in GCC..
 else:
   # silence annoying warnings
-  env.Append( CXXFLAGS = ["-diag-disable", "186,11074,11076"] )
+  env.Append( CXXFLAGS = ["-diag-disable", "186,11074,11076,13212"] )
 
 # set optimization mode
 if 'debug' in env['mode']:
