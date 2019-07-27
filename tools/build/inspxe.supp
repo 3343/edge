@@ -36,7 +36,6 @@ suppression = {
 	}
 }
 
-
 ##
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64535#c17
 ##
@@ -78,7 +77,7 @@ suppression = {
   stacks = {
     {
       ...;
-      mod=edge,func=H5T_path_find;
+      func=H5T__path_find_real;
     }
   }
 }
