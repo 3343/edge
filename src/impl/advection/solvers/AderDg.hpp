@@ -24,7 +24,6 @@
 #ifndef EDGE_ADVECTION_ADER_DG_HPP
 #define EDGE_ADVECTION_ADER_DG_HPP
 
-#include "constants.hpp"
 #include "mesh/common.hpp"
 #include "linalg/Matrix.h"
 #include "linalg/Mappings.hpp"

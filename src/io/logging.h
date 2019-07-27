@@ -24,11 +24,13 @@
 #ifndef EDGE_IO_LOGGING_H_
 #define EDGE_IO_LOGGING_H_
 
-#include <iostream>
+#include <map>
+
 #include "parallel/global.h"
 #ifdef PP_USE_MPI
 #include "parallel/mpi_wrapper.inc"
 #endif
+#include <iostream>
 
 #ifdef PP_USE_EASYLOGGING
 

@@ -23,9 +23,9 @@
 #ifndef EDGE_DATA_EXPRESSION_HPP
 #define EDGE_DATA_EXPRESSION_HPP
 
+#include "exprtk.wrap.hpp"
 #include <string>
 #include "constants.hpp"
-#include "exprtk.wrap.hpp"
 #include "io/logging.h"
 
 namespace edge {

@@ -20,9 +20,7 @@
  * @section DESCRIPTION
  * Dynamic load balancing of work regions.
  **/
-#ifdef PP_USE_MPI
-#include "mpi.h"
-#endif
+#include "parallel/Mpi.h"
 
 #include "LoadBalancing.h"
 

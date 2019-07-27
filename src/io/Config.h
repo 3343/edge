@@ -23,10 +23,10 @@
 #ifndef EDGE_IO_CONFIG_H
 #define EDGE_IO_CONFIG_H
 
-#include "constants.hpp"
+#include <array>
 #include <string>
 #include <vector>
-#include <array>
+#include "constants.hpp"
 #include "linalg/Domain.hpp"
 #include "linalg/HalfSpace.hpp"
 #include "submodules/pugixml/src/pugixml.hpp"

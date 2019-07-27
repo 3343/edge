@@ -21,10 +21,11 @@
  * @section DESCRIPTION
  * Elasticity.
  **/
-#include "Elasticity.h"
 #include <cmath>
-#include "io/logging.h"
 #include "linalg/Matrix.h"
+#include "io/logging.h"
+
+#include "Elasticity.h"
 
 void edge::seismic::setups::Elasticity::setupFlMid( double i_rhoL,
                                                     double i_rhoR,

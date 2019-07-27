@@ -21,8 +21,8 @@
  * Regular meshes in EDGE.
  **/
 
-#include "Regular.h"
 #include "common.hpp"
+#include "Regular.h"
 #include <cassert>
 #include <io/logging.h>
 

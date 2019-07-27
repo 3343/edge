@@ -21,12 +21,14 @@
  * @section DESCRIPTION
  * Viscoelastic attenuation.
  **/
-#include "ViscoElasticity.h"
 #include "linalg/Matrix.h"
+
+#include "ViscoElasticity.h"
 
 // ignore shadowing issues of Eigen library
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #include "submodules/eigen/Eigen/Dense"
 #pragma GCC diagnostic pop
 

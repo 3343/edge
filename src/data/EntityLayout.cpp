@@ -21,8 +21,8 @@
  * Data layout of entities.
  **/
 
-#include "EntityLayout.h"
 #include "io/logging.h"
+#include "EntityLayout.h"
 
 void edge::data::EntityLayout::sizesToLayout( t_enLayout &io_enLayout ) {
   // init the missing parameters

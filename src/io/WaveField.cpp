@@ -20,13 +20,12 @@
  * @section DESCRIPTION
  * Wave field writer.
  **/
-
-#include "WaveField.h"
-
+#include <algorithm>
 #include <cassert>
 #include <sys/types.h>
 #include <cstring>
-#include <algorithm>
+
+#include "WaveField.h"
 #include "logging.h"
 #include "FileSystem.hpp"
 #include "monitor/instrument.hpp"

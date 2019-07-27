@@ -21,10 +21,11 @@
  * Global time stepping setup of regular tetrahedral meshes.
  **/
 
+#include "linalg/Geom.hpp"
+#include "../common.hpp"
+
 #include "Tet.h"
 #include "Base.h"
-#include "../common.hpp"
-#include "linalg/Geom.hpp"
 
 int_el edge::mesh::regular::Tet::getNVeOwned() const {
   return (m_nHex[0]+1) * (m_nHex[1]+1) * (m_nHex[2]+1);

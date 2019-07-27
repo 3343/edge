@@ -24,8 +24,8 @@
 #ifndef EDGE_LINALG_GEOM_HPP
 #define EDGE_LINALG_GEOM_HPP
 
-#include <cmath>
 #include <functional>
+#include <cmath>
 #include "submodules/wykobi/wykobi.hpp"
 #include "constants.hpp"
 #include "io/logging.h"

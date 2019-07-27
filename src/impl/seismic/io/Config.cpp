@@ -22,10 +22,11 @@
  * Runtime configuration of elastics.
  **/
 
-#include "Config.h"
 #include "io/Config.h"
 #include "io/logging.h"
 #include <string>
+
+#include "Config.h"
 
 void edge::seismic::io::Config::print() {
   EDGE_LOG_INFO << "  printing implementation-specific config for elastics (if any)";

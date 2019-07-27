@@ -23,8 +23,8 @@
 #ifndef EDGE_DATA_DATA_LAYOUT_HPP
 #define EDGE_DATA_DATA_LAYOUT_HPP
 
-#include "io/logging.h"
 #include "EntityLayout.type"
+#include "io/logging.h"
 
 namespace edge {
   namespace data {

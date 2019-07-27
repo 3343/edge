@@ -25,8 +25,8 @@
 
 #include <cstdint>
 #include <vector>
-#include "data/EntityLayout.type"
 #include "data/SparseEntities.hpp"
+#include "data/EntityLayout.type"
 #include "parallel/global.h"
 #include "LoadBalancing.h"
 #include "io/logging.h"

@@ -21,11 +21,11 @@
  * Management of the time stepping.
  **/
 
-#ifndef EDGE_MANAGER_H
-#define EDGE_MANAGER_H
+#ifndef EDGE_TIME_MANAGER_H
+#define EDGE_TIME_MANAGER_H
 
-#include <constants.hpp>
 #include "parallel/Shared.h"
+#include "constants.hpp"
 #include "io/Receivers.h"
 #include "io/ReceiversSf.hpp"
 #include "TimeGroupStatic.h"

@@ -26,6 +26,8 @@
 #ifdef PP_USE_MPI
 #include "mpi_wrapper.inc"
 #endif
+#include <map>
+#include <functional>
 #include <string>
 #include <cstdint>
 #include <limits>

@@ -21,8 +21,8 @@
  * VTK output.
  **/
 
-#include "Vtk.h"
 #include "data/common.hpp"
+#include "Vtk.h"
 #include "submodules/visit_writer/visit_writer.h"
 
 void edge::io::Vtk::init(       int_el                 i_nVe,

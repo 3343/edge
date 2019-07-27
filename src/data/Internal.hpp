@@ -26,6 +26,8 @@
 #ifndef EDGE_DATA_INTERNAL_HPP
 #define EDGE_DATA_INTERNAL_HPP
 
+#include <functional>
+
 #include "internal.hpp"
 #include "common.hpp"
 #include "io/logging.h"
