@@ -362,6 +362,7 @@ class edge::seismic::solvers::InternalBoundaryTypes {
         }
         for( unsigned short l_sd = 0; l_sd < 2; l_sd++ )
           EDGE_CHECK_LT( o_bfChars[l_bf].fIdBfEl[l_sd], TL_N_EL_FA );
+
         EDGE_CHECK_LT( o_bfChars[l_bf].vIdFaElR , TL_N_EL_VE );
 
         l_bf++;

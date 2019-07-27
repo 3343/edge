@@ -77,6 +77,8 @@ void edge::seismic::setups::ViscoElasticity::anelasticCoeffPs( unsigned short i_
                                                                double         i_qualityFactor,
                                                                double const * i_freqs,
                                                                double       * o_coeffs ) {
+  EDGE_CHECK_GT( i_nMechs, 0 );
+
   // number of frequencies
   unsigned short l_nFreqs = 2 * i_nMechs - 1;
 

@@ -124,7 +124,8 @@ class edge::parallel::LoadBalancing {
     LoadBalancing( double i_zeroTime=1E-3,
                    double i_maxImbalance=2.5E-2 ): m_zeroTime(     i_zeroTime     ),
                                                    m_maxImbalance( i_maxImbalance ),
-                                                   m_nBalanced(0){}; 
+                                                   m_nBalanced(0),
+                                                   m_nWrks(0){};
 
     /**
      * @brief Initializes the dynamic load balancing.

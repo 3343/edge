@@ -61,7 +61,7 @@ class edge::time::Manager {
     unsigned short m_cflow[N_ENTRIES_CONTROL_FLOW];
 
     //! true if the manager reached the desired synchronization point
-    volatile bool m_finished;
+    volatile bool m_finished = false;
 
     //! scheduling loop
     void schedule();
