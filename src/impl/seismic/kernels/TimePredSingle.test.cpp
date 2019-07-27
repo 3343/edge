@@ -37,9 +37,21 @@ TEST_CASE( "Optimized elastic ADER time prediction for single forward simulation
                                           TET4,
                                           4,
                                           4 > l_pred( nullptr, l_dynMem );
+
+  // data structures for the call
   float l_scratch[9][20][1];
   float l_ders[4][9][20][1];
   float l_tDofs[9][20][1];
+
+  // init invalid
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      l_tDofs[l_qt][l_md][0] = std::numeric_limits< float >::max();
+      for( unsigned short l_de = 0; l_de < 4; l_de++ ) {
+        l_ders[l_de][l_qt][l_md][0] = std::numeric_limits< float >::max();
+      }
+    }
+  }
 
   // compute time prediction
   l_pred.ck(                    0.017,

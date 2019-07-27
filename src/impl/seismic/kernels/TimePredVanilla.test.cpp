@@ -20,6 +20,8 @@
  * @section DESCRIPTION
  * Tests the vanilla time prediction.
  **/
+#include <limits>
+
 #include <catch.hpp>
 #define private public
 #include "TimePredVanilla.hpp"
@@ -30,10 +32,20 @@ TEST_CASE( "Elastic ADER time prediction using vanilla kernels.", "[elastic][Tim
   // set up matrix structures
 #include "TimePred.test.inc"
 
-
+  // data structures for the call
   float l_scratch[9][20][1];
   float l_dersE[4][9][20][1];
   float l_tDofsE[9][20][1];
+
+  // init invalid
+  for( unsigned short l_qt = 0; l_qt < 9; l_qt++ ) {
+    for( unsigned short l_md = 0; l_md < 20; l_md++ ) {
+      l_tDofsE[l_qt][l_md][0] = std::numeric_limits< float >::max();
+      for( unsigned short l_de = 0; l_de < 4; l_de++ ) {
+        l_dersE[l_de][l_qt][l_md][0] = std::numeric_limits< float >::max();
+      }
+    }
+  }
 
   // set up kernel
   edge::data::Dynamic l_dynMem;
