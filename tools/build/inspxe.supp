@@ -330,19 +330,21 @@ suppression = {
 # MOAB
 ##
 suppression = {
-  name = "MOAB: load_file"
-  type = {invalid_memory_access}
-  stacks = {
-    {
-      !!!;
-      mod=edge,src=Moab.cpp,func=read,line=803,func_line=5;
-    }
-    allocation={
-      !!!;
-      mod=edge,src=Moab.cpp,func=read,line=803,func_line=5;
-    }
-  }
+	name = "MOAB: load_file"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=edge,func=load_file;
+			mod=edge,func=read,src=Moab.cpp;
+		}
+		allocation={
+			...;
+			mod=edge,func=create_data;
+		}
+	}
 }
+
 suppression = {
   name = "MOAB: write_file"
   type = {invalid_memory_access}
