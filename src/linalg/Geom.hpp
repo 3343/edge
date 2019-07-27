@@ -24,7 +24,6 @@
 #ifndef EDGE_LINALG_GEOM_HPP
 #define EDGE_LINALG_GEOM_HPP
 
-#include <cassert>
 #include <cmath>
 #include <functional>
 #include "submodules/wykobi/wykobi.hpp"
@@ -401,7 +400,7 @@ class edge::linalg::Geom {
           l_s2 += l_v1[l_dim] * l_v1[l_dim];
         }
 
-        assert( std::abs(l_s2) > TOL.MESH );
+        EDGE_CHECK( std::abs(l_s2) > TOL.MESH );
 
         TL_T_REAL l_alpha = -l_s1 / l_s2;
 
@@ -419,8 +418,8 @@ class edge::linalg::Geom {
         l_lens[0] = std::sqrt( l_lens[0] );
         l_lens[1] = std::sqrt( l_lens[1] );
 
-        assert( l_lens[0] > TOL.MESH );
-        assert( l_lens[1] > TOL.MESH );
+        EDGE_CHECK( l_lens[0] > TOL.MESH );
+        EDGE_CHECK( l_lens[1] > TOL.MESH );
 
         // set tangents
         for( unsigned int l_dim = 0; l_dim < 3; l_dim++ ) {
@@ -428,7 +427,7 @@ class edge::linalg::Geom {
           o_tangent1[l_dim] = l_n[l_dim]  / l_lens[1];
         }
       }
-      else assert( false );
+      else EDGE_LOG_FATAL;
     }
 
     /**
@@ -639,8 +638,8 @@ class edge::linalg::Geom {
       bool l_face    = false;
 
       // define directed vector from entities's face-verts to pt
-      assert(  C_ENT[i_entType].N_FACE_VERTICES < 4 ||
-              (C_ENT[i_entType].N_FACE_VERTICES == 4 && i_entType == HEX8R) );
+      EDGE_CHECK(  C_ENT[i_entType].N_FACE_VERTICES < 4 ||
+                  (C_ENT[i_entType].N_FACE_VERTICES == 4 && i_entType == HEX8R) );
       TL_T_REAL l_directed[3*4];
       for( unsigned short l_dv = 0; l_dv < 3*4; l_dv++ ) l_directed[l_dv] = std::numeric_limits< TL_T_REAL >::max();
 
@@ -703,7 +702,7 @@ class edge::linalg::Geom {
         }
       }
 
-      assert( !(l_inside == true && l_face == true) );
+      EDGE_CHECK( !(l_inside == true && l_face == true) );
 
       unsigned short l_result = 0;
       if( l_inside             ) l_result = 1;
