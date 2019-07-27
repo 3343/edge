@@ -27,12 +27,13 @@
 #ifdef PP_USE_MPI
 #include <moab/ParallelComm.hpp>
 #endif
-#include "constants.hpp"
-#include "data/EntityLayout.type"
-#include <string>
-#include <cstdlib>
 #include <moab/Core.hpp>
 #include "io/logging.h"
+#include "constants.hpp"
+#include "data/EntityLayout.type"
+
+#include <string>
+#include <cstdlib>
 
 namespace edge {
   namespace mesh {

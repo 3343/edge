@@ -20,15 +20,15 @@
  * @section DESCRIPTION
  * Unstructured mesh representation.
  **/
-#ifndef UNSTRUCTURED_H_
-#define UNSTRUCTURED_H_
-
-#include "constants.hpp"
-#include <string>
+#ifndef EDGE_MESH_UNSTRUCTURED_H_
+#define EDGE_MESH_UNSTRUCTURED_H_
 
 #ifdef PP_USE_MOAB
 #include "Moab.h"
 #endif
+
+#include "constants.hpp"
+#include <string>
 
 namespace edge {
   namespace mesh {
