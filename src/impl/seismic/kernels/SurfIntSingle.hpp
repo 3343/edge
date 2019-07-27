@@ -88,10 +88,10 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
     static unsigned short const TL_N_ENS_FS_A = CE_N_ENS_FS_A_DE( TL_N_DIS );
 
     //! pointers to the local flux matrices
-    TL_T_REAL *m_fIntLN[TL_N_FAS+TL_N_FMNS];
+    TL_T_REAL *m_fIntLN[TL_N_FAS+TL_N_FMNS] = {};
 
     //! pointers to the transposed flux matrices
-    TL_T_REAL *m_fIntT[TL_N_FAS];
+    TL_T_REAL *m_fIntT[TL_N_FAS] = {};
 
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;

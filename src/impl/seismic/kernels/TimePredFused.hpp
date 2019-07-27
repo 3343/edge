@@ -89,7 +89,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
     static unsigned short const TL_N_NZS_SRC_A = CE_N_ENS_SRC_A_SP( TL_N_DIS );
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS] = {};
 
     //! matrix kernels
     edge::data::MmXsmmFused< TL_T_REAL > m_mm;

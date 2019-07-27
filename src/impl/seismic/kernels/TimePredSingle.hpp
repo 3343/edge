@@ -85,7 +85,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
     static unsigned short const TL_N_ENS_SRC_A = CE_N_ENS_SRC_A_DE( TL_N_DIS );
 
     //! pointers to the (possibly recursive) stiffness matrices
-    TL_T_REAL *m_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS];
+    TL_T_REAL *m_stiffT[CE_MAX(TL_O_TI-1,1)][TL_N_DIS] = {};
 
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;

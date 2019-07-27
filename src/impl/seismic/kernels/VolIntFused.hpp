@@ -89,7 +89,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
     edge::data::MmXsmmFused< TL_T_REAL > m_mm;
 
     //! pointers to the stiffness matrices
-    TL_T_REAL *m_stiff[TL_N_DIS];
+    TL_T_REAL *m_stiff[TL_N_DIS] = {};
 
     /**
      * Gets the sparse matrix structure of the dense input matrices.

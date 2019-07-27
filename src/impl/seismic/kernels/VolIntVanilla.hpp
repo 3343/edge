@@ -88,7 +88,7 @@ class edge::seismic::kernels::VolIntVanilla: edge::seismic::kernels::VolInt < TL
     edge::data::MmVanilla< TL_T_REAL > m_mm;
 
     //! pointers to the stiffness matrices
-    TL_T_REAL *m_stiff[TL_N_DIS];
+    TL_T_REAL *m_stiff[TL_N_DIS] = {};
 
     /**
      * Generates the matrix kernels for the stiffness matrices and star matrices.
