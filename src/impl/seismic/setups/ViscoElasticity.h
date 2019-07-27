@@ -213,9 +213,12 @@ class edge::seismic::setups::ViscoElasticity {
                      double         & o_lamElastic,
                      double         & o_muElastic,
                      TL_T_REAL     (* o_srcElasticStress)[3*3] ) {
-      // compute anelastic coefficients
+      // anelastic coefficients
       double *l_coeffs = new double[ i_nMechs*2 ];
+      for( unsigned short l_co = 0; l_co < i_nMechs*2; l_co++ )
+        l_coeffs[l_co] = std::numeric_limits< double >::max();
 
+      // compute anelastic coefficients and elastic Lame parameters
       anelasticCoeffLame( i_nMechs,
                           i_freqCen,
                           i_freqRat,
@@ -384,9 +387,12 @@ class edge::seismic::setups::ViscoElasticity {
                      double         & o_lamElastic,
                      double         & o_muElastic,
                      TL_T_REAL     (* o_srcElasticStress)[6*6] ) {
-      // compute anelastic coefficients
+      // anelastic coefficients
       double *l_coeffs = new double[ i_nMechs*2 ];
+      for( unsigned short l_co = 0; l_co < i_nMechs*2; l_co++ )
+        l_coeffs[l_co] = std::numeric_limits< double >::max();
 
+      // compute anelastic coefficients and elastic Lame parameters
       anelasticCoeffLame( i_nMechs,
                           i_freqCen,
                           i_freqRat,
