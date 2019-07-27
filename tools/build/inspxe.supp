@@ -23,6 +23,21 @@
 ##
 
 ##
+# STL
+##
+suppression = {
+	name = "stl_bit_vector"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=stl_bvector.h;
+		}
+	}
+}
+
+
+##
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64535#c17
 ##
 suppression = {
