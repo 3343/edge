@@ -25,6 +25,7 @@
 #define EDGE_SEISMIC_SETUPS_VISCO_ELASTICITY_H
 
 #include <cmath>
+#include <limits>
 #include "io/logging.h"
 #include "../common.hpp"
 
