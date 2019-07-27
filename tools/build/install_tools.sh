@@ -5,6 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -36,10 +37,10 @@ if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   # recent build tools
   sudo yum install -y -q -e 0 centos-release-scl
-  sudo yum install -y -q -e 0 devtoolset-7
-  sudo yum install -y -q -e 0 devtoolset-7-libasan-devel devtoolset-7-libubsan-devel
-  source /opt/rh/devtoolset-7/enable
-  echo "source /opt/rh/devtoolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
+  sudo yum install -y -q -e 0 devtoolset-8
+  sudo yum install -y -q -e 0 devtoolset-8-libasan-devel devtoolset-8-libubsan-devel
+  source /opt/rh/devtoolset-8/enable
+  echo "source /opt/rh/devtoolset-8/enable > /dev/null" | sudo tee --append /etc/bashrc
   # other
   sudo yum install -y -q -e 0 hostname
   sudo yum install -y -q -e 0 wget
@@ -81,10 +82,10 @@ sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 #########
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo yum install -y -q -e 0 llvm-toolset-7-clang llvm-toolset-7-libomp llvm-toolset-7-libomp-devel
+  sudo yum install -y -q -e 0 llvm-toolset-8-clang llvm-toolset-8-libomp llvm-toolset-8-libomp-devel
   sudo yum install -y -q -e 0 clang
-  source /opt/rh/llvm-toolset-7/enable
-  echo "source /opt/rh/llvm-toolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
+  source /opt/rh/llvm-toolset-8/enable
+  echo "source /opt/rh/llvm-toolset-8/enable > /dev/null" | sudo tee --append /etc/bashrc
 fi
 
 ###########
