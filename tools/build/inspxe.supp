@@ -203,7 +203,7 @@ suppression = {
 # ExpressionTk
 ##
 suppression = {
-	name = "expression_tk_0"
+	name = "exprtk_0"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -217,7 +217,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "expression_tk_1"
+	name = "expr_tk_1"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -227,6 +227,17 @@ suppression = {
 		allocation={
 			...;
 			func=parse_symbol,src=exprtk.hpp;
+		}
+	}
+}
+suppression = {
+	name = "exprtk_2"
+	type = {invalid_call}
+	stacks = {
+		{
+			...;
+			mod=edge,func=branch_to_id,src=exprtk.hpp;
+			mod=edge,func=synthesize_expression,src=exprtk.hpp;
 		}
 	}
 }
