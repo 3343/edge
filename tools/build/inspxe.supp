@@ -375,93 +375,40 @@ suppression = {
 # Intel MPI
 ##
 suppression = {
-  name = "impi: NUMA #1"
-  type = {invalid_call}
-  stacks = {
-    {
-      !!!;
-      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
-    }
-  }
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			func=MPIDI_NM_mpi_init_hook,mod=libmpi.so.12;
+		}
+	}
 }
 suppression = {
-  name = "impi: NUMA #2"
-  type = {reachable_memory_leak}
-  stacks = {
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
-    }
-  }
-}
-
-suppression = {
-  name = "impi: NUMA #3"
-  type = {unreachable_memory_leak}
-  stacks = {
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
-    }
-  }
+	type = {thread_start}
+	stacks = {
+		{
+			!!!;
+			func=sock_conn_listener_thread,mod=libsockets-fi.so;
+		}
+	}
 }
 suppression = {
-  name = "impi: NUMA #4"
-  type = {invalid_memory_access_partial}
-  stacks = {
-    {
-      !!!;
-      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
-    }
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=mpid_init.c,func=MPID_nem_impi_create_numa_nodes_map;
-    }
-  }
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func=fi_enable,mod=libmpi.so.12;
+		}
+	}
 }
 suppression = {
-  name = "impi: table"
-  type = {invalid_memory_access_partial}
-  stacks = {
-    {
-      !!!;
-      mod=libmpi.so.12,src=simple_pmi.c,func=iPMI_Get_r2h_table;
-    }
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=simple_pmi.c,func=iPMI_Get_r2h_table;
-    }
-  }
-}
-suppression = {
-  name = "impi: in_map"
-  type = {reachable_memory_leak}
-  stacks = {
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=init_pinning.c,func=I_MPI_Get_pin_map;
-    }
-  }
-}
-suppression = {
-  name = "impi: cpu_info #1"
-  type = {reachable_memory_leak}
-  stacks = {
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=init_pinning.c,func=I_MPI_Get_cpu_info;
-    }
-  }
-}
-suppression = {
-  name = "impi: cpu_info #2"
-  type = {reachable_memory_leak}
-  stacks = {
-    allocation={
-      !!!;
-      mod=libmpi.so.12,src=init_pinning.c,func=I_MPI_Get_cpu_info;
-    }
-  }
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			func=snprintf,mod=libmpi.so.12;
+		}
+	}
 }
 
 ##
