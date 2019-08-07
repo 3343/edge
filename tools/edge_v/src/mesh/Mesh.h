@@ -23,9 +23,9 @@
 #ifndef EDGE_V_MESH_MESH_H
 #define EDGE_V_MESH_MESH_H
 
-#include "constants.h"
+#include "../constants.h"
 
-#include "io/Moab.h"
+#include "../io/Moab.h"
 
 namespace edge_v {
   namespace mesh {

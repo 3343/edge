@@ -23,6 +23,8 @@
 #ifndef EDGE_V_IO_LOGGING_H
 #define EDGE_V_IO_LOGGING_H
 
+#ifdef PP_USE_EASYLOGGING
+
 // enable thread-safety in omp-configs
 #ifdef PP_USE_OMP
 #define ELPP_THREAD_SAFE
@@ -51,5 +53,46 @@
 #define EDGE_V_CHECK_GT(str1, str2) CHECK_GT(str1, str2)
 #define EDGE_V_CHECK_LE(str1, str2) CHECK_LE(str1, str2)
 #define EDGE_V_CHECK_GE(str1, str2) CHECK_GE(str1, str2)
+
+#else
+
+#include <iostream>
+#include <cassert>
+
+#define EDGE_V_LOG_INFO_ALL    std::cout << ""
+#define EDGE_V_LOG_INFO        std::cout << ""
+#define EDGE_V_LOG_TRACE       std::cout << ""
+#define EDGE_V_LOG_DEBUG       std::cout << ""
+#define EDGE_V_LOG_FATAL       std::cerr << ""
+#define EDGE_V_LOG_ERROR       std::cerr << ""
+#define EDGE_V_LOG_WARNING     std::cerr << ""
+#define EDGE_V_LOG_VERBOSE     std::cout << ""
+#define EDGE_V_VLOG_IS_ON(str) true
+#define EDGE_V_VLOG_ALL(str)   std::cout << ""
+#define EDGE_V_VLOG(str)       std::cout << ""
+
+namespace edge_v {
+  namespace io {
+    class NullStream {
+      public:
+        NullStream() {}
+
+        template<typename T>
+        NullStream& operator<<( T const& ) {
+          return *this;
+        }
+    };
+  }
+}
+
+#define EDGE_V_CHECK(str)           assert( str          ); edge_v::io::NullStream() << ""
+#define EDGE_V_CHECK_EQ(str1, str2) assert( str1 == str2 ); edge_v::io::NullStream() << ""
+#define EDGE_V_CHECK_NE(str1, str2) assert( str1 != str2 ); edge_v::io::NullStream() << ""
+#define EDGE_V_CHECK_LT(str1, str2) assert( str1 <  str2 ); edge_v::io::NullStream() << ""
+#define EDGE_V_CHECK_GT(str1, str2) assert( str1 > str2  ); edge_v::io::NullStream() << ""
+#define EDGE_V_CHECK_LE(str1, str2) assert( str1 <= str2 ); edge_v::io::NullStream() << ""
+#define EDGE_V_CHECK_GE(str1, str2) assert( str1 >= str2 ); edge_v::io::NullStream() << ""
+
+#endif
 
 #endif

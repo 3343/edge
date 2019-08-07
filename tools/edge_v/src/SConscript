@@ -34,6 +34,7 @@ l_sources = [ 'io/Config.cpp',
               'time/Groups.cpp' ]
 
 l_headers = [ 'constants.h',
+              'io/logging.h',
               'io/Config.h',
               'io/Moab.h',
               'mesh/Mesh.h',

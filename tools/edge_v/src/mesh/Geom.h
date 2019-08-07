@@ -23,7 +23,7 @@
 #ifndef EDGE_V_MESH_GEOM_H
 #define EDGE_V_MESH_GEOM_H
 
-#include "constants.h"
+#include "../constants.h"
 #include <cmath>
 
 namespace edge_v {
