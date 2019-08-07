@@ -301,6 +301,7 @@ VariantDir( env['build_dir']+'/src', 'src')
 VariantDir( env['build_dir']+'/submodules', 'submodules')
 
 env.headers = []
+env.thirdheaders = []
 env.sources = []
 env.tests = []
 
@@ -337,3 +338,6 @@ for l_he in env.headers:
   l_dir = os.path.dirname( l_he.srcnode().path )
   l_dir = l_dir.split('src')[1]
   env.Install( env['install_dir']+'/include/edge_v' + l_dir, l_he )
+
+for l_he in env.thirdheaders:
+  env.Install( env['install_dir']+'/include/edge_v/third', l_he )

@@ -88,7 +88,7 @@ if env['moab'] != False:
     env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
-
+    env.thirdheaders.append( env['moab']+'/include/moab' )
   conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' )
 
 # UCVM
