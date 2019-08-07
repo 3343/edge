@@ -323,7 +323,7 @@ l_edgev = env.StaticLibrary( env['build_dir']+'/edge_v',
 env.PrependUnique( LIBS = l_edgev )
 
 # build standalone code
-l_main = env.Program( env['build_dir']+'/edge_v', source = env.Object( "src/main.cpp" ) )
+l_main = env.Program( env['build_dir']+'/edge_v', source = env.standalone )
 
 # build unit tests
 if env['tests']:

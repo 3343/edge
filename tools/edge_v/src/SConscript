@@ -50,6 +50,8 @@ if 'ucvm' in env and env['ucvm']:
 for l_src in l_sources:
   env.sources.append( env.Object( l_src ) )
 
+env.standalone = env.Object( "main.cpp" )
+
 if env['tests']:
   l_tests = [ 'tests.cpp',
               'io/Moab.test.cpp',
