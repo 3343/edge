@@ -340,4 +340,4 @@ for l_he in env.headers:
   env.Install( env['install_dir']+'/include/edge_v' + l_dir, l_he )
 
 for l_he in env.thirdheaders:
-  env.Install( env['install_dir']+'/include/edge_v/third', l_he )
+  env.Install( env['install_dir']+'/include/third', l_he )
