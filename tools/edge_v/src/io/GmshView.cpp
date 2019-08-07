@@ -27,7 +27,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "io/logging.h"
+#include "logging.h"
 
 void edge_v::io::GmshView::write ( std::string const  & i_path,
                                    std::string const  & i_elType,

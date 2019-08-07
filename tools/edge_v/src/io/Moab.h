@@ -28,7 +28,7 @@
 #include <moab/Core.hpp>
 #include <string>
 #include "constants.h"
-#include "io/logging.h"
+#include "logging.h"
 
 namespace edge_v {
   namespace io {
