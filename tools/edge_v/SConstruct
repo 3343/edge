@@ -161,6 +161,10 @@ vars.AddVariables(
                 'location where the code is build',
                 'build',
                 PathVariable.PathIsDirCreate ),
+  PathVariable( 'install_dir',
+                'location where the code is installed',
+                'edge_v',
+                PathVariable.PathIsDirCreate ),
 )
 
 # include environment
@@ -296,6 +300,7 @@ if 'omp' in env['parallel']:
 VariantDir( env['build_dir']+'/src', 'src')
 VariantDir( env['build_dir']+'/submodules', 'submodules')
 
+env.headers = []
 env.sources = []
 env.tests = []
 
@@ -312,9 +317,19 @@ Import('env')
 # add a new line
 print ''
 
-# build EDGE-V
-env.Program( env['build_dir']+'/edge_v', source = env.sources )
+# build static library from sources
+l_edgev = env.StaticLibrary( env['build_dir']+'/edge_v',
+                             env.sources )
+env.PrependUnique( LIBS = l_edgev )
+
+# build standalone code
+l_main = env.Program( env['build_dir']+'/edge_v', source = env.Object( "src/main.cpp" ) )
 
 # build unit tests
 if env['tests']:
-  env.Program( env['build_dir']+'/tests', source = env.tests )
+  l_tests = env.Program( env['build_dir']+'/tests', source = env.tests )
+
+# do the installation
+env.Install( env['install_dir']+'/lib',            [l_edgev]   )
+env.Install( env['install_dir']+'/bin',            [l_main]    )
+env.Install( env['install_dir']+'/include/edge_v', env.headers )

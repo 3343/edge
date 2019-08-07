@@ -33,7 +33,18 @@ l_sources = [ 'io/Config.cpp',
               'time/Cfl.cpp',
               'time/Groups.cpp' ]
 
-if env['ucvm']:
+l_headers = [ 'io/Config.h',
+              'io/Moab.h',
+              'mesh/Mesh.h',
+              'models/Constant.h',
+              'models/Model.hpp',
+              'time/Cfl.h',
+              'time/Groups.h' ]
+
+for l_he in l_headers:
+  env.headers.append( env.File(l_he) )
+
+if 'ucvm' in env and env['ucvm']:
   l_sources = l_sources + [ 'models/Ucvm.cpp' ]
 
 for l_src in l_sources:
@@ -50,12 +61,10 @@ if env['tests']:
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )
   l_cxxflags = ['-DPP_UNIT_TEST']
-  if  env['compilers'] != 'intel':
+  if env['compilers'] != 'intel':
     l_cxxflags.append( '-Wno-keyword-macro' )
 
   for l_test in l_tests:
     env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+l_cxxflags ) )
-
-env.sources = env.Object( 'main.cpp' ) + env.sources
 
 Export('env')
