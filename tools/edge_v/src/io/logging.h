@@ -18,72 +18,38 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * EDGE-V config.
+ * Logging macros.
  **/
-#ifndef EDGE_V_IO_CONFIG_H
-#define EDGE_V_IO_CONFIG_H
+#ifndef EDGE_V_IO_LOGGING_H
+#define EDGE_V_IO_LOGGING_H
 
-#include <vector>
-#include <string>
+// enable thread-safety in omp-configs
+#ifdef PP_USE_OMP
+#define ELPP_THREAD_SAFE
+#endif
 
-namespace edge_v {
-  namespace io {
-    class Config;
-  }
-}
+#define ELPP_NO_DEFAULT_LOG_FILE
 
-/**
- * EDGE-V config.
- **/
-class edge_v::io::Config {
-  private:
-    //! path to the input mesh
-    std::string m_meshIn = "";
+#include <easylogging++.h>
 
-    //! path to the output mesh
-    std::string m_meshOut = "";
+#define EDGE_V_LOG_INFO_ALL         LOG(INFO)
+#define EDGE_V_LOG_INFO             LOG(INFO)
+#define EDGE_V_LOG_TRACE            LOG(TRACE)
+#define EDGE_V_LOG_DEBUG            LOG(DEBUG)
+#define EDGE_V_LOG_FATAL            LOG(FATAL)
+#define EDGE_V_LOG_ERROR            LOG(ERROR)
+#define EDGE_V_LOG_WARNING          LOG(WARNING)
+#define EDGE_V_LOG_VERBOSE          LOG(VERBOSE)
+#define EDGE_V_VLOG_IS_ON(str)      VLOG_IS_ON(str)
+#define EDGE_V_VLOG_ALL(str)        VLOG(str)
+#define EDGE_V_VLOG(str)            VLOG(str)
 
-    //! path to the output-csv for the time steps
-    std::string m_tsOut = "";
-
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
-
-  public:
-    /**
-     * Constructor.
-     *
-     * @param i_xml xml file, which is parsed.
-     **/
-    Config( std::string & i_xml );
-
-    /**
-     * Gets the input mesh.
-     *
-     * @return input mesh.
-     **/
-    std::string const & getMeshIn() const { return m_meshIn; }
-
-    /**
-     * Gets the output mesh.
-     *
-     * @return output mesh.
-     **/
-    std::string const & getMeshOut() const { return m_meshOut; }
-
-    /**
-     * Gets the rates of the time step groups.
-     *
-     * @return rates of the time step groups.
-     **/
-    std::vector< double > const & getRates() const { return m_rates; }
-
-    /**
-     * Gets the output file for the time steps of the elements.
-     *
-     * @return output file for time steps.
-     **/
-    std::string const & getTsOut() const { return m_tsOut; }
-};
+#define EDGE_V_CHECK(str)           CHECK(str)
+#define EDGE_V_CHECK_EQ(str1, str2) CHECK_EQ(str1, str2)
+#define EDGE_V_CHECK_NE(str1, str2) CHECK_NE(str1, str2)
+#define EDGE_V_CHECK_LT(str1, str2) CHECK_LT(str1, str2)
+#define EDGE_V_CHECK_GT(str1, str2) CHECK_GT(str1, str2)
+#define EDGE_V_CHECK_LE(str1, str2) CHECK_LE(str1, str2)
+#define EDGE_V_CHECK_GE(str1, str2) CHECK_GE(str1, str2)
 
 #endif

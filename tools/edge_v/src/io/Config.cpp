@@ -1,13 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Junyi Qiu (juq005 AT ucsd.edu)
- * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
- * @author David Lenz (dlenz AT ucsd.edu)
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2017-2018, Regents of the University of California
+ * Copyright (c) 2019, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,77 +18,32 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Runtime configuration.
+ * EDGE-V config.
  **/
 #include "Config.h"
-#include <iostream>
-#include <fstream>
-#include <cassert>
 
-edge_v::io::Config::Config( const std::string &i_pathToFile ) {
-  clock_t l_t = clock();
+#include "io/logging.h"
+#define PUGIXML_HEADER_ONLY
+#include <pugixml.hpp>
+#undef PUGIXML_HEADER_ONLY
 
-  m_antnCfgFn     = i_pathToFile;
+edge_v::io::Config::Config( std::string & i_xml ) {
+  // parse the XML-config
+  pugi::xml_document l_doc;
+  l_doc.load_file( i_xml.c_str() );
 
-  for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ ) {
-    for( unsigned short l_d2 = 0; l_d2 < 3; l_d2++ )
-      m_trafo[l_d1][l_d2] = 0;
+  // read input and ouput mesh
+  m_meshIn = l_doc.child("edge_v").child("mesh").child("files").child("in").text().as_string();
+  m_meshOut = l_doc.child("edge_v").child("mesh").child("files").child("out").text().as_string();
 
-    m_trafo[l_d1][l_d1] = 1.0;
+  pugi::xml_node l_time = l_doc.child("edge_v").child("time");
+
+  // read rates
+  pugi::xml_node l_groups = l_time.child("groups");
+  for( pugi::xml_node l_ra = l_groups.child("rate"); l_ra; l_ra = l_ra.next_sibling("rate") ) {
+    m_rates.push_back( l_ra.text().as_double() );
   }
 
-  std::cout << "Reading Config File: " << i_pathToFile << "... " << std::flush;
-
-  std::ifstream l_mshFs( i_pathToFile.c_str(), std::ios::in );
-  if( !l_mshFs.is_open() ) {
-    std::cout << "Failed." << std::endl;
-    std::cerr << "Error: cannot open the config file." << std::endl;
-    exit( EXIT_FAILURE );
-  }
-
-  std::string l_lineBuf;
-  while( getline( l_mshFs, l_lineBuf ) ) {
-    size_t l_i = -1, l_j;
-
-    while( (++l_i < l_lineBuf.length()) && (l_lineBuf[l_i] == ' ') );
-
-    if( (l_i >= l_lineBuf.length()) || (l_lineBuf[l_i] == '#') )
-      continue;
-
-    l_j = l_i - 1;
-
-    while( (++l_j < l_lineBuf.length()) && (l_lineBuf[l_j] != '=') );
-
-    if( l_j >= l_lineBuf.length() )
-      continue;
-
-    std::string l_varName   = l_lineBuf.substr( l_i, l_j - l_i );
-    std::string l_varValue  = l_lineBuf.substr( l_j + 1 );
-
-    if(      l_varName.compare( "ucvm_config"                ) == 0 ) m_ucvmCfgFn     = l_varValue;
-    else if( l_varName.compare( "ucvm_model_list"            ) == 0 ) m_ucvmModelList = l_varValue;
-    else if( l_varName.compare( "ucvm_cmode"                 ) == 0 ) m_ucvmCmode     = l_varValue;
-    else if( l_varName.compare( "ucvm_type"                  ) == 0 ) m_ucvmType      = l_varValue;
-    else if( l_varName.compare( "proj_mesh"                  ) == 0 ) m_projMesh      = l_varValue;
-    else if( l_varName.compare( "proj_vel"                   ) == 0 ) m_projVel       = l_varValue;
-    else if( l_varName.compare( "vel_rule"                   ) == 0 ) m_velRule       = l_varValue;
-    else if( l_varName.compare( "trafo_x"                    ) == 0 ) vecStringToReal( ' ', l_varValue, m_trafo[0] );
-    else if( l_varName.compare( "trafo_y"                    ) == 0 ) vecStringToReal( ' ', l_varValue, m_trafo[1] );
-    else if( l_varName.compare( "trafo_z"                    ) == 0 ) vecStringToReal( ' ', l_varValue, m_trafo[2] );
-    else if( l_varName.compare( "refinement_center_xy"       ) == 0 ) vecStringToReal( ' ', l_varValue, m_refCenter );
-    else if( l_varName.compare( "refinement_radii_xy"        ) == 0 ) vecStringToReal( ' ', l_varValue, m_refRadii );
-    else if( l_varName.compare( "refinement_relative_cls" ) == 0 ) vecStringToReal( ' ', l_varValue, m_refCls );
-    else if( l_varName.compare( "mesh_file"                  ) == 0 ) m_meshFn        = l_varValue;
-    else if( l_varName.compare( "anno_file"                  ) == 0 ) m_annoFn        = l_varValue;
-    else if( l_varName.compare( "pos_file"                   ) == 0 ) m_posFn         = l_varValue;
-    else if( l_varName.compare( "fault_input_file"           ) == 0 ) m_faultInputFns.push_back( l_varValue );
-    else if( l_varName.compare( "tet_refinement"   ) == 0 ) m_tetRefinement = std::stoi( l_varValue );
-    else std::cout << "\nUnknown setting (" << l_varName << "). Ignored." << std::endl;
-  }
-
-  l_mshFs.close();
-
-  std::cout << "Done! ";
-  l_t = clock() - l_t;
-  std::cout << "(" << (float) l_t / CLOCKS_PER_SEC << "s)" << std::endl;
+  // read output file for cfl time steps
+  m_tsOut = l_time.child("files").child("out_time_steps").text().as_string();
 }

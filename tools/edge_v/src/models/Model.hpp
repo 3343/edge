@@ -18,72 +18,44 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * EDGE-V config.
+ * Base class of a velocity model.
  **/
-#ifndef EDGE_V_IO_CONFIG_H
-#define EDGE_V_IO_CONFIG_H
+#ifndef EDGE_V_MODELS_MODEL_H
+#define EDGE_V_MODELS_MODEL_H
 
-#include <vector>
-#include <string>
+#include <cstddef>
 
 namespace edge_v {
-  namespace io {
-    class Config;
+  namespace models {
+    class Model;
   }
 }
 
 /**
- * EDGE-V config.
+ * Base velocity model.
  **/
-class edge_v::io::Config {
-  private:
-    //! path to the input mesh
-    std::string m_meshIn = "";
-
-    //! path to the output mesh
-    std::string m_meshOut = "";
-
-    //! path to the output-csv for the time steps
-    std::string m_tsOut = "";
-
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
-
+class edge_v::models::Model {
   public:
     /**
-     * Constructor.
+     * Inits the velocity model at the given points.
      *
-     * @param i_xml xml file, which is parsed.
+     * @param i_nPts number of points.
+     * @param i_pts coordinates of the points.
      **/
-    Config( std::string & i_xml );
+    virtual void init( std::size_t          i_nPts,
+                       double      const (* i_pts)[3] ) = 0;
 
     /**
-     * Gets the input mesh.
-     *
-     * @return input mesh.
+     * Frees point-related data (allocated and initialized in the init call).
      **/
-    std::string const & getMeshIn() const { return m_meshIn; }
+    virtual void free() = 0;
 
     /**
-     * Gets the output mesh.
+     * Gets the maximum wave speed at a point.
      *
-     * @return output mesh.
+     * @param i_pt point at which the maximum wave speed is derived.
      **/
-    std::string const & getMeshOut() const { return m_meshOut; }
-
-    /**
-     * Gets the rates of the time step groups.
-     *
-     * @return rates of the time step groups.
-     **/
-    std::vector< double > const & getRates() const { return m_rates; }
-
-    /**
-     * Gets the output file for the time steps of the elements.
-     *
-     * @return output file for time steps.
-     **/
-    std::string const & getTsOut() const { return m_tsOut; }
+    virtual double getMaxSpeed( std::size_t i_pt ) const = 0;
 };
 
 #endif

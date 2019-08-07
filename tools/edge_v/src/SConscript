@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -23,11 +24,37 @@
 
 Import('env')
 l_sources = [ 'io/Config.cpp',
-              'FaultModel.cpp',
-              'FaultRegion.cpp' ]
+              'io/Csv.cpp',
+              'io/GmshView.cpp',
+              'io/Moab.cpp',
+              'mesh/Geom.cpp',
+              'mesh/Mesh.cpp',
+              'models/Constant.cpp',
+              'time/Cfl.cpp',
+              'time/Groups.cpp' ]
+
+if env['ucvm']:
+  l_sources = l_sources + [ 'models/Ucvm.cpp' ]
 
 for l_src in l_sources:
   env.sources.append( env.Object( l_src ) )
+
+if env['tests']:
+  l_tests = [ 'tests.cpp',
+              'io/Moab.test.cpp',
+              'mesh/Geom.test.cpp',
+              'mesh/Mesh.test.cpp',
+              'time/Cfl.test.cpp',
+              'time/Groups.test.cpp' ]
+
+  # add objects and make sure we are allowed to overwrite private keywords
+  env.tests.append( env.sources )
+  l_cxxflags = ['-DPP_UNIT_TEST']
+  if  env['compilers'] != 'intel':
+    l_cxxflags.append( '-Wno-keyword-macro' )
+
+  for l_test in l_tests:
+    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+l_cxxflags ) )
 
 env.sources = env.Object( 'main.cpp' ) + env.sources
 

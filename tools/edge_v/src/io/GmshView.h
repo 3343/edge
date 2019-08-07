@@ -1,10 +1,12 @@
 /**
  * @file This file is part of EDGE.
  *
+ * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
  * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,72 +20,40 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * EDGE-V config.
+ * Writes a GMSH view, based on the given coordinates and values.
  **/
-#ifndef EDGE_V_IO_CONFIG_H
-#define EDGE_V_IO_CONFIG_H
+#ifndef EDGE_V_IO_GMSH_VIEW_HPP
+#define EDGE_V_IO_GMSH_VIEW_HPP
 
-#include <vector>
 #include <string>
 
 namespace edge_v {
   namespace io {
-    class Config;
+    class GmshView;
   }
 }
 
 /**
- * EDGE-V config.
+ * Inteface to Gmsh's view.
  **/
-class edge_v::io::Config {
-  private:
-    //! path to the input mesh
-    std::string m_meshIn = "";
-
-    //! path to the output mesh
-    std::string m_meshOut = "";
-
-    //! path to the output-csv for the time steps
-    std::string m_tsOut = "";
-
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
-
+class edge_v::io::GmshView {
   public:
     /**
-     * Constructor.
-     *
-     * @param i_xml xml file, which is parsed.
+     * Writes the Gmsh-view.
+     * 
+     * @param i_path path of the output file.
+     * @param i_elType element type: 'tria3' or 'tet4'
+     * @param i_nEls number of elements.
+     * @param i_elVe vertices adjacent to the elements.
+     * @param i_veCrds coordinates of the vertices.
+     * @param i_values values, which are assigned to the nodes.
      **/
-    Config( std::string & i_xml );
-
-    /**
-     * Gets the input mesh.
-     *
-     * @return input mesh.
-     **/
-    std::string const & getMeshIn() const { return m_meshIn; }
-
-    /**
-     * Gets the output mesh.
-     *
-     * @return output mesh.
-     **/
-    std::string const & getMeshOut() const { return m_meshOut; }
-
-    /**
-     * Gets the rates of the time step groups.
-     *
-     * @return rates of the time step groups.
-     **/
-    std::vector< double > const & getRates() const { return m_rates; }
-
-    /**
-     * Gets the output file for the time steps of the elements.
-     *
-     * @return output file for time steps.
-     **/
-    std::string const & getTsOut() const { return m_tsOut; }
+    static void write( std::string const  & i_path,
+                       std::string const  & i_elType,
+                       std::size_t          i_nEls,
+                       std::size_t const (* i_elVe),
+                       double      const (* i_veCrds)[3],
+                       float       const  * i_values );
 };
 
 #endif

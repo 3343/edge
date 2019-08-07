@@ -18,72 +18,30 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * EDGE-V config.
+ * Tests the mesh functions.
  **/
-#ifndef EDGE_V_IO_CONFIG_H
-#define EDGE_V_IO_CONFIG_H
-
-#include <vector>
-#include <string>
+#include <catch.hpp>
+#define private public
+#include "Mesh.h"
+#undef private
 
 namespace edge_v {
-  namespace io {
-    class Config;
+  namespace test {
+    extern std::string g_files;
   }
 }
 
-/**
- * EDGE-V config.
- **/
-class edge_v::io::Config {
-  private:
-    //! path to the input mesh
-    std::string m_meshIn = "";
+TEST_CASE( "Tests the mesh interface for triangular meshes.", "[mesh][Tria3]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
 
-    //! path to the output mesh
-    std::string m_meshOut = "";
+    // construct the mesh-interface
+    edge_v::mesh::Mesh l_mesh( l_path );
 
-    //! path to the output-csv for the time steps
-    std::string m_tsOut = "";
-
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
-
-  public:
-    /**
-     * Constructor.
-     *
-     * @param i_xml xml file, which is parsed.
-     **/
-    Config( std::string & i_xml );
-
-    /**
-     * Gets the input mesh.
-     *
-     * @return input mesh.
-     **/
-    std::string const & getMeshIn() const { return m_meshIn; }
-
-    /**
-     * Gets the output mesh.
-     *
-     * @return output mesh.
-     **/
-    std::string const & getMeshOut() const { return m_meshOut; }
-
-    /**
-     * Gets the rates of the time step groups.
-     *
-     * @return rates of the time step groups.
-     **/
-    std::vector< double > const & getRates() const { return m_rates; }
-
-    /**
-     * Gets the output file for the time steps of the elements.
-     *
-     * @return output file for time steps.
-     **/
-    std::string const & getTsOut() const { return m_tsOut; }
-};
-
-#endif
+    REQUIRE( l_mesh.m_nVes == 21 );
+    REQUIRE( l_mesh.m_nFas == 12 );
+    REQUIRE( l_mesh.m_nEls == 28 );
+  }
+}

@@ -5,6 +5,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -19,228 +20,128 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * This is the main file of EDGE-V.
+ * Entry point of standalone EDGE-V.
  **/
-
 #include "io/Config.h"
-#include "Rules.h"
-#include "io/Moab.hpp"
-#include "io/Ucvm.hpp"
-#include "io/GmshView.hpp"
-#include <iostream>
-#include <cmath>
+#include "io/Csv.h"
+#include "models/Constant.h"
+#include "mesh/Mesh.h"
+#include "time/Cfl.h"
+#include "time/Groups.h"
 
-int main( int i_argc, char **i_argv ) {
-  // check input arguments
-  if( i_argc != 3 ) {
-    std::cerr << "Usage: " << i_argv[0] << " -f edge_v.conf" << std::endl;
+#include "io/logging.h"
+#ifdef PP_USE_EASYLOGGING
+INITIALIZE_EASYLOGGINGPP
+#endif
+
+int main( int i_argc, char *i_argv[] ) {
+#ifdef PP_USE_EASYLOGGING
+  START_EASYLOGGINGPP( i_argc, i_argv );
+#endif
+
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVVV   VVVVVVVVVVVVVV            VVVVVVVVVVVVVVV  VVVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVVV   VVVVVVVVVVVVVVV         VVVVVVVVVVVVVVVV   VVVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVV            VVVVV       VVVVV      VVVVVV                       VVVVV";
+  EDGE_V_LOG_INFO << "VVVVV            VVVVV        VVVVV    VVVVV                         VVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVV    VVVVV         VVVVV  VVVVV                  VVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVV    VVVVV         VVVVV  VVVVV      VVVVVVVVV   VVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVV            VVVVV         VVVVV  VVVVV      VVVVVVVVV           VVVVV";
+  EDGE_V_LOG_INFO << "VVVVV            VVVVV        VVVVV    VVVVV        VVVVVV           VVVVV";
+  EDGE_V_LOG_INFO << "VVVVV            VVVVV       VVVVV      VVVVV       VVVVV            VVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVVVV  VVVVVVVVVVVVVVV         VVVVVVVVVVVVVVV   VVVVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVVVV  VVVVVVVVVVVVVV           VVVVVVVVVVVVV    VVVVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
+  EDGE_V_LOG_INFO << "";
+  EDGE_V_LOG_INFO << "              EDGE-V is available from: https://dial3343.org";
+  EDGE_V_LOG_INFO << "";
+
+  // parse argumenets
+  std::vector< std::string > l_args( i_argv, i_argv + i_argc );
+  if( l_args.size() != 3 || (l_args[1] != "-x" && l_args[1] != "--xml") ) {
+    EDGE_V_LOG_INFO << "USAGE: " << l_args[0] << " [options]";
+    EDGE_V_LOG_INFO;
+    EDGE_V_LOG_INFO << "  Options:";
+    EDGE_V_LOG_INFO << "   --help, -h Print usage and exit.";
+    EDGE_V_LOG_INFO << "   --xml,  -x Location of the XML configuration.";
+
+    for( std::size_t l_ar = 0; l_ar < l_args.size(); l_ar++ ) {
+      if( l_args[l_ar] == "-h" || l_args[l_ar] == "--help" ) {
+        return EXIT_SUCCESS;
+      }
+    }
+
     return EXIT_FAILURE;
-  } else if( (i_argv == nullptr) || (i_argv[1][0] != '-') || (i_argv[1][1] != 'f') ) {
-    std::cerr << "Usage: " << i_argv[0] << " -f edge_v.conf" << std::endl;
-    return EXIT_FAILURE;
   }
 
-  // start time
-  clock_t l_tp = clock();
+  EDGE_V_LOG_INFO << "parsing xml config";
+  std::string l_xml = l_args[2];
+  edge_v::io::Config l_config( l_xml );
 
-  // parse config
-  std::string l_configFile = std::string( i_argv[2] );
-  edge_v::io::Config l_config( l_configFile );
+  EDGE_V_LOG_INFO << "initializing MOAB";
+  std::string l_meshIn = l_config.getMeshIn();
+  edge_v::io::Moab l_moab( l_meshIn );
+  l_moab.printStats();
 
-  // init UCVM
-  std::cout << "initializing UCVM" << std::endl;
-  edge_v::io::Ucvm l_ucvm( l_config.m_ucvmCfgFn,
-                           l_config.m_ucvmModelList,
-                           l_config.m_ucvmCmode );
+  // initializing and setting mesh data
+  EDGE_V_LOG_INFO << "initializing mesh interface";
+  edge_v::mesh::Mesh l_mesh( l_moab );
+  l_mesh.printStats();
 
-  // init MOAB mesh interface
-  std::cout << "reading mesh: " << l_config.m_meshFn << std::endl;
-  edge_v::io::Moab< int > l_moab( l_config.m_meshFn );
+  EDGE_V_LOG_INFO << "computing CFL time steps";
+  edge_v::models::Constant l_veMod( 2 );
+  edge_v::time::Cfl l_cfl( l_mesh.getElTy(),
+                           l_mesh.nVes(),
+                           l_mesh.nEls(),
+                           l_mesh.getElVe(),
+                           l_mesh.getVeCrds(),
+                           l_mesh.getInDiaEl(),
+                           l_veMod );
+  l_cfl.printStats();
 
-  // get number of entities
-  int l_nEns[4];
-  for( unsigned short l_di = 0; l_di < 4; l_di++ )
-    l_nEns[l_di] = l_moab.nEnsByDis( l_di );
-
-  std::cout << "entities by number of dimensions: " << std::endl << "  ";
-  for( unsigned short l_di = 0; l_di < 4; l_di++ ) {
-    std::cout << l_di << ": " << l_nEns[l_di];
-    if( l_di < 3 ) std::cout << ", ";
-  }
-  std::cout << std::endl;
-
-  // get the coordinates of the vertices
-  double (*l_veCrds)[3] = new double[ l_nEns[0] ][3];
-  l_moab.getVeCrds( l_veCrds );
-
-  // get connectivity
-  std::vector< int > l_elVe;
-  l_elVe.resize( l_nEns[3]*4 );
-  l_moab.getEnVe( "tet4",
-                  &l_elVe[0] );
-
-  // get velocity model
-  float (*l_veVps)  = new float[ l_nEns[0] ];
-  float (*l_veVss)  = new float[ l_nEns[0] ];
-  float (*l_veRhos) = new float[ l_nEns[0] ];
-
-  // get velocities from UCVM
-  l_ucvm.getVels( l_nEns[0],
-                  l_config.m_trafo,
-                  l_config.m_projMesh,
-                  l_config.m_projVel,
-                  l_config.m_ucvmType,
-                  l_veCrds,
-                  l_veVps,
-                  l_veVss,
-                  l_veRhos );
-
-  // apply velocity rules to vertices
-  for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-    // massage velocities according to given rule
-    edge_v::vel::Rules::apply( l_config.m_velRule,
-                              l_veVps[l_ve],
-                              l_veVss[l_ve],
-                              l_veRhos[l_ve] );
+  if( l_config.getTsOut() != "" ) {
+    EDGE_V_LOG_INFO << "writing time steps";
+    std::string l_colNames = "ts_cfl";
+    double const * l_data[1] = { l_cfl.getTimeSteps() };
+    edge_v::io::Csv::write( l_config.getTsOut(),
+                            1,
+                            l_mesh.nEls(),
+                            &l_colNames,
+                            5,
+                            l_data );
   }
 
-  // assemble characteristic lengths and store Gmsh view, if requested
-  if( l_config.m_posFn != "" ) {
-    // assemble characteristic lengths
-    float (*l_cls)  = new float[ l_nEns[0] ];
+  EDGE_V_LOG_INFO << "computing time step groups";
+  edge_v::time::Groups l_tsGroups(  l_mesh.getElTy(),
+                                    l_mesh.nEls(),
+                                    l_mesh.getElFaEl(),
+                                    l_config.getRates().size(),
+                                   &l_config.getRates()[0],
+                                    l_cfl.getTimeSteps() );
+  l_tsGroups.printStats();
 
-    // scale vs to get char lengths
-    for( int l_ve = 0; l_ve < l_nEns[0]; l_ve++ ) {
-      // determine the vertices xy-distance to the center of refinement
-      float l_dist = 0;
-      for( unsigned short l_di = 0; l_di < 2; l_di++ ) {
-        float l_sub = l_veCrds[l_ve][l_di] - l_config.m_refCenter[l_di];
-        l_dist += l_sub*l_sub;
-      }
-      l_dist = std::sqrt(l_dist);
+  EDGE_V_LOG_INFO << "storing elements' time step groups";
+  std::string l_tagElTg = "edge_v_time_groups";
+  l_moab.deleteTag( l_tagElTg );
+  l_moab.setEnData( l_mesh.getElTy(),
+                    l_tagElTg,
+                    l_tsGroups.getElTg() );
 
-      // derive the respective scaling of the characteristic length
-      float l_sca = std::numeric_limits< float >::max();
-      if( l_dist < l_config.m_refRadii[0] ) {
-        l_sca = l_config.m_refCls[0];
-      }
-      else if( l_dist < l_config.m_refRadii[1] ) {
-        float l_clDif = l_config.m_refCls[1] - l_config.m_refCls[0];
-        float l_radDif = l_config.m_refRadii[1] - l_config.m_refRadii[0];
+  EDGE_V_LOG_INFO << "storing relative time steps of the groups";
+  std::string l_tagRelTs = "edge_v_relative_time_steps";
+  l_moab.deleteTag( l_tagRelTs );
+  l_moab.setGlobalData( l_tagRelTs,
+                        l_tsGroups.nGroups()+1,
+                        l_tsGroups.getTsIntervals() );
 
-        l_sca  = l_config.m_refCls[0];
-        l_sca += l_clDif * (l_dist - l_config.m_refRadii[0]) / l_radDif;
-      }
-      else {
-        l_sca = l_config.m_refCls[1];
-      }
+  EDGE_V_LOG_INFO << "reordering by time step groups";
+  l_moab.reorder( l_mesh.getElTy(),
+                  l_tagElTg );
 
-
-      l_cls[l_ve] = l_veVss[l_ve] * l_sca;
-    }
-
-    // write to disk
-    edge_v::io::GmshView::write(  l_config.m_posFn,
-                                  "tet4",
-                                  l_elVe.size()/4,
-                                 &l_elVe[0],
-                                  l_veCrds,
-                                  l_cls );
-
-    // free memory
-    delete[] l_cls;
+  if( l_config.getMeshOut() != "" ) {
+    EDGE_V_LOG_INFO << "writing mesh";
+    l_moab.writeMesh( l_config.getMeshOut() );
   }
-
-  // assemble elements' Lame parameters and store annotated mesh, if requested
-  if( l_config.m_annoFn != "" ) {
-    std::cout << "annotating mesh with velocity model" << std::endl;
-
-    // barycenters
-    double (* l_elBars)[3] = new double[ l_nEns[3] ][3];
-
-    // compute bary centers
-    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
-      for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-        l_elBars[l_el][l_di] = 0;
-        for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
-          int l_veId = l_elVe[l_el*4+l_ve];
-          l_elBars[l_el][l_di] += l_veCrds[l_veId][l_di];
-        }
-        l_elBars[l_el][l_di] *= 0.25;
-      }
-    }
-
-    // query UCVM for velocity model at barycenters
-    double (*l_elVps)  = new double[ l_nEns[3] ];
-    double (*l_elVss)  = new double[ l_nEns[3] ];
-    double (*l_elRhos) = new double[ l_nEns[3] ];
-
-    // compute average velocity parameters
-    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
-      l_elVps[l_el] = 0;
-      l_elVss[l_el] = 0;
-      l_elRhos[l_el] = 0;
-
-      for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
-        int l_veId = l_elVe[l_el*4+l_ve];
-
-      l_elVps[l_el]  += 0.25 * l_veVps[l_veId];
-      l_elVss[l_el]  += 0.25 * l_veVss[l_veId];
-      l_elRhos[l_el] += 0.25 * l_veRhos[l_veId];
-      }
-    }
-
-    // reapply velocity rules (averaging might lead to violations)
-    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
-      // massage velocities according to given rule
-      edge_v::vel::Rules::apply( l_config.m_velRule,
-                                 l_elVps[l_el],
-                                 l_elVss[l_el],
-                                 l_elRhos[l_el] );
-    }
-
-    // derive elements' Lame parameters
-    double (*l_elLams) = new double[ l_nEns[3] ];
-    double (*l_elMus)  = new double[ l_nEns[3] ];
-
-    for( int l_el = 0; l_el < l_nEns[3]; l_el++ ) {
-      l_elMus[l_el] = l_elVss[l_el] * l_elVss[l_el] * l_elRhos[l_el];
-      l_elLams[l_el] = l_elVps[l_el] * l_elVps[l_el] * l_elRhos[l_el];
-      l_elLams[l_el] -= 2.0 * l_elMus[l_el];
-    }
-
-    // store data in MOAB
-    l_moab.setEnData( "tet4",
-                      "LAMBDA",
-                      l_elLams );
-
-    l_moab.setEnData( "tet4",
-                      "MU",
-                      l_elMus );
-
-    l_moab.setEnData( "tet4",
-                      "RHO",
-                      l_elRhos );
-
-    std::cout << "writing annotated mesh: " << l_config.m_annoFn << std::endl;
-    l_moab.writeMesh( l_config.m_annoFn );
-
-    // free memory
-    delete[] l_elBars;
-    delete[] l_elLams;
-    delete[] l_elMus;
-    delete[] l_elRhos;
-  }
-
-  // free memory
-  delete[] l_veCrds;
-  delete[] l_veVps;
-  delete[] l_veVss;
-  delete[] l_veRhos;
-
-  // finish time
-  l_tp = clock() - l_tp;
-  std::cout << "Time taken: " << (float) l_tp / CLOCKS_PER_SEC << "s\n";
 
   return EXIT_SUCCESS;
 }

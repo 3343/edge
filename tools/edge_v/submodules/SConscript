@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -38,10 +39,33 @@ l_objects = []
 # enable libdl if available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
 
-
 # enable gfortran if available
 conf.CheckLibWithHeaderFlags('gfortran', '', i_dynamic=True )
 
+# enable easylogging
+env.AppendUnique( CPPDEFINES=['PP_USE_EASYLOGGING'] )
+l_el = {}
+l_el['def'] = ['ELPP_NO_DEFAULT_LOG_FILE']
+if 'omp' in env['parallel']:
+  l_el['def']=l_el['def']+['ELPP_THREAD_SAFE']
+l_el['obj'] = env.Object( 'easylogging/src/easylogging++.cc',
+                          CXXFLAGS   = env['CXXFLAGS']+
+                                      ['-Wno-shadow'],
+                          CPPDEFINES = l_el['def'] )
+l_easyLogging = env.StaticLibrary( 'easylogging/easylogging',
+                                   l_el['obj'] )
+env.Append( LIBS = l_easyLogging )
+env.Append( CXXFLAGS = [ ('-isystem', 'submodules/easylogging/src') ] )
+
+# enable pugixml
+env.Append( CXXFLAGS = [ ('-isystem', 'submodules/pugixml/src') ] )
+
+# add Eigen
+env.Append( CXXFLAGS = [ ('-isystem', 'submodules/eigen') ] )
+
+# add Catch
+if env['tests']:
+  env.Append( CXXFLAGS = ['-Isubmodules/Catch/include'] )
 
 # enable zlib if available
 if env['zlib'] != False:
@@ -58,67 +82,50 @@ if env['hdf5'] != False:
   conf.CheckLibWithHeaderFlags( 'hdf5' )
   conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
 
-
-# enable NetCDF if available
-if env['netcdf'] != False:
-  if env['netcdf'] != True:
-    env.AppendUnique( CPPPATH=[ env['netcdf']+'/include'] )
-    env.AppendUnique( LIBPATH=[ env['netcdf']+'/lib']     )
-
-  if conf.CheckLibWithHeaderFlags( 'netcdf', 'netcdf.h' ):
-    env['netcdf'] = True
-  else:
-    env['netcdf'] = False
-
 # forward MOAB
-if env['moab'] != True:
-  env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
-  env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
-  env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
+if env['moab'] != False:
+  if env['moab'] != True:
+    env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
+    env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
 
-if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
-  warnings.warn( 'Error: Could not find MOAB.' )
-  exit()
+  conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' )
 
 # UCVM
-if env['ucvm'] != True:
-  # forward UCVM libs
-  env.AppendUnique( CPPPATH=[ env['ucvm']+'/lib/proj-4/include'] )
-  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/proj-4/lib']     )
-  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/euclid3/lib'] )
-  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/fftw/lib'] )
+if env['ucvm'] != False:
+  # enable UCVM in build
+  env.AppendUnique( CPPDEFINES =['PP_USE_UCVM'] )
 
-  # forward CVMs
-  for l_mo in ['cencal', 'cvmh1511', 'cvms', 'cvms426', 'cvms5' ]:
-    env.AppendUnique( LIBPATH=[ env['ucvm']+'/model/' + l_mo + '/lib'] )
+  if env['ucvm'] != True:
+    # forward UCVM libs
+    env.AppendUnique( CPPPATH=[ env['ucvm']+'/lib/proj-5/include'] )
+    env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/proj-5/lib']     )
+    env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/euclid3/lib'] )
+    env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib/fftw/lib'] )
 
-  # forward UCVM
-  env.AppendUnique( CPPPATH=[ env['ucvm']+'/include'] )
-  env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib']     )
+    # forward CVMs
+    for l_mo in ['cencal', 'cvmh1511', 'cvms', 'cvms426', 'cvms5' ]:
+      env.AppendUnique( LIBPATH=[ env['ucvm']+'/model/' + l_mo + '/lib'] )
 
-if not conf.CheckLibWithHeaderFlags( 'proj', '' ):
-  warnings.warn( 'Error: Could not find proj.' )
-  exit()
+    # forward UCVM
+    env.AppendUnique( CPPPATH=[ env['ucvm']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['ucvm']+'/lib']     )
 
-if not conf.CheckLibWithHeaderFlags( 'etree', '' ):
-  warnings.warn( 'Error: Could not find etree.' )
-  exit()
+  # proj.5 (libpthread is a requirement)
+  conf.CheckLibWithHeaderFlags( 'pthread', '', i_dynamic=True )
+  conf.CheckLibWithHeaderFlags( 'proj', '' )
+  conf.CheckLibWithHeaderFlags( 'etree', '' )
+  conf.CheckLibWithHeaderFlags( 'fftw3', '' )
 
-if not conf.CheckLibWithHeaderFlags( 'fftw3', '' ):
-  warnings.warn( 'Error: Could not find fftw3.' )
-  exit()
+  # add models
+  for l_mo in [ 'cencalvm',     # USGS Bay Area
+                'geo', 'vxapi', # CVM-H
+                'cvmsi',        # CVM-S4.26.M01
+                'cvms5',        # CVM-S4.26
+                'cvms' ]:       # CVM-S4
+    conf.CheckLibWithHeaderFlags( l_mo, '' )
 
-# add models
-for l_mo in [ 'cencalvm',     # USGS Bay Area
-              'geo', 'vxapi', # CVM-H
-              'cvmsi',        # CVM-S4.26.M01
-              'cvms5',        # CVM-S4.26
-              'cvms' ]:       # CVM-S4
-  conf.CheckLibWithHeaderFlags( l_mo, '' )
-
-if not conf.CheckLibWithHeaderFlags( 'ucvm', '' ):
-  warnings.warn( 'Error: Could not find UCVM.' )
-  exit()
+  conf.CheckLibWithHeaderFlags( 'ucvm', '' )
 
 Export('conf')
 Export('env')

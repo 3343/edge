@@ -18,72 +18,55 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * EDGE-V config.
+ * Constant velocity model.
  **/
-#ifndef EDGE_V_IO_CONFIG_H
-#define EDGE_V_IO_CONFIG_H
+#ifndef EDGE_V_MODELS_CONSTANT_H
+#define EDGE_V_MODELS_CONSTANT_H
 
-#include <vector>
-#include <string>
+#include "Model.hpp"
 
 namespace edge_v {
-  namespace io {
-    class Config;
+  namespace models {
+    class Constant;
   }
 }
 
 /**
- * EDGE-V config.
+ * Constant velocity model.
  **/
-class edge_v::io::Config {
+class edge_v::models::Constant: public Model {
   private:
-    //! path to the input mesh
-    std::string m_meshIn = "";
-
-    //! path to the output mesh
-    std::string m_meshOut = "";
-
-    //! path to the output-csv for the time steps
-    std::string m_tsOut = "";
-
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
+    //! contant velocity
+    double m_vel;
 
   public:
     /**
      * Constructor.
      *
-     * @param i_xml xml file, which is parsed.
+     * @param i_vel velocity of the constant model. 
      **/
-    Config( std::string & i_xml );
+    Constant( double i_vel );
 
     /**
-     * Gets the input mesh.
+     * Constant model: Dummy function.
      *
-     * @return input mesh.
+     * @param i_nPts ignored.
+     * @param i_pts ignored.
      **/
-    std::string const & getMeshIn() const { return m_meshIn; }
+    void init( std::size_t          i_nPts,
+               double      const (* i_pts)[3] );
 
     /**
-     * Gets the output mesh.
-     *
-     * @return output mesh.
+     * Constant model: Dummy function
      **/
-    std::string const & getMeshOut() const { return m_meshOut; }
+    void free();
 
     /**
-     * Gets the rates of the time step groups.
+     * Gets the constant wave speed.
      *
-     * @return rates of the time step groups.
+     * @param i_pt ignored.
      **/
-    std::vector< double > const & getRates() const { return m_rates; }
-
-    /**
-     * Gets the output file for the time steps of the elements.
-     *
-     * @return output file for time steps.
-     **/
-    std::string const & getTsOut() const { return m_tsOut; }
+    double getMaxSpeed( std::size_t i_pt ) const;
 };
 
 #endif

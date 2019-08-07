@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -23,7 +24,23 @@
 
 import os
 import warnings
+import subprocess
 import SCons
+
+##
+# Gets the EDGE version
+##
+def getEdgeVersion():
+  # check if dirty
+  l_dirty = subprocess.check_output(['git', 'diff', '--ignore-submodules=dirty'])
+
+  # assemble version
+  l_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+  l_version = str( l_version )
+  if( l_dirty != '' ):
+    l_version = l_version + '_dirty'
+
+  return l_version
 
 def adjustPath( i_var ):
   '''Adjust the given variable by turning relative paths to absolute paths
@@ -120,21 +137,26 @@ vars.AddVariables(
                 'release',
                  allowed_values=('release', 'debug', 'release+san', 'debug+san' )
               ),
+  EnumVariable( 'parallel',
+                'used parallelization',
+                'none',
+                 allowed_values=('none', 'omp')
+              ),
+  BoolVariable( 'tests',
+                'enable unit tests.',
+                 False ),
   PackageVariable( 'zlib',
                    'enable zlib',
                    'no' ),
   PackageVariable( 'hdf5',
                    'enable HDF5',
                    'no' ),
-  PackageVariable( 'netcdf',
-                   'enable NetCDF',
-                   'no' ),
   PackageVariable( 'moab',
                    'Location of the MOAB-Installation.',
                    'yes' ),
   PackageVariable( 'ucvm',
                    'Location of the UCVM-Installation.',
-                   'yes' ),
+                   'no' ),
   PathVariable( 'build_dir',
                 'location where the code is build',
                 'build',
@@ -152,19 +174,22 @@ if vars.UnknownVariables():
 # generate help message
 Help( vars.GenerateHelpText(env) )
 
-print "##########################################################################"
-print "##############   ##############            ###############  ##############"
-print "##############   ###############         ################   ##############"
-print "#####            #####       #####      ######                       #####"
-print "#####            #####        #####    #####                         #####"
-print "#############    #####         #####  #####                  #############"
-print "#############    #####         #####  #####      #########   #############"
-print "#####            #####         #####  #####      #########           #####"
-print "#####            #####        #####    #####        ######           #####"
-print "#####            #####       #####      #####       #####            #####"
-print "###############  ###############         ###############   ###############"
-print "###############  ##############           #############    ###############"
-print "#########################################################################V"
+print( "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" )
+print( "VVVVVVVVVVVVVV   VVVVVVVVVVVVVV            VVVVVVVVVVVVVVV  VVVVVVVVVVVVVV" )
+print( "VVVVVVVVVVVVVV   VVVVVVVVVVVVVVV         VVVVVVVVVVVVVVVV   VVVVVVVVVVVVVV" )
+print( "VVVVV            VVVVV       VVVVV      VVVVVV                       VVVVV" )
+print( "VVVVV            VVVVV        VVVVV    VVVVV                         VVVVV" )
+print( "VVVVVVVVVVVVV    VVVVV         VVVVV  VVVVV                  VVVVVVVVVVVVV" )
+print( "VVVVVVVVVVVVV    VVVVV         VVVVV  VVVVV      VVVVVVVVV   VVVVVVVVVVVVV" )
+print( "VVVVV            VVVVV         VVVVV  VVVVV      VVVVVVVVV           VVVVV" )
+print( "VVVVV            VVVVV        VVVVV    VVVVV        VVVVVV           VVVVV" )
+print( "VVVVV            VVVVV       VVVVV      VVVVV       VVVVV            VVVVV" )
+print( "VVVVVVVVVVVVVVV  VVVVVVVVVVVVVVV         VVVVVVVVVVVVVVV   VVVVVVVVVVVVVVV" )
+print( "VVVVVVVVVVVVVVV  VVVVVVVVVVVVVV           VVVVVVVVVVVVV    VVVVVVVVVVVVVVV" )
+print( "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" )
+print( ""                                                                           )
+print( "              EDGE-V is available from: https://dial3343.org"               )
+print( ""                                                                           )
 
 # print welcome message
 print( 'Running build script of EDGE-V.' )
@@ -176,7 +201,7 @@ conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHea
 env['ENV'] = os.environ
 
 # adjust path variables
-for l_va in [ 'zlib', 'hdf5', 'netcdf', 'moab', 'ucvm' ]:
+for l_va in [ 'zlib', 'hdf5', 'moab', 'ucvm' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler
@@ -228,11 +253,51 @@ if 'san' in  env['mode']:
   env.Append( CXXFLAGS =  ['-g', '-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
   env.Append( LINKFLAGS = ['-g', '-fsanitize=address', '-fsanitize=undefined'] )
 
+# forward EDGE version
+env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
+
+# detect compilers
+try:
+  compVer = subprocess.check_output( [env['CXX'], "--version"] )
+  compVer = str( compVer )
+except:
+  compVer = 'unknown'
+if( 'g++' in compVer ):
+  compilers='gnu'
+elif( 'icpc' in compVer ):
+  compilers='intel'
+elif( 'clang' in compVer):
+  compilers='clang'
+else:
+  compilers='gnu'
+  print( '  no compiler detected' )
+env['compilers']=compilers
+print( '  using ' + compilers + ' as compiler suite' )
+
+if env['PLATFORM'] == 'darwin':
+  env['op_sys'] = 'macos'
+else:
+  env['op_sys'] = 'linux'
+print( '  using ' + env['op_sys'] + ' as operating system' )
+
+# enable omp
+if 'omp' in env['parallel']:
+  env.Append( CPPDEFINES = ['PP_USE_OMP'] )
+
+  if compilers == 'intel':
+    env.Append( CPPFLAGS = ['-qopenmp'] )
+    env.Append( LINKFLAGS = ['-qopenmp'] )
+    env.Append( LINKFLAGS = ['-qopenmp-link=static'] )
+  elif compilers == 'gnu' or compilers == 'clang':
+    env.Append( CPPFLAGS = ['-fopenmp'] )
+    env.Append( LINKFLAGS = ['-fopenmp'] )
+
 # get source files
 VariantDir( env['build_dir']+'/src', 'src')
 VariantDir( env['build_dir']+'/submodules', 'submodules')
 
 env.sources = []
+env.tests = []
 
 Export('env')
 Export('conf')
@@ -249,3 +314,7 @@ print ''
 
 # build EDGE-V
 env.Program( env['build_dir']+'/edge_v', source = env.sources )
+
+# build unit tests
+if env['tests']:
+  env.Program( env['build_dir']+'/tests', source = env.tests )

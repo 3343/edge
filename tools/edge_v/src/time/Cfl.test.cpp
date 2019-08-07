@@ -18,72 +18,37 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * EDGE-V config.
+ * Tests the time step derivation, based on stability constraints.
  **/
-#ifndef EDGE_V_IO_CONFIG_H
-#define EDGE_V_IO_CONFIG_H
+#include <catch.hpp>
+#include "models/Constant.h"
+#define private public
+#include "Cfl.h"
+#undef private
 
-#include <vector>
-#include <string>
+TEST_CASE( "Tests the step derivation.", "[time][cfl]" ) {
+  // set up dummy data
+  std::size_t l_nVes = 4;
+  std::size_t l_nEls = 4;
+  std::size_t l_elVe[4 * 3] = {};
+  double l_veCrds[4][3] = {};
+  double l_inDia[4] = { 2.0, 3.0, 1.5, 2.5 };
 
-namespace edge_v {
-  namespace io {
-    class Config;
-  }
+  edge_v::models::Constant l_mod( 2.0 );
+
+  // set up time steps
+  edge_v::time::Cfl l_cfl( edge_v::TRIA3,
+                           l_nVes,
+                           l_nEls,
+                           l_elVe,
+                           l_veCrds,
+                           l_inDia,
+                           l_mod );
+
+  // check the results
+  REQUIRE( l_cfl.m_tsAbsMin == Approx(0.75) );
+  REQUIRE( l_cfl.getTimeSteps()[0] == Approx( 1.0  / 0.75 ) );
+  REQUIRE( l_cfl.getTimeSteps()[1] == Approx( 1.5  / 0.75 ) );
+  REQUIRE( l_cfl.getTimeSteps()[2] == Approx( 0.75 / 0.75 ) );
+  REQUIRE( l_cfl.getTimeSteps()[3] == Approx( 1.25 / 0.75 ) );
 }
-
-/**
- * EDGE-V config.
- **/
-class edge_v::io::Config {
-  private:
-    //! path to the input mesh
-    std::string m_meshIn = "";
-
-    //! path to the output mesh
-    std::string m_meshOut = "";
-
-    //! path to the output-csv for the time steps
-    std::string m_tsOut = "";
-
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
-
-  public:
-    /**
-     * Constructor.
-     *
-     * @param i_xml xml file, which is parsed.
-     **/
-    Config( std::string & i_xml );
-
-    /**
-     * Gets the input mesh.
-     *
-     * @return input mesh.
-     **/
-    std::string const & getMeshIn() const { return m_meshIn; }
-
-    /**
-     * Gets the output mesh.
-     *
-     * @return output mesh.
-     **/
-    std::string const & getMeshOut() const { return m_meshOut; }
-
-    /**
-     * Gets the rates of the time step groups.
-     *
-     * @return rates of the time step groups.
-     **/
-    std::vector< double > const & getRates() const { return m_rates; }
-
-    /**
-     * Gets the output file for the time steps of the elements.
-     *
-     * @return output file for time steps.
-     **/
-    std::string const & getTsOut() const { return m_tsOut; }
-};
-
-#endif

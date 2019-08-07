@@ -1,9 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -21,28 +23,79 @@
  * This file contains definition of compile time constants for Edge-V.
  **/
 
-#ifndef VM_CONSTANTS_H
-#define VM_CONSTANTS_H
+#ifndef EDGE_V_CONSTANTS_H
+#define EDGE_V_CONSTANTS_H
 
-#include "moab/Interface.hpp"
+namespace edge_v {
+  // entity types
+  typedef enum {
+    POINT    = 0,
+    LINE     = 1,
+    QUAD4R   = 2,
+    TRIA3    = 3,
+    HEX8R    = 4,
+    TET4     = 5,
+    INVALID  = 99
+  } t_entityType;
 
-#define EDGE_V_OUT (std::cout << "EDGE-V INFO: ")
-#define EDGE_V_ERR (std::cerr << "EDGE-V ERR : ")
+  /**
+   * Gets the number of dimensions for the given entity type.
+   *
+   * @param i_enTy entity type.
+   * @return number of dimensions.
+   **/
+  constexpr unsigned short CE_N_DIS( t_entityType i_enTy ) {
+    return (i_enTy == POINT ) ? 0 :
+           (i_enTy == LINE  ) ? 1 :
+           (i_enTy == QUAD4R) ? 2 :
+           (i_enTy == TRIA3 ) ? 2 :
+           (i_enTy == HEX8R ) ? 3 :
+           (i_enTy == TET4  ) ? 3 : 0;
+  }
 
-//! 3 for moab::MBTRI, 4 for moab::MBTET
-#define ELMTTYPE 4
+  /**
+   * Gets the number of vertices for the given entity type.
+   *
+   * @param i_enTy entity type.
+   * @return number of vertices.
+   **/
+  constexpr unsigned short CE_N_VES( t_entityType i_enTy ) {
+    return (i_enTy == POINT ) ? 1 :
+           (i_enTy == LINE  ) ? 2 :
+           (i_enTy == QUAD4R) ? 4 :
+           (i_enTy == TRIA3 ) ? 3 :
+           (i_enTy == HEX8R ) ? 8 :
+           (i_enTy == TET4  ) ? 4 : 0;
+  }
 
-typedef int    int_v;
-typedef double real;
+  /**
+   * Gets the number of faces for the given entity type.
+   *
+   * @param i_enTy entity type.
+   * @return number of faces.
+   **/
+  constexpr unsigned short CE_N_FAS( t_entityType i_enTy ) {
+    return (i_enTy == POINT ) ? 0 :
+           (i_enTy == LINE  ) ? 2 :
+           (i_enTy == QUAD4R) ? 4 :
+           (i_enTy == TRIA3 ) ? 3 :
+           (i_enTy == HEX8R ) ? 6 :
+           (i_enTy == TET4  ) ? 4 : 0;
+  }
 
-typedef struct elmt_t {
-  unsigned int m_vertex[ELMTTYPE];
-} elmt;
+  /**
+   * Gets the face type for the given element type.
+   *
+   * @param i_elTy element type.
+   * @return entity type of the faces.
+   **/
+  constexpr t_entityType CE_T_FA( t_entityType i_enTy ) {
+    return (i_enTy == LINE  ) ? POINT :
+           (i_enTy == QUAD4R) ? LINE :
+           (i_enTy == TRIA3 ) ? LINE :
+           (i_enTy == HEX8R ) ? QUAD4R :
+           (i_enTy == TET4  ) ? TRIA3 : INVALID;
+  }
+}
 
-typedef struct moab_mesh {
-  moab::Interface *m_intf = nullptr;
-  int_v            m_numNodes;
-  int_v            m_numElmts;
-} moab_mesh;
-
-#endif //! VM_CONSTANTS_H
+#endif
