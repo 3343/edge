@@ -33,7 +33,8 @@ l_sources = [ 'io/Config.cpp',
               'time/Cfl.cpp',
               'time/Groups.cpp' ]
 
-l_headers = [ 'io/Config.h',
+l_headers = [ 'constants.h',
+              'io/Config.h',
               'io/Moab.h',
               'mesh/Mesh.h',
               'models/Constant.h',

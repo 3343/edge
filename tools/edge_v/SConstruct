@@ -330,6 +330,10 @@ if env['tests']:
   l_tests = env.Program( env['build_dir']+'/tests', source = env.tests )
 
 # do the installation
-env.Install( env['install_dir']+'/lib',            [l_edgev]   )
-env.Install( env['install_dir']+'/bin',            [l_main]    )
-env.Install( env['install_dir']+'/include/edge_v', env.headers )
+env.Install( env['install_dir']+'/lib', [l_edgev] )
+env.Install( env['install_dir']+'/bin', [l_main]  )
+
+for l_he in env.headers:
+  l_dir = os.path.dirname( l_he.srcnode().path )
+  l_dir = l_dir.split('src')[1]
+  env.Install( env['install_dir']+'/include/edge_v' + l_dir, l_he )
