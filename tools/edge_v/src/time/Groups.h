@@ -176,6 +176,13 @@ class edge_v::time::Groups {
     unsigned short nGroups() const { return m_nGroups; }
 
     /**
+     * Gets the number of elements per group.
+     *
+     * @return number of elements per group.
+     **/
+    std::size_t const * nGroupEls() const { return m_nGroupEls; }
+
+    /**
      * Gets the time step intervals of the groups.
      * For example for rates (1.5, 2.0, 2.0), the following values are returned:
      *   1, 1.5, 3.0, 6.0, std::numeric_limits< double >::max()

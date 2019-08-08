@@ -150,12 +150,23 @@ int main( int i_argc, char *i_argv[] ) {
   delete[] l_rates;
   l_tsGroups.printStats();
 
-  EDGE_V_LOG_INFO << "storing elements' time step groups";
+  EDGE_V_LOG_INFO << "storing elements' time step groups (temporarily)";
   std::string l_tagElTg = "edge_v_element_time_groups";
-  l_moab.deleteTag( l_tagElTg );
   l_moab.setEnData( l_mesh.getElTy(),
                     l_tagElTg,
                     l_tsGroups.getElTg() );
+
+  EDGE_V_LOG_INFO << "reordering by time step groups";
+  l_moab.reorder( l_mesh.getElTy(),
+                  l_tagElTg );
+  l_moab.deleteTag( l_tagElTg );
+
+  EDGE_V_LOG_INFO << "storing number of elements per time group";
+  std::string l_tagNtgEls = "edge_v_n_time_group_elements";
+  l_moab.deleteTag( l_tagNtgEls );
+  l_moab.setGlobalData( l_tagNtgEls,
+                        l_tsGroups.nGroups(),
+                        l_tsGroups.nGroupEls() );
 
   EDGE_V_LOG_INFO << "storing relative time steps of the groups";
   std::string l_tagRelTs = "edge_v_relative_time_steps";
@@ -163,10 +174,6 @@ int main( int i_argc, char *i_argv[] ) {
   l_moab.setGlobalData( l_tagRelTs,
                         l_tsGroups.nGroups()+1,
                         l_tsGroups.getTsIntervals() );
-
-  EDGE_V_LOG_INFO << "reordering by time step groups";
-  l_moab.reorder( l_mesh.getElTy(),
-                  l_tagElTg );
 
   if( l_config.getMeshOut() != "" ) {
     EDGE_V_LOG_INFO << "writing mesh";
