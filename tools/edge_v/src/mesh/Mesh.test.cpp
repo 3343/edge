@@ -40,8 +40,8 @@ TEST_CASE( "Tests the mesh interface for triangular meshes.", "[mesh][Tria3]" ) 
     // construct the mesh-interface
     edge_v::mesh::Mesh l_mesh( l_path );
 
-    REQUIRE( l_mesh.m_nVes == 21 );
-    REQUIRE( l_mesh.m_nFas == 12 );
-    REQUIRE( l_mesh.m_nEls == 28 );
+    REQUIRE( l_mesh.nVes() == 21 );
+    REQUIRE( l_mesh.nFas() == 12 );
+    REQUIRE( l_mesh.nEls() == 28 );
   }
 }

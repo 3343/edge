@@ -50,7 +50,7 @@ class edge_v::time::Groups {
     //! time groups of the elements
     unsigned short * m_elTg;
 
-    //! number of elements in each time groups
+    //! number of elements in each time group
     std::size_t * m_nGroupEls;
 
     //! theoretical loads of the different time stepping schemes: GTS, grouped LTS before normalization, grouped LTS after normalization, per-element LTS

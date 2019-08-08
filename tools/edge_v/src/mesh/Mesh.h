@@ -116,18 +116,25 @@ class edge_v::mesh::Mesh {
     t_entityType getElTy() const { return m_elTy; }
 
     /**
-     * Gets the number of elements.
-     *
-     * @return number of elements in the mesh.
-     **/
-    std::size_t nEls() const { return m_nEls; }
-
-    /**
      * Gets the number of vertices.
      *
      * @return number of vertices.
      **/
     std::size_t nVes() const { return m_nVes; }
+
+    /**
+     * Gets the number of faces.
+     *
+     * @return number of faces.
+     **/
+    std::size_t nFas() const { return m_nFas; }
+
+    /**
+     * Gets the number of elements.
+     *
+     * @return number of elements in the mesh.
+     **/
+    std::size_t nEls() const { return m_nEls; }
 
     /**
      * Gets the vertices, adjacent to the elements.
