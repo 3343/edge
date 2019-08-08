@@ -278,14 +278,15 @@ void edge_v::io::Moab::writeMesh( std::string const & i_pathToMesh ) {
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 
-void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
-                                      std::size_t         i_nValues,
-                                      double      const * i_data ) {
+void edge_v::io::Moab::setGlobalData( moab::DataType         i_daTy,
+                                      std::string    const & i_tagName,
+                                      std::size_t            i_nValues,
+                                      void           const * i_data ) {
   // create the tag
   moab::Tag l_tag;
   moab::ErrorCode l_err = m_moab->tag_get_handle( i_tagName.c_str(),
                                                   i_nValues,
-                                                  moab::DataType::MB_TYPE_DOUBLE,
+                                                  i_daTy,
                                                   l_tag,
                                                   moab::MB_TAG_CREAT|moab::MB_TAG_SPARSE );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
@@ -296,6 +297,15 @@ void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
                                  1,
                                  i_data );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+}
+
+void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
+                                      std::size_t         i_nValues,
+                                      double      const * i_data ) {
+  setGlobalData( moab::DataType::MB_TYPE_DOUBLE,
+                 i_tagName,
+                 i_nValues,
+                 i_data );
 }
 
 std::size_t edge_v::io::Moab::getGlobalDataSize( std::string const & i_tagName ) const {
@@ -334,6 +344,36 @@ void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
                                 &m_root,
                                  1,
                                  o_data );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+}
+
+void edge_v::io::Moab::setEnData( t_entityType        i_enTy,
+                                  moab::DataType      i_daTy,
+                                  std::string const & i_tagName,
+                                  void        const * i_data ) {
+  moab::EntityType l_ty = getMoabType(  i_enTy );
+
+  // get the entities by type
+  std::vector< moab::EntityHandle > l_ens;
+  moab::ErrorCode l_err = m_moab->get_entities_by_type( 0,
+                                                        l_ty,
+                                                        l_ens );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // create the tag
+  moab::Tag l_tag;
+  l_err = m_moab->tag_get_handle( i_tagName.c_str(),
+                                  1,
+                                  i_daTy,
+                                  l_tag,
+                                  moab::MB_TAG_CREAT|moab::MB_TAG_DENSE );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // store the data
+  l_err = m_moab->tag_set_data( l_tag,
+                                &l_ens[0],
+                                l_ens.size(),
+                                i_data );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 

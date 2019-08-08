@@ -80,39 +80,24 @@ class edge_v::io::Moab {
      * @param i_daTy used MOAB data type.
      * @param i_tagName tag name.
      * @param i_data data, which will be stored.
-     *
-     * @paramt TL_T type of the data, which is written.
      **/
-    template< typename TL_T >
     void setEnData( t_entityType        i_enTy,
                     moab::DataType      i_daTy,
                     std::string const & i_tagName,
-                    TL_T        const * i_data ) {
-      moab::EntityType l_ty = getMoabType(  i_enTy );
+                    void        const * i_data );
 
-      // get the entities by type
-      std::vector< moab::EntityHandle > l_ens;
-      moab::ErrorCode l_err = m_moab->get_entities_by_type( 0,
-                                                            l_ty,
-                                                            l_ens );
-      EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-
-      // create the tag
-      moab::Tag l_tag;
-      l_err = m_moab->tag_get_handle( i_tagName.c_str(),
-                                      1,
-                                      i_daTy,
-                                      l_tag,
-                                      moab::MB_TAG_CREAT|moab::MB_TAG_DENSE );
-      EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-
-      // store the data
-      l_err = m_moab->tag_set_data( l_tag,
-                                    &l_ens[0],
-                                    l_ens.size(),
-                                    i_data );
-      EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-    }
+    /**
+     * Stores global mesh data in MOAB.
+     *
+     * @param i_daTy used MOAB data type.
+     * @param i_tagName tag name.
+     * @param i_nValues number of values.
+     * @param i_data data, which will be stored.
+     **/
+    void setGlobalData( moab::DataType         i_daTy,
+                        std::string    const & i_tagName,
+                        std::size_t            i_nValues,
+                        void           const * i_data );
 
   public:
     /**
