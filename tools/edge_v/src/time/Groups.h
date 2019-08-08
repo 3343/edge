@@ -129,11 +129,25 @@ class edge_v::time::Groups {
      *
      * If no rates are given, we get global time stepping.
      *
+     *
+     * The paramter i_funDt allows to adjust the starting point of the time interval.
+     * For example, assume that in the example above the majority of elements
+     * has a time step of 1.6dt. Than all these elements would advance with 1dt.
+     * However, starting at 0.9dt, pushes all these elements into the second group:
+     *
+     * [0.9dt, ..., 1.53dt, ..., 3.06, ..., 5.814, ..., infty )
+     *    group 1     |    group 2 |   group 3 |   group 4
+     *
+     * The cost is the lower time step of the first group.
+     * While the above example is artificial (we could just adjust the rates),
+     * settings with fixed rates, e.g., (2.0, 2.0, 2.0) gain flexibility.
+     *
      * @param i_elTy entity type of the elements.
      * @param i_nEls number of elements.
      * @param i_elFaEl elements adjacent to elements (faces as bridge).
      * @param i_nRates number of rates.
      * @param i_rates rates.
+     * @param i_funDt relative fundamental time step.
      * @param i_ts CFL-conditioned and normalized (minimum is 1) time steps of the elements.
      **/
     Groups( t_entityType           i_elTy,
@@ -141,6 +155,7 @@ class edge_v::time::Groups {
             std::size_t    const * i_elFaEl,
             unsigned short         i_nRates,
             double         const * i_rates,
+            double                 i_funDt,
             double         const * i_ts );
 
     /**
@@ -175,6 +190,13 @@ class edge_v::time::Groups {
      * @return elements' time groups.
      **/
     unsigned short const * getElTg() const { return m_elTg; }
+
+    /**
+     * Gets the theoretical speedup of the grouped time stepping scheme.
+     *
+     * @return speedup.
+     **/
+    double getSpeedUp() { return m_loads[0] / m_loads[2]; }
 };
 
 #endif

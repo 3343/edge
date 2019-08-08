@@ -46,8 +46,11 @@ class edge_v::io::Config {
     //! path to the output-csv for the time steps
     std::string m_tsOut = "";
 
-    //! rates of the time step groups
-    std::vector< double > m_rates = {};
+    //! number of time step groups
+    unsigned short m_nTsGroups = 0;
+
+    //! relative minimum time step
+    double m_funDt = 0;
 
   public:
     /**
@@ -72,11 +75,18 @@ class edge_v::io::Config {
     std::string const & getMeshOut() const { return m_meshOut; }
 
     /**
-     * Gets the rates of the time step groups.
+     * Gets the the number of time step groups.
      *
-     * @return rates of the time step groups.
+     * @return number of time step groups.
      **/
-    std::vector< double > const & getRates() const { return m_rates; }
+    unsigned short nTsGroups() const { return m_nTsGroups; }
+
+    /**
+     * Gets the relative fundamental time step.
+     *
+     * @return relative fundamental time step.
+     **/
+    double getFunDt() const { return m_funDt; }
 
     /**
      * Gets the output file for the time steps of the elements.

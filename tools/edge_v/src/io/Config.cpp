@@ -38,12 +38,8 @@ edge_v::io::Config::Config( std::string & i_xml ) {
 
   pugi::xml_node l_time = l_doc.child("edge_v").child("time");
 
-  // read rates
-  pugi::xml_node l_groups = l_time.child("groups");
-  for( pugi::xml_node l_ra = l_groups.child("rate"); l_ra; l_ra = l_ra.next_sibling("rate") ) {
-    m_rates.push_back( l_ra.text().as_double() );
-  }
-
-  // read output file for cfl time steps
-  m_tsOut = l_time.child("files").child("out_time_steps").text().as_string();
+  // time info
+  m_nTsGroups = l_time.child("n_groups").text().as_uint();
+  m_funDt     = l_time.child("fundamental_time_step").text().as_double();
+  m_tsOut     = l_time.child("files").child("out_time_steps").text().as_string();
 }

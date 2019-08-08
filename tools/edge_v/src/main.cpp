@@ -112,16 +112,46 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   EDGE_V_LOG_INFO << "computing time step groups";
+  unsigned short l_nTsGroups = l_config.nTsGroups();
+  double *l_rates = new double[l_nTsGroups];
+  for( unsigned short l_tg = 0; l_tg < l_nTsGroups; l_tg++ ) {
+    l_rates[l_tg] = 2.0;
+  }
+
+  double l_funDt = l_config.getFunDt();
+  // search for fundamental dt, if not specified
+  double l_speedUp = 0;
+  if( l_funDt == 0 ) {
+    double l_dt = 1.0;
+    while( l_dt > 0.5 ) {
+      edge_v::time::Groups l_tsGroups(  l_mesh.getElTy(),
+                                        l_mesh.nEls(),
+                                        l_mesh.getElFaEl(),
+                                        l_nTsGroups,
+                                        l_rates,
+                                        l_dt,
+                                        l_cfl.getTimeSteps() );
+      if( l_tsGroups.getSpeedUp() > l_speedUp ) {
+        l_speedUp = l_tsGroups.getSpeedUp();
+        l_funDt = l_dt;
+        EDGE_V_LOG_INFO << "  found new best fundamental dt / speedup: " << l_funDt << " / " << l_speedUp;
+      }
+      l_dt -= 0.01;
+    }
+  }
+
   edge_v::time::Groups l_tsGroups(  l_mesh.getElTy(),
                                     l_mesh.nEls(),
                                     l_mesh.getElFaEl(),
-                                    l_config.getRates().size(),
-                                   &l_config.getRates()[0],
+                                    l_nTsGroups,
+                                    l_rates,
+                                    l_funDt,
                                     l_cfl.getTimeSteps() );
+  delete[] l_rates;
   l_tsGroups.printStats();
 
   EDGE_V_LOG_INFO << "storing elements' time step groups";
-  std::string l_tagElTg = "edge_v_time_groups";
+  std::string l_tagElTg = "edge_v_element_time_groups";
   l_moab.deleteTag( l_tagElTg );
   l_moab.setEnData( l_mesh.getElTy(),
                     l_tagElTg,

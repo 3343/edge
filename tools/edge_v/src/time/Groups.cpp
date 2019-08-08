@@ -117,20 +117,23 @@ edge_v::time::Groups::Groups( t_entityType           i_elTy,
                               std::size_t            i_nEls,
                               std::size_t    const * i_elFaEl,
                               unsigned short         i_nRates,
-                              double         const * i_rates,                              
+                              double         const * i_rates,
+                              double                 i_funDt,
                               double         const * i_ts ) {
-  // check for valid rates
+  // check for valid rates and minimum relative time step
   for( unsigned short l_ra = 0; l_ra < i_nRates; l_ra++ ) {
     EDGE_V_CHECK_GT( i_rates[l_ra], 1.0 );
     EDGE_V_CHECK_LE( i_rates[l_ra], 2.0 );
   }
+  EDGE_V_CHECK_GT( i_funDt, 0 );
+  EDGE_V_CHECK_LE( i_funDt, 1 );
 
   m_nEls = i_nEls;
 
   // allocate memory for the groups and init
   m_nGroups = i_nRates+1;
   m_tsIntervals = new double[ m_nGroups+1 ];
-  m_tsIntervals[0] = 1;
+  m_tsIntervals[0] = i_funDt;
   m_tsIntervals[i_nRates+1] = std::numeric_limits< double >::max();
   for( unsigned short l_ra = 0; l_ra < i_nRates; l_ra++ ) {
     m_tsIntervals[l_ra+1] = m_tsIntervals[l_ra] * i_rates[l_ra];

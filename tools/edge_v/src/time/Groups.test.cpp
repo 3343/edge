@@ -59,6 +59,7 @@ TEST_CASE( "Tests the derivation of time step groups.", "[time][groups]" ) {
                                   l_elFaEl1,
                                   4,
                                   l_rates1,
+                                  1.0,
                                   l_ts1 );
 
   REQUIRE( l_groups1.m_elTg[ 0] == 4 );
@@ -96,6 +97,7 @@ TEST_CASE( "Tests the derivation of time step groups.", "[time][groups]" ) {
                                   l_elFaEl2,
                                   4,
                                   l_rates1,
+                                  1.0,
                                   l_ts1 );
   REQUIRE( l_groups2.m_elTg[ 0] == 3 );
   REQUIRE( l_groups2.m_elTg[ 1] == 2 );
