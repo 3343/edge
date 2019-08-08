@@ -46,7 +46,39 @@ TEST_CASE( "Tests element type query.", "[moab][getElTy]" ) {
   }
 }
 
-TEST_CASE( "Set and get global data.", "[moab][setGetGlobalData]" ) {
+
+TEST_CASE( "Set and get global data using size_t.", "[moab][setGetGlobalDataSizeT]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+
+    // construct the moab-reader
+    edge_v::io::Moab l_moab( l_path );
+
+    std::size_t l_dataSet[5] = { 5, 2, 4, 3, 5 };
+    std::string l_tagName = "random_tag_name";
+    l_moab.setGlobalData( l_tagName,
+                          5,
+                          l_dataSet );
+
+    std::size_t l_size = l_moab.getGlobalDataSize( l_tagName );
+    REQUIRE( l_size == 5 );
+
+    std::size_t l_dataGet[5] = {};
+    l_moab.getGlobalData( l_tagName,
+                          l_dataGet );
+
+    // check the results
+    REQUIRE( l_dataGet[0] == 5 );
+    REQUIRE( l_dataGet[1] == 2 );
+    REQUIRE( l_dataGet[2] == 4 );
+    REQUIRE( l_dataGet[3] == 3 );
+    REQUIRE( l_dataGet[4] == 5 );
+  }
+}
+
+TEST_CASE( "Set and get global data using double.", "[moab][setGetGlobalDataDouble]" ) {
   // only continue if the unit test files are available
   if( edge_v::test::g_files != "" ) {
     // path to the mesh file

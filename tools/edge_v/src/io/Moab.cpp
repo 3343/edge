@@ -301,6 +301,25 @@ void edge_v::io::Moab::setGlobalData( moab::DataType         i_daTy,
 
 void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
                                       std::size_t         i_nValues,
+                                      std::size_t const * i_data ) {
+  // convert data to int
+  int *l_data = new int[i_nValues];
+  convert( i_nValues,
+           i_data,
+           l_data );
+
+  // store in MOAB
+  setGlobalData( moab::DataType::MB_TYPE_INTEGER,
+                 i_tagName,
+                 i_nValues,
+                 l_data );
+
+  // free memory
+  delete[] l_data;
+}
+
+void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
+                                      std::size_t         i_nValues,
                                       double      const * i_data ) {
   setGlobalData( moab::DataType::MB_TYPE_DOUBLE,
                  i_tagName,
@@ -322,6 +341,39 @@ std::size_t edge_v::io::Moab::getGlobalDataSize( std::string const & i_tagName )
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   return l_size;
+}
+
+void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
+                                      std::size_t       * o_data ) const {
+  // get the tag
+  moab::Tag l_tag;
+  moab::ErrorCode l_err = m_moab->tag_get_handle( i_tagName.c_str(),
+                                                  l_tag );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // check the type
+  moab::DataType l_daTy;
+  l_err = m_moab->tag_get_data_type( l_tag,
+                                     l_daTy );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+  EDGE_V_CHECK_EQ( l_daTy, moab::DataType::MB_TYPE_INTEGER );
+
+  // get data
+  std::size_t l_nVals = getGlobalDataSize( i_tagName );
+  int *l_data = new int[l_nVals];
+
+  l_err = m_moab->tag_get_data(  l_tag,
+                                &m_root,
+                                 1,
+                                 l_data );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  convert( l_nVals,
+           l_data,
+           o_data );
+
+  // free memory
+  delete[] l_data;
 }
 
 void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
@@ -397,11 +449,9 @@ void edge_v::io::Moab::setEnData( t_entityType           i_enTy,
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   int *l_data = new int[l_nEns];
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-  for( int l_en = 0; l_en < l_nEns; l_en++ )
-    l_data[l_en] = i_data[l_en];
+  convert( l_nEns,
+           i_data,
+           l_data );
 
   setEnData( i_enTy,
              moab::MB_TYPE_INTEGER,
@@ -437,12 +487,9 @@ void edge_v::io::Moab::getEnData( t_entityType           i_enTy,
                         l_data );
 
   // convert
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-  for( std::size_t l_en = 0; l_en < l_ens.size(); l_en++ ) {
-    o_data[l_en] = l_data[l_en];
-  }
+  convert( l_ens.size(),
+           l_data,
+           o_data );
 
   delete[] l_data;
 }
