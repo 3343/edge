@@ -112,9 +112,9 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   EDGE_V_LOG_INFO << "computing time step groups";
-  unsigned short l_nTsGroups = l_config.nTsGroups();
-  double *l_rates = new double[l_nTsGroups];
-  for( unsigned short l_tg = 0; l_tg < l_nTsGroups; l_tg++ ) {
+  unsigned short l_nRates = l_config.nTsGroups()-1;
+  double *l_rates = new double[l_nRates];
+  for( unsigned short l_tg = 0; l_tg < l_nRates; l_tg++ ) {
     l_rates[l_tg] = 2.0;
   }
 
@@ -124,13 +124,13 @@ int main( int i_argc, char *i_argv[] ) {
   if( l_funDt == 0 ) {
     double l_dt = 1.0;
     while( l_dt > 0.5 ) {
-      edge_v::time::Groups l_tsGroups(  l_mesh.getElTy(),
-                                        l_mesh.nEls(),
-                                        l_mesh.getElFaEl(),
-                                        l_nTsGroups,
-                                        l_rates,
-                                        l_dt,
-                                        l_cfl.getTimeSteps() );
+      edge_v::time::Groups l_tsGroups( l_mesh.getElTy(),
+                                       l_mesh.nEls(),
+                                       l_mesh.getElFaEl(),
+                                       l_nRates,
+                                       l_rates,
+                                       l_dt,
+                                       l_cfl.getTimeSteps() );
       if( l_tsGroups.getSpeedUp() > l_speedUp ) {
         l_speedUp = l_tsGroups.getSpeedUp();
         l_funDt = l_dt;
@@ -143,7 +143,7 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::time::Groups l_tsGroups(  l_mesh.getElTy(),
                                     l_mesh.nEls(),
                                     l_mesh.getElFaEl(),
-                                    l_nTsGroups,
+                                    l_nRates,
                                     l_rates,
                                     l_funDt,
                                     l_cfl.getTimeSteps() );
