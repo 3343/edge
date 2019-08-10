@@ -101,7 +101,7 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab ) {
   // query moab
   i_moab.getVeCrds( m_veCrds );
   i_moab.getEnVe( m_elTy, m_elVe );
-  i_moab.getEnFaEn( m_elTy, m_elFaEl );
+  i_moab.getElFaEl( m_elTy, m_elFaEl );
 
   // compute mesh properties
   setInDiameter( m_elTy,

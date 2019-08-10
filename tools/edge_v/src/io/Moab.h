@@ -188,13 +188,22 @@ class edge_v::io::Moab {
                   std::size_t  * o_enVe ) const;
 
     /**
-     * Gets the entity-to-entity adjacency (faces as bridge).
+     * Gets the elements, adjacent to the faces.
      *
-     * @param i_enTy entity type.
-     * @param o_enFaEn will be set to adjacency information.
+     * @param i_elTy element type to which the faces belong.
+     * @param o_faEl will be set to the elements, adjacent to the faces.
      **/
-    void getEnFaEn( t_entityType   i_enTy,
-                    std::size_t  * o_enFaEn ) const;
+    void getFaEl( t_entityType   i_elTy,
+                  std::size_t  * o_faEl ) const;
+
+    /**
+     * Gets the element-to-element adjacency (faces as bridge).
+     *
+     * @param i_elTy element type.
+     * @param o_elFaEl will be set to adjacency information.
+     **/
+    void getElFaEl( t_entityType   i_elTy,
+                    std::size_t  * o_elFaEl ) const;
 
     /**
      * Stores global mesh data.

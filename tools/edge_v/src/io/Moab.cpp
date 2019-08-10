@@ -54,23 +54,21 @@ edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
 
   m_root = m_moab->get_root_set();
 
-  // get mesh dimension
-  int l_nDis = 0;
-  l_err = m_moab->get_dimension( l_nDis );
-  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-  EDGE_V_CHECK_GT( l_nDis, 0 );
-
-  // get elements
-  moab::Range l_els;
+  // get vertices
+  moab::Range l_ves;
   l_err = m_moab->get_entities_by_dimension( m_root,
-                                             l_nDis,
-                                             l_els );
+                                             0,
+                                             l_ves );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // create all other entities
-  for( unsigned short l_di = 1; l_di < l_nDis; l_di++ ) {
+  for( unsigned short l_di = 1; l_di < 3; l_di++ ) {
     moab::Range l_ens;
-    l_err = m_moab->get_adjacencies( l_els, l_di, true, l_ens, moab::Interface::UNION );
+    l_err = m_moab->get_adjacencies( l_ves,
+                                     l_di,
+                                     true,
+                                     l_ens,
+                                     moab::Interface::UNION );
     EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
   }
 
@@ -216,27 +214,70 @@ void edge_v::io::Moab::getEnVe( t_entityType   i_enTy,
   }
 }
 
-void edge_v::io::Moab::getEnFaEn( t_entityType   i_enTy,
-                                  std::size_t  * o_enFaEn ) const {
+void edge_v::io::Moab::getFaEl( t_entityType   i_elTy,
+                                std::size_t  * o_faEl ) const {
+  unsigned short l_nDis = CE_N_DIS( i_elTy );
+  std::size_t l_nFas = nEnsByType( CE_T_FA(i_elTy) );
+  moab::EntityType l_faTy = getMoabType( CE_T_FA(i_elTy) );
+
+  // init
+  for( std::size_t l_fa = 0; l_fa < l_nFas; l_fa++ ) {
+    for( std::size_t l_sd = 0; l_sd < 2; l_sd++ ) {
+      o_faEl[l_fa*2 + l_sd] = std::numeric_limits< std::size_t >::max();
+    }
+  }
+
+  // get faces
+  std::vector< moab::EntityHandle > l_fas;
+  moab::ErrorCode l_err = m_moab->get_entities_by_type( m_root,
+                                                        l_faTy,
+                                                        l_fas );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+  EDGE_V_CHECK_EQ( l_fas.size(), l_nFas );
+
+  for( std::size_t l_fa = 0; l_fa < l_nFas; l_fa++ ) {
+    // get the face-adjacent elements
+    std::vector< moab::EntityHandle > l_els;
+
+    l_err = m_moab->get_adjacencies( &l_fas[l_fa],
+                                     1,
+                                     l_nDis,
+                                     true,
+                                     l_els,
+                                     moab::Interface::UNION );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+    EDGE_V_CHECK_GT( l_els.size(), 0 );
+    EDGE_V_CHECK_LE( l_els.size(), 2 );
+
+    // assign ids
+    for( std::size_t l_si = 0; l_si < l_els.size(); l_si++ ) {
+      o_faEl[l_fa*2 + l_si] = m_moab->id_from_handle( l_els[l_si] ) - 1;
+    }
+    EDGE_V_CHECK_LT( o_faEl[l_fa*2 + 0], o_faEl[l_fa*2 + 1] );
+  }
+}
+
+void edge_v::io::Moab::getElFaEl( t_entityType   i_elTy,
+                                  std::size_t  * o_elFaEl ) const {
 #ifdef PP_USE_MPI
 EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-settings
 #endif
-  unsigned short l_nDis = CE_N_DIS( i_enTy );
-  unsigned short l_nEnFas = CE_N_FAS( i_enTy );
-  moab::EntityType l_ty = getMoabType( i_enTy );
+  unsigned short l_nDis = CE_N_DIS( i_elTy );
+  unsigned short l_elFas = CE_N_FAS( i_elTy );
+  moab::EntityType l_ty = getMoabType( i_elTy );
 
   // get entities of the input type
-  std::vector< moab::EntityHandle > l_ens;
+  std::vector< moab::EntityHandle > l_els;
   moab::ErrorCode l_err = m_moab->get_entities_by_type( m_root,
                                                         l_ty,
-                                                        l_ens );
+                                                        l_els );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // iterate over all entities, determine faces and respective adjacent elements
-  for( std::size_t l_en = 0; l_en < l_ens.size(); l_en++ ) {
+  for( std::size_t l_el = 0; l_el < l_els.size(); l_el++ ) {
     // element's faces
     std::vector< moab::EntityHandle > l_fas;
-    l_err = m_moab->get_adjacencies( &l_ens[l_en],
+    l_err = m_moab->get_adjacencies( &l_els[l_el],
                                      1,
                                      l_nDis-1,
                                      true,
@@ -245,28 +286,28 @@ EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-setti
     EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
     // face adjacent elements
-    std::vector< moab::EntityHandle > l_enFaEn;
+    std::vector< moab::EntityHandle > l_elFaEl;
     l_err = m_moab->get_adjacencies( &l_fas[0],
                                      l_fas.size(),
                                      l_nDis,
                                      true,
-                                     l_enFaEn,
+                                     l_elFaEl,
                                      moab::Interface::UNION );
     EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
     // ensure at least one adjacent element (size includes element itself)
-    EDGE_V_CHECK_GT( l_enFaEn.size(), 1 );
+    EDGE_V_CHECK_GT( l_elFaEl.size(), 1 );
 
     // init adjacency info
-    for( unsigned short l_fa = 0; l_fa < l_nEnFas; l_fa++ ) {
-      o_enFaEn[l_en * l_nEnFas + l_fa] = std::numeric_limits< std::size_t >::max();
+    for( unsigned short l_fa = 0; l_fa < l_elFas; l_fa++ ) {
+      o_elFaEl[l_el * l_elFas + l_fa] = std::numeric_limits< std::size_t >::max();
     }
 
     // store info obtained from MOAB
     unsigned short l_fa = 0;
-    for( std::size_t l_ad = 0; l_ad < l_enFaEn.size(); l_ad++ ) {
-      if( l_enFaEn[l_ad] != l_ens[l_en] ) {
-        o_enFaEn[l_en * l_nEnFas + l_fa] = m_moab->id_from_handle( l_enFaEn[l_ad] ) - 1;
+    for( std::size_t l_ad = 0; l_ad < l_elFaEl.size(); l_ad++ ) {
+      if( l_elFaEl[l_ad] != l_els[l_el] ) {
+        o_elFaEl[l_el * l_elFas + l_fa] = m_moab->id_from_handle( l_elFaEl[l_ad] ) - 1;
         l_fa++;  
       }
     }

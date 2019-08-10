@@ -46,6 +46,29 @@ TEST_CASE( "Tests element type query.", "[moab][getElTy]" ) {
   }
 }
 
+TEST_CASE( "Tests the derivation for elements adjacent to their faces.", "[moab][getFaEl]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+
+    // construct the moab-reader
+    edge_v::io::Moab l_moab( l_path );
+
+    std::size_t l_faEl[48 * 2];
+    l_moab.getFaEl( edge_v::TRIA3,
+                    l_faEl );
+
+    REQUIRE( l_faEl[0*2+0] == 5 );
+    REQUIRE( l_faEl[0*2+1] == std::numeric_limits< std::size_t > ::max() );
+
+    REQUIRE( l_faEl[12*2+0] == 4 );
+    REQUIRE( l_faEl[12*2+1] == 5 );
+
+    REQUIRE( l_faEl[15*2+0] == 1 );
+    REQUIRE( l_faEl[15*2+1] == 3 );
+  }
+}
 
 TEST_CASE( "Set and get global data using size_t.", "[moab][setGetGlobalDataSizeT]" ) {
   // only continue if the unit test files are available
