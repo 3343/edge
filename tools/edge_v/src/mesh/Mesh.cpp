@@ -189,6 +189,9 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
   l_size = m_nFas * 2;
   m_faEl = new std::size_t[ l_size ];
 
+  l_size = m_nEls * l_nElFas;
+  m_elFa = new std::size_t[ l_size ];
+
   l_size  = m_nEls * l_nElVes;
   m_elVe = new std::size_t[ l_size ];
 
@@ -203,6 +206,7 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
   i_moab.getEnVe( l_faTy, m_faVe );
   i_moab.getFaEl( m_elTy, m_faEl );
   i_moab.getEnVe( m_elTy, m_elVe );
+  i_moab.getElFa( m_elTy, m_elFa );
   i_moab.getElFaEl( m_elTy, m_elFaEl );
 
   // adjust periodic boundaries
@@ -228,6 +232,7 @@ edge_v::mesh::Mesh::~Mesh() {
   delete[] m_faVe;
   delete[] m_faEl;
   delete[] m_elVe;
+  delete[] m_elFa;
   delete[] m_elFaEl;
   delete[] m_inDiaEl;
 }

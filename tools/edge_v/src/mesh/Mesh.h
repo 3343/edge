@@ -59,6 +59,9 @@ class edge_v::mesh::Mesh {
     //! elements adjacent to the faces
     std::size_t *m_faEl;
 
+    //! faces adjacent to the elements
+    std::size_t *m_elFa;
+
     //! vertices adjacent to the elements
     std::size_t *m_elVe;
 
@@ -172,9 +175,16 @@ class edge_v::mesh::Mesh {
     /**
      * Gets the elements adjacent to the faces.
      *
-     * @return adjaceny info.
+     * @return adjacency info.
      **/
     std::size_t const * getFaEl() const { return m_faEl; }
+
+    /**
+     * Gets the faces adjacent to the elements.
+     *
+     * @return adjacency inforation.
+     **/
+    std::size_t const * getElFa() const { return m_elFa; }
 
     /**
      * Gets the elements adjacent to the elements (faces as bridge).

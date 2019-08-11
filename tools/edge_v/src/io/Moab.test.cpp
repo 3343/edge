@@ -46,7 +46,7 @@ TEST_CASE( "Tests element type query.", "[moab][getElTy]" ) {
   }
 }
 
-TEST_CASE( "Tests the derivation for elements adjacent to their faces.", "[moab][getFaEl]" ) {
+TEST_CASE( "Tests the derivation of elements adjacent to their faces.", "[moab][getFaEl]" ) {
   // only continue if the unit test files are available
   if( edge_v::test::g_files != "" ) {
     // path to the mesh file
@@ -67,6 +67,29 @@ TEST_CASE( "Tests the derivation for elements adjacent to their faces.", "[moab]
 
     REQUIRE( l_faEl[15*2+0] == 1 );
     REQUIRE( l_faEl[15*2+1] == 3 );
+  }
+}
+
+TEST_CASE( "Tests the derivation of faces adjacent to elements.", "[moab][getElFa]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+
+    // construct the moab-reader
+    edge_v::io::Moab l_moab( l_path );
+
+    std::size_t l_elFa[28 * 3];
+    l_moab.getElFa( edge_v::TRIA3,
+                    l_elFa );
+
+    REQUIRE( l_elFa[0*3 + 0] ==  9 );
+
+    for( unsigned short l_el = 0; l_el < 23; l_el++ ) {
+      for( unsigned short l_fa = 0; l_fa < 3-1; l_fa++ ) {
+        REQUIRE( l_elFa[l_el*3 + l_fa] <  l_elFa[l_el*3 + l_fa+1] );
+      }
+    }
   }
 }
 
