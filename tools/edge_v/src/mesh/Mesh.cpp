@@ -71,7 +71,101 @@ void edge_v::mesh::Mesh::setInDiameter( t_entityType          i_enTy,
   }
 }
 
-edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab ) {
+void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
+                                          std::size_t          i_nFas,
+                                          std::size_t const  * i_faVe,
+                                          double      const (* i_veCrds)[3],
+                                          std::size_t        * io_faEl,
+                                          std::size_t        * io_elFaEl ) {
+  // get boundary faces
+  std::vector< std::size_t > l_bndFas;
+  for( std::size_t l_fa = 0; l_fa < i_nFas; l_fa++ ) {
+    if( io_faEl[l_fa*2+1] == std::numeric_limits< std::size_t >::max() ) {
+      l_bndFas.push_back( l_fa );
+    }
+  }
+  EDGE_V_CHECK_EQ( l_bndFas.size()%2, 0 );
+
+  unsigned short l_nDis = CE_N_DIS( i_elTy );
+  unsigned short l_nFaVes = CE_N_VES( CE_T_FA( i_elTy ) );
+
+  // lambda which derives the dimension,
+  // where the number of matching vertex coordinates matches the requested limit
+  auto l_eqDi = [ l_nDis, l_nFaVes, i_faVe, i_veCrds ]( unsigned short i_limit,
+                                                        std::size_t    i_f0,
+                                                        std::size_t    i_f1,
+                                                        unsigned short l_ignDim = std::numeric_limits< unsigned short >::max() ) {
+    for( unsigned short l_di = 0; l_di < l_nDis; l_di++) {
+      if( l_di == l_ignDim ) continue;
+      unsigned short l_nEq = 0;
+
+      for( unsigned short l_ve0 = 0; l_ve0 < l_nFaVes; l_ve0++ ) {
+        for( unsigned short l_ve1 = 0; l_ve1 < l_nFaVes; l_ve1++ ) {
+          std::size_t l_ve0Id = i_faVe[i_f0*l_nFaVes + l_ve0];
+          std::size_t l_ve1Id = i_faVe[i_f1*l_nFaVes + l_ve1];
+
+          double l_diff = i_veCrds[l_ve0Id][l_di] - i_veCrds[l_ve1Id][l_di];
+          if( std::abs(l_diff) < 1E-5 ) l_nEq++;
+        }
+      }
+
+      // if the number of vertices sharing coordinates in a dimension matches the request, we are done
+      if( l_nEq == i_limit ) return l_di;
+    }
+    return std::numeric_limits< unsigned short >::max();
+  };
+
+  // 1) iterate over all face-pairs,
+  // 2) for each face, determine the constant dimension (assumption for our periodic boundaries)
+  // 3) if the two faces have the same constant dim, check if the faces' vertices share coordinates in another dim
+  std::vector< std::size_t > l_faPairs;
+  for( std::size_t l_f0 = 0; l_f0 < l_bndFas.size(); l_f0++ ) {
+    unsigned short l_constDim0 = l_eqDi( l_nFaVes*l_nFaVes, l_bndFas[l_f0], l_bndFas[l_f0] );
+    for( std::size_t l_f1 = 0; l_f1 < l_bndFas.size(); l_f1++ ) {
+      unsigned short l_constDim1 = l_eqDi( l_nFaVes*l_nFaVes, l_bndFas[l_f1], l_bndFas[l_f1] );
+
+      if( l_constDim0 == l_constDim1 ) {
+        unsigned short l_sharedDim = l_eqDi( l_nFaVes, l_bndFas[l_f0], l_bndFas[l_f1], l_constDim0 );
+
+        if(    l_f0 != l_f1
+            && l_sharedDim < std::numeric_limits< unsigned short >::max() ) l_faPairs.push_back( l_f1 );
+      }
+    }
+  }
+
+  // check that we got a partner for every face
+  EDGE_V_CHECK_EQ( l_faPairs.size(), l_bndFas.size() );
+  for( std::size_t l_fa = 0; l_fa < l_faPairs.size(); l_fa++ ) {
+    EDGE_V_CHECK_EQ( l_faPairs[ l_faPairs[l_fa] ], l_fa );
+  }
+
+  // insert the missing elements
+  unsigned short l_nElFas = CE_N_FAS( i_elTy );
+  for( std::size_t l_f0 = 0; l_f0 < l_faPairs.size(); l_f0++ ) {
+    std::size_t l_f1 = l_faPairs[l_f0];
+    std::size_t l_el0 = io_faEl[l_f0*2 + 0];
+    std::size_t l_el1 = io_faEl[l_f1*2 + 0];
+    io_faEl[l_f0*2 + 1] = l_el1;
+
+    for( unsigned short l_ad = 0; l_ad < l_nElFas; l_ad++ ) {
+      if( io_elFaEl[l_el0*l_nElFas + l_ad] == std::numeric_limits< std::size_t >::max() ) {
+        io_elFaEl[l_el0*l_nElFas + l_ad] = l_el1;
+      }
+    }
+  }
+
+  // recover the sorting
+  for( std::size_t l_fa = 0; l_fa < l_faPairs.size(); l_fa++ ) {
+    std::size_t l_el = io_faEl[l_fa*2 + 0];
+    std::sort( io_faEl+(l_fa*2), io_faEl+((l_fa+1)*2) );
+
+    std::sort( io_elFaEl+(l_el*l_nElFas), io_elFaEl+((l_el+1)*l_nElFas) );
+    EDGE_V_CHECK_NE( io_elFaEl[(l_el+1)*l_nElFas-1], std::numeric_limits< std::size_t >::max() );
+  }
+}
+
+edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
+                          bool                     i_periodic ) {
   // get the element type of the mesh
   m_elTy = i_moab.getElType();
   t_entityType l_faTy = CE_T_FA( m_elTy );
@@ -89,6 +183,12 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab ) {
   std::size_t l_size  = m_nVes * 3;
   m_veCrds = (double (*)[3]) new double[ l_size ];
 
+  l_size = m_nFas * CE_N_VES( l_faTy );
+  m_faVe = new std::size_t[ l_size ];
+
+  l_size = m_nFas * 2;
+  m_faEl = new std::size_t[ l_size ];
+
   l_size  = m_nEls * l_nElVes;
   m_elVe = new std::size_t[ l_size ];
 
@@ -100,8 +200,20 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab ) {
 
   // query moab
   i_moab.getVeCrds( m_veCrds );
+  i_moab.getEnVe( l_faTy, m_faVe );
+  i_moab.getFaEl( m_elTy, m_faEl );
   i_moab.getEnVe( m_elTy, m_elVe );
   i_moab.getElFaEl( m_elTy, m_elFaEl );
+
+  // adjust periodic boundaries
+  if( i_periodic ) {
+    setPeriodicBnds( m_elTy,
+                     m_nFas,
+                     m_faVe,
+                     m_veCrds,
+                     m_faEl,
+                     m_elFaEl );
+  }
 
   // compute mesh properties
   setInDiameter( m_elTy,
@@ -113,6 +225,8 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab ) {
 
 edge_v::mesh::Mesh::~Mesh() {
   delete[] m_veCrds;
+  delete[] m_faVe;
+  delete[] m_faEl;
   delete[] m_elVe;
   delete[] m_elFaEl;
   delete[] m_inDiaEl;

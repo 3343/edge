@@ -85,7 +85,9 @@ int main( int i_argc, char *i_argv[] ) {
 
   // initializing and setting mesh data
   EDGE_V_LOG_INFO << "initializing mesh interface";
-  edge_v::mesh::Mesh l_mesh( l_moab );
+  if( l_config.getPeriodic() ) EDGE_V_LOG_INFO << "  assuming periodioc boundaries";
+  edge_v::mesh::Mesh l_mesh( l_moab,
+                             l_config.getPeriodic() );
   l_mesh.printStats();
 
   EDGE_V_LOG_INFO << "computing CFL time steps";

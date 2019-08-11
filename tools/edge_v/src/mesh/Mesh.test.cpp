@@ -45,3 +45,43 @@ TEST_CASE( "Tests the mesh interface for triangular meshes.", "[mesh][Tria3]" ) 
     REQUIRE( l_mesh.nEls() == 28 );
   }
 }
+
+TEST_CASE( "Tests the mesh interface in the case of periodic boundaries.", "[mesh][periodic]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+
+    // construct the mesh-interface without periodic boundaries
+    edge_v::mesh::Mesh l_mesh0( l_path );
+
+    // check three faces
+    REQUIRE( l_mesh0.getFaEl()[0*2 + 0] == 5 );
+    REQUIRE( l_mesh0.getFaEl()[0*2 + 1] == std::numeric_limits< std::size_t >::max() );
+
+    REQUIRE( l_mesh0.getFaEl()[1*2 + 0] == 18 );
+    REQUIRE( l_mesh0.getFaEl()[1*2 + 1] == std::numeric_limits< std::size_t >::max() );
+
+    REQUIRE( l_mesh0.getFaEl()[2*2 + 0] == 1 );
+    REQUIRE( l_mesh0.getFaEl()[2*2 + 1] == std::numeric_limits< std::size_t >::max() );
+
+    REQUIRE( l_mesh0.getFaEl()[3*2 + 0] == 3 );
+    REQUIRE( l_mesh0.getFaEl()[3*2 + 1] == std::numeric_limits< std::size_t >::max() );
+
+    // construct the mesh-interface with periodic boundaries
+    edge_v::mesh::Mesh l_mesh1( l_path,
+                                true );
+
+    REQUIRE( l_mesh1.getFaEl()[0*2 + 0] == 2 );
+    REQUIRE( l_mesh1.getFaEl()[0*2 + 1] == 5 );
+
+    REQUIRE( l_mesh1.getFaEl()[1*2 + 0] == 17 );
+    REQUIRE( l_mesh1.getFaEl()[1*2 + 1] == 18 );
+
+    REQUIRE( l_mesh1.getFaEl()[2*2 + 0] == 1 );
+    REQUIRE( l_mesh1.getFaEl()[2*2 + 1] == 7 );
+
+    REQUIRE( l_mesh1.getFaEl()[3*2 + 0] == 3 );
+    REQUIRE( l_mesh1.getFaEl()[3*2 + 1] == 4 );
+  }
+}

@@ -43,6 +43,9 @@ class edge_v::io::Config {
     //! path to the output mesh
     std::string m_meshOut = "";
 
+    //! periodic boundary conditions
+    bool m_periodic = false;
+
     //! path to the output-csv for the time steps
     std::string m_tsOut = "";
 
@@ -73,6 +76,13 @@ class edge_v::io::Config {
      * @return output mesh.
      **/
     std::string const & getMeshOut() const { return m_meshOut; }
+
+    /**
+     * Gets the configuration of periodic boundary conditions.
+     *
+     * @return true if the mesh has periodic boundaries, false if not.
+     **/
+    bool getPeriodic() const { return m_periodic; }
 
     /**
      * Gets the the number of time step groups.

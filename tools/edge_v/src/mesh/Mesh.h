@@ -53,6 +53,12 @@ class edge_v::mesh::Mesh {
     //! vertex coordinates
     double (*m_veCrds)[3];
 
+    //! vertices adjacent to the faces
+    std::size_t *m_faVe;
+
+    //! elements adjacent to the faces
+    std::size_t *m_faEl;
+
     //! vertices adjacent to the elements
     std::size_t *m_elVe;
 
@@ -90,13 +96,33 @@ class edge_v::mesh::Mesh {
                                double      const (* i_veCrds)[3],
                                double             * o_inDia );
 
+    /**
+     * Inserts periodic boundaries into faEl and elFaEl by comparing the vertex coordinates of the faces.
+     * The function assumes that the periodic boundaries are coordinate aligned.
+     *
+     * @param i_elTy element type.
+     * @param i_nFas number of faces.
+     * @param i_faVe vertices of the faces.
+     * @param i_veCrds vertex coordinates.
+     * @param io_faEl elements adjacent to the faces.
+     * @param io_elFaEl elements adjacent to elements (faces as bridge).
+     **/
+    static void setPeriodicBnds( t_entityType         i_elTy,
+                                 std::size_t          i_nFas,
+                                 std::size_t const  * i_faVe,
+                                 double      const (* i_veCrds)[3],
+                                 std::size_t        * io_faEl,
+                                 std::size_t        * io_elFaEl );
+
   public:
     /**
      * Constructor.
      *
      * @param i_moab moab interface.
+     * @param i_periodic if true search insert periodic adjacency info for faces at the boundary.
      **/
-    Mesh( io::Moab const & i_moab );
+    Mesh( io::Moab const & i_moab,
+          bool             i_periodic = false );
 
     /**
      * Destructor
@@ -137,14 +163,21 @@ class edge_v::mesh::Mesh {
     std::size_t nEls() const { return m_nEls; }
 
     /**
-     * Gets the vertices, adjacent to the elements.
+     * Gets the vertices adjacent to the elements.
      *
      * @return connectivity info.
      **/
     std::size_t const * getElVe() const { return m_elVe; }
 
     /**
-     * Gets the elements, adjacent to the elements (faces as bridge).
+     * Gets the elements adjacent to the faces.
+     *
+     * @return adjaceny info.
+     **/
+    std::size_t const * getFaEl() const { return m_faEl; }
+
+    /**
+     * Gets the elements adjacent to the elements (faces as bridge).
      *
      * @return adjacency info.
      **/

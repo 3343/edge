@@ -33,8 +33,10 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   l_doc.load_file( i_xml.c_str() );
 
   // read input and ouput mesh
-  m_meshIn = l_doc.child("edge_v").child("mesh").child("files").child("in").text().as_string();
-  m_meshOut = l_doc.child("edge_v").child("mesh").child("files").child("out").text().as_string();
+  pugi::xml_node l_mesh = l_doc.child("edge_v").child("mesh");
+  m_meshIn   = l_mesh.child("files").child("in").text().as_string();
+  m_meshOut  = l_mesh.child("files").child("out").text().as_string();
+  m_periodic = l_mesh.child("periodic").text().as_bool();
 
   pugi::xml_node l_time = l_doc.child("edge_v").child("time");
 
