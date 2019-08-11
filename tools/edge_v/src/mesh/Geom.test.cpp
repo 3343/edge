@@ -88,3 +88,85 @@ TEST_CASE( "Tests the insphere diameter computation for 4-node tetrahedrons.", "
   // check result
   REQUIRE( l_dia == Approx(0.45358449083204) );
 }
+
+TEST_CASE( "Tests the vertex and face reordering for triangles.", "[normVesFasTria3][tria3]" ) {
+  /*
+   * counterclockwise triangle:
+   *
+   *   3
+   *   *  *
+   *   *    *
+   *   *      *
+   *   *        *
+   *   1 ********* 2
+   *
+   * faces (ascending): (1, 2) < (1, 3) < (2, 3)
+   * faces (counter-clockwise): (1, 2), (2, 3), (1, 3)
+   */
+  double l_ves0[3][3] = { {0.0, 0.0, 0.0},
+                          {1.0, 0.0, 0.0},
+                          {0.5, 1.0, 0.0} };
+
+  std::size_t l_elVe0[3]   = { 1, 2, 3 };
+  std::size_t l_elFa0[3]   = { 4, 5, 6 };
+  std::size_t l_elFaEl0[3] = { 7, 8, 9 };
+
+  edge_v::mesh::Geom::normVesFasTria3( l_ves0,
+                                       l_elVe0,
+                                       l_elFa0,
+                                       l_elFaEl0 );
+
+  REQUIRE( l_elVe0[0] == 1 );
+  REQUIRE( l_elVe0[1] == 2 );
+  REQUIRE( l_elVe0[2] == 3 );
+
+  REQUIRE( l_elFa0[0] == 4 );
+  REQUIRE( l_elFa0[1] == 6 );
+  REQUIRE( l_elFa0[2] == 5 );
+
+  REQUIRE( l_elFaEl0[0] == 7 );
+  REQUIRE( l_elFaEl0[1] == 9 );
+  REQUIRE( l_elFaEl0[2] == 8 );
+
+  /*
+   * counterclockwise triangle:
+   *
+   *   3                  2
+   *   *  *               * *
+   *   *    *         ->  *   *
+   *   *      *           *     *
+   *   *        *         *       *
+   *   2 ********* 1      3 ******** 1
+   *
+   * faces (ascending): (1, 2) < (1, 3) < (2, 3)
+   * faces (counter-clockwise): (1, 2), (2, 3), (1, 3)
+   *
+   * counterclockwise ordering exchanges vertices 2 and 3:
+   * faces ordering: (1, 3), (2, 3), (1, 2)
+   */
+  double l_ves1[3][3] = { {1.0, 0.0, 0.0},
+                          {0.0, 0.0, 0.0},
+                          {0.5, 1.0, 0.0} };
+
+
+  std::size_t l_elVe1[3]   = { 1, 2, 3 };
+  std::size_t l_elFa1[3]   = { 4, 5, 6 };
+  std::size_t l_elFaEl1[3] = { 7, 8, 9 };
+
+  edge_v::mesh::Geom::normVesFasTria3( l_ves1,
+                                       l_elVe1,
+                                       l_elFa1,
+                                       l_elFaEl1 );
+
+  REQUIRE( l_elVe1[0] == 1 );
+  REQUIRE( l_elVe1[1] == 3 );
+  REQUIRE( l_elVe1[2] == 2 );
+
+  REQUIRE( l_elFa1[0] == 5 );
+  REQUIRE( l_elFa1[1] == 6 );
+  REQUIRE( l_elFa1[2] == 4 );
+
+  REQUIRE( l_elFaEl1[0] == 8 );
+  REQUIRE( l_elFaEl1[1] == 9 );
+  REQUIRE( l_elFaEl1[2] == 7 );
+}

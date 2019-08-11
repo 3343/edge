@@ -164,6 +164,31 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
   }
 }
 
+void edge_v::mesh::Mesh::normVesFas( t_entityType         i_elTy,
+                                     std::size_t          i_nEls,
+                                     double      const (* i_veCrds)[3],
+                                     std::size_t        * io_elVe,
+                                     std::size_t        * io_elFa,
+                                     std::size_t        * io_elFaEl ) {
+  unsigned short l_nElVes = CE_N_VES( i_elTy );
+  unsigned short l_nElFas = CE_N_FAS( i_elTy );
+
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    // get vertex coordinates
+    double l_veCrds[8][3] = {};
+    getEnVeCrds( i_elTy,
+                 io_elVe + (l_nElVes * l_el),
+                 i_veCrds,
+                 l_veCrds );
+
+    Geom::normVesFas( i_elTy,
+                      l_veCrds,
+                      io_elVe+l_el*l_nElVes,
+                      io_elFa+l_el*l_nElFas,
+                      io_elFaEl+l_el*l_nElFas );
+  }
+}
+
 edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                           bool                     i_periodic ) {
   // get the element type of the mesh
@@ -225,6 +250,13 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                  m_elVe,
                  m_veCrds,
                  m_inDiaEl );
+
+  normVesFas( m_elTy,
+              m_nEls,
+              m_veCrds,
+              m_elVe,
+              m_elFa,
+              m_elFaEl );
 }
 
 edge_v::mesh::Mesh::~Mesh() {

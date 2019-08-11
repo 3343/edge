@@ -117,6 +117,24 @@ class edge_v::mesh::Mesh {
                                  std::size_t        * io_faEl,
                                  std::size_t        * io_elFaEl );
 
+    /**
+     * Normalizes the order of the vertices and faces.
+     * The input is assumed to be ascending (w.r.t. the vertex ids) for all adjacency info.
+     *
+     * @param i_elTy element type.
+     * @param i_nEls number of elements.
+     * @param i_veCrds coordinates of the element's vertices.
+     * @param io_elVe vertices adjacent to the element (ordered ascending by the ids).
+     * @param io_elFa faces adjacent to the element (ordered ascending by the vertex ids of the faces).
+     * @param io_elFaEl elements adjacent to the elements (ordered ascending by the vertex ids of the faces).
+     **/
+    static void normVesFas( t_entityType         i_elTy,
+                            std::size_t          i_nEls,
+                            double      const (* i_veCrds)[3],
+                            std::size_t        * io_elVe,
+                            std::size_t        * io_elFa,
+                            std::size_t        * io_elFaEl );
+
   public:
     /**
      * Constructor.
