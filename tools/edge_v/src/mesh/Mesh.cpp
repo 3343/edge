@@ -164,14 +164,78 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
   }
 }
 
-void edge_v::mesh::Mesh::normVesFas( t_entityType         i_elTy,
-                                     std::size_t          i_nEls,
-                                     double      const (* i_veCrds)[3],
-                                     std::size_t        * io_elVe,
-                                     std::size_t        * io_elFa,
-                                     std::size_t        * io_elFaEl ) {
+void edge_v::mesh::Mesh::normOrder( t_entityType         i_elTy,
+                                    std::size_t          i_nFas,
+                                    std::size_t          i_nEls,
+                                    double      const (* i_veCrds)[3],
+                                    std::size_t        * io_faVe,
+                                    std::size_t        * io_faEl,
+                                    std::size_t        * io_elVe,
+                                    std::size_t        * io_elFa,
+                                    std::size_t        * io_elFaEl ) {
+  unsigned short l_nFaVes = CE_N_VES( CE_T_FA( i_elTy ) );
   unsigned short l_nElVes = CE_N_VES( i_elTy );
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_fa = 0; l_fa < i_nFas; l_fa++ ) {
+    std::sort( io_faVe+l_fa*l_nFaVes, io_faVe+(l_fa+1)*l_nFaVes );
+    std::sort( io_faEl+l_fa*2,        io_faEl+(l_fa+1)*2 );
+  }
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    std::sort( io_elVe+l_el*l_nElVes, io_elVe+(l_el+1)*l_nElVes );
+
+    // lambda, which compares two faces lexicographically
+    auto l_faLess = [ io_faVe, l_nFaVes ]( std::size_t i_faId0,
+                                           std::size_t i_faId1 ) {
+      // get the vertex ids of the faces
+      std::size_t const * l_faVe0 = io_faVe + i_faId0*l_nFaVes;
+      std::size_t const * l_faVe1 = io_faVe + i_faId1*l_nFaVes;
+
+      // iterate over the vertices and compare their ids
+      for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+        // abort only for non-equal
+        if( l_faVe0[l_ve] < l_faVe1[l_ve] )
+          return true;
+        else if( l_faVe0[l_ve] > l_faVe1[l_ve] )
+          return false;
+      }
+
+      // equal would be valid but not for the use-case below
+      EDGE_V_LOG_FATAL;
+      return false;
+    };
+
+    // sort the faces
+    for( unsigned short l_f0 = 0; l_f0 < l_nElFas; l_f0++ ) {
+      for( unsigned short l_f1 = l_f0+1; l_f1 < l_nElFas; l_f1++ ) {
+        // get the ids of the two faces
+        std::size_t l_faId0 = io_elFa[l_el*l_nElFas + l_f0];
+        std::size_t l_faId1 = io_elFa[l_el*l_nElFas + l_f1];
+
+        // check if the id of face at position f1 is lexicographically less than the one at f0
+        bool l_less = l_faLess( l_faId1, l_faId0 );
+
+        // move faces around if not in order
+        if( l_less ) {
+          io_elFa[l_el*l_nElFas + l_f0] = l_faId1;
+          io_elFa[l_el*l_nElFas + l_f1] = l_faId0;
+
+          std::size_t l_elId0 = io_elFaEl[l_el*l_nElFas + l_f0];
+          std::size_t l_elId1 = io_elFaEl[l_el*l_nElFas + l_f1];
+
+          io_elFaEl[l_el*l_nElFas + l_f0] = l_elId1;
+          io_elFaEl[l_el*l_nElFas + l_f1] = l_elId0;
+        }
+      }
+    }
+  }
 
   for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
     // get vertex coordinates
@@ -251,12 +315,15 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                  m_veCrds,
                  m_inDiaEl );
 
-  normVesFas( m_elTy,
-              m_nEls,
-              m_veCrds,
-              m_elVe,
-              m_elFa,
-              m_elFaEl );
+  normOrder( m_elTy,
+             m_nFas,
+             m_nEls,
+             m_veCrds,
+             m_faVe,
+             m_faEl,
+             m_elVe,
+             m_elFa,
+             m_elFaEl );
 }
 
 edge_v::mesh::Mesh::~Mesh() {
