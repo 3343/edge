@@ -25,14 +25,7 @@
 
 #include "ViscoElasticity.h"
 
-// ignore shadowing issues of Eigen library
-#pragma GCC diagnostic push 
-#pragma GCC diagnostic ignored "-Wshadow"
-#if __GNUC__ >= 9
-#pragma GCC diagnostic ignored "-Wdeprecated-copy"
-#endif
-#include "submodules/eigen/Eigen/Dense"
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 void edge::seismic::setups::ViscoElasticity::elasticLame( unsigned short         i_nMechs,
                                                           double                 i_freqRef,
