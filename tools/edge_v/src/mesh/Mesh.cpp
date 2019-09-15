@@ -153,15 +153,6 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
       }
     }
   }
-
-  // recover the sorting
-  for( std::size_t l_fa = 0; l_fa < l_faPairs.size(); l_fa++ ) {
-    std::size_t l_el = io_faEl[l_fa*2 + 0];
-    std::sort( io_faEl+(l_fa*2), io_faEl+((l_fa+1)*2) );
-
-    std::sort( io_elFaEl+(l_el*l_nElFas), io_elFaEl+((l_el+1)*l_nElFas) );
-    EDGE_V_CHECK_NE( io_elFaEl[(l_el+1)*l_nElFas-1], std::numeric_limits< std::size_t >::max() );
-  }
 }
 
 void edge_v::mesh::Mesh::normOrder( t_entityType         i_elTy,
