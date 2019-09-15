@@ -283,7 +283,7 @@ void edge_v::io::Moab::getElFa( t_entityType   i_elTy,
                                      l_fas,
                                      moab::Interface::UNION );
     EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-    EDGE_V_CHECK_GT( l_els.size(), l_nElFas );
+    EDGE_V_CHECK_EQ( l_fas.size(), l_nElFas );
 
     // assign ids
     for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
@@ -298,10 +298,10 @@ void edge_v::io::Moab::getElFaEl( t_entityType   i_elTy,
 EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-settings
 #endif
   unsigned short l_nDis = CE_N_DIS( i_elTy );
-  unsigned short l_elFas = CE_N_FAS( i_elTy );
+  unsigned short l_nElFas = CE_N_FAS( i_elTy );
   moab::EntityType l_ty = getMoabType( i_elTy );
 
-  // get entities of the input type
+  // get elements
   std::vector< moab::EntityHandle > l_els;
   moab::ErrorCode l_err = m_moab->get_entities_by_type( m_root,
                                                         l_ty,
@@ -319,31 +319,30 @@ EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-setti
                                      l_fas,
                                      moab::Interface::UNION );
     EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+    EDGE_V_CHECK_EQ( l_fas.size(), l_nElFas );
 
     // face adjacent elements
-    std::vector< moab::EntityHandle > l_elFaEl;
-    l_err = m_moab->get_adjacencies( &l_fas[0],
-                                     l_fas.size(),
-                                     l_nDis,
-                                     true,
-                                     l_elFaEl,
-                                     moab::Interface::UNION );
-    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+    for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      std::vector< moab::EntityHandle > l_elFaEl;
+      l_err = m_moab->get_adjacencies( &l_fas[l_fa],
+                                       1,
+                                       l_nDis,
+                                       true,
+                                       l_elFaEl,
+                                       moab::Interface::UNION );
+      EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
-    // ensure at least one adjacent element (size includes element itself)
-    EDGE_V_CHECK_GT( l_elFaEl.size(), 1 );
+      // ensure at least one adjacent element (size includes element itself)
+      EDGE_V_CHECK( l_elFaEl.size() == 1 || l_elFaEl.size() == 2 );
 
-    // init adjacency info
-    for( unsigned short l_fa = 0; l_fa < l_elFas; l_fa++ ) {
-      o_elFaEl[l_el * l_elFas + l_fa] = std::numeric_limits< std::size_t >::max();
-    }
+      // init adjacency info
+      o_elFaEl[l_el * l_nElFas + l_fa] = std::numeric_limits< std::size_t >::max();
 
-    // store info obtained from MOAB
-    unsigned short l_fa = 0;
-    for( std::size_t l_ad = 0; l_ad < l_elFaEl.size(); l_ad++ ) {
-      if( l_elFaEl[l_ad] != l_els[l_el] ) {
-        o_elFaEl[l_el * l_elFas + l_fa] = m_moab->id_from_handle( l_elFaEl[l_ad] ) - 1;
-        l_fa++;  
+      // store info obtained from MOAB
+      for( std::size_t l_ad = 0; l_ad < l_elFaEl.size(); l_ad++ ) {
+        if( l_elFaEl[l_ad] != l_els[l_el] ) {
+          o_elFaEl[l_el * l_nElFas + l_fa] = m_moab->id_from_handle( l_elFaEl[l_ad] ) - 1;
+        }
       }
     }
   }
