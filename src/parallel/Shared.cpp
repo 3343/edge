@@ -69,7 +69,7 @@ void edge::parallel::Shared::init( unsigned int i_nWrks ) {
 }
 
 void edge::parallel::Shared::print() {
-  EDGE_LOG_INFO << "sharing shared memory setup:";
+  EDGE_LOG_INFO << "shared memory setup:";
 #ifdef PP_USE_OMP
   EDGE_LOG_INFO << "  omp-version: "
 #if _OPENMP==200505
