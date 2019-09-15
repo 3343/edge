@@ -35,6 +35,7 @@ l_kernels = [ 'time/TimeGroupStatic.cpp' ]
 l_sources = [ 'data/Expression.cpp',
               'data/Dynamic.cpp',
               'data/EntityLayout.cpp',
+              'mesh/EdgeV.cpp',
               'mesh/Regular.cpp',
               'dg/Basis.cpp',
               'io/OptionParser.cpp',
@@ -83,6 +84,7 @@ if env['tests']:
              'sc/Detections.test.cpp',
              'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
+             'mesh/EdgeV.test.cpp',
              'mesh/regular/Base.test.cpp',
              'monitor/Timer.test.cpp',
              'parallel/Shared.test.cpp',
@@ -109,6 +111,9 @@ if env['tests']:
 
   if not env['xsmm']:
     l_tests = l_tests + [ 'sc/Kernels.test.cpp' ]
+
+  if env['order'] == '3':
+    l_tests = l_tests + ['impl/advection/kernels/TimePred.test.cpp']
 
   if 'elastic' in env['equations']:
     l_tests = l_tests+['impl/seismic/common.test.cpp',

@@ -41,9 +41,7 @@
 
 #define ELPP_NO_DEFAULT_LOG_FILE
 
-// silence compilers for easylogging
-#pragma GCC system_header
-#include "submodules/easylogging/src/easylogging++.h"
+#include <easylogging++.h>
 
 #define EDGE_LOG_INFO_ALL         LOG(INFO)
 #define EDGE_LOG_INFO             LOG_IF(edge::parallel::g_rank==0&&edge::parallel::g_thread==0,INFO)

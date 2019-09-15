@@ -29,7 +29,7 @@
 #include "constants.hpp"
 #include "linalg/Domain.hpp"
 #include "linalg/HalfSpace.hpp"
-#include "submodules/pugixml/src/pugixml.hpp"
+#include <pugixml.hpp>
 
 namespace edge {
   namespace io {

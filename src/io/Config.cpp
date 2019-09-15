@@ -106,39 +106,39 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
   std::string l_xsmm = "no";
 #endif
 
-  EDGE_LOG_INFO << "sharing the build config, note that every change requires a recompile";
-  EDGE_LOG_INFO << "  running without a recompile will just use the settings of the";
-  EDGE_LOG_INFO << "  last compile and ignore changed runtime parameters:";
-  EDGE_LOG_INFO << "    EDGE version:                      " << PP_EDGE_VERSION;
-  EDGE_LOG_INFO << "    date / time of the build:          " << __DATE__      << " / " << __TIME__;
-  EDGE_LOG_INFO << "    compiler name / version:           " << l_compiler    << " / " << __VERSION__;
-  EDGE_LOG_INFO << "    inst. set build / arch runtime:    " << l_instSet     << " / " << i_build.child("arch").text().as_string();
-  EDGE_LOG_INFO << "    cfr (build / runtime):             " << PP_N_CRUNS    << " / " << i_build.child("cfr").text().as_string();
-  EDGE_LOG_INFO << "    equations       (build / runtime): " << l_equations   << " / " << i_build.child("equations").text().as_string();
-  EDGE_LOG_INFO << "    element_type    (build / runtime): " << l_elementType << " / " << i_build.child("element_type").text().as_string();
-  EDGE_LOG_INFO << "    order           (build / runtime): " << PP_ORDER      << " / " << i_build.child("order").text().as_string();
-  EDGE_LOG_INFO << "    precision       (build / runtime): " << PP_PRECISION  << " / " << i_build.child("precision").text().as_string();
-  EDGE_LOG_INFO << "    mesh type build / moab runtime:    " << l_meshType    << " / " << i_build.child("moab").text().as_string();
-  EDGE_LOG_INFO << "    xsmm            (build / runtime): " << l_xsmm        << " / " << i_build.child("xsmm").text().as_string();
+  EDGE_LOG_INFO << "build config (note that every change requires a recompile, running";
+  EDGE_LOG_INFO << "              without a recompile will just use the settings of the";
+  EDGE_LOG_INFO << "              last compile and ignore changed runtime parameters):";
+  EDGE_LOG_INFO << "  EDGE version:                      " << PP_EDGE_VERSION;
+  EDGE_LOG_INFO << "  date / time of the build:          " << __DATE__      << " / " << __TIME__;
+  EDGE_LOG_INFO << "  compiler name / version:           " << l_compiler    << " / " << __VERSION__;
+  EDGE_LOG_INFO << "  inst. set build / arch runtime:    " << l_instSet     << " / " << i_build.child("arch").text().as_string();
+  EDGE_LOG_INFO << "  cfr (build / runtime):             " << PP_N_CRUNS    << " / " << i_build.child("cfr").text().as_string();
+  EDGE_LOG_INFO << "  equations       (build / runtime): " << l_equations   << " / " << i_build.child("equations").text().as_string();
+  EDGE_LOG_INFO << "  element_type    (build / runtime): " << l_elementType << " / " << i_build.child("element_type").text().as_string();
+  EDGE_LOG_INFO << "  order           (build / runtime): " << PP_ORDER      << " / " << i_build.child("order").text().as_string();
+  EDGE_LOG_INFO << "  precision       (build / runtime): " << PP_PRECISION  << " / " << i_build.child("precision").text().as_string();
+  EDGE_LOG_INFO << "  mesh type build / moab runtime:    " << l_meshType    << " / " << i_build.child("moab").text().as_string();
+  EDGE_LOG_INFO << "  xsmm            (build / runtime): " << l_xsmm        << " / " << i_build.child("xsmm").text().as_string();
   EDGE_LOG_INFO << "some derived parameters: ";
   EDGE_LOG_INFO << "  #element modes: " << N_ELEMENT_MODES;
 #if defined PP_USE_MEMKIND
   EDGE_LOG_INFO << "  memkind version: " << memkind_get_version();
 #endif
-  EDGE_LOG_INFO << "  memory alignment (bytes): ";
-  EDGE_LOG_INFO << "    stack base pointers:   " << ALIGNMENT.BASE.STACK;
-  EDGE_LOG_INFO << "    heap base pointers:    " << ALIGNMENT.BASE.HEAP;
-  EDGE_LOG_INFO << "    cruns:                 " << ALIGNMENT.CRUNS;
-  EDGE_LOG_INFO << "    private element modes: " << ALIGNMENT.ELEMENT_MODES.PRIVATE;
-  EDGE_LOG_INFO << "    shared element modes:  " << ALIGNMENT.ELEMENT_MODES.SHARED;
+  EDGE_LOG_INFO << "memory alignment (bytes): ";
+  EDGE_LOG_INFO << "  stack base pointers:   " << ALIGNMENT.BASE.STACK;
+  EDGE_LOG_INFO << "  heap base pointers:    " << ALIGNMENT.BASE.HEAP;
+  EDGE_LOG_INFO << "  cruns:                 " << ALIGNMENT.CRUNS;
+  EDGE_LOG_INFO << "  private element modes: " << ALIGNMENT.ELEMENT_MODES.PRIVATE;
+  EDGE_LOG_INFO << "  shared element modes:  " << ALIGNMENT.ELEMENT_MODES.SHARED;
 }
 
 void edge::io::Config::printConfig() {
-  EDGE_LOG_INFO << "printing the runtime config, just for you!";
+  EDGE_LOG_INFO << "runtime config:";
 
   EDGE_LOG_INFO << "  synchronization:";
   EDGE_LOG_INFO << "    max_int (possibly using default settings): " << m_syncMaxInt;
-  EDGE_LOG_INFO << "  here's the mesh:";
+  EDGE_LOG_INFO << "  mesh:";
 #ifdef PP_T_MESH_REGULAR
   EDGE_LOG_INFO << "    n_elements: ";
   EDGE_LOG_INFO << "      x: " << m_nElementsX;
@@ -179,13 +179,12 @@ void edge::io::Config::printConfig() {
     }
   }
 
-  EDGE_LOG_INFO << "  more? get ready for the setups:";
+  EDGE_LOG_INFO << "  setups:";
   for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
     std::string l_pre = "    initial_values #" + std::to_string(l_cr) + ": ";
     printMultiLine( l_pre,
                     m_initValsExprStrs[l_cr].c_str() );
   }
-  EDGE_LOG_INFO << "  alright, we are sharing parameters again:";
   EDGE_LOG_INFO << "    end_time: " << m_endTime;
 
   if( m_waveFieldType != "" ) {
@@ -211,7 +210,7 @@ void edge::io::Config::printConfig() {
     else            l_type = "face quad";
 
     if( m_recvNames[l_rt].size() > 0 ) {
-      EDGE_LOG_INFO << "  we have " << m_recvNames[l_rt].size() << " " << l_type << " receivers in the config: ";
+      EDGE_LOG_INFO << "  found " << m_recvNames[l_rt].size() << " " << l_type << " receivers in the config: ";
       EDGE_LOG_INFO << "    sampling frequency: " << m_recvFreq[l_rt];
       EDGE_LOG_INFO << "    path to out-directory: "<< m_recvPath[l_rt];
     }
