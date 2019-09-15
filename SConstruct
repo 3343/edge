@@ -48,7 +48,7 @@ def getEdgeVersion():
 ##
 # Adjust the given variable by turning relative paths to absolute paths
 #
-# i_var variable which is adjusted
+# @param i_var variable which is adjusted
 ##
 def adjustPath( i_var ):
   l_var = i_var
@@ -211,6 +211,10 @@ vars.AddVariables(
   PackageVariable( 'moab',
                    'Enables the use of MOAB (The Mesh-Oriented datABase) and thus support for unstructured meshes if set. Otherwise regular meshes are used.',
                    'no' ),
+  PackageVariable( 'edge_v',
+                   'Location of EDGE-V installation.',
+                   'tools/edge_v/edge_v' ),
+
   PackageVariable( 'hugetlbfs',
                    'Enables the use of libhugetlbfs.',
                    'no' ),
@@ -254,6 +258,9 @@ print( "#####            #####       #####      #####       #####            ###
 print( "###############  ###############         ###############   ###############" )
 print( "###############  ##############           #############    ###############" )
 print( "##########################################################################" )
+print( ""                                                                           )
+print( "               EDGE is available from: https://dial3343.org"                )
+print( ""                                                                           )
 
 # print welcome message
 print( 'Running build script of EDGE.' )
@@ -269,7 +276,7 @@ env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
-for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab', 'hugetlbfs' ]:
+for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab', 'edge_v', 'hugetlbfs' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler
@@ -492,7 +499,7 @@ if compilers == 'clang':
 if 'mpi' in env['parallel']:
   env.Append( CPPDEFINES = ['PP_USE_MPI'] )
 
-# add current path to seach path
+# add current path to search path
 env.Append( CPPPATH = ['#', '#/src'] )
 
 # add default flags

@@ -5,6 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2015-2018, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
@@ -40,6 +41,10 @@ l_objects = []
 # add pugixml
 l_objects.append( env.Object( 'pugixml/src/pugixml.cpp',
                                CXXFLAGS = env['CXXFLAGS']+ ['-Wno-error'] ) )
+env.Append( CXXFLAGS = [ ('-isystem', 'submodules/pugixml/src') ] )
+
+# add Eigen
+env.Append( CXXFLAGS = [ ('-isystem', 'submodules/eigen') ] )
 
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
@@ -103,6 +108,17 @@ if env['moab'] != False:
 if env['moab'] == False:
   env.AppendUnique( CPPDEFINES=['PP_T_MESH_REGULAR'] )
 
+# forward EDGE-V
+if env['edge_v'] != False:
+  if env['edge_v'] != True:
+    env.AppendUnique( CPPPATH=[ env['edge_v']+'/include'] )
+    env.AppendUnique( CPPPATH=[ env['edge_v']+'/include/third'] )
+    env.AppendUnique( LIBPATH=[ env['edge_v']+'/lib']     )
+
+  conf.CheckLibWithHeaderFlags( 'edge_v', 'edge_v/edge_v.h' )
+else:
+  warnings.warn( 'Warning: Could not find EDGE-V. There is no fallback in place.' )
+
 # create visit writer separately to get around "format string" warnings
 env.sources.append( env.Object( 'visit_writer/visit_writer.cpp',
                                 CXXFLAGS = env['CXXFLAGS']+
@@ -114,12 +130,18 @@ env.sources.append( env.Object( 'visit_writer/visit_writer.cpp',
 # create easylogging separately to get around shadow warnings
 if env['easylogging'] != False:
   env.AppendUnique( CPPDEFINES=['PP_USE_EASYLOGGING'] )
-  l_def = ['ELPP_NO_DEFAULT_LOG_FILE']
-  if 'omp' in env['parallel']: l_def=l_def+['ELPP_THREAD_SAFE']
-  env.sources.append( env.Object( 'easylogging/src/easylogging++.cc',
-                                  CXXFLAGS   = env['CXXFLAGS']+
-                                              ['-Wno-shadow'],
-                                  CPPDEFINES = l_def ) )
+  l_el = {}
+  l_el['def'] = ['ELPP_NO_DEFAULT_LOG_FILE']
+  if 'omp' in env['parallel']:
+    l_el['def']=l_el['def']+['ELPP_THREAD_SAFE']
+  l_el['obj'] = env.Object( 'easylogging/src/easylogging++.cc',
+                            CXXFLAGS   = env['CXXFLAGS']+
+                                        ['-Wno-shadow'],
+                            CPPDEFINES = l_el['def'] )
+  l_easyLogging = env.StaticLibrary( 'easylogging/easylogging',
+                                     l_el['obj'] )
+  env.Append( LIBS = l_easyLogging )
+  env.Append( CXXFLAGS = [ ('-isystem', 'submodules/easylogging/src') ] )
 
 # compile numerical libs separately
 l_numLibs = [ 'FastGL/fastgl.cpp' ]
@@ -131,7 +153,7 @@ for l_lib in l_numLibs:
                                              ['-Wno-shadow']+
                                              ['-Wno-unused-variable'] ) )
 
-# compile default soruces
+# compile default sources
 for l_object in l_objects:
   env.sources.append( l_object )
 
