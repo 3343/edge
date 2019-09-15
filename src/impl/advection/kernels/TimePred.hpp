@@ -150,7 +150,38 @@ class edge::advection::kernels::TimePred {
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_tInt[l_md][l_cr] += l_scalar * o_der[l_de][l_md][l_cr];
       }
+    }
 
+    /**
+     * Integrates the DOFs over the sub-interval [0, dt].
+     *
+     * @param i_dt time step.
+     * @param i_ders derivatives.
+     * @param o_tInt will be set to time-integrated DOFs.
+     **/
+    void integrate( TL_T_REAL i_dt,
+                    TL_T_REAL i_ders[TL_O_TI][TL_N_MDS][TL_N_CRS],
+                    TL_T_REAL o_tInt[TL_N_MDS][TL_N_CRS] ) {
+      // scaling in the time integration
+      TL_T_REAL l_sca = i_dt;
+
+      // init time integrated dofs
+      for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+          o_tInt[l_md][l_cr] = l_sca * i_ders[0][l_md][l_cr];
+
+      // compute the time integrated dofs
+      for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
+        // update scaling
+        l_sca *= i_dt / (l_de+1);
+
+        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            // update time DOFs
+            o_tInt[l_md][l_cr] += l_sca * i_ders[l_de][l_md][l_cr];
+          }
+        }
+      }
     }
 };
 
