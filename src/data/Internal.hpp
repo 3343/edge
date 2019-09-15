@@ -28,7 +28,7 @@
 
 #include <functional>
 
-#include "internal.hpp"
+#include "../internal.hpp"
 #include "common.hpp"
 #include "io/logging.h"
 #include "parallel/Shared.h"
