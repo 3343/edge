@@ -1,3 +1,6 @@
+##
+# Build
+##
 *.dblite
 config.log
 .sconf_temp/
@@ -8,3 +11,8 @@ config.log
 ##
 __pycache__/
 *.py[cod]
+
+##
+# Mac
+##
+.DS_Store
