@@ -72,9 +72,6 @@ class edge::advection::solvers::AderDg {
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
-    //! number of quantities
-    static unsigned short const TL_N_QTS = 1;
-
     //! number of DG modes
     static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
@@ -186,12 +183,13 @@ class edge::advection::solvers::AderDg {
      *
      * @param i_first first element considered.
      * @param i_nEls number of elements.
+     * @param i_firstTs true if this is the first time step of every rate-2 ts pair.
      * @param i_dt time step.
      * @param i_elChars element characteristics.
      * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers.
      * @param io_dofsDg DG DOFs which will be updates with the elements' local contributions.
-     * @param o_tDofsDg temporary DG DOFs (buffers or DOFs and buffers), which will be updated.
+     * @param o_tDofsDg time integrated DG DOFs (==, <, >) which will be set or updated.
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_CHARS_EL element characteristics, offering sparse type .spType.
@@ -200,12 +198,13 @@ class edge::advection::solvers::AderDg {
               typename TL_T_CHARS_EL >
     void local( TL_T_LID                                i_first,
                 TL_T_LID                                i_nEls,
+                bool                                    i_firstTs,
                 double                                  i_dt,
                 TL_T_CHARS_EL  const                   *i_elChars,
                 TL_T_REAL      const                  (*i_starM)[TL_N_DIS],
                 TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
-                TL_T_REAL                             (*io_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL            (* const * const   o_tDofsDg[2])[TL_N_MDS][TL_N_CRS] ) {
+                TL_T_REAL                             (*io_dofsDg)[1][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL            (* const * const   o_tDofsDg[3])[TL_N_MDS][TL_N_CRS] ) {
       // iterate over all elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // compute ader time prediction
@@ -215,6 +214,28 @@ class edge::advection::solvers::AderDg {
                     io_dofsDg[l_el][0],
                     l_derBuffer,
                     o_tDofsDg[0][l_el][0] );
+
+        // update summed time integrated DOFs, if an adjacent element has a larger time step
+        if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
+          // reset, if required
+          if( i_firstTs ) {
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                o_tDofsDg[1][l_el][0][l_md][l_cr] = 0;
+          }
+
+          // add tDofs of this time step
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+              o_tDofsDg[1][l_el][0][l_md][l_cr] += o_tDofsDg[0][l_el][0][l_md][l_cr];
+        }
+
+        // compute [0, 0.5dt] time integrated DOFs, if an adjacent element has a smaller time step
+        if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_GT]) == C_LTS_EL[EL_INT_GT] ) {
+          m_time->integrate( TL_T_REAL(0.5*i_dt),
+                             l_derBuffer,
+                             o_tDofsDg[2][l_el][0] );
+        }
 
         // compute volume contribution
         m_volInt->apply( i_starM[l_el],
@@ -233,6 +254,7 @@ class edge::advection::solvers::AderDg {
      *
      * @param i_first first element considered.
      * @param i_nEls number of elements.
+     * @param i_firstTs true if this is the first time step of every rate-2 ts pair.
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_fluxSolvers flux solvers.
@@ -240,7 +262,7 @@ class edge::advection::solvers::AderDg {
      * @param i_elFaEl elements' adjacent elements (faces as bridge).
      * @param i_fIdElFaEl local face ids of face-neighboring elements.
      * @param i_vIdElFaEl local vertex ids w.r.t. the shared face from the neighboring elements' perspective.
-     * @param i_tDofs temporary DOFs 1) buffers or 2) DOFs and buffers, which will be used for the elements' updates.
+     * @param i_tDofs time integrated DG DOFs (==, <, >).
      * @param io_dofs DOFs which will be updated with neighboring elements' contribution.
      *
      * @paramt TL_T_LID integral type of local ids.
@@ -252,6 +274,7 @@ class edge::advection::solvers::AderDg {
               typename TL_T_CHARS_EL >
     void neigh( TL_T_LID                                i_first,
                 TL_T_LID                                i_nEls,
+                bool                                    i_firstTs,
                 TL_T_CHARS_FA  const                   *i_faChars,
                 TL_T_CHARS_EL  const                   *i_elChars,
                 TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
@@ -259,8 +282,8 @@ class edge::advection::solvers::AderDg {
                 TL_T_LID       const                  (*i_elFaEl)[TL_N_FAS],
                 unsigned short const                  (*i_fIdElFaEl)[TL_N_FAS],
                 unsigned short const                  (*i_vIdElFaEl)[TL_N_FAS],
-                TL_T_REAL            (* const * const   i_tDofs[2])[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                             (*io_dofs)[TL_N_QTS][TL_N_MDS][TL_N_CRS] ) {
+                TL_T_REAL            (* const * const   i_tDofs[3])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL                             (*io_dofs)[1][TL_N_MDS][TL_N_CRS] ) {
       // iterate over elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
@@ -276,6 +299,32 @@ class edge::advection::solvers::AderDg {
             l_ne = l_el;
           }
 
+          // assemble the neighboring time integrated DOFs
+          TL_T_REAL l_tDofs[1][TL_N_MDS][TL_N_CRS];
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              // element and face-adjacent one have an equal time step
+              if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                l_tDofs[0][l_md][l_cr] = i_tDofs[0][l_ne][0][l_md][l_cr];
+              }
+              // element has a greater time step than the face-adjacent one
+              else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+                l_tDofs[0][l_md][l_cr] = i_tDofs[1][l_ne][0][l_md][l_cr];
+              }
+              // element has a time step less than the adjacent one
+              else {
+                EDGE_CHECK_EQ( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]), C_LTS_AD[l_fa][AD_LT] );
+
+                if( i_firstTs ) {
+                  l_tDofs[0][l_md][l_cr] = i_tDofs[2][l_ne][0][l_md][l_cr];
+                }
+                else {
+                  l_tDofs[0][l_md][l_cr] = i_tDofs[0][l_ne][0][l_md][l_cr] - i_tDofs[2][l_ne][0][l_md][l_cr];
+                }
+              }
+            }
+          }
+
           // default are outflow boundaries
           unsigned short l_vId = std::numeric_limits< unsigned short >::max();
           unsigned short l_fId = std::numeric_limits< unsigned short >::max();
@@ -289,7 +338,7 @@ class edge::advection::solvers::AderDg {
                             l_vId,
                             l_fId,
                             i_fluxSolvers[l_el][TL_N_FAS+l_fa],
-                            i_tDofs[0][l_ne],
+                            l_tDofs,
                             io_dofs[l_el] );
       }
     }

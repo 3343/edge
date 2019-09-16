@@ -24,9 +24,8 @@
 // advection equation performs two steps per time step
 // 0) time prediction
 // 1) update
-// 2) limit
-const unsigned short N_STEPS_PER_UPDATE=3;
-const unsigned short N_ENTRIES_CONTROL_FLOW=7;
+const unsigned short N_STEPS_PER_UPDATE=2;
+const unsigned short N_ENTRIES_CONTROL_FLOW=8;
 
 #if PP_ORDER > 9
 #error not supported

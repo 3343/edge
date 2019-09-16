@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016, Regents of the University of California
  * All rights reserved.
  *
@@ -24,13 +25,14 @@ if( i_step == 0 ) {
 #if PP_ORDER == 1
   edge::advection::solvers::FiniteVolume::timeInt( i_first,
                                                    i_size,
-                                                   m_dT,
+                                                   m_dt,
                                                    m_internal.m_elementModePrivate1,
                                                    m_internal.m_globalShared3[0] );
 #else
   m_internal.m_globalShared4[0]->local(  i_first,
                                          i_size,
-                                         m_dT,
+                                         getUpdatesSync()%2 == 0,
+                                         m_dt,
                                          m_internal.m_elementChars,
                                          m_internal.m_elementShared2,
                                          m_internal.m_elementShared3,
@@ -49,6 +51,7 @@ else if( i_step == 1 ) {
 #else
   m_internal.m_globalShared4[0]->neigh( i_first,
                                         i_size,
+                                        getUpdatesSync()%2 == 0,
                                         m_internal.m_faceChars,
                                         m_internal.m_elementChars,
                                         m_internal.m_elementShared3,

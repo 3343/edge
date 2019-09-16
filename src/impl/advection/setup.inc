@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -23,21 +24,22 @@
 
 // allocate flex data for time buffers and DOFs
 {
-  int_spType  l_spTypes[1] = { C_LTS_EL[t_ltsEl::EL_DOFS] };
-  std::size_t l_spSizes[1] = { 1 };
+  int_spType  l_spTypes[2] = { C_LTS_EL[t_ltsEl::EL_INT_LT], C_LTS_EL[t_ltsEl::EL_INT_GT] };
+  std::size_t l_spSizes[2] = { 1,                            1                            };
 
   real_base (**l_raw)[N_ELEMENT_MODES][N_CRUNS];
 
   l_raw = l_dynMem.flex<
     real_base [N_ELEMENT_MODES][N_CRUNS] >( l_internal.m_nElements,
-                                            1,
+                                            2,
                                             1,
                                             l_spTypes,
                                             l_spSizes,
                                             l_internal.m_elementChars );
 
   l_internal.m_globalShared3[0] = l_raw;
-  l_internal.m_globalShared3[1] = l_raw + l_internal.m_nElements;
+  l_internal.m_globalShared3[1] = l_raw +   l_internal.m_nElements;
+  l_internal.m_globalShared3[2] = l_raw + 2*l_internal.m_nElements;
 }
 
 #ifdef PP_USE_MPI
@@ -53,7 +55,7 @@
 
 // setup shared memory parallelization
 for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
-  int_spType l_spTypes[2] = { LIMIT, EXTREMA };
+  unsigned short l_nTgs = l_enLayouts[2].timeGroups.size();
 
   // local, inner-elements
   l_shared.regWrkRgn( l_tg,
@@ -61,8 +63,8 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_tg * N_ENTRIES_CONTROL_FLOW + 0,
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_tg,
-                      1, l_spTypes, l_internal.m_elementChars );
+                      l_nTgs - l_tg,
+                      0, nullptr, l_internal.m_elementChars );
 
   // local, send-elements
   l_shared.regWrkRgn( l_tg,
@@ -72,28 +74,28 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_enLayouts[2].timeGroups.size() + l_tg,
-                      1, l_spTypes, l_internal.m_elementChars );
+                      l_nTgs*2 - l_tg,
+                      0, nullptr, l_internal.m_elementChars );
 
   // neigh, inner-elements
   l_shared.regWrkRgn( l_tg,
                       1,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 3,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 6,
                       l_enLayouts[2].timeGroups[l_tg].inner.first,
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_tg,
-                      2, l_spTypes, l_internal.m_elementChars );
+                      l_nTgs - l_tg,
+                      0, nullptr, l_internal.m_elementChars );
 
   // neigh, send-elements
   l_shared.regWrkRgn( l_tg,
                       1,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 4,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 7,
                       l_enLayouts[2].timeGroups[l_tg].inner.first+
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_enLayouts[2].timeGroups.size() + l_tg,
-                      2, l_spTypes, l_internal.m_elementChars );
+                      l_nTgs*2 - l_tg,
+                      0, nullptr, l_internal.m_elementChars );
 }
 
 // initialize DOFs
