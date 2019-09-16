@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -36,36 +37,36 @@ namespace edge {
 }
 
 class edge::time::TimeGroupStatic {
-  //private:
-    //! rate of the cluster
-//    const int_ts m_rate;
+  private:
+    //! multiple of the fundamental time step which defines the time step of this group
+    unsigned short m_funMul;
 
-    //! fundamental time step multiple of the cluster
-    const int_ts m_funMult;
+    //! divisor of the largest LTS group's time step which results in this groups time step
+    unsigned short m_maxDiv;
 
     //! number of performend updates since last synchronization
-    volatile int_ts m_updatesSync;
+    volatile std::size_t m_nTsSync;
 
     //! total number of performed updates
-    volatile int_ts m_updatesPer;
+    volatile std::size_t m_nTsPer;
 
-    //! number of required updates until synchronization
-    int_ts m_updatesReq;
+    //! number of required full time steps before synchronization phase
+    std::size_t m_nTsReqFull;
 
-    //! general time step for all but last update
-    double m_dTgen;
+    //! full time step of the group (without synchronization adjustments)
+    double m_dtFull;
 
-    //! final time step
-    double m_dTfin;
+    //! time step used during the synchronization phase
+    double m_dtSync;
 
     //! time step of the current update
-    volatile double m_dT;
+    volatile double m_dt;
 
     //! covered simulation time
     double m_covSimTime;
 
-    //! elements/faces under control of this cluster
-    data::Internal &m_internal;
+    //! internal state
+    data::Internal & m_internal;
 
     /**
      * Sets the time step for the current update.
@@ -76,21 +77,21 @@ class edge::time::TimeGroupStatic {
     /**
      * Constructor.
      *
-     * @param i_rate local rate of this cluster.
-     * @param i_funMult global rate with respect to the fundamental time step.
-     * @param i_internal data under control of this cluster.
+     * @param i_nTgs number of time groups.
+     * @param i_tgId id of this time group.
+     * @param i_internal internal data.
      **/
-    TimeGroupStatic( int_ts          i_rate,
-                     int_ts          i_funMult,
-                     data::Internal &i_internal );
+    TimeGroupStatic( unsigned short   i_nTgs,
+                     unsigned short   i_tgId,
+                     data::Internal & i_internal );
 
     /**
      * Sets up the cluster for iterations until the given synchronization point.
      *
-     * @param i_dTfun fundamental time step.
+     * @param i_dtFun fundamental time step.
      * @param i_time time to advance forward in time.
      **/
-    void setUp( double i_dTfun,
+    void setUp( double i_dtFun,
                 double i_time );
 
     /**
@@ -129,14 +130,14 @@ class edge::time::TimeGroupStatic {
      *
      * @return number of updates since last synchronization
      **/
-    int_ts getUpdatesSync() { return m_updatesSync; };
+    int_ts getUpdatesSync() { return m_nTsSync; };
 
     /**
      * Gets the number of updates the time group performed.
      *
      * @return number of performed updates.
      **/
-    int_ts getUpdatesPer() { return m_updatesPer; }
+    int_ts getUpdatesPer() { return m_nTsPer; }
 
     /**
      * Gets the covered simulation time.
@@ -146,21 +147,21 @@ class edge::time::TimeGroupStatic {
     double getCovSimTime() { return m_covSimTime; };
 
     /**
-     * Checks if the cluster is performing its last time step
+     * Checks if the time group is performing its last time step
      *
-     * @return true if the cluster is performing its last time step. false otherwise
+     * @return true if the group is performing its last time step. false otherwise
      **/
     bool lastTimeStep() const {
-      return m_updatesReq == 1;
+      return (m_nTsSync == m_nTsReqFull + m_maxDiv - 1 );
     }
 
     /**
-     * Checks if the cluster reached the synchronization time.
+     * Checks if the time group reached the synchronization time.
      *
-     * @return true if the cluster reached the synchronization time. false otherwise.
+     * @return true if the group reached the synchronization time. false otherwise.
      **/
     bool finished() const {
-      return m_updatesReq == 0;
+      return (m_nTsSync == m_nTsReqFull + m_maxDiv );
     }
 
     /**

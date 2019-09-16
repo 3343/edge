@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -38,38 +39,67 @@ namespace edge {
 }
 
 class edge::time::Manager {
-  //private:
+  private:
     //! fundamental time step
     const double m_dTfun;
 
     //! shared memory parallelization
-    parallel::Shared &m_shared;
+    parallel::Shared & m_shared;
 
     //! mpi parallelization
-    parallel::Mpi &m_mpi;
+    parallel::Mpi & m_mpi;
 
     //! receiver output
-    io::Receivers &m_recvs;
+    io::Receivers & m_recvs;
 
     //! receiver output at sub-faces
-    io::ReceiversSf<real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS> &m_recvsSf;
+    io::ReceiversSf< real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS > & m_recvsSf;
 
     //! clusters under control of the time manager
     std::vector< TimeGroupStatic* > m_timeGroups;
 
     //! control flow of the scheme
-    unsigned short m_cflow[N_ENTRIES_CONTROL_FLOW];
+    unsigned short (*m_cflow)[N_ENTRIES_CONTROL_FLOW];
 
     //! true if the manager reached the desired synchronization point
     volatile bool m_finished = false;
 
-    //! scheduling loop
+    /**
+     * Checks if the time group performed an even number of time steps (in-progress time steps are ignored).
+     *
+     * @return true if even, false if not.
+     **/
+    bool getEven( unsigned short i_tg );
+
+    /**
+     * Checks if the previous time group performed an odd number of time steps (in-process time steps are ignored).
+     * Always true, if there is no previous time group.
+     *
+     * @return true if odd, false if not.
+     **/
+    bool getPrevOdd( unsigned short i_tg );
+
+    /**
+     * Checks if the previous time group performed an even number of time steps (in-process time steps are ignored).
+     * Always true, if there is no previous time group.
+     *
+     * @return true if even, false if not.
+     **/
+    bool getPrevEven( unsigned short i_tg );
+
+    /**
+     * Runs scheduling tasks.
+     **/
     void schedule();
 
-    //! communication loop
+    /**
+     * Runs communication tasks.
+     **/
     void communicate();
 
-    //! computational loop
+    /**
+     * Performs computations.
+     **/
     void compute();
 
   public:
@@ -79,25 +109,24 @@ class edge::time::Manager {
      * @param i_dT fundamental time step.
      * @param i_shared shared memory parallelization.
      * @param i_mpi mpi parallelization.
+     * @param i_timeGroups time groups
      * @param i_recvs modal receivers.
      * @param i_recvsSf receivers at sub-faces.
      **/
-    Manager(       double                              i_dT,
-                   parallel::Shared                    &i_shared,
-                   parallel::Mpi                       &i_mpi,
-                   io::Receivers                       &i_recvs,
-                   io::ReceiversSf< real_base,
-                                    T_SDISC.ELEMENT,
-                                    ORDER,
-                                    N_CRUNS >        &i_recvsSf ):
-     m_dTfun(i_dT), m_shared(i_shared), m_mpi(i_mpi), m_recvs(i_recvs), m_recvsSf(i_recvsSf){};
+    Manager( double                               i_dt,
+             parallel::Shared                   & i_shared,
+             parallel::Mpi                      & i_mpi,
+             std::vector< TimeGroupStatic >     & i_timeGroups,
+             io::Receivers                      & i_recvs,
+             io::ReceiversSf< real_base,
+                              T_SDISC.ELEMENT,
+                              ORDER,
+                              N_CRUNS >         & i_recvsSf );
 
     /**
-     * Adds a time group to the time manager.
-     *
-     * @param i_timeGroup time group to add.
+     * Destructor.
      **/
-    void add( TimeGroupStatic *i_timeGroup );
+    ~Manager();
 
     /**
      * Advances in time for the given time.

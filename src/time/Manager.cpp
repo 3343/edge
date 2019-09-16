@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -37,8 +38,55 @@ void edge::time::Manager::schedule() {
 #endif
 }
 
-void edge::time::Manager::add( TimeGroupStatic *i_timeGroup ) {
-  m_timeGroups.push_back( i_timeGroup );
+edge::time::Manager::Manager( double                               i_dt,
+                              parallel::Shared                   & i_shared,
+                              parallel::Mpi                      & i_mpi,
+                              std::vector< TimeGroupStatic  >    & i_timeGroups,
+                              io::Receivers                      & i_recvs,
+                              io::ReceiversSf< real_base,
+                                               T_SDISC.ELEMENT,
+                                               ORDER,
+                                               N_CRUNS >         & i_recvsSf ): m_dTfun(   i_dt      ),
+                                                                                m_shared(  i_shared  ),
+                                                                                m_mpi(     i_mpi     ),
+                                                                                m_recvs(   i_recvs   ),
+                                                                                m_recvsSf( i_recvsSf ) {
+  for( std::size_t l_tg = 0; l_tg < i_timeGroups.size(); l_tg++ ) {
+    m_timeGroups.push_back( &i_timeGroups[l_tg] );
+  }
+  m_cflow = ( unsigned short(*)[N_ENTRIES_CONTROL_FLOW] ) new unsigned short[i_timeGroups.size() * N_ENTRIES_CONTROL_FLOW];
+}
+
+edge::time::Manager::~Manager() {
+  delete[] m_cflow;
+}
+
+bool edge::time::Manager::getEven( unsigned short i_tg ) {
+  return m_timeGroups[i_tg]->getUpdatesSync() % 2 == 0;
+}
+
+bool edge::time::Manager::getPrevOdd( unsigned short i_tg ) {
+  bool l_odd = true;
+
+  if( i_tg > 0 ) {
+    if( m_timeGroups[i_tg-1]->getUpdatesSync() % 2 == 0 ) {
+      l_odd = false;
+    }
+  }
+
+  return l_odd;
+}
+
+bool edge::time::Manager::getPrevEven( unsigned short i_tg ) {
+  bool l_even = true;
+
+  if( i_tg > 0 ) {
+    if( m_timeGroups[i_tg-1]->getUpdatesSync() % 2 == 1 ) {
+      l_even = false;
+    }
+  }
+
+  return l_even;
 }
 
 void edge::time::Manager::communicate() {
@@ -102,8 +150,10 @@ void edge::time::Manager::simulate( double i_time ) {
   m_shared.resetStatus( parallel::Shared::WAI );
 
   // reset control flow
-  for( unsigned short l_cf = 0; l_cf < N_ENTRIES_CONTROL_FLOW; l_cf++ ) {
-    m_cflow[l_cf] = std::numeric_limits< unsigned short >::max();
+  for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+    for( unsigned short l_cf = 0; l_cf < N_ENTRIES_CONTROL_FLOW; l_cf++ ) {
+      m_cflow[l_tg][l_cf] = std::numeric_limits< unsigned short >::max();
+    }
   }
 
   // we are not finished until the scheduling threads decides so
