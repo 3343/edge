@@ -364,7 +364,7 @@ class edge::seismic::solvers::AderDg {
         // compute ADER time integration
         m_kernels->m_time.ck( i_dt,
                               m_starE[l_el],
-                              m_starA[l_el],
+                              (TL_N_RMS > 0) ? m_starA[l_el] : nullptr,
                               m_srcA+l_el*std::size_t(TL_N_RMS),
                               io_dofsE[l_el],
                               l_dofsA,
@@ -397,7 +397,7 @@ class edge::seismic::solvers::AderDg {
 
         // compute volume integral
         m_kernels->m_volInt.apply( m_starE[l_el],
-                                   m_starA[l_el],
+                                   (TL_N_RMS > 0) ? m_starA[l_el] : nullptr,
                                    m_srcA+l_el*std::size_t(TL_N_RMS),
                                    o_tDofsDg[0][l_el],
                                    l_tDofsA,
@@ -425,7 +425,7 @@ class edge::seismic::solvers::AderDg {
         TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
         // call kernel
         m_kernels->m_surfInt.local( m_fsE[0][l_el],
-                                    m_fsA[0][l_el],
+                                    (TL_N_RMS > 0) ? m_fsA[0][l_el] : nullptr,
                                     o_tDofsDg[0][l_el],
                                     io_dofsE[l_el],
                                     l_dofsA,
@@ -770,7 +770,7 @@ class edge::seismic::solvers::AderDg {
                                         l_vId,
                                         l_fId,
                                         m_fsE[1][l_el][l_fa],
-                                        m_fsA[1][l_el][l_fa],
+                                        (TL_N_RMS > 0) ? m_fsA[1][l_el][l_fa] : nullptr,
                                         i_tDofsDg[0][l_ne],
                                         io_dofsE[l_el],
                                         l_upA,
