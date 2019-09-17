@@ -49,6 +49,10 @@ env.Append( CXXFLAGS = [ ('-isystem', 'submodules/eigen') ] )
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
 
+# disable exprtk-optimizations in debug builds
+if 'debug' in env['mode']:
+  env.Append( CXXFLAGS = ['-Dexprtk_disable_enhanced_features'] )
+
 # forward libxsmm
 if env['xsmm'] != False:
   if env['xsmm'] != True:
