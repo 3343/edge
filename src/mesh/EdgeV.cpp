@@ -153,7 +153,7 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   // allocate memory for relative time steps and init with GTS
   m_relDt = new double[m_nTgs+1];
-  m_relDt[0] = 0;
+  m_relDt[0] = 1;
   m_relDt[1] = std::numeric_limits< double >::max();
 
   if( m_nTgs > 1 ) {
