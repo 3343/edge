@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2016, Regents of the University of California
 # All rights reserved.
 #
@@ -34,7 +35,7 @@ import numpy
 from matplotlib.backends.backend_pdf import PdfPages
 
 # set up logger
-logging.basicConfig( level=logging.DEBUG,
+logging.basicConfig( level=logging.INFO,
                      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' )
 # command line arugments
 l_parser    = argparse.ArgumentParser( description='Produces convergence plots.' )
@@ -108,7 +109,7 @@ l_regExp = { 'order':     l_arguments['xregexp'].replace( "ORDER_TAG", "([0-9]+)
 l_simRes = {}
 
 # extract results
-for l_file in xrange(len(l_files)):
+for l_file in range(len(l_files)):
   l_order = re.search(l_regExp['order'], l_files[l_file]).group(1)
   l_ref   = re.search(l_regExp['ref'], l_files[l_file]).group(1)
 
@@ -119,12 +120,12 @@ for l_file in xrange(len(l_files)):
     l_simRes[l_order][l_ref] = {}
 
   # read the results
-  with open(l_arguments['xdir']+'/'+l_files[l_file]) as l_xmlFile:
+  with open(l_arguments['xdir']+'/'+l_files[l_file], 'rb') as l_xmlFile:
     l_simRes[l_order][l_ref] = xmltodict.parse(l_xmlFile)
 
 # get number of quantities and cfrs
-l_firstKey = [ l_simRes.keys()[0] ]
-l_firstKey = l_firstKey + [ l_simRes[l_firstKey[0]].keys()[0] ]
+l_firstKey = [ list(l_simRes.keys())[0] ]
+l_firstKey = l_firstKey + [ list(l_simRes[l_firstKey[0]].keys())[0] ]
 
 l_nQs  = len(l_simRes[l_firstKey[0]][l_firstKey[1]]['error_norms']['l1']['q'])
 
@@ -155,10 +156,10 @@ for l_enorm in ['l1', 'l2', 'linf']:
   l_char[l_enorm] = []
   l_yVals[l_enorm] = []
   for l_order in l_simRes.keys():
-    for l_q in xrange(l_nQs):
+    for l_q in range(l_nQs):
       if( l_q not in l_arguments['qfilter'] ):
         continue
-      for l_cfr in xrange(l_nCfr):
+      for l_cfr in range(l_nCfr):
         if( l_cfr not in l_arguments['cfrfilter'] ):
           continue
         # get y vals
@@ -187,7 +188,7 @@ for l_enorm in ['l1', 'l2', 'linf']:
 
 # sort the results
 for l_enorm in ['l1', 'l2', 'linf']:
-  for l_config in xrange(len(l_yVals[l_enorm])):
+  for l_config in range(len(l_yVals[l_enorm])):
     l_xTmp = map(float, l_xVals    )
     l_yTmp = map(float, l_yVals[l_enorm][l_config] )
 
@@ -247,18 +248,18 @@ for l_enorm in ['l1', 'l2', 'linf']:
   l_leg = []
 
   # derive legend
-  for l_config in xrange(len(l_yVals[l_enorm])):
+  for l_config in range(len(l_yVals[l_enorm])):
     l_leg = l_leg + [ "O" +str(l_char[l_enorm][l_config]['order'])
                       + " Q" + str(l_char[l_enorm][l_config]['q'])
                       + " C" + str(l_char[l_enorm][l_config]['cfr']) ]
 
   # sort legend and plots
-  l_plotRange = xrange(len(l_yVals[l_enorm]))
+  l_plotRange = range(len(l_yVals[l_enorm]))
   l_plotRange = [l for (r,l) in sorted(zip(l_leg,l_plotRange))]
   l_leg.sort()
 
   for l_config in l_plotRange:
-    matplotlib.pyplot.loglog( [ l_xVals[i] for i in xrange(len(l_yVals[l_enorm][l_config])) ],
+    matplotlib.pyplot.loglog( [ l_xVals[i] for i in range(len(l_yVals[l_enorm][l_config])) ],
                               l_yVals[l_enorm][l_config],
                               marker=l_style['markers'][l_char[l_enorm][l_config]['order']],
                               color=l_style['color'][l_char[l_enorm][l_config]['cfr']]  )
@@ -272,7 +273,7 @@ for l_enorm in ['l1', 'l2', 'linf']:
     l_legPos = 'upper left'
 
   if l_arguments['legend']:
-    matplotlib.pyplot.legend( l_leg, loc=l_legPos, fontsize=4, ncol=l_nCols  )
+    matplotlib.pyplot.legend( l_leg, loc=l_legPos, fontsize=4, ncol=int(l_nCols)  )
   matplotlib.pyplot.xlabel('refinement')
   matplotlib.pyplot.ylabel('error')
   matplotlib.pyplot.grid( which='both' )
