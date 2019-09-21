@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -28,93 +29,92 @@
  * 0: ready to be progressed
  * 1: in progress
  * 2: done
+ * 3: done, processed by our own control flow
  */
 
 
-// make sure we have our eight entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 7, "entries of control flow not matching" );
+// make sure we have our six entries
+static_assert( N_ENTRIES_CONTROL_FLOW == 8, "entries of control flow not matching" );
 
-// initialize control flow if neccessary
-if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 0);
-  m_shared.setStatusAll(parallel::Shared::RDY, 1);
-  m_cflow[0] = 1;  m_cflow[1] = 1;
+#ifdef PP_USE_MPI
+EDGE_LOG_FATAL << "fix me!";
+#endif
 
-  m_mpi.beginRecvs(0, 0);
-  m_cflow[5] = 1;
+// number of finished time groups
+unsigned short l_nTgsFin = 0;
 
-  m_cflow[2] = 0;
-  m_cflow[3] = 0;
-  m_cflow[4] = 0;
-}
+// iterate over the time groups
+for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+  unsigned short l_tgOff = N_ENTRIES_CONTROL_FLOW * l_tg;
 
-////////////////////////////////////////
-// TODO: GLOBAL TIME STEPPING ONLY //
-////////////////////////////////////////
-/*
- * update control flow with finished tasks
- */
-
-// inner-elements finished local computations
-if( m_cflow[0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 0) ) m_cflow[0] = 2;
-
-// send-elements finished local computations
-if( m_cflow[1] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 1) ) m_cflow[1] = 2;
-
-// sends completed
-if( m_cflow[2] == 1 && m_mpi.finSends(0, 0) ) m_cflow[2] = 2;
-
-// inner-elements finished neighboring computations
-if( m_cflow[3] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 3) ) m_cflow[3] = 2;
-
-// send-elements finished neighboring computations
-if( m_cflow[4] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 4) ) m_cflow[4] = 2;
-
-// receive completed
-if( m_cflow[5] == 1 && m_mpi.finRecvs(0, 0) ) m_cflow[5] = 2;
-
-/*
- * Simple implementation: "Blocking"
- */
-if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[2] == 0 ) {
-    m_mpi.beginSends(0, 0);
-    m_cflow[2] = 1;
-}
-
-// check if we are finished
-if( m_timeGroups[0]->finished() ) {
-  // wait for communication to finish before signaling the other threads
-  if( m_cflow[2] == 2 && m_cflow[5] == 2 ) {
-    m_finished = true;
+  // initialize control flow if necessary
+  if( m_cflow[l_tg][0] == std::numeric_limits< unsigned short >::max() ) {
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+0 );
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+1 );
+    m_cflow[l_tg][0] = m_cflow[l_tg][1] = 1;
+    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 0;
   }
+
+  /*
+   * update control flow with finished tasks
+   */
+  // local, inner
+  if( m_cflow[l_tg][0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+0) ) {
+    m_cflow[l_tg][0] = 2;
+    m_timeGroups[l_tg]->updateTimePredInner();
+  }
+
+  // local, send
+  if( m_cflow[l_tg][1] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+1) ) {
+    m_cflow[l_tg][1] = 2;
+    m_timeGroups[l_tg]->updateTimePredSend();
+  }
+
+  // neigh, inner
+  if( m_cflow[l_tg][6] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+6) ) {
+    m_cflow[l_tg][6] = 2;
+    m_timeGroups[l_tg]->updateDofUpInner();
+  }
+
+  // neigh, send
+  if( m_cflow[l_tg][7] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+7) ) {
+    m_cflow[l_tg][7] = 2;
+    m_timeGroups[l_tg]->updateDofUpSend();
+  }
+
+  // schedule neighboring updates
+  if( m_cflow[l_tg][0] == 2 && m_cflow[l_tg][1] == 2 && getTimePredAvailable(l_tg) ) {
+    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+6);
+    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+7);
+
+    m_cflow[l_tg][0] = m_cflow[l_tg][1] = 3;
+    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 1;
+  }
+
+  // time step complete
+  if( m_cflow[l_tg][6] == 2 && m_cflow[l_tg][7] == 2 && getTimePredConsumed(l_tg) ) {
+    m_timeGroups[l_tg]->updateTsInfo();
+
+    if( !m_timeGroups[l_tg]->finished() ) {
+      m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+0);
+      m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+1);
+      m_cflow[l_tg][0] = m_cflow[l_tg][1] = 1;
+    }
+    else {
+      m_cflow[l_tg][0] = m_cflow[l_tg][1] = 0;
+    }
+
+    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 0;
+  }
+
+  // increase finished time group counter if appropiate
+  if( m_timeGroups[l_tg]->finished() ) {
+    l_nTgsFin++;
+  }
+}
+
+// check if all time groups are finished
+if( l_nTgsFin == m_timeGroups.size() ) {
+  m_finished = true;
   return;
-}
-
-// local work and receive done
-if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[5] == 2 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 3);
-  m_shared.setStatusAll(parallel::Shared::RDY, 4);
-
-  m_cflow[0] = m_cflow[1] = 0;
-  m_cflow[3] = m_cflow[4] = 1;
-  m_cflow[5] = 0;
-}
-
-// limiting complete
-if( m_cflow[3] == 2 && m_cflow[4] == 2 ) {
-  m_timeGroups[0]->updateTsInfo();
-
-  if( !m_timeGroups[0]->finished() ) {
-    m_shared.setStatusAll(parallel::Shared::RDY, 0);
-    m_shared.setStatusAll(parallel::Shared::RDY, 1);
-    m_cflow[0] = m_cflow[1] = 1;
-
-    m_mpi.beginRecvs(0, 0);
-    m_cflow[5] = 1;
-
-    m_cflow[2] = 0;
-  }
-  else m_cflow[5] = 2;
-
-  m_cflow[3] = m_cflow[4] = 0;
 }
