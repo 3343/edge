@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -25,7 +26,6 @@
 
 #include "exprtk.wrap.hpp"
 #include <string>
-#include "constants.hpp"
 #include "io/logging.h"
 
 namespace edge {
