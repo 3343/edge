@@ -159,9 +159,9 @@ class edge::advection::kernels::TimePred {
      * @param i_ders derivatives.
      * @param o_tInt will be set to time-integrated DOFs.
      **/
-    void integrate( TL_T_REAL i_dt,
-                    TL_T_REAL i_ders[TL_O_TI][TL_N_MDS][TL_N_CRS],
-                    TL_T_REAL o_tInt[TL_N_MDS][TL_N_CRS] ) {
+    static void integrate( TL_T_REAL i_dt,
+                           TL_T_REAL i_ders[TL_O_TI][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL o_tInt[TL_N_MDS][TL_N_CRS] ) {
       // scaling in the time integration
       TL_T_REAL l_sca = i_dt;
 
