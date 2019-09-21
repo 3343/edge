@@ -23,7 +23,6 @@
 
 // receiver-output
 edge::io::Receivers l_receivers;
-edge::io::ReceiversSf<real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS> l_recvsSf; // implementation-dependent #quantities, setup is in impl
 
 // setup receivers
 if( l_config.m_recvCrds[0].size() > 0 ) {

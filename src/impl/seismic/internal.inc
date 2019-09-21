@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -21,15 +22,6 @@
  * Internal data of seismic simulations.
  **/
 
-/*
- * First global data encodes the setup
- */
-#define PP_N_GLOBAL_PRIVATE_1 1
-struct setupChars {
-  enum InitialDofs { zero, planeWaves } initialDofs;
-};
-typedef setupChars t_globalPrivate1;
-
 // point sources
 #ifdef PP_HAS_HDF5
 #include "impl/seismic/setups/PointSources.hpp"
@@ -40,18 +32,6 @@ typedef edge::seismic::setups::PointSources< real_base,
                                              ORDER,
                                              N_CRUNS > t_globalShared3;
 #endif
-
-/*
- * Rupture physics
- */
-#define PP_N_GLOBAL_SHARED_5 1
-typedef edge::seismic::solvers::t_LinSlipWeak< real_base,
-                                               T_SDISC.ELEMENT,
-                                               ORDER,
-                                               N_CRUNS> t_globalShared5;
-// DOFs of the rupture elements
-#define PP_N_ELEMENT_SPARSE_SHARED_3 1
-typedef real_base t_elementSparseShared3[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS];
 
 /*
  * First shared element data are the background parameters.
@@ -75,23 +55,9 @@ typedef real_base t_elementModePrivate1;
 typedef real_base t_elementModePrivate2;
 #endif
 
-// flex data holding a time buffer or a time buffer and element-DOFs per entry
-#define PP_N_GLOBAL_SHARED_6 2
+// flex data holding "==", "<" and ">" data
+#define PP_N_GLOBAL_SHARED_6 3
 typedef real_base (**t_globalShared6)[N_ELEMENT_MODES][N_CRUNS];
-
-#define PP_N_GLOBAL_SHARED_7 1
-typedef edge::sc::ibnd::t_InternalBoundary< int_el,
-                                            real_base,
-                                            t_spTypeElastic,
-                                            T_SDISC.ELEMENT,
-                                            N_QUANTITIES > t_globalShared7;
-
-#include "impl/seismic/sc/Llf.hpp"
-#define PP_N_GLOBAL_SHARED_8 1
-typedef edge::seismic::sc::Llf< real_base,
-                                T_SDISC.ELEMENT,
-                                ORDER,
-                                N_CRUNS > t_globalShared8;
 
 // ADER-DG kernels
 #include "impl/seismic/solvers/AderDg.hpp"

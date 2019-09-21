@@ -27,14 +27,3 @@
 #ifdef PP_HAS_HDF5
 #include "impl/seismic/setups/PointSources.hpp"
 #endif
-
-// rupture boundaries
-#include "impl/seismic/solvers/InternalBoundary.hpp"
-#include "sc/ibnd/Memory.hpp"
-#include "sc/ibnd/Init.hpp"
-#include "impl/seismic/setups/RuptureInit.hpp"
-#include "io/InternalBoundary.hpp"
-
-// sub-cell solver
-#include "sc/Memory.hpp"
-#include "impl/seismic/sc/Llf.hpp"

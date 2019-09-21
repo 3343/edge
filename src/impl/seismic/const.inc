@@ -122,10 +122,8 @@ constexpr unsigned short CE_N_ENS_FS_A_DE( unsigned short i_nDis ) {
   return CE_N_QTS_E( i_nDis ) * CE_N_QTS_M( i_nDis );
 }
 
-#include "sc/ibnd/InternalBoundary.type"
-
 // number of entries in the control flow
-const unsigned short N_ENTRIES_CONTROL_FLOW=18;
+const unsigned short N_ENTRIES_CONTROL_FLOW=9;
 
 // number of relaxation mechanisms
 const unsigned short N_RELAXATION_MECHANISMS=PP_N_RELAXATION_MECHANISMS;
@@ -137,14 +135,6 @@ const unsigned short N_RELAXATION_MECHANISMS=PP_N_RELAXATION_MECHANISMS;
 const double SCALE_CFL_ORDER[9] = { 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9 };
 
 const double SCALE_CFL=(1.0/N_DIM)*SCALE_CFL_ORDER[PP_ORDER-1];
-
-/**
- * Kernel groups, used for seismic simulations.
- **/
-enum class t_mmSeismic: unsigned short {
-  SUB_CELL = static_cast< unsigned short >( t_mm::SUB_CELL ),
-  ADER_DG  = 1
-};
 
 /*
  * Bitmasks for elastics.
@@ -176,11 +166,6 @@ typedef struct {
   real_base qs;
 } t_bgPars;
 
-typedef struct {
-  real_base solver[N_QUANTITIES][N_QUANTITIES];
-} t_fluxSolver;
-
-
 /**
  * Scratch memory (per thread)
  **/
@@ -194,15 +179,5 @@ struct scratchMem {
   real_base dBuf[ORDER][N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.ELEMENT_MODES.PRIVATE)));
   // scratch memory for the surface integration
   real_base tResSurf[2][N_QUANTITIES][N_FACE_MODES][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.FACE_MODES.PRIVATE)));
-  // sub-cells at the DG faces
-  real_base scFa[4][N_QUANTITIES][CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
-  // sub-grid
-  real_base sg[N_QUANTITIES][CE_N_SUB_CELLS(T_SDISC.ELEMENT,ORDER)][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
-  // sub-grid with ghost cells
-  real_base sgGh[N_QUANTITIES][   CE_N_SUB_CELLS(T_SDISC.ELEMENT, ORDER)
-                                + C_ENT[T_SDISC.ELEMENT].N_FACES *  CE_N_SUB_FACES(T_SDISC.ELEMENT, ORDER)
-                              ][N_CRUNS] __attribute__ ((aligned (ALIGNMENT.CRUNS)));
 };
 typedef scratchMem t_scratchMem;
-
-#include "src/impl/seismic/solvers/FrictionLaws.type"

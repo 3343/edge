@@ -5,6 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
@@ -49,17 +50,6 @@ namespace edge {
 
 class edge::data::Internal {
   public:
-    /**
-     * Matrix-matrix multiplication kernels
-     **/
-#if defined PP_T_KERNELS_VANILLA
-    data::MmVanilla< real_base > m_mm;
-#elif defined PP_T_KERNELS_XSMM_DENSE_SINGLE
-    data::MmXsmmSingle< real_base > m_mm;
-#else
-    data::MmXsmmFused< real_base > m_mm;
-#endif
-
     /**
      * Memory types.
      * TODO: Extend with more data structures.

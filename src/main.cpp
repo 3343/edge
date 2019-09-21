@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -35,12 +36,8 @@ INITIALIZE_EASYLOGGINGPP
 #include "io/Config.h"
 #include "dg/Basis.h"
 #include "dg/QuadratureEval.hpp"
-#include "sc/Memory.hpp"
-#include "sc/Init.hpp"
-#include "sc/ibnd/SuperCell.hpp"
 #include "setups/Cpu.h"
 #include "io/Receivers.h"
-#include "io/ReceiversSf.hpp"
 #include "io/WaveField.h"
 #include "data/Dynamic.h"
 #include "data/DataLayout.hpp"
@@ -50,6 +47,8 @@ INITIALIZE_EASYLOGGINGPP
 #include "mesh/common.hpp"
 #include "mesh/SparseTypes.hpp"
 #include "mesh/setup_dep.inc"
+#include "mesh/EdgeV.h"
+
 #include "monitor/Timer.hpp"
 #include "monitor/instrument.hpp"
 
@@ -106,8 +105,9 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "###############  ###############         ###############   ###############";
   EDGE_LOG_INFO << "###############  ##############           #############    ###############";
   EDGE_LOG_INFO << "##########################################################################";
-  EDGE_LOG_INFO << "";
-  EDGE_LOG_INFO << "please come in, have a seat, and.. let's go!!";
+  EDGE_LOG_INFO;
+  EDGE_LOG_INFO << "               EDGE is available from: https://dial3343.org";
+  EDGE_LOG_INFO;
 
 #ifdef PP_USE_MPI
   EDGE_LOG_INFO << "our mpi settings:";
@@ -134,11 +134,15 @@ int main( int i_argc, char *i_argv[] ) {
 
   // parse mesh
   EDGE_LOG_INFO << "parsing mesh";
+  edge::mesh::EdgeV l_edgeV( l_config.m_meshFileIn,
+                             l_config.m_periodic != std::numeric_limits< int >::max() );
 #include "mesh/setup.inc"
 
   // get the data layout
   EDGE_LOG_INFO << "taking care of data layout now";
 #include "data/setup.inc"
+
+  l_enLayouts[2] = l_edgeV.getElLayout();
 
   // initialize all elements/faces
   edge::data::Internal l_internal;
@@ -153,18 +157,18 @@ int main( int i_argc, char *i_argv[] ) {
   l_basis.print();
 
 #include "dg/setup_ader.inc"
-#include "sc/setup.inc"
 
   // initialize internal chars and connectivity information
   EDGE_LOG_INFO << "initializing internal chars and connectivity info";
   l_mesh.getVeChars( l_internal.m_vertexChars  );
   l_mesh.getElChars( l_internal.m_elementChars );
   l_mesh.getFaChars( l_internal.m_faceChars    );
-  // int_el l_nElVeEl = l_mesh.getNelVeEl();
-  // l_internal.m_connect.elVeEl[0] = (int_el*) l_dynMem.allocate( l_nElVeEl * sizeof(int_el) );
+
   l_mesh.getConnect( l_internal.m_vertexChars,
                      l_internal.m_faceChars,
                      l_internal.m_connect      );
+
+  l_edgeV.setLtsTypes( l_internal.m_elementChars );
 
   // enhance entity chars if set in the config
   if( l_config.m_spTypesDoms[0].size() > 0 ) EDGE_LOG_FATAL << "not implemented";
@@ -227,23 +231,34 @@ l_mesh.getGIdsEl( l_gIdsEl );
 #endif
   l_dtG[1] /= edge::parallel::g_nRanks;
 
-  // construct single GTS cluster
-  edge::time::TimeGroupStatic l_cluster( std::numeric_limits< int_ts >::max(),
-                                         1,
-                                         l_internal );
+  // assemble LTS groups
+  std::vector< edge::time::TimeGroupStatic > l_tgs;
+
+  unsigned short l_nTgs = l_enLayouts[2].timeGroups.size();
+  for( unsigned short l_tg = 0; l_tg < l_nTgs; l_tg++ ) {
+    l_tgs.push_back( edge::time::TimeGroupStatic( l_nTgs,
+                                                  l_tg,
+                                                  l_internal ) );
+  }
 
   EDGE_LOG_INFO << "time step stats coming thru (min,ave,max): "
                 << l_dtG[0] << ", " << l_dtG[1] << ", " << l_dtG[2];
 
-  // add cluster to time manager
-  edge::time::Manager l_time( l_dtG[0], l_shared, l_mpi, l_receivers, l_recvsSf );
-  l_time.add( &l_cluster );
+  // create time manager
+  EDGE_LOG_INFO << "creating time manager, groups relative to the min. dt:";
+  for( unsigned short l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
+    EDGE_LOG_INFO << "  [" << l_edgeV.getRelDt()[l_tg] << ", " << l_edgeV.getRelDt()[l_tg+1] << "[";
+  }
+  edge::time::Manager l_time( l_edgeV.getRelDt()[0]*l_dtG[0],
+                              l_shared,
+                              l_mpi,
+                              l_tgs,
+                              l_receivers );
 
   // set up simulation times and synchronization intervals
   double l_simTime = 0;
   double l_endTime = l_config.m_endTime;
   double l_syncInt = l_config.m_waveFieldInt;
-         l_syncInt = std::min( l_syncInt, l_config.m_iBndInt );
          l_syncInt = std::min( l_syncInt, l_config.m_syncMaxInt );
 
   if( std::abs(l_syncInt) < TOL.TIME ) l_syncInt = l_endTime;
@@ -268,18 +283,6 @@ l_mesh.getGIdsEl( l_gIdsEl );
                     l_internal.m_globalShared2[0].limSync );
   }
 
-#if defined(PP_T_EQUATIONS_SEISMIC)
-  if( l_config.m_iBndInt > TOL.TIME ) {
-    EDGE_LOG_INFO << "  writing internal boundary #0";
-    l_rupWriter.write( 0,
-                       l_enLayouts[l_rupLayoutFa].nEnts,
-                       5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                       5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                       l_internal.m_globalShared5[0].sfQtNaPtr,
-                       (real_base*) l_internal.m_globalShared5[0].sf );
-  }
-#endif
-
   // print mem stats
   edge::data::common::printMemStats();
 
@@ -300,7 +303,6 @@ l_mesh.getGIdsEl( l_gIdsEl );
   // iterate over sync points
   unsigned int l_step    = 0;
   unsigned int l_stepWf  = 0;
-  unsigned int l_stepBnd = 0;
   while( l_endTime - l_simTime > TOL.TIME ) {
     // derive time to advance in this step
     double l_stepTime = std::max( 0.0, l_endTime - l_simTime );
@@ -335,25 +337,9 @@ l_mesh.getGIdsEl( l_gIdsEl );
       l_stepWf++;
     }
 
-#if defined(PP_T_EQUATIONS_SEISMIC)
-    if( l_simTime + TOL.TIME > (l_stepBnd+1)*l_config.m_iBndInt ) {
-      EDGE_LOG_INFO << "  writing internal boundary #" << l_stepBnd+1;
-      l_rupWriter.write( 0,
-                         l_enLayouts[l_rupLayoutFa].nEnts,
-                         2*N_CRUNS + 3 * (N_DIM-1) * N_CRUNS,
-                         5*N_CRUNS + 4 * (N_DIM-1) * N_CRUNS,
-                         l_internal.m_globalShared5[0].sfQtNaPtr + (N_DIM+2)*N_CRUNS,
-                         (real_base*) l_internal.m_globalShared5[0].sf[0][0].muf );
-      l_stepBnd++;
-    }
-#endif
-
     // increase step and derive next synchronization point
     l_step++;
-    if( (l_stepWf+1)*l_config.m_waveFieldInt < (l_stepBnd+1)*l_config.m_iBndInt )
-      l_syncInt = (l_stepWf +1)*l_config.m_waveFieldInt - l_simTime;
-    else
-      l_syncInt = (l_stepBnd+1)*l_config.m_iBndInt      - l_simTime;
+    l_syncInt = (l_stepWf +1)*l_config.m_waveFieldInt - l_simTime;
 
     l_syncInt = std::min( l_syncInt, l_config.m_syncMaxInt );
     l_syncInt = std::min( l_syncInt, l_endTime-l_simTime );
@@ -365,7 +351,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   l_timer.end();
   PP_INSTR_REG_END(comp)
   EDGE_LOG_INFO << "that's the duration of the computations ("
-                << l_cluster.getUpdatesPer() << " time steps): "
+                << l_tgs[0].getUpdatesPer() << " fundamental time steps): "
                 << l_timer.elapsed() << " seconds";
   l_timer.reset();
   PP_INSTR_REG_DEF(fin)
