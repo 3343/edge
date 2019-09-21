@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -18,7 +19,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Scheduling for elastics with rupture physics or point sources.
+ * Scheduling for seismic simulations with point sources.
  **/
 
 /*
@@ -27,352 +28,136 @@
  * max: first touch since synchronization
  * 0: ready to be progressed
  * 1: in progress
- * 2: done
+ * 2+: done in various steps
  */
 
 // make sure we have our entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 18, "entries of control flow not matching" );
-
-// get number of updates since sync
-int_ts l_nUpsSync = m_timeGroups[0]->getUpdatesSync();
-
-/*
- * derive MPI groups for current and upcoming (after time step)
- *   1) extrema
- *   2) candidate admissibility
- *   3) sub-cell tDOFs
- */
-unsigned short l_tmpIds[4];
-std::uintptr_t l_tmpIdData;
-
-unsigned short l_ad[2], l_sc[2], l_ex[2];
-edge::sc::Steering::getAdmIds( l_nUpsSync,
-                               l_tmpIds );
-l_tmpIdData = m_timeGroups[0]->getAdmDataId( l_tmpIds[1] );
-l_ad[0] = m_mpi.getMg( l_tmpIdData );
-l_tmpIdData = m_timeGroups[0]->getAdmDataId( l_tmpIds[3] );
-l_ad[1] = m_mpi.getMg( l_tmpIdData );
-
-edge::sc::Steering::getDofsIds( l_nUpsSync,
-                                l_tmpIds );
-l_tmpIdData = m_timeGroups[0]->getDofsScDataId( l_tmpIds[0] );
-l_sc[0] = m_mpi.getMg( l_tmpIdData );
-l_tmpIdData = m_timeGroups[0]->getDofsScDataId( l_tmpIds[1] );
-l_sc[1] = m_mpi.getMg( l_tmpIdData );
-
-edge::sc::Steering::getExtIds( l_nUpsSync,
-                               l_tmpIds );
-l_tmpIdData = m_timeGroups[0]->getExDataId( l_tmpIds[0] );
-l_ex[0] = m_mpi.getMg( l_tmpIdData );
-l_tmpIdData = m_timeGroups[0]->getExDataId( l_tmpIds[1] );
-l_ex[1] = m_mpi.getMg( l_tmpIdData );
-
-/*
- * initialize control flow if necessary
- */
-if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
-  // default for everyone: ready to be scheduled
-  for( unsigned short l_cf = 0; l_cf < N_ENTRIES_CONTROL_FLOW; l_cf++ )
-    m_cflow[l_cf] = 0;
-
-  // compute local updates: send elements
-  m_shared.setStatusAll(parallel::Shared::RDY, 1);
-  m_cflow[1] = 1;
-
-  // compute rupture net-updates: send/recv faces
-  m_shared.setStatusAll(parallel::Shared::RDY, 4);
-  m_cflow[4] = 1;
-
-  // compute rupture net-updates: inner faces
-  m_shared.setStatusAll(parallel::Shared::RDY, 3);
-  m_cflow[3] = 1;
-
-  // receive time integrated DG DOFs
-  m_mpi.beginRecvs(0, 0);
-  m_cflow[15] = 1;
-
-  // receive candidate admissibility
-  m_mpi.beginRecvs(0, l_ad[0] );
-  m_cflow[17] = 1;
-
-  // init communication
-  m_cflow[ 2] = 0;
-  m_cflow[ 7] = 2;
-  m_cflow[ 8] = 2;
-  m_cflow[13] = 2;
-  m_cflow[14] = 2;
-  m_cflow[16] = 2;
-}
-
-/*
- * update control flow with finished tasks
- */
-// compute local, inner
-if( m_cflow[ 0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 0) ) m_cflow[0] = 2;
-
-// compute local, send
-if( m_cflow[ 1] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 1) ) m_cflow[1] = 2;
-
-// MPI-send DG-DOFS
-if( m_cflow[ 2] == 1 && m_mpi.finSends(0, 0) ) m_cflow[2] = 2;
-
-
-// compute rupture, inner
-if( m_cflow[ 3] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 3) ) m_cflow[3] = 2;
-
-// compute rupture, send-/recv
-if( m_cflow[ 4] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 4) ) m_cflow[4] = 2;
-
-
-// compute neigh, inner-elements
-if( m_cflow[ 5] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 5) ) m_cflow[5] = 2;
-
-// compute neigh, send-elements
-if( m_cflow[ 6] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 6) ) m_cflow[6] = 2;
-
-// MPI-recv extrema
-if( m_cflow[ 7] == 1 && m_mpi.finRecvs(0, l_ex[0]) ) m_cflow[7] = 2;
-
-// MPI-send candidate admissibility
-if( m_cflow[ 8] == 1 && m_mpi.finSends(0, l_ad[0]) ) m_cflow[8] = 2;
-
-
-// compute point sources, inner-elements
-if( m_cflow[ 9] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 9) ) m_cflow[9] = 2;
-
-// compute point sources, send-elements
-if( m_cflow[10] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 10) ) m_cflow[10] = 2;
-
-
-// compute limit+, inner
-if( m_cflow[11] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 11) ) m_cflow[11] = 2;
-
-// compute limit+, send
-if( m_cflow[12] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 12) ) m_cflow[12] = 2;
-
-// MPI-recv: SC-DOFs
-if( m_cflow[13] == 1 && m_mpi.finRecvs(0, l_sc[0]) ) m_cflow[13] = 2;
-
-// MPI-send: SC DOF
-if( m_cflow[14] == 1 && m_mpi.finSends(0, l_sc[0]) ) m_cflow[14] = 2;
-
-// MPI-recv: DG-DOF
-if( m_cflow[15] == 1 &&m_mpi.finRecvs(0, 0) ) m_cflow[15] = 2;
-
-// MPI-send: extrema
-if( m_cflow[16] == 1 && m_mpi.finSends(0, l_ex[0]) ) m_cflow[16] = 2;
-
-// MPI-receive: candidate admissibility
-if( m_cflow[17] == 1 &&  m_mpi.finRecvs(0, l_ad[0]) ) m_cflow[17] = 2;
-
-/*
- * resolve dependencies
- */
-// MPI-send DG DOFs done: compute local send
-if( m_cflow[2] == 2 && m_cflow[1] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 1);
-  m_cflow[1] = 1;
-
-  m_cflow[2] = 0;
-}
-
-// compute local send done: compute local inner
-if( m_cflow[1] == 2 && m_cflow[0] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 0);
-  m_cflow[0] = 1;
-}
-
-// compute local, send done: MPI-send DG DOFs 
-if( m_cflow[1] == 2 && m_cflow[2] == 0 ) {
-    m_mpi.beginSends(0, 0);
-    m_cflow[2] = 1;
-}
-
-// MPI-recv SC DOFs + MPI-send SC DOFs done: compute rupture for send/recv
-if( m_cflow[13] == 2 && m_cflow[14] == 2 && m_cflow[4] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 4);
-  m_cflow[4] = 1;
-}
-
-// compute inner local + compute send local + MPI-recv DG DOFs + MPI-recv extrema done: compute neigh, send
-if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[15] == 2 && m_cflow[7] == 2 && m_cflow[6] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 6);
-  m_cflow[6] = 1;
-
-  // allow for new MPI-recv extrema and MPI-send admissibility
-  m_cflow[7] = 0;
-  m_cflow[8] = 0;
-
-  // flush DG receivers if buffer size gets low
-  m_recvs.flushIf();
-}
-
-// compute local, inner + compute local, send done: compute neighboring for inner
-if( m_cflow[0] == 2 && m_cflow[1] == 2 && m_cflow[5] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 5);
-  m_cflow[5] = 1;
-}
-
-//  compute neigh, send done: MPI-recv extrema
-if( m_cflow[6] == 2 && m_cflow[7] == 0 ) {
-  m_mpi.beginRecvs(0, l_ex[1]);
-
-  // this is fire and forget: we are only concerned with the extrema in the next time step (l_ex[0] then)
-  m_cflow[7] = 2;
-}
-
-// compute rupture, send/recv + compute neigh, send done: send admissibility
-if( m_cflow[4] == 2 && m_cflow[6] == 2 && m_cflow[8] == 0 ) {
-  m_mpi.beginSends(0, l_ad[0]);
-  m_cflow[8] = 1;
-
-  // flush sub-cell receivers if buffer gets low
-  m_recvsSf.flushIf();
-}
-
-// compute neighboring, inner done: compute point sources inner
-if( m_cflow[5] == 2 && m_cflow[9] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 9);
-  m_cflow[9] = 1;
-}
-
-// compute neighboring, inner done: compute point sources inner
-if( m_cflow[6] == 2 && m_cflow[10] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 10);
-  m_cflow[10] = 1;
-}
-
-//   compute rupture, inner + compute rupture, send/recv
-// + compute point sorces, inner + compute point sources, send
-// + MPI-recv candidate admissibility done:
-//     compute limit+, send
-if(    m_cflow[3] == 2 && m_cflow[4] == 2
-    && m_cflow[9] == 2 && m_cflow[10] == 2
-    && m_cflow[17] == 2
-    && m_cflow[12] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 12);
-  m_cflow[12] = 1;
-
-  // we obtained this time steps admissibility from adjacent ranks:
-  // the limiter's sends have to be complete
-  EDGE_CHECK_EQ( m_cflow[13], 2 );
-  EDGE_CHECK_EQ( m_cflow[14], 2 );
-  EDGE_CHECK_EQ( m_cflow[15], 2 );
-  EDGE_CHECK_EQ( m_cflow[16], 2 );
-
-  // reset communication
-  m_cflow[13] = 0;
-  m_cflow[14] = 0;
-  m_cflow[15] = 0;
-  m_cflow[16] = 0;
-  m_cflow[17] = 0;
-}
-
-// compute rupture, inner + compute rupture, send/recv + compute point sources, inner + compute point sources, send done: compute limit+, inner
-if( m_cflow[3] == 2 && m_cflow[4] == 2 && m_cflow[9] == 2 && m_cflow[10] == 2 && m_cflow[11] == 0 ) {
-  m_shared.setStatusAll(parallel::Shared::RDY, 11);
-  m_cflow[11] = 1;
-}
-
-// compute limit+, send done:
-//   MPI-recv SC-DOFs, MPI-recv SC-DOFs, MPI-recv DG-DOFs, MPI-send extrema, MPI-recv candidate admissibility
-if( m_cflow[12] == 2 && m_cflow[13] == 0 ) {
-  EDGE_CHECK_EQ( m_cflow[14], 0 );
-  EDGE_CHECK_EQ( m_cflow[15], 0 );
-  EDGE_CHECK_EQ( m_cflow[16], 0 );
-  EDGE_CHECK_EQ( m_cflow[17], 0 );
-
-  m_mpi.beginRecvs(0, l_sc[1]);
-  m_mpi.beginSends(0, l_sc[1]);
-  m_mpi.beginSends(0, l_ex[1]);
-
-  // receive next time steps candidate admissibility and DG-DOFs only if there is another time step
-  if( !m_timeGroups[0]->lastTimeStep() ) {
-    m_mpi.beginRecvs(0, 0);
-    m_mpi.beginRecvs(0, l_ad[1]);
-  }
-
-  // fire and forget comunication: relevant in next time step
-  m_cflow[13] = 2;
-  m_cflow[14] = 2;
-  m_cflow[15] = 2;
-  m_cflow[16] = 2;
-  m_cflow[17] = 2;
-}
-
-// inner limit+ + send limit+ done
-if( m_cflow[11] == 2 && m_cflow[12] == 2 ) {
-  // perform safety checks
-  EDGE_CHECK_EQ( m_cflow[ 0], 2 );
-  EDGE_CHECK_EQ( m_cflow[ 1], 2 );
-
-  EDGE_CHECK_EQ( m_cflow[ 3], 2 );
-  EDGE_CHECK_EQ( m_cflow[ 4], 2 );
-  EDGE_CHECK_EQ( m_cflow[ 5], 2 );
-  EDGE_CHECK_EQ( m_cflow[ 6], 2 );
-
-  EDGE_CHECK_EQ( m_cflow[ 9], 2 );
-  EDGE_CHECK_EQ( m_cflow[10], 2 );
-
-  // fire and forget
-  EDGE_CHECK_EQ( m_cflow[ 7], 2 );
-  EDGE_CHECK_EQ( m_cflow[13], 2 );
-  EDGE_CHECK_EQ( m_cflow[14], 2 );
-  EDGE_CHECK_EQ( m_cflow[15], 2 );
-  EDGE_CHECK_EQ( m_cflow[16], 2 );
-  EDGE_CHECK_EQ( m_cflow[17], 2 );
-
-  // this is the final and most restrictive condition of the time step, update the ts-info
-  m_timeGroups[0]->updateTsInfo();
-
-  // schedule next time step if not finished
-  if( !m_timeGroups[0]->finished() ) {
-    // inner rupture
-    m_shared.setStatusAll(parallel::Shared::RDY, 3);
-    m_cflow[3] = 1;
-
-    // reset compute tasks
-    m_cflow[ 0] = 0;
-    m_cflow[ 1] = 0;
-    m_cflow[ 4] = 0;
-    m_cflow[ 5] = 0;
-    m_cflow[ 6] = 0;
-    m_cflow[ 9] = 0;
-    m_cflow[10] = 0;
-    m_cflow[11] = 0;
-    m_cflow[12] = 0;
-  
-    // set possible ongoing communication relevant for next time step
-    m_cflow[ 7] = 1;
-    m_cflow[13] = 1;
-    m_cflow[14] = 1;
-    m_cflow[15] = 1;
-    m_cflow[16] = 1;
-    m_cflow[17] = 1;
-
-    // print a progress report
-    if(   edge::parallel::g_rank==0
-       && m_timeGroups[0]->getUpdatesPer()%25 == 0 ) {
-      EDGE_LOG_INFO_ALL << "finished time step: #"
-                        << m_timeGroups[0]->getUpdatesPer()
-                        << ", time: "
-                        << m_timeGroups[0]->getCovSimTime();
-    }
-  }
-  else {
-    // wait and progress possibly ongoing communication before leaving for synchronization
-    while(    m_mpi.finSends( 0, 0       ) == false     // DG DOFs: send
-           || m_mpi.finSends( 0, l_ad[0] ) == false     // candidate admissibility
-           || m_mpi.finSends( 0, l_sc[1] ) == false     // SC DOFs: send
-           || m_mpi.finRecvs( 0, l_sc[1] ) == false     // SC DOFS: recv
-           || m_mpi.finSends( 0, l_ex[1] ) == false     // extrema: send
-           || m_mpi.finRecvs( 0, l_ex[1] ) == false ) { // extrema: recv
-      m_mpi.comm( m_shared.isSched(),
-                  m_finished,
-                  m_shared.isCommLead() );
+static_assert( N_ENTRIES_CONTROL_FLOW == 9, "entries of control flow not matching" );
+
+#ifdef PP_USE_MPI
+EDGE_LOG_FATAL << "fix me!";
+#endif
+
+// update control flow if any of the work regions (local, src, neigh) finished
+// outside of the regular loop for a consistent view in the next loop
+for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+  unsigned short l_tgOff = N_ENTRIES_CONTROL_FLOW * l_tg;
+
+  // initialize control flow if necessary
+  if( m_cflow[l_tg][0] == std::numeric_limits< unsigned short >::max() ) {
+    // reset all entries
+    for( unsigned short l_en = 0; l_en < N_ENTRIES_CONTROL_FLOW; l_en++ ) {
+      m_cflow[l_tg][l_en] = 0;
     }
 
-    m_finished = true;
-    return;
+    // local, send
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+1 );
+    m_cflow[l_tg][1] = 1;
+
+    // local, inner
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+0 );
+    m_cflow[l_tg][0] = 1;
   }
+
+  // local, inner
+  if( m_cflow[l_tg][0] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+0 ) ) {
+    m_cflow[l_tg][0] = 2;
+    m_timeGroups[l_tg]->updateTimePredInner();
+  }
+  // local, send
+  if( m_cflow[l_tg][1] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+1 ) ) {
+    m_cflow[l_tg][1] = 2;
+    m_timeGroups[l_tg]->updateTimePredSend();
+  }
+  // src, inner
+  if( m_cflow[l_tg][2] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+2 ) ) {
+    m_cflow[l_tg][2] = 2;
+  }
+  // src, send
+  if( m_cflow[l_tg][3] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+3 ) ) {
+    m_cflow[l_tg][3] = 2;
+  }
+  // neigh, inner
+  if( m_cflow[l_tg][4] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+4 ) ) {
+    m_cflow[l_tg][4] = 2;
+    m_timeGroups[l_tg]->updateDofUpInner();
+  }
+  // neigh, send
+  if( m_cflow[l_tg][5] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+5 ) ) {
+    m_cflow[l_tg][5] = 2;
+    m_timeGroups[l_tg]->updateDofUpSend();
+  }
+}
+
+// number of finished time groups
+unsigned short l_nTgsFin = 0;
+
+// resolve dependencies
+for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+  unsigned short l_tgOff = N_ENTRIES_CONTROL_FLOW * l_tg;
+
+  // schedule src, send
+  if( m_cflow[l_tg][1] == 2 ) {
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+3 );
+
+    m_cflow[l_tg][1] = 3;
+    m_cflow[l_tg][3] = 1;
+  }
+
+  // schedule src, inner
+  if( m_cflow[l_tg][0] == 2 ) {
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+2 );
+
+    m_cflow[l_tg][0] = 3;
+    m_cflow[l_tg][2] = 1;
+  }
+
+  // schedule neigh, send
+  if( m_cflow[l_tg][0] >= 3 && m_cflow[l_tg][1] >= 3 && m_cflow[l_tg][3] == 2 && getTimePredAvailable(l_tg) ) {
+    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+5);
+
+    m_cflow[l_tg][1] = 4;
+    m_cflow[l_tg][3] = 3;
+    m_cflow[l_tg][5] = 1;
+  }
+
+  // schedule neigh, inner
+  if( m_cflow[l_tg][0] >= 3 && m_cflow[l_tg][1] >= 3 && m_cflow[l_tg][2] == 2 && getTimePredAvailable(l_tg) ) {
+    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+4);
+
+    m_cflow[l_tg][0] = 4;
+    m_cflow[l_tg][2] = 3;
+    m_cflow[l_tg][4] = 1;
+
+    // flush receivers if buffer size gets low
+    m_recvs.flushIf();
+  }
+
+  // time step for the time group complete
+  if( m_cflow[l_tg][4] == 2 && m_cflow[l_tg][5] == 2 && getTimePredConsumed(l_tg) ) {
+    m_timeGroups[l_tg]->updateTsInfo();
+
+    if( !m_timeGroups[l_tg]->finished() ) {
+      m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+1);
+      m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+0);
+      m_cflow[l_tg][0] = m_cflow[l_tg][1] = 1;
+    }
+    else {
+      m_cflow[l_tg][0] = m_cflow[l_tg][1] = 0;
+    }
+
+    m_cflow[l_tg][2] = m_cflow[l_tg][3] = 0;
+    m_cflow[l_tg][4] = m_cflow[l_tg][5] = 0;
+  }
+
+  // increase finished time group counter if appropiate
+  if( m_timeGroups[l_tg]->finished() ) {
+    l_nTgsFin++;
+  }
+}
+
+// check if all time groups are finished
+if( l_nTgsFin == m_timeGroups.size() ) {
+  m_finished = true;
+  return;
 }
