@@ -24,7 +24,6 @@
 
 #include "Manager.h"
 #include "monitor/instrument.hpp"
-#include "sc/Steering.hpp"
 
 void edge::time::Manager::schedule() {
 #if defined PP_T_EQUATIONS_ADVECTION
@@ -42,15 +41,10 @@ edge::time::Manager::Manager( double                               i_dt,
                               parallel::Shared                   & i_shared,
                               parallel::Mpi                      & i_mpi,
                               std::vector< TimeGroupStatic  >    & i_timeGroups,
-                              io::Receivers                      & i_recvs,
-                              io::ReceiversSf< real_base,
-                                               T_SDISC.ELEMENT,
-                                               ORDER,
-                                               N_CRUNS >         & i_recvsSf ): m_dTfun(   i_dt      ),
-                                                                                m_shared(  i_shared  ),
-                                                                                m_mpi(     i_mpi     ),
-                                                                                m_recvs(   i_recvs   ),
-                                                                                m_recvsSf( i_recvsSf ) {
+                              io::Receivers                      & i_recvs ): m_dTfun(   i_dt      ),
+                                                                              m_shared(  i_shared  ),
+                                                                              m_mpi(     i_mpi     ),
+                                                                              m_recvs(   i_recvs   ) {
   for( std::size_t l_tg = 0; l_tg < i_timeGroups.size(); l_tg++ ) {
     m_timeGroups.push_back( &i_timeGroups[l_tg] );
   }
@@ -61,36 +55,42 @@ edge::time::Manager::~Manager() {
   delete[] m_cflow;
 }
 
-bool edge::time::Manager::getEven( unsigned short i_tg ) {
-  return m_timeGroups[i_tg]->getUpdatesSync() % 2 == 0;
+bool edge::time::Manager::getTimePredAvailable( unsigned short i_tg ) {
+  // time group with smaller time step
+  bool l_left = (i_tg == 0) ?
+                true :
+                   m_timeGroups[i_tg-1]->nTimePredInner() == m_timeGroups[i_tg]->nTimePredInner()*2
+                && m_timeGroups[i_tg-1]->nTimePredSend()  == m_timeGroups[i_tg]->nTimePredSend()*2;
+
+  // time group with larger time step
+  bool l_right = (i_tg == m_timeGroups.size() - 1 ) ?
+                 true :
+                      m_timeGroups[i_tg]->nTimePredInner() <= m_timeGroups[i_tg+1]->nTimePredInner()*2
+                   && m_timeGroups[i_tg]->nTimePredSend()  <= m_timeGroups[i_tg+1]->nTimePredSend()*2;
+
+  return l_left && l_right;
 }
 
-bool edge::time::Manager::getPrevOdd( unsigned short i_tg ) {
-  bool l_odd = true;
+bool edge::time::Manager::getTimePredConsumed( unsigned short i_tg ) {
+  // time group with smaller time step
+  bool l_left = (i_tg == 0) ?
+                true :
+                      m_timeGroups[i_tg-1]->nDofUpInner() == m_timeGroups[i_tg]->nTimePredInner()*2
+                   && m_timeGroups[i_tg-1]->nDofUpSend()  == m_timeGroups[i_tg]->nTimePredSend()*2;
 
-  if( i_tg > 0 ) {
-    if( m_timeGroups[i_tg-1]->getUpdatesSync() % 2 == 0 ) {
-      l_odd = false;
-    }
-  }
+  // time group with larger time step: last time group, odd time step, even time step (accumulated data consumed)
+  bool l_right = (i_tg == m_timeGroups.size() - 1 ) ?
+                 true :    m_timeGroups[i_tg]->getUpdatesSync()%2 == 0
+                        || (    m_timeGroups[i_tg]->nTimePredInner() == m_timeGroups[i_tg+1]->nDofUpInner()*2
+                             && m_timeGroups[i_tg]->nTimePredSend()  == m_timeGroups[i_tg+1]->nDofUpSend()*2 );
 
-  return l_odd;
-}
-
-bool edge::time::Manager::getPrevEven( unsigned short i_tg ) {
-  bool l_even = true;
-
-  if( i_tg > 0 ) {
-    if( m_timeGroups[i_tg-1]->getUpdatesSync() % 2 == 1 ) {
-      l_even = false;
-    }
-  }
-
-  return l_even;
+  return l_left && l_right;
 }
 
 void edge::time::Manager::communicate() {
-  m_mpi.comm( m_shared.isSched(), m_finished, m_shared.isCommLead() );
+  m_mpi.comm( m_shared.isSched(),
+              m_finished,
+              m_shared.isCommLead() );
 }
 
 void edge::time::Manager::compute() {
@@ -101,7 +101,7 @@ void edge::time::Manager::compute() {
 
   while( m_finished == false ) {
     bool l_wrk;
-    int_tg         l_tg;
+    unsigned short l_tg;
     unsigned short l_st;
     unsigned int   l_id;
     int_el         l_first;
@@ -124,7 +124,7 @@ void edge::time::Manager::compute() {
       PP_INSTR_PAR_UINT64("cflow_id", (uint64_t) l_id )
 #pragma warning pop
 
-      m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs, m_recvsSf );
+      m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs );
 
       PP_INSTR_REG_END(step)
 
@@ -141,7 +141,7 @@ void edge::time::Manager::simulate( double i_time ) {
   PP_INSTR_FUN("simulate")
 
   // propagate sync time to all time groups
-  for( int_tg l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+  for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
     m_timeGroups[l_tg]->setUp( m_dTfun,
                                i_time );
   }
@@ -175,9 +175,4 @@ void edge::time::Manager::simulate( double i_time ) {
 
   // (re-)balance work regions
   m_shared.balance();
-
-  // prepare limiter for sync
-  for( int_tg l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
-    m_timeGroups[l_tg]->limSync();
-  }
 }

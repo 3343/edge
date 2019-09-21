@@ -28,7 +28,6 @@
 #include "parallel/Shared.h"
 #include "constants.hpp"
 #include "io/Receivers.h"
-#include "io/ReceiversSf.hpp"
 #include "TimeGroupStatic.h"
 #include <vector>
 
@@ -52,9 +51,6 @@ class edge::time::Manager {
     //! receiver output
     io::Receivers & m_recvs;
 
-    //! receiver output at sub-faces
-    io::ReceiversSf< real_base, T_SDISC.ELEMENT, ORDER, N_CRUNS > & m_recvsSf;
-
     //! clusters under control of the time manager
     std::vector< TimeGroupStatic* > m_timeGroups;
 
@@ -65,27 +61,20 @@ class edge::time::Manager {
     volatile bool m_finished = false;
 
     /**
-     * Checks if the time group performed an even number of time steps (in-progress time steps are ignored).
+     * Returns true if the time predictions of the neighboring smaller and large time group (on this rank) are available for an update.
      *
-     * @return true if even, false if not.
+     * @param i_tg time group for which the information is requested.
+     * @return true if available, false if not.
      **/
-    bool getEven( unsigned short i_tg );
+    bool getTimePredAvailable( unsigned short i_tg );
 
     /**
-     * Checks if the previous time group performed an odd number of time steps (in-process time steps are ignored).
-     * Always true, if there is no previous time group.
+     * Returns true if this cluster's time predicitions have been consumed (on this rank) by neighboring clusters.
      *
-     * @return true if odd, false if not.
+     * @param i_tg time group for which the information is requested.
+     * @return true if consumed, false if not.
      **/
-    bool getPrevOdd( unsigned short i_tg );
-
-    /**
-     * Checks if the previous time group performed an even number of time steps (in-process time steps are ignored).
-     * Always true, if there is no previous time group.
-     *
-     * @return true if even, false if not.
-     **/
-    bool getPrevEven( unsigned short i_tg );
+    bool getTimePredConsumed( unsigned short i_tg );
 
     /**
      * Runs scheduling tasks.
@@ -104,24 +93,19 @@ class edge::time::Manager {
 
   public:
     /**
-     * Constructor of time step management.
+     * Constructor of the time stepping management.
      *
-     * @param i_dT fundamental time step.
+     * @param i_dt fundamental time step.
      * @param i_shared shared memory parallelization.
      * @param i_mpi mpi parallelization.
      * @param i_timeGroups time groups
      * @param i_recvs modal receivers.
-     * @param i_recvsSf receivers at sub-faces.
      **/
     Manager( double                               i_dt,
              parallel::Shared                   & i_shared,
              parallel::Mpi                      & i_mpi,
              std::vector< TimeGroupStatic >     & i_timeGroups,
-             io::Receivers                      & i_recvs,
-             io::ReceiversSf< real_base,
-                              T_SDISC.ELEMENT,
-                              ORDER,
-                              N_CRUNS >         & i_recvsSf );
+             io::Receivers                      & i_recvs );
 
     /**
      * Destructor.
