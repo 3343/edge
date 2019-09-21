@@ -34,10 +34,6 @@
 #include "linalg/Mappings.hpp"
 #include "../kernels/Kernels.hpp"
 #include "io/Receivers.h"
-#include "InternalBoundary.hpp"
-#include "FrictionLaws.hpp"
-#include "sc/Kernels.hpp"
-#include "sc/Detections.hpp"
 #include "AderDgInit.hpp"
 
 namespace edge {
@@ -311,28 +307,30 @@ class edge::seismic::solvers::AderDg {
      * Local step: ADER + volume + local surface.
      *
      * @param i_first first element considered.
-     * @param i_nElements number of elements.
+     * @param i_nEls number of elements.
+     * @param i_firstTs true if this is the first time step of every rate-2 ts pair.
      * @param i_time time of the initial DOFs.
      * @param i_dt time step.
      * @param i_firstSpRe first sparse receiver entity.
      * @param i_elChars element characteristics.
      * @param io_dofsE elastic DOFs.
      * @param io_dofsA anelastic DOFs.
-     * @param o_tDofsDg will be set to temporary DOFs of the DG solution, [0]: time integrated, [1]: DOFs of previous time step (if required).
+     * @param o_tDofs time integrated DG DOFs (==, <, >) which will be set or updated.
      * @param io_recvs will be updated with receiver info.
      *
      * @paramt TL_T_LID integer type of local entity ids.
      **/
     template < typename TL_T_LID >
     void local( TL_T_LID                             i_first,
-                TL_T_LID                             i_nElements,
+                TL_T_LID                             i_nEls,
+                bool                                 i_firstTs,
                 double                               i_time,
                 double                               i_dt,
                 TL_T_LID                             i_firstSpRe,
                 t_elementChars              const  * i_elChars,
                 TL_T_REAL                         (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                         (* io_dofsA)[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL        (* const * const    o_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL        (* const * const    o_tDofs[3])[TL_N_MDS][TL_N_CRS],
                 edge::io::Receivers                & io_recvs ) const {
       // counter for receivers
       unsigned int l_enRe = i_firstSpRe;
@@ -344,16 +342,7 @@ class edge::seismic::solvers::AderDg {
       TL_T_REAL (*l_derBuffer)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] = parallel::g_scratchMem->dBuf;
 
       // iterate over all elements
-      for( TL_T_LID l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
-        // store DOFs where required
-        if( (i_elChars[l_el].spType & C_LTS_EL[EL_DOFS]) != C_LTS_EL[EL_DOFS] ) {}
-        else {
-          for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                o_tDofsDg[1][l_el][l_qt][l_md][l_cr] = io_dofsE[l_el][l_qt][l_md][l_cr];
-        }
-
+      for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // pointer to anelastic dofs
         TL_T_REAL (*l_dofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS] =
           (TL_T_REAL (*) [TL_N_QTS_M][TL_N_MDS][TL_N_CRS]) (io_dofsA+l_el*std::size_t(TL_N_RMS)*std::size_t(TL_N_QTS_M));
@@ -371,8 +360,32 @@ class edge::seismic::solvers::AderDg {
                               l_tmp,
                               l_derBuffer,
                               l_derA,
-                              o_tDofsDg[0][l_el],
+                              o_tDofs[0][l_el],
                               l_tDofsA );
+
+        // update summed time integrated elastic DOFs, if an adjacent element has a larger time step
+        if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
+          // reset, if required
+          if( i_firstTs ) {
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                  o_tDofs[1][l_el][l_qt][l_md][l_cr] = 0;
+          }
+
+          // add tDofs of this time step
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                o_tDofs[1][l_el][l_qt][l_md][l_cr] += o_tDofs[0][l_el][l_qt][l_md][l_cr];
+        }
+
+        // compute [0, 0.5dt] time integrated DOFs, if an adjacent element has a smaller time step
+        if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_GT]) == C_LTS_EL[EL_INT_GT] ) {
+          m_kernels->m_time.integrate( TL_T_REAL(0.5*i_dt),
+                                       l_derBuffer,
+                                       o_tDofs[2][l_el] );
+        }
 
         // write receivers (if required)
         if( !( (i_elChars[l_el].spType & RECEIVER) == RECEIVER) ) {} // no receivers in the current element
@@ -399,7 +412,7 @@ class edge::seismic::solvers::AderDg {
         m_kernels->m_volInt.apply( m_starE[l_el],
                                    (TL_N_RMS > 0) ? m_starA[l_el] : nullptr,
                                    m_srcA+l_el*std::size_t(TL_N_RMS),
-                                   o_tDofsDg[0][l_el],
+                                   o_tDofs[0][l_el],
                                    l_tDofsA,
                                    io_dofsE[l_el],
                                    l_dofsA,
@@ -409,13 +422,13 @@ class edge::seismic::solvers::AderDg {
         const TL_T_REAL (* l_preDofs)[TL_N_MDS][TL_N_CRS] = nullptr;
         const TL_T_REAL (* l_preTint)[TL_N_MDS][TL_N_CRS] = nullptr;
 
-        if( l_el < i_first+i_nElements-1 ) {
+        if( l_el < i_first+i_nEls-1 ) {
           l_preDofs = io_dofsE[l_el+1];
-          l_preTint = o_tDofsDg[0][l_el+1];
+          l_preTint = o_tDofs[0][l_el+1];
         }
         else {
           l_preDofs = io_dofsE[l_el];
-          l_preTint = o_tDofsDg[0][l_el];
+          l_preTint = o_tDofs[0][l_el];
         }
 
          /*
@@ -426,7 +439,7 @@ class edge::seismic::solvers::AderDg {
         // call kernel
         m_kernels->m_surfInt.local( m_fsE[0][l_el],
                                     (TL_N_RMS > 0) ? m_fsA[0][l_el] : nullptr,
-                                    o_tDofsDg[0][l_el],
+                                    o_tDofs[0][l_el],
                                     io_dofsE[l_el],
                                     l_dofsA,
                                     l_tmpFa,
@@ -436,286 +449,40 @@ class edge::seismic::solvers::AderDg {
     }
 
     /**
-     * Solves rupture physics for the given faces.
-     *
-     * @param i_first first rupture faces.
-     * @param i_nBf number of rupture faces at the internal boundary.
-     * @param i_firstSpRe first sparse id of the receivers.
-     * @param i_time current time of the faces.
-     * @param i_dt time step of the two adjacent elements.
-     * @param i_scDgAd adjacency of sub-cells at the faces of face-adjacent elements.
-     * @parma i_liDoLiDu possibly duplicated limited elements, adjacent to an the dominant one.
-     * @param i_iBnd internal boundary data.
-     * @param i_frictionGlobal global data of the friction law.
-     * @param i_frictionFa face-local data of the friction law.
-     * @param i_frictionSf data of the friction law local to the sub-faces of the DG-faces.
-     * @param io_tDofs sub-cell tDOFs, which will be updated with net-updates.
-     * @param io_admC admissiblity of the candidate solution, will be set to false if any of the DG-faces are rupture faces and the fault failed.
-     * @param io_lock lock for the sub-cell solution. Will be set to true for all active rupture elements.
-     * @param io_recvsSf receivers at sub-faces.
-     * @param i_mm libxsmm kernels
-     *
-     * @paramt TL_T_LID integral type of local entity ids.
-     * @paramt TL_T_REAL type used for floating point arithmetic.
-     * @paramt TL_T_FRI_GL struct representing global friction data.
-     * @paramt TL_T_FRI_FA struct representing face-local friction data.
-     * @paramt TL_T_FRI_SF struct representing sub-face-local friction data.
-     * @paramt TL_T_SP integer type of the sparse type.
-     * @paramt TL_T_RECV_SF type of the sub-face receivers.
-     **/
-    template< typename TL_T_LID,
-              typename TL_T_FRI_GL,
-              typename TL_T_FRI_FA,
-              typename TL_T_FRI_SF,
-              typename TL_T_SP,
-              typename TL_T_RECV_SF,
-              typename TL_T_MM >
-    static void rupture( TL_T_LID                                       i_first,
-                         TL_T_LID                                       i_nBf,
-                         TL_T_LID                                       i_firstSpRe,
-                         TL_T_REAL                                      i_time,
-                         TL_T_REAL                                      i_dt,
-                         unsigned short                      const      i_scDgAd[TL_N_VES_FA][TL_N_SFS],
-                         TL_T_LID                            const   (* i_liDoLiDu)[TL_N_FAS],
-                         TL_T_LID                            const   (* i_liLp),
-                         edge::sc::ibnd::t_InternalBoundary<
-                           TL_T_LID,
-                           TL_T_REAL,
-                           TL_T_SP,
-                           TL_T_EL,
-                           TL_N_QTS_E >                      const     & i_iBnd,
-                         TL_T_FRI_GL                                   & i_frictionGlobal,
-                         TL_T_FRI_FA                                   * i_frictionFa,
-                         TL_T_FRI_SF                                  (* i_frictionSf)[TL_N_SFS],
-                         TL_T_REAL                                  (* (*io_tDofs) [TL_N_FAS])[TL_N_QTS_E][TL_N_SFS][TL_N_CRS],
-                         bool                                         (* io_admC)[TL_N_CRS],
-                         bool                                         (* io_lock)[TL_N_CRS],
-                         TL_T_RECV_SF                                  & io_recvsSf,
-                         TL_T_MM                              const    & i_mm
-                         ) {
-      // store sparse receiver id
-      TL_T_LID l_faRe = i_firstSpRe;
-
-      // struct for the pertubation of the middle states
-      struct {
-        TL_T_FRI_GL  *gl;
-        TL_T_FRI_FA  *fa;
-        TL_T_FRI_SF (*sf)[TL_N_SFS];
-      } l_faData;
-      l_faData.gl = &i_frictionGlobal;
-      l_faData.fa =  i_frictionFa+i_first;
-      l_faData.sf =  i_frictionSf+i_first;
-
-      // iterate over internal boundary faces
-      for( TL_T_LID l_bf = i_first; l_bf < i_first+i_nBf; l_bf++ ) {
-        // get limited elements
-        TL_T_LID const *l_li = i_iBnd.connect.bfLe[l_bf];
-
-        // get corresponding limited plus elements
-        TL_T_LID l_lp[2];
-        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) l_lp[l_sd] = i_liLp[ l_li[l_sd] ];
-
-        // get local face ids and vertex id
-        unsigned short const *l_fIdBfEl = i_iBnd.bfChars[l_bf].fIdBfEl;
-        unsigned short const l_vIdFaEl = i_iBnd.bfChars[l_bf].vIdFaElR;
-
-        // get sub-cell solution at DG-faces
-        TL_T_REAL (*l_dofsSc)[TL_N_QTS_E][TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa;
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-            unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
-#pragma omp simd
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              l_dofsSc[0][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sfRe][l_cr];
-              l_dofsSc[1][l_qt][l_sf][l_cr] = (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf  ][l_cr];
-            }
-          }
-        }
-
-        // rupture indicator for the sub-faces
-        bool l_rup[TL_N_SFS][TL_N_CRS];
-
-        // net-updates
-        TL_T_REAL (*l_netUps)[TL_N_QTS_E][TL_N_SFS][TL_N_CRS] = parallel::g_scratchMem->scFa+2;
-
-        // call the rupture solver
-        edge::seismic::solvers::InternalBoundary<
-          TL_T_EL,
-          TL_N_QTS_E,
-          TL_O_SP,
-          TL_N_CRS >::template netUpdates<
-            TL_T_REAL, TL_T_MM, 
-            edge::seismic::solvers::FrictionLaws< TL_N_DIS, TL_N_CRS >
-          > (  i_iBnd.mss[l_bf][0],
-               i_iBnd.mss[l_bf][1],
-               i_iBnd.mss[l_bf][2],
-               i_iBnd.mss[l_bf][3],
-               l_dofsSc[0],
-               l_dofsSc[1],
-               l_netUps[0],
-               l_netUps[1],
-               l_rup,
-               i_mm,
-               i_dt,
-              &l_faData );
- 
-        // store net-updates
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-          for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-            // sub-cells are ordered based on the left element; reorder for right element
-            unsigned short l_sfRe = i_scDgAd[l_vIdFaEl][l_sf];
-
-#pragma omp simd
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-               (*io_tDofs[ l_lp[0] ][ l_fIdBfEl[0] ])[l_qt][l_sf][l_cr] = l_netUps[0][l_qt][l_sf][l_cr];
-               (*io_tDofs[ l_lp[1] ][ l_fIdBfEl[1] ])[l_qt][l_sf][l_cr] = l_netUps[1][l_qt][l_sfRe][l_cr];
-            }
-          }
-        }
-
-        // update admissibility
-        for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-#pragma omp simd
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            // enforce sub-cell solver for DR
-            io_admC[ l_li[0] ][l_cr] = false;
-            io_admC[ l_li[1] ][l_cr] = false;
-
-            io_lock[ l_li[0] ][l_cr] = true;
-            io_lock[ l_li[1] ][l_cr] = true;
-          }
-        }
-
-        // synchronize possible duplicates
-        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
-          for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-            TL_T_LID l_liDu = i_liDoLiDu[ l_li[l_sd] ][l_fa];
-
-            if( l_liDu == std::numeric_limits< TL_T_LID >::max() ) break;
-            else {
-              // copy over admissibility and lock
-              for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-#pragma omp simd
-                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  io_admC[ l_liDu ][l_cr] = false;
-                  io_lock[ l_liDu ][l_cr] = true;
-                }
-              }
-
-              TL_T_LID l_lpDu = i_liLp[ l_liDu ];
-
-              // copy over data
-              for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-                for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-                  // sub-cells are ordered based on the left element; reorder for right element
-                  unsigned short l_sfRe = (l_sd == 0) ? l_sf : i_scDgAd[l_vIdFaEl][l_sf];
-
-#pragma omp simd
-                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                    (*io_tDofs[ l_lpDu ][ l_fIdBfEl[l_sd] ])[l_qt][l_sf][l_cr] = l_netUps[l_sd][l_qt][l_sfRe][l_cr];
-                }
-              }
-            }
-          }
-        }
-
-        // check if this face requires receiver output
-        if( (i_iBnd.bfChars[l_bf].spType & RECEIVER) != RECEIVER ){}
-        else {
-          // check if the receiver requires output
-          if( io_recvsSf.getRecvTimeRel( l_faRe, i_time, i_dt ) >= -TOL.TIME ) {
-            // gather receiver data, TODO: outsource
-            TL_T_REAL l_buff[ (TL_N_DIS-1)*3 ][TL_N_SFS][TL_N_CRS];
-
-            for( unsigned short l_sf = 0; l_sf < TL_N_SFS; l_sf++ ) {
-              for( unsigned short l_di = 0; l_di < TL_N_DIS-1; l_di++ ) {
-#pragma omp simd
-                for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) {
-                  l_buff[             0+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].tr[l_di][l_ru];
-                  l_buff[  (TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].sr[l_di][l_ru];
-                  l_buff[2*(TL_N_DIS-1)+l_di][l_sf][l_ru] = i_frictionSf[l_bf][l_sf].dd[l_di][l_ru];
-                }
-              }
-            }
-
-            // write the receiver info
-            io_recvsSf.writeRecvAll( i_time, i_dt, l_faRe, l_buff );
-          }
-
-          l_faRe++;
-        }
-
-        // update pointers
-        l_faData.fa++;
-        l_faData.sf++;
-      }
-    }
-
-    /**
      * Performs the neighboring updates of the ADER-DG scheme.
      *
      * @param i_first first element considered.
-     * @param i_nElements number of elements.
-     * @param i_firstLi first limited element.
-     * @param i_firstLp first limited plus element.
-     * @param i_firstEx first element computing extrema.
-     * @param i_scatter scatter opterators (DG -> sub-cells).
+     * @param i_nEls number of elements.
+     * @param i_firstTs true if this is the first time step of every rate-2 ts pair.
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
-     * @param i_lpFaLp limited plus elements adjacent to limited plus (faces as bridge).
      * @param i_elFa elements' adjacent faces.
      * @param i_elFaEl face-neighboring elements.
      * @param i_fIdElFaEl local face ids of face-neighboring elememts.
      * @param i_vIdElFaEl local vertex ids w.r.t. the shared face from the neighboring elements' perspsective.
-     * @param i_tDofsDg temporarary DG DOFs ([0]: time integrated, [1]: DOFs of previous time step).
+     * @param i_tDofs time integrated DG DOFs (==, <, >).
      * @param io_dofs DOFs which will be updated with neighboring elements' contribution.
-     * @param io_admC will be updated with the admissibility of the candidate solution.
-     * @param i_extP extreme of the previous solution.
-     * @param o_extC will be set to extreme of the candidate solution.
-     * @param i_mm matrix-matrix multiplication kernels.
      *
      * @paramt TL_T_LID integer type of local entity ids.
-     * @paramt TL_T_MM type of the matrix-matrix multiplication kernels.
      **/
-    template< typename TL_T_LID,
-              typename TL_T_MM >
+    template< typename TL_T_LID >
     void neigh( TL_T_LID                              i_first,
-                TL_T_LID                              i_nElements,
-                TL_T_LID                              i_firstLi,
-                TL_T_LID                              i_firstLp,
-                TL_T_LID                              i_firstEx,
-                TL_T_REAL      const                  i_scatter[TL_N_MDS][TL_N_SCS],
+                TL_T_LID                              i_nEls,
+                bool                                  i_firstTs,
                 t_faceChars    const                * i_faChars,
                 t_elementChars const                * i_elChars,
-                unsigned short const                  i_faSfSc[TL_N_FAS][TL_N_SFS],
-                unsigned short const                  i_scDgAd[TL_N_VES_FA][TL_N_SFS],
-                TL_T_LID       const               (* i_lpFaLp)[TL_N_FAS],
                 TL_T_LID       const               (* i_elFa)[TL_N_FAS],
                 TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
                 unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
                 unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
-                TL_T_REAL            (* const * const i_tDofsDg[2])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL            (* const * const i_tDofs[2])[TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                          (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                          (* io_dofsA)[TL_N_MDS][TL_N_CRS],
-                bool                               (* io_admC)[TL_N_CRS],
-                TL_T_REAL      const               (* i_extP)[2][TL_N_QTS_E][TL_N_CRS],
-                TL_T_REAL                          (* o_extC)[2][TL_N_QTS_E][TL_N_CRS],
-                TL_T_REAL                        (* (*o_tDofsSc) [TL_N_FAS])[TL_N_QTS_E][TL_N_SFS][TL_N_CRS],
-                TL_T_MM        const                & i_mm ) const {
-      // counter for elements computing extrema
-      TL_T_LID l_ex = i_firstEx;
-
-      // counter for limited plus elements
-      TL_T_LID l_lp = i_firstLp;
-
-      // counter for limited elements
-      TL_T_LID l_li = i_firstLi;
-
+                TL_T_REAL                          (* io_dofsA)[TL_N_MDS][TL_N_CRS] ) const {
       // temporary product for three-way mult
       TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
 
       // iterate over elements
-      for( TL_T_LID l_el = i_first; l_el < i_first+i_nElements; l_el++ ) {
+      for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // anelastic updates (excluding frequency scaling)
         TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
         if( TL_N_RMS > 0) {
@@ -745,14 +512,42 @@ class edge::seismic::solvers::AderDg {
             // prefetch for the upcoming surface integration of this element
             if( l_fa < TL_N_FAS-1 ) l_neUp = i_elFaEl[l_el][l_fa+1];
             // first surface integration of the next element
-            else if( l_el < i_first+i_nElements-1 ) l_neUp = i_elFaEl[l_el+1][0];
+            else if( l_el < i_first+i_nEls-1 ) l_neUp = i_elFaEl[l_el+1][0];
 
             // only proceed with adjacent data if the element exists
-            if( l_neUp != std::numeric_limits<TL_T_LID>::max() ) l_pre = i_tDofsDg[0][l_neUp];
+            if( l_neUp != std::numeric_limits<TL_T_LID>::max() ) l_pre = i_tDofs[0][l_neUp];
             // next element data in case of boundary conditions
-            else if( l_el < i_first+i_nElements-1 )              l_pre = io_dofsE[l_el+1];
+            else if( l_el < i_first+i_nEls-1 )              l_pre = io_dofsE[l_el+1];
             // default to element data to avoid performance penality
             else                                                 l_pre = io_dofsE[l_el];
+
+            // assemble the neighboring time integrated DOFs
+            TL_T_REAL l_tDofs[TL_N_QTS_E][TL_N_MDS][TL_N_CRS];
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                  // element and face-adjacent one have an equal time step
+                  if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                    l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr];
+                  }
+                  // element has a greater time step than the face-adjacent one
+                  else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+                    l_tDofs[l_qt][l_md][l_cr] = i_tDofs[1][l_ne][l_qt][l_md][l_cr];
+                  }
+                  // element has a time step less than the adjacent one
+                  else {
+                    EDGE_CHECK_EQ( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]), C_LTS_AD[l_fa][AD_LT] );
+
+                    if( i_firstTs ) {
+                      l_tDofs[l_qt][l_md][l_cr] = i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+                    }
+                    else {
+                      l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr] - i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+                    }
+                  }
+                }
+              }
+            }
 
             /*
              * solve
@@ -771,7 +566,7 @@ class edge::seismic::solvers::AderDg {
                                         l_fId,
                                         m_fsE[1][l_el][l_fa],
                                         (TL_N_RMS > 0) ? m_fsA[1][l_el][l_fa] : nullptr,
-                                        i_tDofsDg[0][l_ne],
+                                        l_tDofs,
                                         io_dofsE[l_el],
                                         l_upA,
                                         l_tmpFa,
@@ -785,57 +580,6 @@ class edge::seismic::solvers::AderDg {
             (TL_T_REAL (*) [TL_N_QTS_M][TL_N_MDS][TL_N_CRS]) (io_dofsA+l_el*std::size_t(TL_N_RMS)*std::size_t(TL_N_QTS_M));
 
           m_kernels->m_surfInt.scatterUpdateA( l_upA, l_dofsA );
-        }
-
-        // compute extrema (if required)
-        if( (i_elChars[l_el].spType & EXTREMA) != EXTREMA ) {}
-        else {
-          //! TODO: Use dedicated scratch memory for this
-          TL_T_REAL (*l_sg)[TL_N_SCS][TL_N_CRS] = parallel::g_scratchMem->sg;
-
-          // compute DG extrema
-          edge::sc::Kernels< TL_T_EL,
-                             TL_O_SP,
-                             TL_N_QTS_E,
-                             TL_N_CRS >::dgExtrema(  i_mm,
-                                                     io_dofsE[l_el],
-                                                     i_scatter,
-                                                     l_sg,
-                                                     o_extC[l_ex][0],
-                                                     o_extC[l_ex][1] );
-
-          // store the surface sub-cells
-          if( ( i_elChars[l_el].spType & LIMIT_PLUS ) == LIMIT_PLUS ) {
-            // set admissibility
-            if( ( i_elChars[l_el].spType & LIMIT ) == LIMIT ) {
-              if( ( i_elChars[l_el].spType & RUPTURE ) != RUPTURE ) {
-                bool l_adm[TL_N_CRS];
-                edge::sc::Detections< TL_T_EL,
-                                      TL_N_QTS_E,
-                                      TL_N_CRS >::dmpFa( i_extP[l_ex],
-                                                         i_extP,
-                                                         o_extC[l_ex],
-                                                         i_lpFaLp[l_lp],
-                                                         l_adm );
-
-                // update admissibility
-#pragma omp simd
-                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  // only write "false" to memory, not "true" (avoids conflicts with rupture-admissibility in shared memory parallelization)
-                  if( l_adm[l_cr] == false )
-                    io_admC[l_li][l_cr] = false;
-                }
-              }
-
-              // increase counter of limited elements
-              l_li++;
-            }
-            // increase counter of limited plus elements
-            l_lp++;
-          }
-
-          // increase counter of extrema elements
-          l_ex++;
         }
       }
     }
