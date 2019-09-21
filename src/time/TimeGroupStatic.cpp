@@ -33,11 +33,8 @@
 #include "impl/swe/ts_dep.inc"
 #endif
 
-#include "sc/Steering.hpp"
-#include "sc/Limiter.hpp"
-
-edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short    i_nTgs,
-                                              unsigned short    i_tgId,
+edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short   i_nTgs,
+                                              unsigned short   i_tgId,
                                               data::Internal & i_internal ): m_internal( i_internal ) {
   // derive multiple of fundamental time step (rate-2 LTS)
   m_funMul = 1;
@@ -54,6 +51,8 @@ edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short    i_nTgs,
   m_nTsSync = 0;
   m_nTsPer = 0;
   m_nTsReqFull = 0;
+  m_nTimePredSync[0] = m_nTimePredSync[1] = 0;
+  m_nDofUpSync[0] = m_nDofUpSync[1] = 0;
   m_dt     = std::numeric_limits< double >::max();
   m_dtFull = std::numeric_limits< double >::max();
   m_dtSync = std::numeric_limits< double >::max();
@@ -64,8 +63,10 @@ void edge::time::TimeGroupStatic::setUp( double i_dtFun,
   // set full time step of the group
   m_dtFull = i_dtFun * m_funMul;
 
-  // reset number of updates since sync
+  // reset number of time steps, time predictions and DOF updates since sync
   m_nTsSync = 0;
+  m_nTimePredSync[0] = m_nTimePredSync[1] = 0;
+  m_nDofUpSync[0] = m_nDofUpSync[1] = 0;
 
   // derive number of full time steps
   double l_dtMax = i_dtFun * (m_funMul * m_maxDiv);
@@ -100,15 +101,11 @@ void edge::time::TimeGroupStatic::updateTsInfo() {
   setDt();
 }
 
-void edge::time::TimeGroupStatic::computeStep( unsigned short                              i_step,
-                                               int_el                                      i_first,
-                                               int_el                                      i_size,
-                                               int_el                              const * i_enSp,
-                                               io::Receivers                             & io_recvs,
-                                               io::ReceiversSf< real_base,
-                                                                T_SDISC.ELEMENT,
-                                                                ORDER,
-                                                                N_CRUNS >                & io_recvsSf  ) {
+void edge::time::TimeGroupStatic::computeStep( unsigned short        i_step,
+                                               int_el                i_first,
+                                               int_el                i_size,
+                                               int_el        const * i_enSp,
+                                               io::Receivers       & io_recvs ) {
 #if defined PP_T_EQUATIONS_ADVECTION
 #include "impl/advection/inc/time/tgs_steps.inc"
 #elif defined PP_T_EQUATIONS_SEISMIC
@@ -118,15 +115,4 @@ void edge::time::TimeGroupStatic::computeStep( unsigned short                   
 #else
 #error "steps not defined"
 #endif
-}
-
-void edge::time::TimeGroupStatic::limSync() {
-  sc::Steering::resetAdm( m_nTsSync,
-                          m_internal.m_globalShared2[0].adm );
-
-  sc::Steering::resetDofs( m_nTsSync,
-                           m_internal.m_globalShared2[0].tDofs );
-
-  sc::Steering::resetExt( m_nTsSync,
-                          m_internal.m_globalShared2[0].ext );
 }
