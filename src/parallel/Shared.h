@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -20,8 +21,8 @@
  * @section DESCRIPTION
  * Shared memory parallelization.
  **/
-#ifndef EDGE_PARALLEL_SHARED_H_
-#define EDGE_PARALLEL_SHARED_H_
+#ifndef EDGE_PARALLEL_SHARED_H
+#define EDGE_PARALLEL_SHARED_H
 
 #include <cstdint>
 #include <vector>
@@ -169,15 +170,15 @@ class edge::parallel::Shared {
      * @param i_enChars entity characteristics.
      **/
     template <typename T = t_vertexChars>
-    void regWrkRgn( int_tg          i_tg,
-                    unsigned short  i_step,
-                    unsigned int    i_id,
-                    int_el          i_first,
-                    int_el          i_size,
-                    int             i_prio=0,
-                    unsigned short  i_nSpTypes=0,
-                    int_spType     *i_spType=NULL,
-                    const T        *i_enChars=NULL ) {
+    void regWrkRgn( unsigned short   i_tg,
+                    unsigned short   i_step,
+                    unsigned int     i_id,
+                    std::size_t      i_first,
+                    std::size_t      i_size,
+                    int              i_prio=0,
+                    unsigned short   i_nSpTypes=0,
+                    int_spType     * i_spType = nullptr,
+                    const T        * i_enChars = nullptr ) {
     // wait for all threads since memory modifications before might result in inconsistent results
 #ifdef PP_USE_OMP
 #pragma omp barrier
@@ -236,7 +237,7 @@ class edge::parallel::Shared {
      *
      * @return true if work is available; false otherwise.
      **/
-    bool getWrkTd( int_tg         & o_tg,
+    bool getWrkTd( unsigned short & o_tg,
                    unsigned short & o_step,
                    unsigned int   & o_id,
                    int_el         & o_first,

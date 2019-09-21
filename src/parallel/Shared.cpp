@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -125,7 +126,7 @@ std::size_t edge::parallel::Shared::getWrkRgn( unsigned int i_id ) {
   return l_rg;
 }
 
-bool edge::parallel::Shared::getWrkTd( int_tg         & o_tg,
+bool edge::parallel::Shared::getWrkTd( unsigned short & o_tg,
                                        unsigned short & o_step,
                                        unsigned int   & o_id,
                                        int_el         & o_first,
