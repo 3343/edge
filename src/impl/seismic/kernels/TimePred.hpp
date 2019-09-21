@@ -154,6 +154,40 @@ class edge::seismic::kernels::TimePred {
       }
     }
 
+    /**
+     * Integrates the DOFs over the interval [0, dt].
+     *
+     * @param i_dt time step.
+     * @param i_derE elastic derivatives.
+     * @param o_tIntE will be set to elastic time-integrated DOFs.
+     **/
+    static void integrate( TL_T_REAL         i_dt,
+                           TL_T_REAL const   i_derE[TL_O_TI][TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL         o_tIntE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) {
+      // scalar for the time integration
+      TL_T_REAL l_sca = i_dt;
+
+      // init time integrated dofs
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+            o_tIntE[l_qt][l_md][l_cr] = l_sca * i_derE[0][l_qt][l_md][l_cr];
+
+      // iterate over time derivatives
+      for( unsigned int l_de = 1; l_de < TL_O_TI; l_de++ ) {
+        // update scalar
+        l_sca *= i_dt / (l_de+1);
+
+        // elastic: update time integrated DOFs
+        unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
+
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+          for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ )
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+              o_tIntE[l_qt][l_md][l_cr] += l_sca * i_derE[l_de][l_qt][l_md][l_cr];
+      }
+    }
+
 };
 
 #endif
