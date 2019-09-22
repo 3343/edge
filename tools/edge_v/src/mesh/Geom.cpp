@@ -207,6 +207,40 @@ void edge_v::mesh::Geom::normVesFasTria3( double      const (* i_veCrds)[3],
   }
 }
 
+void edge_v::mesh::Geom::normVesFasTet4( double      const (* i_veCrds)[3],
+                                         std::size_t        * io_elVe,
+                                         std::size_t        * io_elFa,
+                                         std::size_t        * io_elFaEl ) {
+  // get vectors point from 0->1, 0->2 and 0->3
+  Eigen::Matrix3d l_m;
+  for( unsigned short l_d0 = 0; l_d0 < 3; l_d0++ )
+    for( unsigned short l_d1 = 0; l_d1 < 3; l_d1++ )
+      l_m(l_d0, l_d1) = i_veCrds[l_d1+1][l_d0] - i_veCrds[0][l_d0];
+
+  // check if we have to reorder based on the determinant
+  double l_det = l_m.determinant();
+
+  // assert non-planar vertices
+  EDGE_V_CHECK_GT( std::abs(l_det), 1E-5 );
+
+  // negative determinant -> clockwise -> exchange vertices 2,3 and faces 0,1
+  if( l_det < 0 ) {
+    // exchange vertices
+    std::size_t l_tmpVe = io_elVe[2];
+    io_elVe[2] = io_elVe[3];
+    io_elVe[3] = l_tmpVe;
+
+    // exchange faces
+    std::size_t l_tmpFa = io_elFa[0];
+    io_elFa[0] = io_elFa[1];
+    io_elFa[1] = l_tmpFa;
+
+    std::size_t l_tmpEl = io_elFaEl[0];
+    io_elFaEl[0] = io_elFaEl[1];
+    io_elFaEl[1] = l_tmpEl;
+  }
+}
+
 double edge_v::mesh::Geom::inDiameter( t_entityType         i_enTy,
                                        double       const (*i_veCrds)[3] ) {
   double l_dia = std::numeric_limits< double >::max();
@@ -231,6 +265,12 @@ void edge_v::mesh::Geom::normVesFas( t_entityType         i_elTy,
                      io_elVe,
                      io_elFa,
                      io_elFaEl );
+  }
+  else if( i_elTy == TET4 ) {
+    normVesFasTet4( i_veCrds,
+                    io_elVe,
+                    io_elFa,
+                    io_elFaEl );
   }
   else EDGE_V_LOG_FATAL;
 }
