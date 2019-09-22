@@ -93,10 +93,8 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
   // where the number of matching vertex coordinates matches the requested limit
   auto l_eqDi = [ l_nDis, l_nFaVes, i_faVe, i_veCrds ]( unsigned short i_limit,
                                                         std::size_t    i_f0,
-                                                        std::size_t    i_f1,
-                                                        unsigned short l_ignDim = std::numeric_limits< unsigned short >::max() ) {
+                                                        std::size_t    i_f1 ) {
     for( unsigned short l_di = 0; l_di < l_nDis; l_di++) {
-      if( l_di == l_ignDim ) continue;
       unsigned short l_nEq = 0;
 
       for( unsigned short l_ve0 = 0; l_ve0 < l_nFaVes; l_ve0++ ) {
@@ -115,6 +113,31 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
     return std::numeric_limits< unsigned short >::max();
   };
 
+  // lambda which derives the number of matching face-vertices assuming a fixed dimensions
+  auto l_maVes = [ l_nDis, l_nFaVes, i_faVe, i_veCrds ]( unsigned short i_fixedDi,
+                                                         std::size_t    i_f0,
+                                                         std::size_t    i_f1 ) {
+    unsigned short l_nMaVes = 0;
+
+    for( unsigned short l_ve0 = 0; l_ve0 < l_nFaVes; l_ve0++ ) {
+      for( unsigned short l_ve1 = 0; l_ve1 < l_nFaVes; l_ve1++ ) {
+        std::size_t l_ve0Id = i_faVe[i_f0*l_nFaVes + l_ve0];
+        std::size_t l_ve1Id = i_faVe[i_f1*l_nFaVes + l_ve1];
+
+        unsigned short l_nMaDis = 0;
+        for( unsigned short l_di = 0; l_di < l_nDis; l_di++) {
+          double l_diff = i_veCrds[l_ve0Id][l_di] - i_veCrds[l_ve1Id][l_di];
+          if(    l_di != i_fixedDi
+              && std::abs(l_diff) < 1E-5 ) l_nMaDis++;
+        }
+
+        if( l_nMaDis == l_nDis-1 ) l_nMaVes++;
+      }
+    }
+
+    return l_nMaVes;
+  };
+
   // 1) iterate over all face-pairs,
   // 2) for each face, determine the constant dimension (assumption for our periodic boundaries)
   // 3) if the two faces have the same constant dim, check if the faces' vertices share coordinates in another dim
@@ -125,10 +148,11 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
       unsigned short l_constDim1 = l_eqDi( l_nFaVes*l_nFaVes, l_bndFas[l_f1], l_bndFas[l_f1] );
 
       if( l_constDim0 == l_constDim1 ) {
-        unsigned short l_sharedDim = l_eqDi( l_nFaVes, l_bndFas[l_f0], l_bndFas[l_f1], l_constDim0 );
+        unsigned short l_nMaVes = l_maVes( l_constDim0, l_f0, l_f1 );
 
-        if(    l_f0 != l_f1
-            && l_sharedDim < std::numeric_limits< unsigned short >::max() ) l_faPairs.push_back( l_f1 );
+        if( l_f0 != l_f1 && l_nMaVes == l_nFaVes ) {
+          l_faPairs.push_back( l_f1 );
+        }
       }
     }
   }
