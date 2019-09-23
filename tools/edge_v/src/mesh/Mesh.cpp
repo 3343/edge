@@ -349,6 +349,7 @@ edge_v::mesh::Mesh::~Mesh() {
   delete[] m_elFa;
   delete[] m_elFaEl;
   delete[] m_inDiaEl;
+  if( m_volFa != nullptr ) delete[] m_volFa;
   if( m_volEl != nullptr ) delete[] m_volEl;
 }
 
@@ -359,7 +360,33 @@ void edge_v::mesh::Mesh::printStats() const {
   EDGE_V_LOG_INFO << "  #elements: " << m_nEls;
 }
 
-double const * edge_v::mesh::Mesh::getVolEl() {
+double const * edge_v::mesh::Mesh::getAreaFa() {
+  // only work on this once
+  if( m_volFa == nullptr ) {
+    // allocate memory
+    m_volFa = new double[ m_nFas ];
+
+    t_entityType l_faTy = CE_T_FA( m_elTy );
+    unsigned short l_nFaVes = CE_N_VES( l_faTy );
+
+    for( std::size_t l_fa = 0; l_fa < m_nFas; l_fa++ ) {
+      // get vertex coordinates
+      double l_veCrds[4][3] = {};
+      getEnVeCrds( l_faTy,
+                   m_faVe + (l_nFaVes * l_fa),
+                   m_veCrds,
+                   l_veCrds );
+
+      // compute "volume"
+      m_volFa[l_fa] = Geom::volume( l_faTy,
+                                    l_veCrds );
+    }
+  }
+
+  return m_volFa;
+}
+
+double const * edge_v::mesh::Mesh::getVolumeEl() {
   // only work on this once
   if( m_volEl == nullptr ) {
     // allocate memory
