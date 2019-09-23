@@ -71,6 +71,9 @@ class edge_v::mesh::Mesh {
     //! indiameter of the elements
     double *m_inDiaEl;
 
+    //! volumes of the elements
+    double * m_volEl = nullptr;
+
     /**
      * Gathers the vertex coordinates of the given entity.
      *
@@ -201,6 +204,13 @@ class edge_v::mesh::Mesh {
     std::size_t const * getElVe() const { return m_elVe; }
 
     /**
+     * Gets the vertices adjacent to the faces.
+     *
+     * @return connectivity info.
+     **/
+    std::size_t const * getFaVe() const { return m_faVe; }
+
+    /**
      * Gets the elements adjacent to the faces.
      *
      * @return adjacency info.
@@ -210,7 +220,7 @@ class edge_v::mesh::Mesh {
     /**
      * Gets the faces adjacent to the elements.
      *
-     * @return adjacency inforation.
+     * @return adjacency info.
      **/
     std::size_t const * getElFa() const { return m_elFa; }
 
@@ -227,6 +237,13 @@ class edge_v::mesh::Mesh {
      * @return vertex coordinates.
      **/
     double const (* getVeCrds() const)[3] { return m_veCrds; }
+
+    /**
+     * Gets the volumes of the elements.
+     *
+     * @return volumes.
+     **/
+    double const * getVolEl();
 
     /**
      * Gets the length (1d), incircle (2d) or insphere (3d) diameters of the elements.
