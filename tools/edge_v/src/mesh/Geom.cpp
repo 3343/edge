@@ -59,6 +59,22 @@ void edge_v::mesh::Geom::normal( t_entityType         i_enTy,
   else EDGE_V_LOG_FATAL;
 }
 
+void edge_v::mesh::Geom::tangents( t_entityType         i_enTy,
+                                   double       const (*i_veCrds)[3],
+                                   double       const   i_nPt[3],
+                                   double               o_tangents[2][3] ) {
+  // init to zero
+  for( unsigned short l_di = 0; l_di < 3; l_di++ )
+    o_tangents[0][l_di] = o_tangents[1][l_di] = 0;
+
+  if( i_enTy == LINE ) {
+    GeomLine::tangent( i_veCrds,
+                       i_nPt,
+                       o_tangents[0] );
+  }
+  else EDGE_V_LOG_FATAL;
+}
+
 double edge_v::mesh::Geom::inDiameter( t_entityType         i_enTy,
                                        double       const (*i_veCrds)[3] ) {
   double l_dia = std::numeric_limits< double >::max();

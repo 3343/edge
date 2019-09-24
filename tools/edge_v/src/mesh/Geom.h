@@ -58,6 +58,19 @@ class edge_v::mesh::Geom {
                         double               o_normal[3] );
 
     /**
+     * Computes the tangents for the given entity
+     *
+     * @param i_enTy entity type.
+     * @param i_veCrds vertex coordinates.
+     * @param i_nPt normal point on one side of the entity (normal is assumed to point in the other direction).
+     * @param o_tangents will be set to tangents.
+     **/
+    static void tangents( t_entityType         i_enTy,
+                          double       const (*i_veCrds)[3],
+                          double       const   i_nPt[3],
+                          double               o_tangents[2][3] );
+
+    /**
      * Computes the length (1d), incircle (2d) or insphere diameter (3d).
      *
      * @param i_enTy entity type.
