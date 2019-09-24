@@ -89,6 +89,49 @@ TEST_CASE( "Tests the insphere diameter computation for 4-node tetrahedrons.", "
   REQUIRE( l_dia == Approx(0.45358449083204) );
 }
 
+TEST_CASE( "Tests the normal computation for lines.", "[normal][line]" ) {
+  double l_ves0[2][3] = { {0.0, 0.0, 0.0},
+                          {7.0, 0.0, 0.0} };
+  double l_np0[3] = {0.0, 10.0, 0.0};
+
+  double l_normal[3] = {0};
+
+  edge_v::mesh::Geom::normalLine( l_ves0, l_np0, l_normal );
+
+  REQUIRE( l_normal[0] == Approx( 0.0) );
+  REQUIRE( l_normal[1] == Approx(-1.0) );
+  REQUIRE( l_normal[2] == Approx( 0.0) );
+
+  double l_np1[3] = {0.0, -10.0, 0.0};
+
+  edge_v::mesh::Geom::normalLine( l_ves0, l_np1, l_normal );
+
+  REQUIRE( l_normal[0] == Approx( 0.0) );
+  REQUIRE( l_normal[1] == Approx( 1.0) );
+  REQUIRE( l_normal[2] == Approx( 0.0) );
+}
+
+TEST_CASE( "Tests the tangent computation for lines.", "[tangent][line]" ) {
+  double l_ves0[2][3] = { {0.0, 0.0, 0.0},
+                          {7.0, 0.0, 0.0} };
+  double l_np0[3] = {0.0, 10.0, 0.0};
+
+  double l_tangent[3] = {0};
+
+  edge_v::mesh::Geom::tangentLine( l_ves0, l_np0, l_tangent );
+
+  REQUIRE( l_tangent[0] == Approx( 1.0) );
+  REQUIRE( l_tangent[1] == Approx( 0.0) );
+  REQUIRE( l_tangent[2] == Approx( 0.0) );
+
+  double l_np1[3] = {0.0, -10.0, 0.0};
+  edge_v::mesh::Geom::tangentLine( l_ves0, l_np1, l_tangent );
+
+  REQUIRE( l_tangent[0] == Approx(-1.0) );
+  REQUIRE( l_tangent[1] == Approx( 0.0) );
+  REQUIRE( l_tangent[2] == Approx( 0.0) );
+}
+
 TEST_CASE( "Tests the vertex and face reordering for triangles.", "[normVesFasTria3][tria3]" ) {
   /*
    * counterclockwise triangle:

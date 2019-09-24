@@ -75,6 +75,28 @@ class edge_v::mesh::Geom {
     static double inDiameterTet4( double const (*i_veCrds)[3] );
 
     /**
+     * Computes the directed normal for a line.
+     *
+     * @param i_veCrds vertices of the line.
+     * @param i_nPt point lying on the non-normal side of the line (normal will point away from this point).
+     * @param o_normal will be set to normal.
+     **/
+    static void normalLine( double const (*i_veCrds)[3],
+                            double const   i_nPt[3],
+                            double         o_normal[3] );
+
+    /**
+     * Computes the tangent for a line (right-handed coordinate system with normal).
+     *
+     * @param i_veCrds vertices of the line.
+     * @param i_nPt point lying on the non-normal side of the line (normal is assumed to point away from this point).
+     * @param o_tangent will be set to tangent.
+     **/
+    static void tangentLine( double const (*i_veCrds)[3],
+                             double const   i_nPt[3],
+                             double         o_tangent[3] );
+
+    /**
      * Normalizes the order of the vertices and faces.
      * The input is assumed to be ascending (w.r.t. the vertex ids) for all adjacency info.
      *

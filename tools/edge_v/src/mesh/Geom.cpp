@@ -152,6 +152,67 @@ double edge_v::mesh::Geom::inDiameterTet4( double const (*i_veCrds)[3] ) {
   return l_dia;
 }
 
+void edge_v::mesh::Geom::normalLine( double const (*i_veCrds)[3],
+                                     double const   i_nPt[3],
+                                     double         o_normal[3] ) {
+  // unit vector: v0 -> v1
+  Eigen::Vector2d l_d;
+  l_d[0] = i_veCrds[1][0] - i_veCrds[0][0];
+  l_d[1] = i_veCrds[1][1] - i_veCrds[0][1];
+  l_d.normalize();
+
+  // derive normal
+  Eigen::Vector2d l_n;
+  l_n[0] = -l_d[1];
+  l_n[1] =  l_d[0];
+
+  /*
+   * compute dot product of vector pointing from a vertex to the normal point and the normal
+   *
+   *            x * * * * * o <-- normal point
+   *          *  *     .   o
+   *        *     *  .  <-----example normal
+   *      x     1  *     o <-- vector pointing from a vertex
+   *         *      *   o
+   *             *   * o
+   *                * x
+   *  translates to:
+   *  |        o
+   *  |       o \
+   *  |      o   \
+   *  |     o   a . <--- projection (a=90deg) by the dot product > 0:
+   *  |    o    .        we are on the wrong side here.
+   *  |   o   .
+   *  |  o  .
+   *  | o .
+   *  |o.
+   *  |_______
+   */
+  Eigen::Vector2d l_nPt( i_nPt );
+  double l_dp = l_n.dot( l_nPt );
+
+  // if the dot product is positive, the angle is below 90deg:
+  // we want the normal to point in the other direction; therefore we have to change the sign
+  if( l_dp > 0 ) {
+    l_n *= -1;
+  }
+
+  o_normal[0] = l_n[0];
+  o_normal[1] = l_n[1];
+  o_normal[2] = 0;
+}
+
+void edge_v::mesh::Geom::tangentLine( double const (*i_veCrds)[3],
+                                      double const   i_nPt[3],
+                                      double         o_tangent[3] ) {
+  double l_n[3] = {0};
+  normalLine( i_veCrds, i_nPt, l_n );
+
+  o_tangent[0] = -l_n[1];
+  o_tangent[1] =  l_n[0];
+  o_tangent[2] =  0;
+}
+
 void edge_v::mesh::Geom::normVesFasTria3( double      const (* i_veCrds)[3],
                                           std::size_t        * io_elVe,
                                           std::size_t        * io_elFa,
