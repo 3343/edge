@@ -18,67 +18,73 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Geometry computations for the mesh.
+ * Geometry computations for 4-node tetrahedral elements.
  **/
-#ifndef EDGE_V_MESH_GEOM_H
-#define EDGE_V_MESH_GEOM_H
+#ifndef EDGE_V_MESH_GEOM_TET4_H
+#define EDGE_V_MESH_GEOM_TET4_H
 
-#include "../constants.h"
-#include <cmath>
+#include <cstdlib>
 
 namespace edge_v {
   namespace mesh {
-    class Geom;
+    class GeomTet4;
   }
 }
 
-class edge_v::mesh::Geom {
+class edge_v::mesh::GeomTet4 {
   public:
     /**
-     * Computes the volume of the given entity.
+     * Computes the volume.
      *
-     * @param i_enTy entity type.
-     * @param i_veCrds vertex coordinates.
-     * @return volume of the entity.
+     * @param i_veCrds vertex coordinates of the tetrahedron.
+     * @return volume of the tetrahedron.
      **/
-    static double volume( t_entityType         i_enTy,
-                          double       const (*i_veCrds)[3] );
+    static double volume(  double const (*i_veCrds)[3] );
 
     /**
-     * Computes the normal for the given entity
+     * Computes the insphere-diameter.
      *
-     * @param i_enTy entity type.
-     * @param i_veCrds vertex coordinates.
-     * @param i_nPt normal point on one side of the entity (normal will point to the other direction).
-     * @param o_normal will be set to normal.
-     **/
-    static void normal( t_entityType         i_enTy,
-                        double       const (*i_veCrds)[3],
-                        double       const   i_nPt[3],
-                        double               o_normal[3] );
-
-    /**
-     * Computes the length (1d), incircle (2d) or insphere diameter (3d).
-     *
-     * @param i_enTy entity type.
      * @param i_veCrds vertex coordinates.
      * @return diameter.
      **/
-    static double inDiameter( t_entityType         i_enTy,
-                              double       const (*i_veCrds)[3] );
+    static double inDiameter( double const (*i_veCrds)[3] );
 
     /**
-     * Normalizes the order of the vertices and faces.
-     * The input is assumed to be ascending (w.r.t. the vertex ids) for all adjacency info.
+     * Normalizes the order for faces and vertices.
      *
-     * @param i_elTy element type.
+     * Given the tetrahedral vertices v0-v3. We keep the assignment of vertices v0 and v1.
+     * Then we consider outer pointing normal of face v1-v2-v3.
+     * Looking from the outside to this face (opposite direction of the normal),
+     * we enforce counter-clockwise storage of vertices v2 and v3 w.r.t. to face 3.
+     *
+     * While exchanging v2 and v3 leaves the nodes (not the ordering) of face 2 (0-3-2)
+     * and face 3 (1-2-3) untouched, we have to change the exchange the positions of face 0 and 1:
+     *   face 0 (0-2-1) gets face 1 (0-1-3).
+     *   face 1 (0-1-3) gets face 0 (0-2-2).
+     *
+     *
+     * Example:
+     *
+     *                 v2                                          v3
+     *                 *                                           *
+     *               * . *                                       * . *
+     *             *    .  *                                   *    .  *
+     *           *       .   *                               *       .   *
+     *         *          .    *                           *          .    *
+     *       *  .            .   *              ->       *  .            .   *
+     *  v1 *                    .  *                v1 *                    .  *
+     *            *                . *                        *                . *
+     *                    *           .*                              *           .*
+     *                            *      *                                    *      *
+     *                                     *                                            *
+     *                                       v3                                          v2
+     *
      * @param i_veCrds coordinates of the element's vertices.
      * @param io_elVe vertices adjacent to the element (ordered ascending by the ids).
      * @param io_elFa faces adjacent to the element (ordered ascending by the vertex ids of the faces).
      * @param io_elFaEl elements adjacent to the elements (ordered ascending by the vertex ids of the faces).
      **/
-    static void normVesFas( t_entityType         i_elTy,
-                            double      const (* i_veCrds)[3],
+    static void normVesFas( double      const (* i_veCrds)[3],
                             std::size_t        * io_elVe,
                             std::size_t        * io_elFa,
                             std::size_t        * io_elFaEl );

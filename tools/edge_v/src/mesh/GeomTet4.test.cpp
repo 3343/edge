@@ -18,11 +18,11 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Tests the geometry computations.
+ * Tests the geometry computations on tet4-elements.
  **/
 #include <catch.hpp>
 #define private public
-#include "Geom.h"
+#include "GeomTet4.h"
 #undef private
 
 TEST_CASE( "Tests the volume computation of 4-node tetrahedrons.", "[volume][tet4]" ) {
@@ -33,8 +33,7 @@ TEST_CASE( "Tests the volume computation of 4-node tetrahedrons.", "[volume][tet
                          {0.5, 0.5, 1.2} };
 
   // compute diameter
-  double l_vol = edge_v::mesh::Geom::volume( edge_v::TET4,
-                                             l_ves );
+  double l_vol = edge_v::mesh::GeomTet4::volume( l_ves );
 
   // check results
   REQUIRE( l_vol == Approx(0.112667) );
@@ -48,8 +47,7 @@ TEST_CASE( "Tests the insphere diameter computation for 4-node tetrahedrons.", "
                          {0.5, 0.5, 1.0} };
 
   // compute diameter
-  double l_dia = edge_v::mesh::Geom::inDiameter( edge_v::TET4,
-                                                 l_ves );
+  double l_dia = edge_v::mesh::GeomTet4::inDiameter( l_ves );
 
   // check result
   REQUIRE( l_dia == Approx(0.45358449083204) );
