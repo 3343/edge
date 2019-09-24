@@ -26,6 +26,26 @@
 #include "Geom.h"
 #include "io/logging.h"
 
+std::size_t edge_v::mesh::Mesh::getAddEntry( std::size_t   i_sizeFirst,
+                                             std::size_t   i_sizeSecond,
+                                             std::size_t * i_first,
+                                             std::size_t * i_second ) {
+  for( std::size_t l_se = 0; l_se < i_sizeSecond; l_se++ ) {
+    bool l_present = false;
+
+    for( std::size_t l_fi = 0; l_fi < i_sizeFirst; l_fi++ ) {
+      if( i_second[l_se] == i_first[l_fi] ) {
+        l_present = true;
+        break;
+      }
+    }
+
+    if( l_present == false ) return i_second[l_se];
+  }
+
+  return std::numeric_limits< std::size_t >::max();
+}
+
 void edge_v::mesh::Mesh::getEnVeCrds( t_entityType          i_enTy,
                                       std::size_t  const  * i_enVe,
                                       double       const (* i_veCrds)[3],
@@ -349,8 +369,10 @@ edge_v::mesh::Mesh::~Mesh() {
   delete[] m_elFa;
   delete[] m_elFaEl;
   delete[] m_inDiasEl;
-  if( m_volFa != nullptr ) delete[] m_volFa;
-  if( m_volEl != nullptr ) delete[] m_volEl;
+  if( m_volFa != nullptr    ) delete[] m_volFa;
+  if( m_volEl != nullptr    ) delete[] m_volEl;
+  if( m_normals != nullptr  ) delete[] m_normals;
+  if( m_tangents != nullptr ) delete[] m_tangents;
 }
 
 void edge_v::mesh::Mesh::printStats() const {
@@ -415,4 +437,53 @@ double const * edge_v::mesh::Mesh::getVolumesEl() {
   }
 
   return m_volEl;
+}
+
+double const (* edge_v::mesh::Mesh::getNormals() )[3] {
+  // only work on this once
+  if( m_normals == nullptr ) {
+    // allocate memory
+    m_normals = (double (*)[3]) new double[ m_nFas*3 ];
+
+    t_entityType l_faTy = CE_T_FA( m_elTy );
+    unsigned short l_nElVes = CE_N_VES( m_elTy );
+    unsigned short l_nFaVes = CE_N_VES( l_faTy );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+    for( std::size_t l_fa = 0; l_fa < m_nFas; l_fa++ ) {
+      // get vertex coordinates
+      double l_veCrds[4][3] = {};
+      getEnVeCrds( l_faTy,
+                   m_faVe + (l_nFaVes * l_fa),
+                   m_veCrds,
+                   l_veCrds );
+
+      // normal point from the first element
+      std::size_t l_el = m_faEl[l_fa*2];
+      std::size_t l_np = getAddEntry( l_nFaVes,
+                                      l_nElVes,
+                                      m_faVe+(l_nFaVes*l_fa),
+                                      m_elVe+(l_nElVes*l_el) );
+      EDGE_V_CHECK_NE( l_np, std::numeric_limits< std::size_t >::max() );
+
+      // compute normals
+      Geom::normal( l_faTy,
+                    l_veCrds,
+                    m_veCrds[l_np],
+                    m_normals[l_fa] );
+    }
+  }
+
+  return m_normals;
+}
+
+/**
+ * Gets the tangents of the faces.
+ *
+ * @return tangents of the faces.
+ **/
+double const (* edge_v::mesh::Mesh::getTangents() )[2][3] {
+  return m_tangents;
 }

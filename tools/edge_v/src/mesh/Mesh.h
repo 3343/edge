@@ -77,6 +77,26 @@ class edge_v::mesh::Mesh {
     //! volumes of the elements
     double * m_volEl = nullptr;
 
+    //! normals of the faces
+    double (* m_normals)[3] = nullptr;
+
+    //! tangents of the faces
+    double (* m_tangents)[2][3] = nullptr;
+
+    /**
+     * Returns an entry in the second array, which is not in the first one.
+     *
+     * @param i_sizeFirst size of the first array.
+     * @param i_sizeSecond size of the second array.
+     * @param i_first first array.
+     * @param i_second second array.
+     * @return first found entry present in the second but not in the first one. numeric_limits< std::size_t >::max() if none.
+     **/
+    static std::size_t getAddEntry( std::size_t   i_sizeFirst,
+                                    std::size_t   i_sizeSecond,
+                                    std::size_t * i_first,
+                                    std::size_t * i_second );
+
     /**
      * Gathers the vertex coordinates of the given entity.
      *
@@ -254,6 +274,20 @@ class edge_v::mesh::Mesh {
      * @return volumes.
      **/
     double const * getVolumesEl();
+
+    /**
+     * Gets the normals of the faces.
+     *
+     * @return normals of the faces.
+     **/
+    double const (* getNormals() )[3];
+
+    /**
+     * Gets the tangents of the faces.
+     *
+     * @return tangents of the faces.
+     **/
+    double const (* getTangents() )[2][3];
 
     /**
      * Gets the length (1d), incircle (2d) or insphere (3d) diameters of the elements.

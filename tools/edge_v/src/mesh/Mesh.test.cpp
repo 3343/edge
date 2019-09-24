@@ -31,6 +31,38 @@ namespace edge_v {
   }
 }
 
+TEST_CASE( "Tests the derivation of the extra entry in two arrays..", "[mesh][getAddEntry]" ) {
+  std::size_t l_first0[3]  = { 4, 9, 1    };
+  std::size_t l_second0[4] = { 1, 9, 5, 4 };
+
+  std::size_t l_add0 = edge_v::mesh::Mesh::getAddEntry( 3,
+                                                        4,
+                                                        l_first0,
+                                                        l_second0 );
+
+  REQUIRE( l_add0 == 5 );
+
+  std::size_t l_first1[3]  = { 4, 9, 1             };
+  std::size_t l_second1[7] = { 1, 9, 1, 4, 1, 9, 4 };
+
+  std::size_t l_add1 = edge_v::mesh::Mesh::getAddEntry( 3,
+                                                        7,
+                                                        l_first1,
+                                                        l_second1 );
+
+  REQUIRE( l_add1 == std::numeric_limits< std::size_t >::max() );
+
+  std::size_t l_first2[4]  = { 3, 9, 1       };
+  std::size_t l_second2[5] = { 9, 9, 1, 3, 2 };
+
+  std::size_t l_add2 = edge_v::mesh::Mesh::getAddEntry( 3,
+                                                        5,
+                                                        l_first2,
+                                                        l_second2 );
+
+  REQUIRE( l_add2 == 2 );
+}
+
 TEST_CASE( "Tests the mesh interface for triangular meshes.", "[mesh][Tria3]" ) {
   // only continue if the unit test files are available
   if( edge_v::test::g_files != "" ) {
