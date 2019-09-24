@@ -35,14 +35,6 @@ namespace edge_v {
 class edge_v::mesh::Geom {
   private:
     /**
-     * Computes the area of a 3-node triangle.
-     *
-     * @param i_veCrds vertex coordinates of the triangle.
-     * @return area of the triangle.
-     **/
-    static double areaTria3( double const (*i_veCrds)[3] );
-
-    /**
      * Computes the volume of a 4-node tetrahedron.
      *
      * @param i_veCrds vertex coordinates of the tetrahedron.
@@ -51,65 +43,12 @@ class edge_v::mesh::Geom {
     static double volumeTet4(  double const (*i_veCrds)[3] );
 
     /**
-     * Computes the incircle-diameter of 3-node triangles.
-     *
-     * @param i_veCrds vertex coordinates.
-     * @return diameter.
-     **/
-    static double inDiameterTria3( double const (*i_veCrds)[3] );
-
-    /**
      * Computes the insphere-diameter of 4-node tetrahedrons.
      *
      * @param i_veCrds vertex coordinates.
      * @return diameter.
      **/
     static double inDiameterTet4( double const (*i_veCrds)[3] );
-
-    /**
-     * Normalizes the order of the vertices and faces.
-     * The input is assumed to be ascending (w.r.t. the vertex ids) for all adjacency info.
-     *
-     * Example for the mapping of the initial, vertex-ordered face assignment to an orientation-based assignment:
-     *
-     *                 15                             15
-     *                 *                              *
-     *               *    *             map         *    *
-     *             * 0    1  *         ---->      * 0     2 *
-     *           *      2       *               *       1      *
-     *       35 ******************** 80     35 ******************** 80
-     *
-     * Example for a valid mapping (0->1, 1->2, 2-> 0 is counter-clockwise):
-     *
-     *                0                   2 *
-     *                *              Ref.   * *
-     *             *      *         ---->   *   *
-     *           *             *            *     *
-     *       1 ******************** 2     0 ********* 1
-     *
-     * In this case we only check that the first face has vertices 0 and 1, the second face has vertices 1 and 2 and the
-     * third face has vertices 2 and 0. No changes are performed.
-     *
-     * Example for an invalid mapping (0->1, 1->2, 2-> 0 is clockwise):
-     *
-     *                0                   1 *
-     *                *              Ref.   * *
-     *             *      *         ---->   *   *
-     *           *             *            *     *
-     *       2 ******************** 1     0 ********* 2
-     *
-     * In this case we exchange the local position of vertices 1 and 2.
-     * Additional we change the ordering of the faces to match this.
-     *
-     * @param i_veCrds coordinates of the element's vertices.
-     * @param io_elVe vertices adjacent to the element (ordered ascending by the ids).
-     * @param io_elFa faces adjacent to the element (ordered ascending by the vertex ids of the faces).
-     * @param io_elFaEl elements adjacent to the elements (ordered ascending by the vertex ids of the faces).
-     **/
-    static void normVesFasTria3( double      const (* i_veCrds)[3],
-                                 std::size_t        * io_elVe,
-                                 std::size_t        * io_elFa,
-                                 std::size_t        * io_elFaEl );
 
     /**
      * Normalizes the order for faces and vertices of tetrahedral elements.
