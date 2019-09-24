@@ -302,6 +302,18 @@ void edge_v::mesh::Geom::normVesFasTet4( double      const (* i_veCrds)[3],
   }
 }
 
+void edge_v::mesh::Geom::normal( t_entityType         i_enTy,
+                                 double       const (*i_veCrds)[3],
+                                 double       const   i_nPt[3],
+                                 double               o_normal[3] ) {
+  if( i_enTy == LINE ) {
+    normalLine( i_veCrds,
+                i_nPt,
+                o_normal );
+  }
+  else EDGE_V_LOG_FATAL;
+}
+
 double edge_v::mesh::Geom::inDiameter( t_entityType         i_enTy,
                                        double       const (*i_veCrds)[3] ) {
   double l_dia = std::numeric_limits< double >::max();

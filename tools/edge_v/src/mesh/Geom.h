@@ -193,6 +193,19 @@ class edge_v::mesh::Geom {
                           double       const (*i_veCrds)[3] );
 
     /**
+     * Computes the normal for the given entity
+     *
+     * @param i_enTy entity type.
+     * @param i_veCrds vertex coordinates.
+     * @param i_nPt normal point on one side of the entity (normal will point to the other direction).
+     * @param o_normal will be set to normal.
+     **/
+    static void normal( t_entityType         i_enTy,
+                        double       const (*i_veCrds)[3],
+                        double       const   i_nPt[3],
+                        double               o_normal[3] );
+
+    /**
      * Computes the length (1d), incircle (2d) or insphere diameter (3d).
      *
      * @param i_enTy entity type.
