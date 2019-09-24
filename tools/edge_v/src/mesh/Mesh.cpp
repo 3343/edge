@@ -369,6 +369,9 @@ double const * edge_v::mesh::Mesh::getAreaFa() {
     t_entityType l_faTy = CE_T_FA( m_elTy );
     unsigned short l_nFaVes = CE_N_VES( l_faTy );
 
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
     for( std::size_t l_fa = 0; l_fa < m_nFas; l_fa++ ) {
       // get vertex coordinates
       double l_veCrds[4][3] = {};
@@ -394,6 +397,9 @@ double const * edge_v::mesh::Mesh::getVolumeEl() {
 
     unsigned short l_nElVes = CE_N_VES( m_elTy );
 
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
     for( std::size_t l_el = 0; l_el < m_nEls; l_el++ ) {
       // get vertex coordinates
       double l_veCrds[8][3] = {};
