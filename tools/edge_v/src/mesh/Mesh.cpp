@@ -479,11 +479,42 @@ double const (* edge_v::mesh::Mesh::getNormals() )[3] {
   return m_normals;
 }
 
-/**
- * Gets the tangents of the faces.
- *
- * @return tangents of the faces.
- **/
 double const (* edge_v::mesh::Mesh::getTangents() )[2][3] {
+  // only work on this once
+  if( m_tangents == nullptr ) {
+    // allocate memory
+    m_tangents = (double (*)[2][3]) new double[ m_nFas*2*3 ];
+
+    t_entityType l_faTy = CE_T_FA( m_elTy );
+    unsigned short l_nElVes = CE_N_VES( m_elTy );
+    unsigned short l_nFaVes = CE_N_VES( l_faTy );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+    for( std::size_t l_fa = 0; l_fa < m_nFas; l_fa++ ) {
+      // get vertex coordinates
+      double l_veCrds[4][3] = {};
+      getEnVeCrds( l_faTy,
+                   m_faVe + (l_nFaVes * l_fa),
+                   m_veCrds,
+                   l_veCrds );
+
+      // normal point from the first element
+      std::size_t l_el = m_faEl[l_fa*2];
+      std::size_t l_np = getAddEntry( l_nFaVes,
+                                      l_nElVes,
+                                      m_faVe+(l_nFaVes*l_fa),
+                                      m_elVe+(l_nElVes*l_el) );
+      EDGE_V_CHECK_NE( l_np, std::numeric_limits< std::size_t >::max() );
+
+      // compute tangents
+      Geom::tangents( l_faTy,
+                      l_veCrds,
+                      m_veCrds[l_np],
+                      m_tangents[l_fa] );
+    }
+  }
+
   return m_tangents;
 }
