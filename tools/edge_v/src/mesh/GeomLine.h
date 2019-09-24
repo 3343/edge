@@ -23,9 +23,6 @@
 #ifndef EDGE_V_MESH_GEOM_LINE_H
 #define EDGE_V_MESH_GEOM_LINE_H
 
-#include "../constants.h"
-#include <cmath>
-
 namespace edge_v {
   namespace mesh {
     class GeomLine;
