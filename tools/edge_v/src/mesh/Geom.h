@@ -35,14 +35,6 @@ namespace edge_v {
 class edge_v::mesh::Geom {
   private:
     /**
-     * Computes the length of a line.
-     *
-     * @param i_veCrds vertex coordinates of the line.
-     * @return length of the line.
-     **/
-    static double lengthLine( double const (*i_veCrds)[3] );
-
-    /**
      * Computes the area of a 3-node triangle.
      *
      * @param i_veCrds vertex coordinates of the triangle.
@@ -73,28 +65,6 @@ class edge_v::mesh::Geom {
      * @return diameter.
      **/
     static double inDiameterTet4( double const (*i_veCrds)[3] );
-
-    /**
-     * Computes the directed normal for a line.
-     *
-     * @param i_veCrds vertices of the line.
-     * @param i_nPt point lying on the non-normal side of the line (normal will point away from this point).
-     * @param o_normal will be set to normal.
-     **/
-    static void normalLine( double const (*i_veCrds)[3],
-                            double const   i_nPt[3],
-                            double         o_normal[3] );
-
-    /**
-     * Computes the tangent for a line (right-handed coordinate system with normal).
-     *
-     * @param i_veCrds vertices of the line.
-     * @param i_nPt point lying on the non-normal side of the line (normal is assumed to point away from this point).
-     * @param o_tangent will be set to tangent.
-     **/
-    static void tangentLine( double const (*i_veCrds)[3],
-                             double const   i_nPt[3],
-                             double         o_tangent[3] );
 
     /**
      * Normalizes the order of the vertices and faces.
