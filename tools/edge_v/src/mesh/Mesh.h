@@ -280,14 +280,14 @@ class edge_v::mesh::Mesh {
      *
      * @return normals of the faces.
      **/
-    double const (* getNormals() )[3];
+    double const (* getNormalsFa() )[3];
 
     /**
      * Gets the tangents of the faces.
      *
      * @return tangents of the faces.
      **/
-    double const (* getTangents() )[2][3];
+    double const (* getTangentsFa() )[2][3];
 
     /**
      * Gets the length (1d), incircle (2d) or insphere (3d) diameters of the elements.

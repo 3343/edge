@@ -439,7 +439,7 @@ double const * edge_v::mesh::Mesh::getVolumesEl() {
   return m_volEl;
 }
 
-double const (* edge_v::mesh::Mesh::getNormals() )[3] {
+double const (* edge_v::mesh::Mesh::getNormalsFa() )[3] {
   // only work on this once
   if( m_normals == nullptr ) {
     // allocate memory
@@ -479,7 +479,7 @@ double const (* edge_v::mesh::Mesh::getNormals() )[3] {
   return m_normals;
 }
 
-double const (* edge_v::mesh::Mesh::getTangents() )[2][3] {
+double const (* edge_v::mesh::Mesh::getTangentsFa() )[2][3] {
   // only work on this once
   if( m_tangents == nullptr ) {
     // allocate memory
