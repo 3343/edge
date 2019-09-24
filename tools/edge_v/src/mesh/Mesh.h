@@ -69,7 +69,7 @@ class edge_v::mesh::Mesh {
     std::size_t *m_elFaEl;
 
     //! indiameter of the elements
-    double *m_inDiaEl;
+    double *m_inDiasEl;
 
     //! area/length of the faces
     double * m_volFa = nullptr;
@@ -246,21 +246,21 @@ class edge_v::mesh::Mesh {
      *
      * @return area/length.
      **/
-    double const * getAreaFa();
+    double const * getAreasFa();
 
     /**
      * Gets the volumes of the elements.
      *
      * @return volumes.
      **/
-    double const * getVolumeEl();
+    double const * getVolumesEl();
 
     /**
      * Gets the length (1d), incircle (2d) or insphere (3d) diameters of the elements.
      *
      * @return element diameter.
      **/
-    double const * getInDiaEl() const { return m_inDiaEl; }
+    double const * getInDiasEl() const { return m_inDiasEl; }
 };
 
 #endif

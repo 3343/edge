@@ -97,7 +97,7 @@ int main( int i_argc, char *i_argv[] ) {
                            l_mesh.nEls(),
                            l_mesh.getElVe(),
                            l_mesh.getVeCrds(),
-                           l_mesh.getInDiaEl(),
+                           l_mesh.getInDiasEl(),
                            l_veMod );
   l_cfl.printStats();
 

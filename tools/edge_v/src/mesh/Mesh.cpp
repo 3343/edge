@@ -300,7 +300,7 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
   m_elVe = new std::size_t[ l_size ];
 
   l_size  = m_nEls;
-  m_inDiaEl = new double[ l_size ];
+  m_inDiasEl = new double[ l_size ];
 
   l_size = m_nEls * l_nElFas;
   m_elFaEl = new std::size_t[ l_size ];
@@ -328,7 +328,7 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                  m_nEls,
                  m_elVe,
                  m_veCrds,
-                 m_inDiaEl );
+                 m_inDiasEl );
 
   normOrder( m_elTy,
              m_nFas,
@@ -348,7 +348,7 @@ edge_v::mesh::Mesh::~Mesh() {
   delete[] m_elVe;
   delete[] m_elFa;
   delete[] m_elFaEl;
-  delete[] m_inDiaEl;
+  delete[] m_inDiasEl;
   if( m_volFa != nullptr ) delete[] m_volFa;
   if( m_volEl != nullptr ) delete[] m_volEl;
 }
@@ -360,7 +360,7 @@ void edge_v::mesh::Mesh::printStats() const {
   EDGE_V_LOG_INFO << "  #elements: " << m_nEls;
 }
 
-double const * edge_v::mesh::Mesh::getAreaFa() {
+double const * edge_v::mesh::Mesh::getAreasFa() {
   // only work on this once
   if( m_volFa == nullptr ) {
     // allocate memory
@@ -389,7 +389,7 @@ double const * edge_v::mesh::Mesh::getAreaFa() {
   return m_volFa;
 }
 
-double const * edge_v::mesh::Mesh::getVolumeEl() {
+double const * edge_v::mesh::Mesh::getVolumesEl() {
   // only work on this once
   if( m_volEl == nullptr ) {
     // allocate memory
