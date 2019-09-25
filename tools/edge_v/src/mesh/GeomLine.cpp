@@ -40,9 +40,10 @@ void edge_v::mesh::GeomLine::normal( double const (*i_veCrds)[3],
                                      double const   i_nPt[3],
                                      double         o_normal[3] ) {
   // unit vector: v0 -> v1
-  Eigen::Vector2d l_d;
-  l_d[0] = i_veCrds[1][0] - i_veCrds[0][0];
-  l_d[1] = i_veCrds[1][1] - i_veCrds[0][1];
+  Eigen::Vector2d l_v0( i_veCrds[0] );
+  Eigen::Vector2d l_v1( i_veCrds[1] );
+
+  Eigen::Vector2d l_d = l_v1 - l_v0;
   l_d.normalize();
 
   // derive normal
@@ -73,7 +74,9 @@ void edge_v::mesh::GeomLine::normal( double const (*i_veCrds)[3],
    *  |_______
    */
   Eigen::Vector2d l_nPt( i_nPt );
-  double l_dp = l_n.dot( l_nPt );
+  Eigen::Vector2d l_dn = l_nPt - l_v0;
+
+  double l_dp = l_n.dot( l_dn );
 
   // if the dot product is positive, the angle is below 90deg:
   // we want the normal to point in the other direction; therefore we have to change the sign
