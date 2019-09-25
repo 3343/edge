@@ -136,14 +136,16 @@ class edge_v::mesh::Mesh {
      * @param io_faEl elements adjacent to the faces.
      * @param i_elFa faces adjacent to the elements.
      * @param io_elFaEl elements adjacent to elements (faces as bridge).
+     * @param o_pFasGt will be set to periodic faces originally only adjacent to the element with the greater id.
      **/
-    static void setPeriodicBnds( t_entityType         i_elTy,
-                                 std::size_t          i_nFas,
-                                 std::size_t const  * i_faVe,
-                                 double      const (* i_veCrds)[3],
-                                 std::size_t        * io_faEl,
-                                 std::size_t const  * i_elFa,
-                                 std::size_t        * io_elFaEl );
+    static void setPeriodicBnds( t_entityType                        i_elTy,
+                                 std::size_t                         i_nFas,
+                                 std::size_t                const  * i_faVe,
+                                 double                     const (* i_veCrds)[3],
+                                 std::size_t                       * io_faEl,
+                                 std::size_t                const  * i_elFa,
+                                 std::size_t                       * io_elFaEl,
+                                 std::vector< std::size_t >        & o_pFasGt );
 
     /**
      * Normalizes the order of the given adjacency information.

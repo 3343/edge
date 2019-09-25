@@ -91,13 +91,16 @@ void edge_v::mesh::Mesh::setInDiameter( t_entityType          i_enTy,
   }
 }
 
-void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
-                                          std::size_t          i_nFas,
-                                          std::size_t const  * i_faVe,
-                                          double      const (* i_veCrds)[3],
-                                          std::size_t        * io_faEl,
-                                          std::size_t const  * i_elFa,
-                                          std::size_t        * io_elFaEl ) {
+void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                        i_elTy,
+                                          std::size_t                         i_nFas,
+                                          std::size_t                const  * i_faVe,
+                                          double                     const (* i_veCrds)[3],
+                                          std::size_t                       * io_faEl,
+                                          std::size_t                const  * i_elFa,
+                                          std::size_t                       * io_elFaEl,
+                                          std::vector< std::size_t >        & o_pFasGt ) {
+  o_pFasGt.resize(0);
+
   // get boundary faces
   std::vector< std::size_t > l_bndFas;
   for( std::size_t l_fa = 0; l_fa < i_nFas; l_fa++ ) {
@@ -184,7 +187,7 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
     EDGE_V_CHECK_EQ( l_faPairs[ l_faPairs[l_fa] ], l_fa );
   }
 
-  // insert the missing elements
+  // insert the missing elements and store the face with the larger adjacent element
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
   for( std::size_t l_f0 = 0; l_f0 < l_faPairs.size(); l_f0++ ) {
     std::size_t l_f1 = l_faPairs[l_f0];
@@ -195,6 +198,12 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
     std::size_t l_el0 = io_faEl[l_f0Id*2 + 0];
     std::size_t l_el1 = io_faEl[l_f1Id*2 + 0];
     io_faEl[l_f0Id*2 + 1] = l_el1;
+
+    // reverse order for face with larger element
+    // results in consistent normals and tangents w.r.t. the other face
+    if( l_el0 > l_el1 ) {
+      o_pFasGt.push_back( l_f0Id );
+    }
 
     for( unsigned short l_ad = 0; l_ad < l_nElFas; l_ad++ ) {
       if( i_elFa[l_el0*l_nElFas + l_ad] == l_f0Id ) {
@@ -339,6 +348,7 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
   i_moab.getElFaEl( m_elTy, m_elFaEl );
 
   // adjust periodic boundaries
+  std::vector< std::size_t > l_pFasGt;
   if( i_periodic ) {
     setPeriodicBnds( m_elTy,
                      m_nFas,
@@ -346,7 +356,8 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                      m_veCrds,
                      m_faEl,
                      m_elFa,
-                     m_elFaEl );
+                     m_elFaEl,
+                     l_pFasGt );
   }
 
   // compute mesh properties
@@ -365,6 +376,15 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
              m_elVe,
              m_elFa,
              m_elFaEl );
+
+  // reverse the order of larger-element periodic faces for consistent normals
+  for( std::size_t l_pf = 0; l_pf < l_pFasGt.size(); l_pf++ ) {
+    std::size_t l_fa = l_pFasGt[l_pf];
+
+    std::size_t l_tmpEl = m_faEl[l_fa*2+0];
+    m_faEl[l_fa*2+0] = m_faEl[l_fa*2+1];
+    m_faEl[l_fa*2+1] = l_tmpEl;
+  }
 }
 
 edge_v::mesh::Mesh::~Mesh() {
