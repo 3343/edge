@@ -96,6 +96,7 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
                                           std::size_t const  * i_faVe,
                                           double      const (* i_veCrds)[3],
                                           std::size_t        * io_faEl,
+                                          std::size_t const  * i_elFa,
                                           std::size_t        * io_elFaEl ) {
   // get boundary faces
   std::vector< std::size_t > l_bndFas;
@@ -168,7 +169,7 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
       unsigned short l_constDim1 = l_eqDi( l_nFaVes*l_nFaVes, l_bndFas[l_f1], l_bndFas[l_f1] );
 
       if( l_constDim0 == l_constDim1 ) {
-        unsigned short l_nMaVes = l_maVes( l_constDim0, l_f0, l_f1 );
+        unsigned short l_nMaVes = l_maVes( l_constDim0, l_bndFas[l_f0], l_bndFas[l_f1] );
 
         if( l_f0 != l_f1 && l_nMaVes == l_nFaVes ) {
           l_faPairs.push_back( l_f1 );
@@ -187,12 +188,16 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType         i_elTy,
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
   for( std::size_t l_f0 = 0; l_f0 < l_faPairs.size(); l_f0++ ) {
     std::size_t l_f1 = l_faPairs[l_f0];
-    std::size_t l_el0 = io_faEl[l_f0*2 + 0];
-    std::size_t l_el1 = io_faEl[l_f1*2 + 0];
-    io_faEl[l_f0*2 + 1] = l_el1;
+
+    std::size_t l_f0Id = l_bndFas[ l_f0 ];
+    std::size_t l_f1Id = l_bndFas[ l_f1 ];
+
+    std::size_t l_el0 = io_faEl[l_f0Id*2 + 0];
+    std::size_t l_el1 = io_faEl[l_f1Id*2 + 0];
+    io_faEl[l_f0Id*2 + 1] = l_el1;
 
     for( unsigned short l_ad = 0; l_ad < l_nElFas; l_ad++ ) {
-      if( io_elFaEl[l_el0*l_nElFas + l_ad] == std::numeric_limits< std::size_t >::max() ) {
+      if( i_elFa[l_el0*l_nElFas + l_ad] == l_f0Id ) {
         io_elFaEl[l_el0*l_nElFas + l_ad] = l_el1;
       }
     }
@@ -340,6 +345,7 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                      m_faVe,
                      m_veCrds,
                      m_faEl,
+                     m_elFa,
                      m_elFaEl );
   }
 

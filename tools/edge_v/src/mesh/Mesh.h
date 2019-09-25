@@ -134,6 +134,7 @@ class edge_v::mesh::Mesh {
      * @param i_faVe vertices of the faces.
      * @param i_veCrds vertex coordinates.
      * @param io_faEl elements adjacent to the faces.
+     * @param i_elFa faces adjacent to the elements.
      * @param io_elFaEl elements adjacent to elements (faces as bridge).
      **/
     static void setPeriodicBnds( t_entityType         i_elTy,
@@ -141,6 +142,7 @@ class edge_v::mesh::Mesh {
                                  std::size_t const  * i_faVe,
                                  double      const (* i_veCrds)[3],
                                  std::size_t        * io_faEl,
+                                 std::size_t const  * i_elFa,
                                  std::size_t        * io_elFaEl );
 
     /**
