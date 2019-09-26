@@ -36,6 +36,64 @@ TEST_CASE( "Tests the volume computation for 3-node triangles.", "[volume][tria3
   REQUIRE( l_vol2 == Approx(1.27279) );
 }
 
+TEST_CASE( "Tests the tangents computation for 3-node triangles.", "[tangents][tria3]" ) {
+  double l_ves0[3][3] = { {3.0, 2.0, 2.0}, {5.0, 4.0, 2.0}, {3.0, 4.0, 2.0} };
+  double l_np0[3] = { 4.5, 2.5, -3.0 };
+
+  double l_tangents[2][3] = {0};
+
+  edge_v::mesh::GeomTria3::tangents( l_ves0,
+                                     l_np0,
+                                     l_tangents );
+
+  REQUIRE( l_tangents[0][0] == Approx(  std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[0][1] == Approx(  std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[0][2] == Approx(  0              ) );
+
+  REQUIRE( l_tangents[1][0] == Approx( -std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[1][1] == Approx(  std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[1][2] == Approx(  0              ) );
+
+  double l_np1[3] = { 4.5, 2.5, 3.0 };
+
+  edge_v::mesh::GeomTria3::tangents( l_ves0,
+                                     l_np1,
+                                     l_tangents );
+
+  REQUIRE( l_tangents[0][0] == Approx( -std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[0][1] == Approx(  std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[0][2] == Approx(  0              ) );
+
+  REQUIRE( l_tangents[1][0] == Approx(  std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[1][1] == Approx(  std::sqrt(0.5) ) );
+  REQUIRE( l_tangents[1][2] == Approx(  0              ) );
+}
+
+TEST_CASE( "Tests the normal computation for 3-node triangles.", "[normal][tria3]" ) {
+  double l_ves0[3][3] = { {3.0, 2.0, 2.0}, {5.0, 4.0, 2.0}, {3.0, 4.0, 2.0} };
+  double l_np0[3] = { 4.5, 2.5, -3.0 };
+
+  double l_normal[3] = {0};
+
+  edge_v::mesh::GeomTria3::normal( l_ves0,
+                                   l_np0,
+                                   l_normal );
+
+  REQUIRE( l_normal[0] == Approx(0.0) );
+  REQUIRE( l_normal[1] == Approx(0.0) );
+  REQUIRE( l_normal[2] == Approx(1.0) );
+
+  double l_np1[3] = { 4.5, 2.5, 5.0 };
+
+  edge_v::mesh::GeomTria3::normal( l_ves0,
+                                   l_np1,
+                                   l_normal );
+
+  REQUIRE( l_normal[0] == Approx( 0.0) );
+  REQUIRE( l_normal[1] == Approx( 0.0) );
+  REQUIRE( l_normal[2] == Approx(-1.0) );
+}
+
 TEST_CASE( "Tests the incircle diameter computation for 3-node triangles.", "[inDiameter][tria3]" ) { 
   // construct equilateral triangle
   double l_ves[3][3] = { {0.0, 0.0, 0.0} , {1.0, 0.0, 0.0}, {0.5, std::sqrt(3.0)/2.0, 0.0 } };

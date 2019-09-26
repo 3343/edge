@@ -45,6 +45,80 @@ double edge_v::mesh::GeomTria3::area( double const (*i_veCrds)[3] ) {
   return l_vol;
 }
 
+void edge_v::mesh::GeomTria3::tangents( double const (*i_veCrds)[3],
+                                        double const   i_nPt[3],
+                                        double         o_tangents[2][3] ) {
+  /*
+   * we can derive the second (normal) tangent from the first tangent
+   *
+   *            x <- d1
+   * d0 -> x   *
+   *       *  *
+   *       * *
+   *       x******x <- n: that's the vector we want
+   *
+   *  <d0, n> = 0
+   *  <d0, d1 + alpha * d0> = 0
+   *  <d0, d1> + <d0, alpha * d0> = 0
+   *  => alpha = - <d0,d1> / <d0,d0>
+   *  => n = d1 + alpha * d0
+   */
+  Eigen::Vector3d l_v0( i_veCrds[0] );
+  Eigen::Vector3d l_v1( i_veCrds[1] );
+  Eigen::Vector3d l_v2( i_veCrds[2] );
+
+  // directions
+  Eigen::Vector3d l_d0 = l_v1 - l_v0;
+  Eigen::Vector3d l_d1 = l_v2 - l_v0;
+
+  // compute alpha
+  double l_alpha = -l_d0.dot( l_d1 ) / l_d0.dot( l_d0 );
+
+  // compute in-plane normal to d0 and normalize
+  Eigen::Vector3d l_n0 = l_d1 + l_alpha * l_d0;
+  l_d0.normalize();
+  l_n0.normalize();
+
+  // compute normal to d0 and n0
+  Eigen::Vector3d l_n1 = l_d0.cross( l_n0 );
+
+  // check if we have to change the orientation
+  // which implies a change of the tangents right-handed coordinate system
+  Eigen::Vector3d l_np( i_nPt );
+  Eigen::Vector3d l_dn = l_np - l_v0;
+  double l_dp = l_n1.dot( l_dn );
+  if( l_dp > 0 ) {
+    Eigen::Vector3d l_tmp = l_d0;
+    l_d0 = l_n0;
+    l_n0 = l_tmp;
+  }
+
+  // store results
+  for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+    o_tangents[0][l_di] = l_d0[l_di];
+    o_tangents[1][l_di] = l_n0[l_di];
+  }
+}
+
+void edge_v::mesh::GeomTria3::normal( double const (*i_veCrds)[3],
+                                      double const   i_nPt[3],
+                                      double         o_normal[3] ) {
+  // compute tangents
+  double l_ts[2][3] = {0};
+  tangents( i_veCrds,
+            i_nPt,
+            l_ts );
+
+  Eigen::Vector3d l_t0( l_ts[0] );
+  Eigen::Vector3d l_t1( l_ts[1] );
+
+  // derive normal as cross-product
+  Eigen::Vector3d l_n = l_t0.cross( l_t1 );
+
+  for( unsigned short l_di = 0; l_di < 3; l_di++ )
+    o_normal[l_di] = l_n[l_di];
+}
+
 double edge_v::mesh::GeomTria3::inDiameter( double const (*i_veCrds)[3] ) {
   // check zero last dimension
   EDGE_V_CHECK_EQ( i_veCrds[0][2], 0 );

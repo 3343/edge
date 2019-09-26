@@ -42,6 +42,28 @@ class edge_v::mesh::GeomTria3 {
     static double area( double const (*i_veCrds)[3] );
 
     /**
+     * Computes the face-aligned tangents.
+     *
+     * @param i_veCrds vertices of the triangle.
+     * @param i_nPt point lying on the non-normal side of the triangle (normal is assumed to point away from this point).
+     * @param o_tangents will be set to tangents.
+     **/
+    static void tangents( double const (*i_veCrds)[3],
+                          double const   i_nPt[3],
+                          double         o_tangents[2][3] );
+
+    /**
+     * Computes the directed normal.
+     *
+     * @param i_veCrds vertices of the triangle.
+     * @param i_nPt point lying on the non-normal side of the triangle (normal will point away from this point).
+     * @param o_normal will be set to normal.
+     **/
+    static void normal( double const (*i_veCrds)[3],
+                        double const   i_nPt[3],
+                        double         o_normal[3] );
+
+    /**
      * Computes the incircle-diameter.
      *
      * @param i_veCrds vertex coordinates.

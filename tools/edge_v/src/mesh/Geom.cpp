@@ -56,6 +56,11 @@ void edge_v::mesh::Geom::normal( t_entityType         i_enTy,
                       i_nPt,
                       o_normal );
   }
+  else if( i_enTy == TRIA3 ) {
+    GeomTria3::normal( i_veCrds,
+                       i_nPt,
+                       o_normal );
+  }
   else EDGE_V_LOG_FATAL;
 }
 
@@ -71,6 +76,11 @@ void edge_v::mesh::Geom::tangents( t_entityType         i_enTy,
     GeomLine::tangent( i_veCrds,
                        i_nPt,
                        o_tangents[0] );
+  }
+  else if( i_enTy == TRIA3 ) {
+    GeomTria3::tangents( i_veCrds,
+                         i_nPt,
+                         o_tangents );
   }
   else EDGE_V_LOG_FATAL;
 }
