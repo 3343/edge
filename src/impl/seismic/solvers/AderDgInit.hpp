@@ -376,7 +376,7 @@ class edge::seismic::solvers::AderDgInit {
      * @param i_nFas number of faces.
      * @param i_faEl elements adjacent to faces.
      * @param i_elVe vertices adjacent to elements.
-     * @param i_elFa faces adjacent to elements.
+     * @param i_elFaEl faces adjacent to elements.
      * @param i_elMeDa mapping of element ids: mesh-to-data.
      * @param i_elDaMe mapping of element ids: data-to-mesh.
      * @param i_veChars vertex characteristics.
@@ -394,7 +394,7 @@ class edge::seismic::solvers::AderDgInit {
                         TL_T_LID                i_nFas,
                         TL_T_LID       const (* i_faEl)[2],
                         TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
-                        TL_T_LID       const (* i_elFa)[TL_N_FAS],
+                        TL_T_LID       const (* i_elFaEl)[TL_N_FAS],
                         TL_T_LID       const  * i_elMeDa,
                         TL_T_LID       const  * i_elDaMe,
                         t_vertexChars  const  * i_veChars,
@@ -443,12 +443,12 @@ class edge::seismic::solvers::AderDgInit {
         unsigned short l_fIdL = std::numeric_limits< unsigned short >::max();
         unsigned short l_fIdR = std::numeric_limits< unsigned short >::max();
         for( unsigned short l_fi = 0; l_fi < TL_N_FAS; l_fi++ ) {
-          if( l_exL && i_elFa[l_elL][l_fi] == l_fa ) {
+          if( l_exL && i_elFaEl[l_elL][l_fi] == l_elR ) {
             // face should only by found once
             EDGE_CHECK_EQ( l_fIdL, std::numeric_limits< unsigned short >::max() );
             l_fIdL = l_fi;
           }
-          if( l_exR && i_elFa[l_elR][l_fi] == l_fa ) {
+          if( l_exR && i_elFaEl[l_elR][l_fi] == l_elL ) {
             // face should only by found once
             EDGE_CHECK_EQ( l_fIdR, std::numeric_limits <unsigned short >::max() );
             l_fIdR = l_fi;

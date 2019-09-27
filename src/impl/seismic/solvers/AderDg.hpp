@@ -203,7 +203,7 @@ class edge::seismic::solvers::AderDg {
      * @param i_nFas number of faces.
      * @param i_faEl elements adjacent to faces.
      * @param i_elVe vertices adjacent to elements.
-     * @param i_elFa faces adjacent to elements.
+     * @param i_elFaEl elements adjacent to elements through faces as bridge.
      * @param i_elMeDa mesh to data mapping for elements.
      * @param i_elDaMe data to mesh mapping for elements.
      * @param i_veChars vertex characteristics.
@@ -221,7 +221,7 @@ class edge::seismic::solvers::AderDg {
            TL_T_LID                i_nFas,
            TL_T_LID       const (* i_faEl)[2],
            TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
-           TL_T_LID       const (* i_elFa)[TL_N_FAS],
+           TL_T_LID       const (* i_elFaEl)[TL_N_FAS],
            TL_T_LID       const  * i_elMeDa,
            TL_T_LID       const  * i_elDaMe,
            t_vertexChars  const  * i_veChars,
@@ -285,7 +285,7 @@ class edge::seismic::solvers::AderDg {
                                         i_nFas,
                                         i_faEl,
                                         i_elVe,
-                                        i_elFa,
+                                        i_elFaEl,
                                         i_elMeDa,
                                         i_elDaMe,
                                         i_veChars,
