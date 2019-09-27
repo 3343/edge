@@ -199,8 +199,7 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                        i_
     std::size_t l_el1 = io_faEl[l_f1Id*2 + 0];
     io_faEl[l_f0Id*2 + 1] = l_el1;
 
-    // reverse order for face with larger element
-    // results in consistent normals and tangents w.r.t. the other face
+    // store faces where the first element has greater id than the second one
     if( l_el0 > l_el1 ) {
       o_pFasGt.push_back( l_f0Id );
     }
