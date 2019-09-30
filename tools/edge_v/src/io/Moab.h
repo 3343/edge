@@ -92,11 +92,13 @@ class edge_v::io::Moab {
 #pragma omp parallel for
 #endif
       for( std::size_t l_va = 0; l_va < i_nValues; l_va++ ) {
+#ifndef __clang__
         // check bounds
         if( !std::is_signed<TL_T_OUT>() ) {
           EDGE_V_CHECK_GE( i_data[l_va], std::numeric_limits< TL_T_OUT >::lowest() );
         }
         EDGE_V_CHECK_LE( i_data[l_va], std::numeric_limits< TL_T_OUT >::max()    );
+#endif
 
         o_data[l_va] = i_data[l_va];
       }
