@@ -104,7 +104,7 @@ void edge_v::mesh::GeomTria3::normal( double const (*i_veCrds)[3],
                                       double const   i_nPt[3],
                                       double         o_normal[3] ) {
   // compute tangents
-  double l_ts[2][3] = {0};
+  double l_ts[2][3] = {{0}};
   tangents( i_veCrds,
             i_nPt,
             l_ts );

@@ -40,7 +40,7 @@ TEST_CASE( "Tests the tangents computation for 3-node triangles.", "[tangents][t
   double l_ves0[3][3] = { {3.0, 2.0, 2.0}, {5.0, 4.0, 2.0}, {3.0, 4.0, 2.0} };
   double l_np0[3] = { 4.5, 2.5, -3.0 };
 
-  double l_tangents[2][3] = {0};
+  double l_tangents[2][3] = {{0}};
 
   edge_v::mesh::GeomTria3::tangents( l_ves0,
                                      l_np0,
