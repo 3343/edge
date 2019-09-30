@@ -121,7 +121,7 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
   } l_elChars[7] = { {0},{0},{0},{0},{0},{0},{0} };
 
   // assign el-ve adjacency
-  int l_elVe[7][4];
+  unsigned int l_elVe[7][4];
   l_elVe[0][0] =  1; l_elVe[0][1] = 4;  l_elVe[0][2] =  3; l_elVe[0][3] = 0;
   l_elVe[1][0] =  2; l_elVe[1][1] = 5;  l_elVe[1][2] =  4; l_elVe[1][3] = 1;
   l_elVe[2][0] =  4; l_elVe[2][1] = 7;  l_elVe[2][2] =  6; l_elVe[2][3] = 3;
@@ -131,7 +131,7 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
   l_elVe[6][0] = 11; l_elVe[6][1] = 12; l_elVe[6][2] =  5; l_elVe[6][3] = 2;
 
   // assign global ids
-  int l_gIdsEl[7];
+  unsigned int l_gIdsEl[7];
   l_gIdsEl[0] = 3; l_gIdsEl[1] = 2; l_gIdsEl[2] = 4; l_gIdsEl[3] = 1;
   l_gIdsEl[4] = 0; l_gIdsEl[5] = 5; l_gIdsEl[6] = 5;
 
@@ -157,7 +157,7 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
 
     edge::seismic::setups::PointSources<
      float,
-     int,
+     unsigned int,
      QUAD4R,
      2,
      3 > l_pss;
@@ -244,7 +244,7 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
 
     edge::seismic::setups::PointSources<
      float,
-     int,
+     unsigned int,
      QUAD4R,
      2,
      3 > l_pss;
