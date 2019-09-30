@@ -211,9 +211,64 @@ void edge::mesh::EdgeV::setLtsTypes( t_elementChars * io_elChars ) const {
 
   // copy over sparse types
   EDGE_CHECK_EQ( sizeof(long long), sizeof( io_elChars->spType ) );
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
   for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
     io_elChars[l_el].spType |= l_spTys[l_el];
   }
 
   delete[] l_spTys;
+}
+
+void edge::mesh::EdgeV::setSpTypes( t_vertexChars  * io_veChars,
+                                    t_faceChars    * io_faChars,
+                                    t_elementChars * io_elChars ) const {
+  // vertices
+  int * l_dataVe = new int[ nVes() ];
+  m_moab.getEnDataFromSet( m_mesh.getTypeVe(),
+                           "MATERIAL_SET",
+                           l_dataVe );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_ve = 0; l_ve < nVes(); l_ve++ ) {
+    if( l_dataVe[l_ve] != std::numeric_limits< int >::max() )
+      io_veChars[l_ve].spType |= l_dataVe[l_ve];
+  }
+
+  delete[] l_dataVe;
+
+  // faces
+  int * l_dataFa = new int[ nFas() ];
+  m_moab.getEnDataFromSet( m_mesh.getTypeFa(),
+                           "MATERIAL_SET",
+                           l_dataFa );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_fa = 0; l_fa < nFas(); l_fa++ ) {
+    if( l_dataFa[l_fa] != std::numeric_limits< int >::max() )
+      io_faChars[l_fa].spType |= l_dataFa[l_fa];
+  }
+
+  delete[] l_dataFa;
+
+  // elements
+  int * l_dataEl = new int[ nEls() ];
+  m_moab.getEnDataFromSet( m_mesh.getTypeEl(),
+                           "MATERIAL_SET",
+                           l_dataEl );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < nEls(); l_el++ ) {
+    if( l_dataEl[l_el] != std::numeric_limits< int >::max() )
+      io_elChars[l_el].spType |= l_dataEl[l_el];
+  }
+
+  delete[] l_dataEl;
 }

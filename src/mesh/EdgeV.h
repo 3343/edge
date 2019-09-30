@@ -159,6 +159,17 @@ class edge::mesh::EdgeV {
     void setLtsTypes( t_elementChars * io_elChars ) const;
 
     /**
+     * Sets the sparse types based on mesh-definitions.
+     *
+     * @param io_veChars vertex characteristics whose sparse type is adjusted.
+     * @param io_faChars face characteristics whose sparse type is adjusted.
+     * @param io_elChars elemenet characteristics whose sparse type is adjusted.
+     **/
+    void setSpTypes( t_vertexChars  * io_veChars,
+                     t_faceChars    * io_faChars,
+                     t_elementChars * io_elChars ) const;
+
+    /**
      * Gets the element layout.
      *
      * @return element layout.
