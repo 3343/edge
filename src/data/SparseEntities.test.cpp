@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017, Regents of the University of California
  * All rights reserved.
  *
@@ -1151,16 +1152,16 @@ TEST_CASE( "Sparse Ents: Derivation of dense ids from Cartesian points", "[ptToM
                                  {{0.0, 1.0, 9.0}, 0} };
 
   // setup tets
-  int_el l_enVe[10][4] = { {4,5,6,7}, // tg 1
-                           {4,5,6,7},
-                           {0,0,0,0},
-                           {4,5,6,7}, // tg 2
-                           {0,1,2,3},
-                           {0,1,2,3},
-                           {0,1,2,3}, // ghost tg 2
-                           {4,5,6,7},
-                           {4,5,6,7},
-                           {0,1,2,3} };
+  int l_enVe[10][4] = { {4,5,6,7}, // tg 1
+                        {4,5,6,7},
+                        {0,0,0,0},
+                        {4,5,6,7}, // tg 2
+                        {0,1,2,3},
+                        {0,1,2,3},
+                        {0,1,2,3}, // ghost tg 2
+                        {4,5,6,7},
+                        {4,5,6,7},
+                        {0,1,2,3} };
 
   // For plotting in Mathematica, you can use:
   //  Graphics3D[ {{Opacity[.3], Tetrahedron[]}, {PointSize[0.1], Point[{0.15, 0.15, 0.15}] }}, Axes -> True ]
