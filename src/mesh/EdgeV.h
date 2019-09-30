@@ -131,6 +131,34 @@ class edge::mesh::EdgeV {
     std::size_t const * nTgEls() const { return m_nTgEls; }
 
     /**
+     * Gets the number of vertices.
+     *
+     * @return number of vertices.
+     **/
+    std::size_t nVes() const { return m_mesh.nVes(); }
+
+    /**
+     * Gets the number of faces.
+     *
+     * @return number of faces.
+     **/
+    std::size_t nFas() const { return m_mesh.nFas(); }
+
+    /**
+     * Gets the number of elements.
+     *
+     * @return number of elements.
+     **/
+    std::size_t nEls() const { return m_mesh.nEls(); }
+
+    /**
+     * Sets LTS type in the sparse types of the elements.
+     *
+     * @param io_elChars element characteristics whose sparse type is adjusted.
+     **/
+    void setLtsTypes( t_elementChars * io_elChars ) const;
+
+    /**
      * Gets the element layout.
      *
      * @return element layout.
@@ -138,11 +166,81 @@ class edge::mesh::EdgeV {
     t_enLayout getElLayout() const { return m_elLay; }
 
     /**
-     * Sets LTS type in the sparse types of the elements.
+     * Gets the vertices of the faces.
      *
-     * @param io_elChars element characteristics whose sparse type is adjusted
+     * @return faVe info.
      **/
-    void setLtsTypes( t_elementChars * io_elChars ) const;
+    std::size_t const * getFaVe() const { return m_mesh.getFaVe(); }
+
+    /**
+     * Gets the elements adjacent to the faces.
+     *
+     * @return faEl info.
+     **/
+    std::size_t const * getFaEl() const { return m_mesh.getFaEl(); }
+
+    /**
+     * Gets the vertices adjacent to the elements.
+     *
+     * @return elVe info.
+     **/
+    std::size_t const * getElVe() const { return m_mesh.getElVe(); }
+
+    /**
+     * Gets the faces adjacent to the elements.
+     *
+     * @return elFa info.
+     **/
+    std::size_t const * getElFa() const { return m_mesh.getElFa(); }
+
+    /**
+     * Gets the face-adjacent elements.
+     *
+     * @return elFaEl info.
+     **/
+    std::size_t const * getElFaEl() const { return m_mesh.getElFaEl(); }
+
+    /**
+     * Gets the vertex coordinates.
+     *
+     * @return vertex coordinates.
+     **/
+    double const (* getVeCrds() )[3]{ return m_mesh.getVeCrds(); }
+
+    /**
+     * Gets the normals of the faces.
+     *
+     * @return normals of the faces.
+     **/
+    double const (* getNormalsFa() )[3] { return m_mesh.getNormalsFa(); }
+
+    /**
+     * Gets the tangents of the faces.
+     *
+     * @return tangents of the faces.
+     **/
+    double const (* getTangentsFa() )[2][3] { return m_mesh.getTangentsFa(); }
+
+    /**
+     * Gets the areas of the faces.
+     *
+     * @return areas.
+     **/
+    double const * getAreasFa() { return m_mesh.getAreasFa(); }
+
+    /**
+     * Gets the volumes of the elements.
+     *
+     * @return volumes.
+     **/
+    double const * getVolumesEl() { return m_mesh.getVolumesEl(); }
+
+    /**
+     * Gets the in-diameters of the elements.
+     *
+     * @return in-diameters.
+     **/
+    double const * getInDiasEl() { return m_mesh.getInDiasEl(); }
 };
 
 #endif
