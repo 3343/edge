@@ -70,16 +70,16 @@ TEST_CASE( "Data Layout: Sparse adjacency.", "[dataLayout][spAd]" ) {
 
   double  l_dataRaw1[3*10][87];
   double (*l_dataPtrs1[10][3])[87];
-  int l_lpFaLp1[10][3] = {
-    {1, std::numeric_limits< int >::max(), 5},
+  std::size_t l_lpFaLp1[10][3] = {
+    {1, std::numeric_limits< std::size_t >::max(), 5},
     {2,0,3},
-    {std::numeric_limits< int >::max(),0,6},
-    {2,std::numeric_limits< int >::max(),8},
-    {7,std::numeric_limits< int >::max(),5},
+    {std::numeric_limits< std::size_t >::max(),0,6},
+    {2,std::numeric_limits< std::size_t >::max(),8},
+    {7,std::numeric_limits< std::size_t >::max(),5},
     {8,4,2},
-    {0,std::numeric_limits< int >::max(),std::numeric_limits< int >::max()},
-    {std::numeric_limits< int >::max(),3,4},
-    {5,4,std::numeric_limits< int >::max()},
+    {0,std::numeric_limits< std::size_t >::max(),std::numeric_limits< std::size_t >::max()},
+    {std::numeric_limits< std::size_t >::max(),3,4},
+    {5,4,std::numeric_limits< std::size_t >::max()},
     {5,4,6}
   };
 
