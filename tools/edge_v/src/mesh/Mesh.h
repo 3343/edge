@@ -196,11 +196,25 @@ class edge_v::mesh::Mesh {
     void printStats() const;
 
     /**
+     * Gets the vertex type of the mesh.
+     *
+     * @return vertex type.
+     **/
+    t_entityType getTypeVe() const{ return edge_v::POINT; }
+
+    /**
+     * Gets the face type of the mesh.
+     *
+     * @return face type.
+     **/
+    t_entityType getTypeFa() const{ return CE_T_FA(m_elTy); }
+
+    /**
      * Gets the element type of the mesh.
      *
      * @return element type.
      **/
-    t_entityType getElTy() const { return m_elTy; }
+    t_entityType getTypeEl() const { return m_elTy; }
 
     /**
      * Gets the number of vertices.

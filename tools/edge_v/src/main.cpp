@@ -92,7 +92,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   EDGE_V_LOG_INFO << "computing CFL time steps";
   edge_v::models::Constant l_veMod( 2 );
-  edge_v::time::Cfl l_cfl( l_mesh.getElTy(),
+  edge_v::time::Cfl l_cfl( l_mesh.getTypeEl(),
                            l_mesh.nVes(),
                            l_mesh.nEls(),
                            l_mesh.getElVe(),
@@ -126,7 +126,7 @@ int main( int i_argc, char *i_argv[] ) {
   if( l_funDt == 0 ) {
     double l_dt = 1.0;
     while( l_dt > 0.5 ) {
-      edge_v::time::Groups l_tsGroups( l_mesh.getElTy(),
+      edge_v::time::Groups l_tsGroups( l_mesh.getTypeEl(),
                                        l_mesh.nEls(),
                                        l_mesh.getElFaEl(),
                                        l_nRates,
@@ -142,7 +142,7 @@ int main( int i_argc, char *i_argv[] ) {
     }
   }
 
-  edge_v::time::Groups l_tsGroups(  l_mesh.getElTy(),
+  edge_v::time::Groups l_tsGroups(  l_mesh.getTypeEl(),
                                     l_mesh.nEls(),
                                     l_mesh.getElFaEl(),
                                     l_nRates,
@@ -154,12 +154,12 @@ int main( int i_argc, char *i_argv[] ) {
 
   EDGE_V_LOG_INFO << "storing elements' time step groups (temporarily)";
   std::string l_tagElTg = "edge_v_element_time_groups";
-  l_moab.setEnData( l_mesh.getElTy(),
+  l_moab.setEnData( l_mesh.getTypeEl(),
                     l_tagElTg,
                     l_tsGroups.getElTg() );
 
   EDGE_V_LOG_INFO << "reordering by time step groups";
-  l_moab.reorder( l_mesh.getElTy(),
+  l_moab.reorder( l_mesh.getTypeEl(),
                   l_tagElTg );
   l_moab.deleteTag( l_tagElTg );
 
