@@ -194,6 +194,76 @@ TEST_CASE( "Set and get data for entities.", "[moab][setGetEnData]" ) {
   }
 }
 
+TEST_CASE( "Gets the material set data for faces.", "[moab][getMatSetFa]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+
+    // construct the moab-reader
+    edge_v::io::Moab l_moab( l_path );
+
+    // check that the MATERIAL_SET tag is present
+    std::vector< std::string > l_tagNames;
+    l_moab.getTagNames( l_tagNames );
+
+    bool l_foundMs = false;
+    for( unsigned short l_tn = 0; l_tn < l_tagNames.size(); l_tn++ ) {
+      if( l_tagNames[l_tn] == "MATERIAL_SET" ) {
+        l_foundMs = true;
+      }
+    }
+    REQUIRE( l_foundMs );
+
+    // get the material set values
+    std::size_t l_nLine = l_moab.nEnsByType( edge_v::LINE );
+    int * l_matSetData = new int[l_nLine];
+
+    l_moab.getEnDataFromSet( edge_v::LINE,
+                             "MATERIAL_SET",
+                             l_matSetData );
+
+    // check the results
+    for( unsigned short l_li = 0; l_li < l_nLine; l_li++ ) {
+      if( l_li < 12 ) {
+        REQUIRE( l_matSetData[l_li] == 106 );
+      }
+      else {
+        REQUIRE( l_matSetData[l_li] == std::numeric_limits< int >::max() );
+      }
+
+    }
+
+    delete[] l_matSetData;
+  }
+}
+
+TEST_CASE( "Gets the material set data for elements.", "[moab][getMatSetEl]" ) {
+  // only continue if the unit test files are available
+  if( edge_v::test::g_files != "" ) {
+    // path to the mesh file
+    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+
+    // construct the moab-reader
+    edge_v::io::Moab l_moab( l_path );
+
+    // get the material set values
+    std::size_t l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
+    int * l_matSetData = new int[l_nTria3];
+
+    l_moab.getEnDataFromSet( edge_v::TRIA3,
+                             "MATERIAL_SET",
+                             l_matSetData );
+
+    // check the results
+    for( unsigned short l_tr = 0; l_tr < l_nTria3; l_tr++ ) {
+      REQUIRE( l_matSetData[l_tr] == 1 );
+    }
+
+    delete[] l_matSetData;
+  }
+}
+
 TEST_CASE( "Mesh reordering.", "[moab][reorder]" ) {
   // only continue if the unit test files are available
   if( edge_v::test::g_files != "" ) {

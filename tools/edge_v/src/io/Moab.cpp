@@ -569,6 +569,66 @@ void edge_v::io::Moab::getEnData( t_entityType           i_enTy,
   delete[] l_data;
 }
 
+void edge_v::io::Moab::getEnDataFromSet( t_entityType         i_enTy,
+                                         std::string  const & i_tagName,
+                                         int                * o_data ) const {
+  // query mesh for tag
+  moab::Tag l_tag;
+  moab::ErrorCode l_err = m_moab->tag_get_handle( i_tagName.c_str(),
+                                                  l_tag );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get all sets which define the tag
+  moab::Range l_sets;
+  l_err = m_moab->get_entities_by_type_and_tag( m_root,
+                                                moab::MBENTITYSET,
+                                                &l_tag,
+                                                nullptr,
+                                                1,
+                                                l_sets );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get entities
+  std::vector< moab::EntityHandle > l_ens;
+  l_err = m_moab->get_entities_by_type( m_root,
+                                        getMoabType( i_enTy ),
+                                                     l_ens );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // lambda which finds the cotaining mesh set for an entity if any
+  auto l_findMs = [ this, l_sets, l_ens ]( std::size_t i_en ) {
+    std::size_t l_coSe = std::numeric_limits< std::size_t >::max();
+    for( std::size_t l_se = 0; l_se < l_sets.size(); l_se++ ) {
+      if( m_moab->contains_entities( l_sets[l_se], l_ens.data()+i_en, 1 ) ) {
+        l_coSe = l_se;
+        break;
+      }
+    }
+    return l_coSe;
+  };
+
+  // iterate over the entities
+  for( std::size_t l_en = 0; l_en < l_ens.size(); l_en++ ) {
+    // determine containg mesh set for the entity
+    std::size_t l_coSe = l_findMs(l_en);
+
+    // get tag-data if part of a mesh set
+    if( l_coSe < std::numeric_limits< std::size_t >::max() ) {
+      EDGE_V_CHECK_LT( l_coSe, l_sets.size() );
+
+      moab::EntityHandle l_setHa = l_sets[l_coSe];
+      l_err = m_moab->tag_get_data( l_tag,
+                                    &l_setHa,
+                                    1,
+                                    o_data+l_en );
+      EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+    }
+    else {
+      o_data[l_en] = std::numeric_limits< int >::max();
+    }
+  }
+}
+
 void edge_v::io::Moab::getTagNames( std::vector< std::string > & o_tagNames ) const {
   // clear output vector
   o_tagNames.clear();

@@ -300,6 +300,18 @@ class edge_v::io::Moab {
                     unsigned short       * o_data ) const;
 
     /**
+     * Gets the data for the given entity type from the containing set.
+     * If no containing meshset is found, std::numeric_limits< int >::max() is set for the respective entity.
+     *
+     * @param i_enTy entity type to which this data belongs.
+     * @param i_tagName tag name.
+     * @param o_data output array.
+     **/
+    void getEnDataFromSet( t_entityType           i_enTy,
+                           std::string    const & i_tagName,
+                           int                  * o_data ) const;
+
+    /**
      * Gets the names of the tags.
      *
      * @param o_tagNames will be set to the names of the tags.
