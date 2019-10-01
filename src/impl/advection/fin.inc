@@ -31,18 +31,12 @@ if( l_errorWriter.outEnabled() ) {
     N_QUANTITIES,
     N_CRUNS >::err( std::size_t(0),
                     l_internal.m_nElements,
-                    std::size_t(0),
-                    t_enTypeShared::LIMIT,
                     l_config.m_refValsExprStrs,
                     l_basis,
                     l_internal.m_connect.elVe,
-                    l_internal.m_globalShared2[0].connect.scSv,
                     l_internal.m_vertexChars,
-                    l_internal.m_globalShared2[0].svChars,
                     l_internal.m_elementChars,
-                    l_internal.m_globalShared2[0].adm[0], // dummy
                     l_internal.m_elementModePrivate1,
-                    l_internal.m_globalShared2[0].dofs,
                     l_normsTmp[0], l_normsTmp[1], l_normsTmp[2] );
 
   // perform reductions
