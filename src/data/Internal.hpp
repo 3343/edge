@@ -532,12 +532,6 @@ class edge::data::Internal {
       size_t l_elementSharedSize4        = std::size_t(m_nElements) * PP_N_ELEMENT_SHARED_4                                   * sizeof(t_elementShared4);
 #endif
 
-      size_t l_connElVeSize              =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_VERTICES                 * sizeof(int_el);
-      size_t l_connElVeElSize            =  std::size_t((m_nElements + 1))                                                    * sizeof(int_el*);
-      size_t l_connElFaElSize            =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
-      size_t l_connElFaSize              =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(int_el);
-      size_t l_connFaElSize              =  std::size_t(m_nFaces)         * 2                                                 * sizeof(int_el);
-      size_t l_connFaVeSize              =  std::size_t(m_nFaces)         * C_ENT[T_SDISC.FACE].N_VERTICES                    * sizeof(int_el);
       size_t l_connfIdElFaElSize         =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
       size_t l_connvIdElFaElSize         =  std::size_t(m_nElements)      * C_ENT[T_SDISC.ELEMENT].N_FACES                    * sizeof(unsigned short);
 
@@ -637,18 +631,6 @@ class edge::data::Internal {
                                                                                                                                      m_memTypes.huge.elementShared4 );
 #endif
 
-      m_connect.elVe            = (int_el         (*)[C_ENT[T_SDISC.ELEMENT].N_VERTICES]                         ) common::allocate( l_connElVeSize,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
-      m_connect.elVeEl          = (int_el**                                                                      ) common::allocate( l_connElVeElSize,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
-      m_connect.elFaEl          = (int_el         (*)[C_ENT[T_SDISC.ELEMENT].N_FACES]                            ) common::allocate( l_connElFaElSize,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
-      m_connect.elFa            = (int_el         (*)[C_ENT[T_SDISC.ELEMENT].N_FACES]                            ) common::allocate( l_connElFaSize,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
-      m_connect.faEl            = (int_el         (*)[2]                                                         ) common::allocate( l_connFaElSize,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
-      m_connect.faVe            = (int_el         (*)[C_ENT[T_SDISC.FACE].N_VERTICES]                            ) common::allocate( l_connFaVeSize,
-                                                                                                                                     ALIGNMENT.BASE.HEAP );
       m_connect.fIdElFaEl       = (unsigned short (*)[C_ENT[T_SDISC.ELEMENT].N_FACES]                            ) common::allocate( l_connfIdElFaElSize,
                                                                                                                                      ALIGNMENT.BASE.HEAP );
       m_connect.vIdElFaEl       = (unsigned short (*)[C_ENT[T_SDISC.ELEMENT].N_FACES]                            ) common::allocate( l_connvIdElFaElSize,
@@ -1049,12 +1031,6 @@ class edge::data::Internal {
        common::release(m_elementShared4, m_memTypes.hbw.elementShared4, m_memTypes.huge.elementShared4);
 #endif
 
-      common::release(m_connect.elVe);
-      common::release(m_connect.elFa);
-      common::release(m_connect.faEl);
-      common::release(m_connect.faVe);
-      common::release(m_connect.elVeEl);
-      common::release(m_connect.elFaEl);
       common::release(m_connect.fIdElFaEl);
       common::release(m_connect.vIdElFaEl);
 
