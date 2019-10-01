@@ -117,9 +117,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 // initialize wave speeds
 edge::advection::setups::Convergence::setConstantSpeed( l_internal.m_nElements,
                                                         l_internal.m_elementShared1,
-                                                        1,
-                                                        0.5,  // ignored for #dim==1
-                                                        -1 ); // ignored for #dim!=3
+                                                        1, 0.5, -1 );
 
 #if PP_ORDER > 1
 // initialize ADER-DG solver

@@ -25,7 +25,7 @@
 #ifndef EDGE_ADVECTION_SOLVERS_COMMON_HPP
 #define EDGE_ADVECTION_SOLVERS_COMMON_HPP
 
-#include <cassert>
+#include "io/logging.h"
 
 namespace edge {
   namespace advection {
@@ -40,13 +40,13 @@ class edge::advection::solvers::common {
     /**
      * Computes the time step in a given element.
      *
-     * @param i_inSphereDiameter insphere diameter of the element.
+     * @param i_inDia insphere diameter of the element.
      * @param i_bgPars background parameters of an element.
      * @param i_cfl cfl number.
      **/
-    static double computeTimeStep(       double    i_inSphereDiameter,
-                                   const t_bgPars &i_bgPars,
-                                         double    i_cfl  = 0.25 ) {
+    static double computeTimeStep( double           i_inDia,
+                                   t_bgPars const & i_bgPars,
+                                   double           i_cfl  = 0.25 ) {
        // get abs advection speed
 #if PP_N_DIM == 1
        double l_lambda = std::abs( i_bgPars.a );
@@ -64,41 +64,41 @@ class edge::advection::solvers::common {
 #endif
 
        // compute time step
-       double l_dT  = i_inSphereDiameter / l_lambda;
-              l_dT *= i_cfl;
+       double l_dt  = i_inDia / l_lambda;
+              l_dt *= i_cfl;
 
        // scale with order
-       l_dT /= 2.0*ORDER-1;
+       l_dt /= 2.0*ORDER-1;
 
-       return l_dT;
+       return l_dt;
     }
 
   public:
     /**
      * Gets the time step statitics over the elements.
      *
-     * @param i_nElements number of elements.
-     * @param i_elementChars element characteristics.
+     * @param i_nEls number of elements.
+     * @param i_elChars element characteristics.
      * @param i_bgPars background parameters of an element.
      * @param o_minDt set to minimum occurring time step.
      * @param o_aveDt set to average occuring time step.
      * @param o_maxDt set to maximum occuring time step.
      **/
-    static void getTimeStepStatistics(       std::size_t      i_nElements,
-                                       const t_elementChars  *i_elementChars,
-                                       const t_bgPars       (*i_bgPars)[1],
-                                             double          &o_minDt,
-                                             double          &o_aveDt,
-                                             double          &o_maxDt ) {
+    static void getTimeStepStatistics( std::size_t             i_nEls,
+                                       t_elementChars const  * i_elChars,
+                                       t_bgPars       const (* i_bgPars)[1],
+                                       double                & o_minDt,
+                                       double                & o_aveDt,
+                                       double                & o_maxDt ) {
       // intialize statistics
       o_minDt = std::numeric_limits< double >::max();
       o_aveDt = 0;
       o_maxDt = 0;
 
-      for( std::size_t l_element = 0; l_element < i_nElements; l_element++ ) {
+      for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
         // compute time step
-        double l_dT = computeTimeStep( i_elementChars[l_element].inDia,
-                                       i_bgPars[l_element][0],
+        double l_dT = computeTimeStep( i_elChars[l_el].inDia,
+                                       i_bgPars[l_el][0],
                                        SCALE_CFL );
 
         // add element to stats
@@ -108,56 +108,59 @@ class edge::advection::solvers::common {
       }
 
       // average
-      o_aveDt /= i_nElements;
+      o_aveDt /= i_nEls;
     }
 
     /**
      * Sets up the solvers.
      * We store one solver for the elements own contribution in pos [0, N_FACES] and the neigh contribution in [N_FACES+1, 2*N_FACES].
      *
-     * @param i_nElements number of elements in the mesh.
-     * @param i_nFaces number of faces in the mesh.
+     * @param i_nEls number of elements in the mesh.
+     * @param i_nFas number of faces in the mesh.
      * @param i_elVe vertices adjacent to the elements.
-     * @param i_faceAdjacentElements elements adjacent to the faces.
+     * @param i_faEl elements adjacent to the faces.
      * @param i_elFa faces adjacent to the elements.
      * @param i_elFaEl adjacent elements (faces as bridge).
-     * @param i_vertexChars vertex characteristics.
-     * @param i_faceChars mesh characteristics of the faces.
+     * @param i_veChars vertex characteristics.
+     * @param i_faChars mesh characteristics of the faces.
      * @param i_bgPars backgrorund parameters (velocities).
-     * @param o_fluxSolvers will be set to the flux solvers.
+     * @param o_fs will be set to the flux solvers.
+     *
+     * @paramt TL_T_REAL real type.
      **/
-    static void setupSolvers(       std::size_t            i_nElements,
-                                    std::size_t            i_nFaces,
-                              const std::size_t          (*i_elVe)[ C_ENT[T_SDISC.ELEMENT].N_VERTICES ],
-                              const std::size_t          (*i_faceAdjacentElements)[2],
-                              const std::size_t          (*i_elFa)[C_ENT[T_SDISC.ELEMENT].N_FACES],
-                              const std::size_t          (*i_elFaEl)[C_ENT[T_SDISC.ELEMENT].N_FACES],
-                              const t_vertexChars         *i_vertexChars,
-                              const t_faceChars           *i_faceChars,
-                              const t_bgPars             (*i_bgPars)[1],
-                                    real_base            (*o_fluxSolvers)[C_ENT[T_SDISC.ELEMENT].N_FACES*2] ) {
+    template< typename TL_T_REAL >
+    static void setupSolvers( std::size_t            i_nEls,
+                              std::size_t            i_nFas,
+                              std::size_t   const (* i_elVe)[ C_ENT[T_SDISC.ELEMENT].N_VERTICES ],
+                              std::size_t   const (* i_faEl)[2],
+                              std::size_t   const (* i_elFa)[C_ENT[T_SDISC.ELEMENT].N_FACES],
+                              std::size_t   const (* i_elFaEl)[C_ENT[T_SDISC.ELEMENT].N_FACES],
+                              t_vertexChars const  * i_veChars,
+                              t_faceChars   const  * i_faChars,
+                              t_bgPars      const (* i_bgPars)[1],
+                              TL_T_REAL           (* o_fs)[C_ENT[T_SDISC.ELEMENT].N_FACES*2] ) {
       // iterate over elements and reset flux solvers
-      for( std::size_t l_el = 0; l_el < i_nElements; l_el++ ) {
+      for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
         for( int_md l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES*2; l_fa++ ) {
-          o_fluxSolvers[l_el][l_fa] = 0;
+          o_fs[l_el][l_fa] = 0;
         }
       }
 
       // iterate over faces
-      for( std::size_t l_fa = 0; l_fa < i_nFaces; l_fa++ ) {
+      for( std::size_t l_fa = 0; l_fa < i_nFas; l_fa++ ) {
         // get left and right element
-        std::size_t l_elL = i_faceAdjacentElements[l_fa][0];
-        std::size_t l_elR = i_faceAdjacentElements[l_fa][1];
+        std::size_t l_elL = i_faEl[l_fa][0];
+        std::size_t l_elR = i_faEl[l_fa][1];
 
         // determine existance of elements (boundary conditions)
-        bool l_exL = (l_elL < i_nElements);
-        bool l_exR = (l_elR < i_nElements);
+        bool l_exL = (l_elL < i_nEls);
+        bool l_exR = (l_elR < i_nEls);
 
         // compute advection speeds
-        real_base l_advSpeedL  = std::numeric_limits<real_base>::max();
-        real_base l_advSpeedR  = std::numeric_limits<real_base>::max();
-        real_base l_advNormalL = std::numeric_limits<real_base>::max();
-        real_base l_advNormalR = std::numeric_limits<real_base>::max();
+        TL_T_REAL l_advSpeedL  = std::numeric_limits<TL_T_REAL>::max();
+        TL_T_REAL l_advSpeedR  = std::numeric_limits<TL_T_REAL>::max();
+        TL_T_REAL l_advNormalL = std::numeric_limits<TL_T_REAL>::max();
+        TL_T_REAL l_advNormalR = std::numeric_limits<TL_T_REAL>::max();
 
         if( l_exL ) {
           l_advSpeedL  = i_bgPars[l_elL][0].a * i_bgPars[l_elL][0].a;
@@ -183,28 +186,28 @@ class edge::advection::solvers::common {
 
         // project advection on normal
         if( l_exL ) {
-          l_advNormalL  = i_bgPars[l_elL][0].a * i_faceChars[l_fa].outNormal[0];
+          l_advNormalL  = i_bgPars[l_elL][0].a * i_faChars[l_fa].outNormal[0];
 #if PP_N_DIM > 1
-          l_advNormalL += i_bgPars[l_elL][0].b * i_faceChars[l_fa].outNormal[1];
+          l_advNormalL += i_bgPars[l_elL][0].b * i_faChars[l_fa].outNormal[1];
 #endif
 #if PP_N_DIM > 2
-          l_advNormalL += i_bgPars[l_elL][0].c * i_faceChars[l_fa].outNormal[2];
+          l_advNormalL += i_bgPars[l_elL][0].c * i_faChars[l_fa].outNormal[2];
 #endif
         }
 
         if( l_exR ) {
-          l_advNormalR  = i_bgPars[l_elR][0].a * i_faceChars[l_fa].outNormal[0];
+          l_advNormalR  = i_bgPars[l_elR][0].a * i_faChars[l_fa].outNormal[0];
 #if PP_N_DIM > 1
-          l_advNormalR += i_bgPars[l_elR][0].b * i_faceChars[l_fa].outNormal[1];
+          l_advNormalR += i_bgPars[l_elR][0].b * i_faChars[l_fa].outNormal[1];
 #endif
 #if PP_N_DIM > 2
-          l_advNormalR += i_bgPars[l_elR][0].c * i_faceChars[l_fa].outNormal[2];
+          l_advNormalR += i_bgPars[l_elR][0].c * i_faChars[l_fa].outNormal[2];
 #endif
         }
 
         // check that our directed normal speeds are lower than the dimensionless advection speed
-        assert( l_exL == false || l_advSpeedL + TOL.SOLVER > std::abs(l_advNormalL) );
-        assert( l_exR == false || l_advSpeedR + TOL.SOLVER > std::abs(l_advNormalR) );
+        EDGE_CHECK( l_exL == false || l_advSpeedL + TOL.SOLVER > std::abs(l_advNormalL) );
+        EDGE_CHECK( l_exR == false || l_advSpeedR + TOL.SOLVER > std::abs(l_advNormalR) );
 
         // find ids of local contribution flux solvers for the elements
         unsigned short l_fLocIdL = std::numeric_limits<unsigned short>::max();
@@ -212,16 +215,16 @@ class edge::advection::solvers::common {
 
         for( unsigned int l_elFa = 0; l_elFa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_elFa++ ) {
           if( l_exL == true && i_elFaEl[l_elL][l_elFa] == l_elR ) {
-            assert( l_fLocIdL == std::numeric_limits<unsigned short>::max() ); // this must be unique
+            EDGE_CHECK_EQ( l_fLocIdL, std::numeric_limits<unsigned short>::max() ); // this must be unique
             l_fLocIdL = l_elFa; // id of local contribution solver
           }
           if( l_exR == true && i_elFaEl[l_elR][l_elFa] == l_elL ) {
-            assert( l_fLocIdR == std::numeric_limits<unsigned short>::max() ); // this must be unique
+            EDGE_CHECK_EQ( l_fLocIdR, std::numeric_limits<unsigned short>::max() ); // this must be unique
             l_fLocIdR = l_elFa; // id of local contribution solver
           }
         }
-        assert( l_exL == false || l_fLocIdL != std::numeric_limits<unsigned short>::max() );
-        assert( l_exR == false || l_fLocIdR != std::numeric_limits<unsigned short>::max() );
+        EDGE_CHECK( l_exL == false || l_fLocIdL != std::numeric_limits<unsigned short>::max() );
+        EDGE_CHECK( l_exR == false || l_fLocIdR != std::numeric_limits<unsigned short>::max() );
 
         // find ids of neigh contribution flux solvers for the elements
         unsigned short l_fNegIdL = l_fLocIdL + C_ENT[T_SDISC.ELEMENT].N_FACES;
@@ -235,29 +238,29 @@ class edge::advection::solvers::common {
          */
          // check for normal direction of left element's wave speeds
          if( l_exR == false || (l_exL == true && l_advNormalL > 0) ) {
-           if( l_exL ) o_fluxSolvers[l_elL][l_fLocIdL] = -l_advNormalL;
+           if( l_exL ) o_fs[l_elL][l_fLocIdL] = -l_advNormalL;
 
-           if( l_exR ) o_fluxSolvers[l_elR][l_fNegIdR] = l_advNormalL;
+           if( l_exR ) o_fs[l_elR][l_fNegIdR] = l_advNormalL;
 
            if( l_exR == false &&  l_advNormalL < 0 ) {
-             o_fluxSolvers[l_elL][l_fLocIdL] *= -1;
+             o_fs[l_elL][l_fLocIdL] *= -1;
            }
          }
 
          // check for normal direction of right element's wave speeds
          if( l_exL == false || (l_exR == true && l_advNormalR < 0) ) {
-           if( l_exR ) o_fluxSolvers[l_elR][l_fLocIdR] = l_advNormalR;
+           if( l_exR ) o_fs[l_elR][l_fLocIdR] = l_advNormalR;
 
-           if( l_exL ) o_fluxSolvers[l_elL][l_fNegIdL] = -l_advNormalR;
+           if( l_exL ) o_fs[l_elL][l_fNegIdL] = -l_advNormalR;
 
            if( l_exL == false && l_advNormalR > 0) {
-             o_fluxSolvers[l_elR][l_fNegIdR] *= -1;
+             o_fs[l_elR][l_fNegIdR] *= -1;
            }
          }
 
         // derive vertex coords
-        real_mesh l_veCoordsL[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
-        real_mesh l_veCoordsR[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
+        double l_veCoordsL[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
+        double l_veCoordsR[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
 
         for( unsigned int l_ve = 0; l_ve < C_ENT[T_SDISC.ELEMENT].N_VERTICES; l_ve++ ) {
           std::size_t l_veIdL = std::numeric_limits<std::size_t>::max();
@@ -266,18 +269,18 @@ class edge::advection::solvers::common {
           if( l_exR == true ) l_veIdR = i_elVe[l_elR][l_ve];
 
           for( unsigned int l_dim = 0; l_dim < N_DIM; l_dim++ ) {
-            if( l_exL == true ) l_veCoordsL[l_dim][l_ve] = i_vertexChars[l_veIdL].coords[l_dim];
-            if( l_exR == true ) l_veCoordsR[l_dim][l_ve] = i_vertexChars[l_veIdR].coords[l_dim];
+            if( l_exL == true ) l_veCoordsL[l_dim][l_ve] = i_veChars[l_veIdL].coords[l_dim];
+            if( l_exR == true ) l_veCoordsR[l_dim][l_ve] = i_veChars[l_veIdR].coords[l_dim];
           }
         }
 
         // compute determinant of the mapping's jacobian
-        real_mesh l_jacL[N_DIM][N_DIM], l_jacR[N_DIM][N_DIM];
+        double l_jacL[N_DIM][N_DIM], l_jacR[N_DIM][N_DIM];
         for( unsigned short l_dm1 = 0; l_dm1 < N_DIM; l_dm1++ )
           for( unsigned short l_dm2 = 0; l_dm2 < N_DIM; l_dm2++ )
-            l_jacL[l_dm1][l_dm2] = l_jacR[l_dm1][l_dm2] = std::numeric_limits<real_mesh>::max();
-        real_mesh l_jL = std::numeric_limits<real_mesh>::max();
-        real_mesh l_jR = std::numeric_limits<real_mesh>::max();
+            l_jacL[l_dm1][l_dm2] = l_jacR[l_dm1][l_dm2] = std::numeric_limits<double>::max();
+        double l_jL = std::numeric_limits<double>::max();
+        double l_jR = std::numeric_limits<double>::max();
         if( l_exL == true ) linalg::Mappings::evalJac( T_SDISC.ELEMENT, l_veCoordsL[0], l_jacL[0] );
         if( l_exR == true ) linalg::Mappings::evalJac( T_SDISC.ELEMENT, l_veCoordsR[0], l_jacR[0] );
 #if PP_N_DIM == 1
@@ -297,33 +300,33 @@ class edge::advection::solvers::common {
           // Remark: For tets the determinant is not equal to the volume of the tets.
           //         We apply the effect of the inverse mass matrix right here.
           //         Effectively this just scales the flux solver by the volume of the tets.
-          if( l_exL == true ) l_jL /= (real_mesh) 6;
-          if( l_exR == true ) l_jR /= (real_mesh) 6;
+          if( l_exL == true ) l_jL /= (double) 6;
+          if( l_exR == true ) l_jR /= (double) 6;
         }
 
         // ensure positive determinants
-        assert( l_exL == false || l_jL > 0 );  assert( l_exR == false || l_jR > 0 );
-        assert( i_faceChars[l_fa].area > 0 );
+        EDGE_CHECK( l_exL == false || l_jL > 0 );  EDGE_CHECK( l_exR == false || l_jR > 0 );
+        EDGE_CHECK_GT( i_faChars[l_fa].area, 0 );
 
         // scale the flux solvers by dets of volume integration
-        if( l_exL == true ) o_fluxSolvers[l_elL][l_fLocIdL] /= l_jL;
-        if( l_exR == true ) o_fluxSolvers[l_elR][l_fLocIdR] /= l_jR;
-        if( l_exL == true ) o_fluxSolvers[l_elL][l_fNegIdL] /= l_jL;
-        if( l_exR == true ) o_fluxSolvers[l_elR][l_fNegIdR] /= l_jR;
+        if( l_exL == true ) o_fs[l_elL][l_fLocIdL] /= l_jL;
+        if( l_exR == true ) o_fs[l_elR][l_fLocIdR] /= l_jR;
+        if( l_exL == true ) o_fs[l_elL][l_fNegIdL] /= l_jL;
+        if( l_exR == true ) o_fs[l_elR][l_fNegIdR] /= l_jR;
 
         // scale by the face surfaces
-        if( l_exL == true ) o_fluxSolvers[l_elL][l_fLocIdL] *= i_faceChars[l_fa].area;
-        if( l_exR == true ) o_fluxSolvers[l_elR][l_fLocIdR] *= i_faceChars[l_fa].area;
-        if( l_exL == true ) o_fluxSolvers[l_elL][l_fNegIdL] *= i_faceChars[l_fa].area;
-        if( l_exR == true ) o_fluxSolvers[l_elR][l_fNegIdR] *= i_faceChars[l_fa].area;
+        if( l_exL == true ) o_fs[l_elL][l_fLocIdL] *= i_faChars[l_fa].area;
+        if( l_exR == true ) o_fs[l_elR][l_fLocIdR] *= i_faChars[l_fa].area;
+        if( l_exL == true ) o_fs[l_elL][l_fNegIdL] *= i_faChars[l_fa].area;
+        if( l_exR == true ) o_fs[l_elR][l_fNegIdR] *= i_faChars[l_fa].area;
 
 #if defined PP_T_ELEMENTS_TET4
         // the det of the surface-jac is twice the area of the triangle
         // TODO: Replace this formulation with Jacobi-determinants.
-        if( l_exL == true ) o_fluxSolvers[l_elL][l_fLocIdL] *= 2;
-        if( l_exR == true ) o_fluxSolvers[l_elR][l_fLocIdR] *= 2;
-        if( l_exL == true ) o_fluxSolvers[l_elL][l_fNegIdL] *= 2;
-        if( l_exR == true ) o_fluxSolvers[l_elR][l_fNegIdR] *= 2;
+        if( l_exL == true ) o_fs[l_elL][l_fLocIdL] *= 2;
+        if( l_exR == true ) o_fs[l_elR][l_fLocIdR] *= 2;
+        if( l_exL == true ) o_fs[l_elL][l_fNegIdL] *= 2;
+        if( l_exR == true ) o_fs[l_elR][l_fNegIdR] *= 2;
 #endif
       }
     }
