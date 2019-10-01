@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -250,166 +251,37 @@ class edge::setups::InitialDofs {
     }
 
     /**
-     * Initializes the sub-cell-DOFs of limited limited elements according to the given expressions.
-     * The expressions are evaluated at the vertices of the sub-cells and the sub-cell values are
-     * set to accordingly to the average of all adjacent sub-vertices.
-     *
-     * @param i_first first DG-element.
-     * @param i_size number of DG elements.
-     * @param i_liFirst first limited element.
-     * @param i_spType sparse type indicating a limited element.
-     * @param i_exprStrs expressions strings which are evaluated at sub-vertices of limited elements.
-     * @param i_elVe vertices adjacent to DG-elements.
-     * @param i_scSv sub-vertices adjacent to sub-cells.
-     * @param i_veChars characteristics of DG-vertices (prodividing their spatial coordinates).
-     * @param i_svChars characteristics of sub-vertices (providing their spatial coordinates).
-     * @param i_elChars characteristics of the DG-elements (providing their sparse type).
-     * @param o_dofsSc sub-cell DOFs, which will be initialized.
-     *
-     * @paramt TL_T_LID integral type of local ids.
-     * @paramt TL_T_REAL floating point type.
-     * @paramt TL_T_SP sparse type.
-     * @paramt TL_T_VE_CHARS vertex characteristics, offering coordinates through .coords.
-     * @paramt TL_T_SV_CHARS sub-vertex characteristics, offering coordinates through .coords.
-     * @paramt TL_T_EL_chars element characteristics, offering sparse type through .spType.
-     **/
-    template< typename TL_T_LID,
-              typename TL_T_REAL,
-              typename TL_T_SP,
-              typename TL_T_VE_CHARS,
-              typename TL_T_SV_CHARS,
-              typename TL_T_EL_CHARS >
-    static void sc( TL_T_LID               i_first,
-                    TL_T_LID               i_size,
-                    TL_T_LID               i_liFirst,
-                    TL_T_SP                i_spType,
-                    std::string    const   i_exprStrs[TL_N_CRS],
-                    TL_T_LID       const (*i_elVe)[TL_N_VES],
-                    unsigned short const (*i_scSv)[TL_N_VES],
-                    TL_T_VE_CHARS  const  *i_veChars,
-                    TL_T_SV_CHARS  const  *i_svChars,
-                    TL_T_EL_CHARS  const  *i_elChars,
-                    TL_T_REAL            (*o_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS] ) {
-      // coordinates
-      TL_T_REAL l_crds[TL_N_DIMS];
-
-      // quantities
-      TL_T_REAL l_qts[TL_N_CRS][TL_N_QTS];
-
-      // expressions
-      edge::data::Expression< TL_T_REAL > l_exprs[TL_N_CRS];
-
-      // bind and compile expressions
-      bc( i_exprStrs, l_crds, l_qts, l_exprs );
-
-      // init limited elements
-      TL_T_LID l_li = i_liFirst;
-
-      // averaging scalar
-      TL_T_REAL l_sca = 1; l_sca /= TL_N_VES;
-
-      // iterate over DG-elements
-      for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
-        // check if DG-element is limited
-        if( (i_elChars[l_el].spType & i_spType) == i_spType ) {
-          // get vertex coordinates of the DG-element
-          TL_T_REAL l_veCrds[TL_N_DIMS][TL_N_VES];
-          mesh::common<
-            TL_T_EL
-          >::getElVeCrds( l_el,
-                          i_elVe,
-                          i_veChars,
-                          l_veCrds );
-
-          // iterate over sub-cells
-          for( unsigned short l_sc = 0; l_sc < TL_N_SCS; l_sc++ ) {
-            // init sc-dofs
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                o_dofsSc[l_li][l_qt][l_sc][l_cr] = 0;
-              }
-            }
-
-            // iterate over sub-vertices of the sub-cell
-            for( unsigned short l_ve = 0; l_ve < TL_N_VES; l_ve++ ) {
-              // get sub-vertex id
-              TL_T_LID l_sv = i_scSv[l_sc][l_ve];
-
-              // get physical coordinates of the vertex
-              linalg::Mappings::refToPhy( TL_T_EL,
-                                          l_veCrds[0],
-                                          i_svChars[l_sv].coords,
-                                          l_crds );
-
-              // eval expressions of all forward runs and add results
-              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                // reset quantities
-                for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-                  l_qts[l_cr][l_qt] = 0;
-
-                l_exprs[l_cr].eval();
-
-                for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-                  o_dofsSc[l_li][l_qt][l_sc][l_cr] += l_qts[l_cr][l_qt] * l_sca;
-              }
-
-            }
-          }
-
-          l_li++;
-        }
-      }
-
-    }
-
-    /**
      * Computes the L1, L2, and Linf error of the given, possibly limited solution.
      *
-     * @param i_first firse DG-element.
+     * @param i_first first DG-element.
      * @param i_size number of DG-elements.
-     * @param i_liFirst first limited DG-element.
-     * @param i_spType sparse type of limited elements.
      * @param i_exprStrs expressions string, encoding the reference solution.
      * @param i_basis DG basis.
      * @param i_elVe vertices adjacent to DG-elements (no bridge).
-     * @param i_scSv sub-vertices adjacent to sub-cells (no bridge).
      * @param i_veChars vertex characteristics.
-     * @param i_svChars vertex characteristics of sub-cell-vertices.
      * @param i_elChars element characteristics.
-     * @param i_adm admissibility of limited elements.
      * @param i_dofsDg DOFs of the DG-solution.
-     * @param i_dofsSc DOFs of the sub-cell solution.
      * @param o_l1 will be set to L1 error.
      * @param o_l2p2 will be set to squared (to the power of 2) L2 error.
      * @param o_lInf will be set to Linf error.
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_REAL floating point type.
-     * @paramt TL_T_SP sparse type.
      * @paramt TL_T_VE_CHARS vertex characteristics, offering coordinates through .coords.
-     * @paramt TL_T_SV_CHARS sub-vertex characteristics, offering coordinates through .coords.
      * @paramt TL_T_EL_chars element characteristics, offering sparse type through .spType.
      **/
     template< typename TL_T_LID,
               typename TL_T_REAL,
-              typename TL_T_SP,
               typename TL_T_VE_CHARS,
-              typename TL_T_SV_CHARS,
               typename TL_T_EL_CHARS >
     static void err( TL_T_LID               i_first,
                      TL_T_LID               i_size,
-                     TL_T_LID               i_liFirst,
-                     TL_T_SP                i_spType,
                      std::string    const   i_exprStrs[TL_N_CRS],
                      dg::Basis      const  &i_basis,
                      TL_T_LID       const (*i_elVe)[TL_N_VES],
-                     unsigned short const (*i_scSv)[TL_N_VES],
                      TL_T_VE_CHARS  const  *i_veChars,
-                     TL_T_SV_CHARS  const  *i_svChars,
                      TL_T_EL_CHARS  const  *i_elChars,
-                     bool           const (*i_adm)[TL_N_CRS],
                      TL_T_REAL      const (*i_dofsDg)[TL_N_QTS][TL_N_MDS][TL_N_CRS],
-                     TL_T_REAL      const (*i_dofsSc)[TL_N_QTS][TL_N_SCS][TL_N_CRS],
                      double                 o_l1[TL_N_QTS][TL_N_CRS],
                      double                 o_l2p2[TL_N_QTS][TL_N_CRS],
                      double                 o_lInf[TL_N_QTS][TL_N_CRS] ) {
@@ -417,9 +289,6 @@ class edge::setups::InitialDofs {
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
         for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
           o_l1[l_qt][l_cr] = o_l2p2[l_qt][l_cr] = o_lInf[l_qt][l_cr] = 0;
-
-      // limited DG-element id
-      TL_T_LID l_li = i_liFirst;
 
       // coordinates and quantities of the expression
       double l_cE[TL_N_DIMS];
@@ -438,18 +307,6 @@ class edge::setups::InitialDofs {
                                      C_REF_ELEMENT.VE.ENT[TL_T_EL],
                                      l_ptsR[0], l_ptsR[1], l_ptsR[2], l_wesR );
       EDGE_CHECK( l_wesR.size() == TL_N_QPS1 ); // check compability of work-around
-
-      // determine sub-cells closest to the quad points
-      TL_T_LID l_qpSc[TL_N_QPS1];
-      for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
-        // TODO: work-around for SoA
-        double l_pt[TL_N_DIMS];
-        for( unsigned short l_di = 0; l_di < TL_N_DIMS; l_di++ ) l_pt[l_di] = l_ptsR[l_di][l_qp];
-
-        // set sub-cell
-        l_qpSc[l_qp] = sc::SubGrid< TL_T_EL, TL_O_SP >::ptSc( l_pt, i_scSv, i_svChars );
-      }
-
 
       // iterate over DG-elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_size; l_el++ ) {
@@ -487,31 +344,16 @@ class edge::setups::InitialDofs {
           // numerical solution at quad points
           TL_T_REAL l_qN[TL_N_QTS][TL_N_QPS1];
 
-          // limited element
-          if( (i_elChars[l_el].spType & i_spType) == i_spType &&
-               i_adm[l_li][l_cr] == false ) {
-            // iterate over quad points
-            for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ ) {
-              // id of corresponding sub-cell
-              TL_T_LID l_sc = l_qpSc[l_qp];
+          // iterate over quantities
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
+            // gather modes
+            TL_T_REAL l_mds[TL_N_MDS];
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+              l_mds[l_md] = i_dofsDg[l_el][l_qt][l_md][l_cr];
 
-              // set numerical solution
-              for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ )
-                l_qN[l_qt][l_qp] = i_dofsSc[l_li][l_qt][l_sc][l_cr];
-            }
-          }
-          else {
-            // iterate over quantities
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS; l_qt++ ) {
-              // gather modes
-              TL_T_REAL l_mds[TL_N_MDS];
-              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-                l_mds[l_md] = i_dofsDg[l_el][l_qt][l_md][l_cr];
-
-              // set numerical solution
-              for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ )
-                l_qN[l_qt][l_qp] = i_basis.modal2refPtVal( TL_O_SP+1, l_qp, l_mds );
-            }
+            // set numerical solution
+            for( unsigned short l_qp = 0; l_qp < TL_N_QPS1; l_qp++ )
+              l_qN[l_qt][l_qp] = i_basis.modal2refPtVal( TL_O_SP+1, l_qp, l_mds );
           }
 
           // compute errors
@@ -524,9 +366,6 @@ class edge::setups::InitialDofs {
             }
           }
         }
-
-        // increase limited DG-element id if required
-        if( (i_elChars[l_el].spType & i_spType) == i_spType ) l_li++;
       }
     }
 };
