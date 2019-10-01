@@ -344,7 +344,7 @@ typedef unsigned short int_qt;
 typedef unsigned int int_md;
 
 // size for integer representation of the elements/faces/vertices.
-typedef int int_el;
+typedef std::size_t int_el;
 
 // size of global entity ids
 typedef int int_gid;
@@ -434,22 +434,22 @@ typedef struct {
 // define connectivity information
 typedef struct {
   // vertices adjacent to faces
-  int_el (*faVe)[ C_ENT[T_SDISC.FACE].N_VERTICES ];
+  std::size_t (*faVe)[ C_ENT[T_SDISC.FACE].N_VERTICES ];
 
   // vertices adjacent to elements
-  int_el (*elVe)[ C_ENT[T_SDISC.ELEMENT].N_VERTICES ];
+  std::size_t (*elVe)[ C_ENT[T_SDISC.ELEMENT].N_VERTICES ];
 
   // elements adjacent to faces
-  int_el (*faEl)[2];
+  std::size_t (*faEl)[2];
 
   // faces adjacent to the elements
-  int_el (*elFa)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
+  std::size_t const (*elFa)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 
   // elements connected to an element through vertices
-  int_el **elVeEl;
+  std::size_t **elVeEl;
 
   // elements connected to an element through faces
-  int_el (*elFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
+  std::size_t (*elFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
 
   // local face id (ref element) of the face-neighboring elements
   unsigned short (*fIdElFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
