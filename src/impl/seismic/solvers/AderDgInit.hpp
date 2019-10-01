@@ -377,8 +377,6 @@ class edge::seismic::solvers::AderDgInit {
      * @param i_faEl elements adjacent to faces.
      * @param i_elVe vertices adjacent to elements.
      * @param i_elFaEl faces adjacent to elements.
-     * @param i_elMeDa mapping of element ids: mesh-to-data.
-     * @param i_elDaMe mapping of element ids: data-to-mesh.
      * @param i_veChars vertex characteristics.
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
@@ -395,8 +393,6 @@ class edge::seismic::solvers::AderDgInit {
                         TL_T_LID       const (* i_faEl)[2],
                         TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
                         TL_T_LID       const (* i_elFaEl)[TL_N_FAS],
-                        TL_T_LID       const  * i_elMeDa,
-                        TL_T_LID       const  * i_elDaMe,
                         t_vertexChars  const  * i_veChars,
                         t_faceChars    const  * i_faChars,
                         t_elementChars const  * i_elChars,
@@ -623,28 +619,6 @@ class edge::seismic::solvers::AderDgInit {
             // scale right elements' solvers
             if( l_exR ) o_fsA[0][l_elR][l_fIdR][l_en] *= l_sca[1];
             if( l_exR ) o_fsA[1][l_elR][l_fIdR][l_en] *= l_sca[1];
-          }
-        }
-      }
-
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-      // take care of duplicated elements
-      for( TL_T_LID l_el = 0; l_el < i_nEls; l_el++ ) {
-        // get dominant id
-        TL_T_LID l_elDo = i_elMeDa[ i_elDaMe[l_el] ];
-
-        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
-          for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_E; l_en++ ) {
-            o_fsE[0][l_el][l_fa][l_en] = o_fsE[0][l_elDo][l_fa][l_en];
-            o_fsE[1][l_el][l_fa][l_en] = o_fsE[1][l_elDo][l_fa][l_en];
-          }
-          if( o_fsA[0] != nullptr && o_fsA[1] != nullptr ) {
-            for( unsigned short l_en = 0; l_en < TL_N_ENS_FS_A; l_en++ ) {
-              o_fsA[0][l_el][l_fa][l_en] = o_fsA[0][l_elDo][l_fa][l_en];
-              o_fsA[1][l_el][l_fa][l_en] = o_fsA[1][l_elDo][l_fa][l_en];
-            }
           }
         }
       }
