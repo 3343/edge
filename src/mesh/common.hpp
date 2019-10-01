@@ -744,7 +744,7 @@ class edge::mesh::common {
      **/
     static void getFIdsElFaEl( const t_enLayout             &i_elLayout,
                                const std::vector< int_gid > &i_gIdsEl,
-                               const int_el                (*i_elFa)[TL_N_EL_FAS],
+                               const std::size_t           (*i_elFa)[TL_N_EL_FAS],
                                const int_el                (*i_elFaEl)[TL_N_EL_FAS],
                                      unsigned short        (*o_fIdElFaEl)[TL_N_EL_FAS] ) {
       // iterate over own entities
