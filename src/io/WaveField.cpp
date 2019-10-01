@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
@@ -30,33 +31,30 @@
 #include "FileSystem.hpp"
 #include "monitor/instrument.hpp"
 
-edge::io::WaveField::WaveField(       std::string      i_type,
-                                      std::string      i_outFile,
-                                const t_enLayout      &i_elLayout,
-                                const t_inMap         *i_inMap,
-                                const t_vertexChars   *i_veChars,
-                                const t_elementChars  *i_elChars,
-                                const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-                                const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                                      int_spType       i_spType ):
+edge::io::WaveField::WaveField( std::string             i_type,
+                                std::string             i_outFile,
+                                std::size_t             i_nVes,
+                                t_enLayout     const  & i_elLayout,
+                                t_vertexChars  const  * i_veChars,
+                                t_elementChars const  * i_elChars,
+                                std::size_t    const (* i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
+                                real_base      const (* i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+                                int_spType              i_spType ):
  m_veChars(i_veChars),
  m_elChars(i_elChars),
  m_elVe(i_elVe),
- m_dofs(i_dofs) {
+ m_dofs(i_dofs),
+ m_nVes(i_nVes) {
   // derive the print elements
   for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
-    int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
-    int_el l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;
+    std::size_t l_first = i_elLayout.timeGroups[l_tg].inner.first;
+    std::size_t l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;
     // iterate over owned elements of this time group
-    for( int_el l_el = l_first; l_el < l_first+l_size; l_el++ ) {
-      // get unique element
-      int_el l_elUn = i_inMap->elDaMe[ l_el   ];
-             l_elUn = i_inMap->elMeDa[ l_elUn ];
-
+    for( std::size_t l_el = l_first; l_el < l_first+l_size; l_el++ ) {
       // only add if element has the desired sparse type
       if(     i_spType == std::numeric_limits< int_spType >::max()
           || (i_elChars[l_el].spType & i_spType) == i_spType )
-        m_elPrint.push_back( l_elUn );
+        m_elPrint.push_back( l_el );
     }
   }
   // remove duplicates
@@ -66,32 +64,16 @@ edge::io::WaveField::WaveField(       std::string      i_type,
   /*
    * derive sparse ids of limited elements.
    */
-  m_liPrint.resize( m_elPrint.size() );
-
   // last print element
-  int_el l_lastPrint = (m_elPrint.size() == 0) ? 0 : m_elPrint.back()+1;
+  std::size_t l_lastPrint = (m_elPrint.size() == 0) ? 0 : m_elPrint.back()+1;
 
   // current print element
   std::size_t l_ep = 0;
 
-  //! counter for limited elements
-  int_el l_li = 0;
-
   // iterate over dense elements
-  for( int_el l_el = 0; l_el < l_lastPrint; l_el++ ) {
+  for( std::size_t l_el = 0; l_el < l_lastPrint; l_el++ ) {
     // ignore if not print
     if( l_el != m_elPrint[l_ep] ) continue;
-
-    // check if element is limited
-    bool l_lim = false;
-    if( ( m_elChars[l_el].spType & LIMIT ) == LIMIT ) l_lim = true;
-
-    if( l_lim ) {
-      m_liPrint[l_ep] = l_li;
-      l_li++;
-    }
-    else
-      m_liPrint[l_ep] = std::numeric_limits< int_el >::max();
 
     // increase counter for print elements
     l_ep++;
@@ -118,13 +100,10 @@ edge::io::WaveField::WaveField(       std::string      i_type,
     }
   }
 
-  m_nVe = i_inMap->veDaMe.size();
-
   m_writeStep = 0;
 }
 
-void edge::io::WaveField::write( double         i_time,
-                                 unsigned int (*i_limSync)[N_CRUNS] ) {
+void edge::io::WaveField::write( double         i_time ) {
   PP_INSTR_FUN("write_wf")
 
 //  if( m_type == netcdf ) writeNetcdf( i_time, i_dofs );
@@ -137,13 +116,11 @@ void edge::io::WaveField::write( double         i_time,
     if( m_elPrint.size() > 0 )
       m_vtk.write( l_outFile,
                    m_type==vtkBinary,
-                   m_nVe,
+                   m_nVes,
                    m_elPrint,
-                   m_liPrint,
                    m_veChars,
                    m_elVe,
-                   m_dofs,
-                   i_limSync );
+                   m_dofs );
   }
 
   m_writeStep++;

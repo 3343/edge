@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
@@ -45,9 +46,6 @@ class edge::io::Vtk {
     //! connectivity information of elements to vertices.
     int *m_connElVe;
 
-    //! number of time an element was limited since the last sync; TODO: stored as float since this is all our vtk-writer supports.
-    float *m_limSync;
-
     //! 1st order dofs in single precision, storage is element as ld, then quantities, then cruns (slowest dim).
     float *m_dofs;
 
@@ -58,10 +56,10 @@ class edge::io::Vtk {
     int m_visitElType;
 
     //! var names in the vtk output
-    std::string  m_varNames[N_CRUNS*(N_QUANTITIES+1)];
+    std::string  m_varNames[N_CRUNS*N_QUANTITIES];
 
     //! c-pts to vars names
-    char const * m_varNamesC[N_CRUNS*(N_QUANTITIES+1)];
+    char const * m_varNamesC[N_CRUNS*N_QUANTITIES];
 
     /**
      * Initializes Vtk including the respective memory allocations.
@@ -100,21 +98,17 @@ class edge::io::Vtk {
      * @param i_binary true for binary output.
      * @param i_nVe number of vertices.
      * @param i_elPrint print elements.
-     * @param i_lePrint sparse ids of limited print elements.
      * @param i_veChars vertex characteristics.
      * @param i_elVe ids of the elements' adjacent vertices.
      * @param i_dofs DOFs.
-     * @param i_limSync optitional number of times the elements were limited.
      **/
     void write( const std::string           &i_outFile,
                       bool                   i_binary,
                       int_el                 i_nVe,
                 const std::vector< int_el > &i_elPrint,
-                const std::vector< int_el > &i_lePrint,
                 const t_vertexChars         *i_veChars,
                 const int_el               (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-                const real_base            (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                const unsigned int         (*i_limSync)[N_CRUNS]=nullptr );
+                const real_base            (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] );
 };
 
 #endif

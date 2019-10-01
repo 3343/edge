@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -38,7 +39,7 @@ namespace edge {
 }
 
 class edge::io::WaveField {
-  //private:
+  private:
     enum Type{ none,
                vtkAscii,
                vtkBinary };
@@ -62,19 +63,16 @@ class edge::io::WaveField {
     const t_elementChars *m_elChars;
 
     //! vertices adjacent to the elements
-    const int_el (*m_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES];
+    const std::size_t (*m_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES];
 
     //! degrees of freedom
     const real_base (*m_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS];
 
     //! number of vertices
-    int_el m_nVe;
+    std::size_t m_nVes;
 
     //! print elements (unqiue owned elements)
-    std::vector< int_el > m_elPrint;
-
-    //! sparse ids of limited print element (std::limit<int_el>::max() if not a limited element)
-    std::vector< int_el > m_liPrint;
+    std::vector< std::size_t > m_elPrint;
 
   public:
     /**
@@ -83,31 +81,28 @@ class edge::io::WaveField {
      * @param i_type type of the output
      * @param i_outFile output file.
      * @param i_elLayout entity layout of the elements.
-     * @param i_inMap index mapping
      * @param i_veChars characteristics of the vertices.
      * @param i_elChars characteristics of the elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_dofs location of degrees of freedom, which will get written in corresponding calls.
      * @param i_spType sparse type for elements, which are printed. If numeric_limits<>::max(), all elements are printed.
      **/
-    WaveField(       std::string      i_type,
-                     std::string      i_outFile,
-               const t_enLayout      &i_elLayout,
-               const t_inMap         *i_inMap,
-               const t_vertexChars   *i_veChars,
-               const t_elementChars  *i_elChars,
-               const int_el         (*i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
-               const real_base      (*i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
-                     int_spType       i_spType = std::numeric_limits< int_spType >::max() );
+    WaveField( std::string             i_type,
+               std::string             i_outFile,
+               std::size_t             i_nVes,
+               t_enLayout     const  & i_elLayout,
+               t_vertexChars  const  * i_veChars,
+               t_elementChars const  * i_elChars,
+               std::size_t    const (* i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
+               real_base      const (* i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
+               int_spType              i_spType = std::numeric_limits< int_spType >::max() );
 
     /**
      * Writes the given dofs.
      *
      * @param i_time time of this snapshot
-     * @param i_limSync optional number of times the elements were limited since the last sync.
      **/
-    void write( double         i_time,
-                unsigned int (*i_limSync)[N_CRUNS] = nullptr );
+    void write( double i_time );
 };
 
 #endif
