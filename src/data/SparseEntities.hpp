@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -381,33 +382,6 @@ class edge::data::SparseEntities {
     }
 
     /**
-     * Syncs the entity characteristics, of duplicated entities.
-     *
-     * @param i_nEn number of entities.
-     * @param i_enDaMe mapping of entity ids: data-to-mesh.
-     * @param i_enMeDa mapping of element ids: mesh-to-data.
-     *
-     * @paramt TL_T_LID integral type of local ids.
-     * @paramt TL_T_CHARS entity characteristics, offering member .spType.
-     **/
-    template< typename TL_T_LID,
-              typename TL_T_CHARS >
-    static void syncDupl( TL_T_LID          i_nEn,
-                          TL_T_LID   const *i_enDaMe,
-                          TL_T_LID   const *i_enMeDa,
-                          TL_T_CHARS       *io_chars ) {
-      // iterate over entities
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-      for( TL_T_LID l_en = 0; l_en < i_nEn; l_en++ ) {
-        TL_T_LID l_enDo = i_enDaMe[ l_en   ];
-                 l_enDo = i_enMeDa[ l_enDo ];
-        io_chars[l_en].spType = io_chars[l_enDo].spType;
-      }
-    }
-
-    /**
      * Propagates sparse information to adjacent entities.
      *
      * Example (i_spTypeIn == i_spTypeOut):
@@ -430,8 +404,6 @@ class edge::data::SparseEntities {
      * @param i_spTypeOut sparse type which is set in elements adjacent to a triggered element.
      * @param i_charsEn0 characteristics of entity type en0 (has to provide the member .spType).
      * @param i_charsEn1 characteristics of entity type en1 (has to provide the member .spType) which will be updated via bit-wise | if an adjacent en0 entity has the respective sparse type.
-     * @param i_enDaMe mapping of entity ids: data-to-mesh.
-     * @param i_enMeDa mapping of element ids: mesh-to-data.
      *
      * @paramt TL_T_LID integer type of local ids.
      * @paramt TL_T_INT_SP integer type of the sparse type.
@@ -448,9 +420,7 @@ class edge::data::SparseEntities {
                          TL_T_INT_SP            i_spTypeIn,
                          TL_T_INT_SP            i_spTypeOut,
                          TL_T_EN0_CHARS const * i_charsEn0,
-                         TL_T_EN1_CHARS       * o_charsEn1,
-                         TL_T_LID       const * i_enDaMe = nullptr,
-                         TL_T_LID       const * i_enMeDa = nullptr ) {
+                         TL_T_EN1_CHARS       * o_charsEn1 ) {
       // maximum number of modified output entities
       TL_T_LID l_nEn1 = 0;
 
@@ -470,15 +440,6 @@ class edge::data::SparseEntities {
           }
         }
       }
-
-      // synchronize output characteristics
-      if( i_enDaMe != nullptr ) {
-        EDGE_CHECK_NE( i_enMeDa, nullptr );
-        syncDupl( l_nEn1,
-                  i_enDaMe,
-                  i_enMeDa,
-                  o_charsEn1 );
-      }
     }
 
     /**
@@ -492,8 +453,6 @@ class edge::data::SparseEntities {
      * @param i_spTypeOut sparse type which is set in elements adjacent to a triggered element.
      * @param i_charsEn0 characteristics of entity type en0 (has to provide the member .spType).
      * @param i_charsEn1 characteristics of entity type en1 (has to provide the member .spType) which will be updated via bit-wise | if an adjacent en0 entity has the respective sparse type.
-     * @param i_enDaMe mapping of entity ids: data-to-mesh.
-     * @param i_enMeDa mapping of element ids: mesh-to-data.
      *
      * @paramt TL_T_LID integer type of local ids.
      * @paramt TL_T_INT_SP integer type of the sparse type.
@@ -509,9 +468,7 @@ class edge::data::SparseEntities {
                          TL_T_INT_SP                    i_spTypeIn,
                          TL_T_INT_SP                    i_spTypeOut,
                          TL_T_EN0_CHARS         const * i_charsEn0,
-                         TL_T_EN1_CHARS               * o_charsEn1,
-                         TL_T_LID               const * i_enDaMe = nullptr,
-                         TL_T_LID               const * i_enMeDa = nullptr ) {
+                         TL_T_EN1_CHARS               * o_charsEn1 ) {
       // maximum number of modified output entities
       TL_T_LID l_nEn1 = 0;
 
@@ -530,15 +487,6 @@ class edge::data::SparseEntities {
             }
           }
         }
-      }
-
-      // synchronize output characteristics
-      if( i_enDaMe != nullptr ) {
-        EDGE_CHECK_NE( i_enMeDa, nullptr );
-        syncDupl( l_nEn1,
-                  i_enDaMe,
-                  i_enMeDa,
-                  o_charsEn1 );
       }
     }
 
