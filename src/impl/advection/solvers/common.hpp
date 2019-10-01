@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -83,7 +84,7 @@ class edge::advection::solvers::common {
      * @param o_aveDt set to average occuring time step.
      * @param o_maxDt set to maximum occuring time step.
      **/
-    static void getTimeStepStatistics(       int_el           i_nElements,
+    static void getTimeStepStatistics(       std::size_t      i_nElements,
                                        const t_elementChars  *i_elementChars,
                                        const t_bgPars       (*i_bgPars)[1],
                                              double          &o_minDt,
@@ -94,7 +95,7 @@ class edge::advection::solvers::common {
       o_aveDt = 0;
       o_maxDt = 0;
 
-      for( int_el l_element = 0; l_element < i_nElements; l_element++ ) {
+      for( std::size_t l_element = 0; l_element < i_nElements; l_element++ ) {
         // compute time step
         double l_dT = computeTimeStep( i_elementChars[l_element].inDia,
                                        i_bgPars[l_element][0],
@@ -116,46 +117,37 @@ class edge::advection::solvers::common {
      *
      * @param i_nElements number of elements in the mesh.
      * @param i_nFaces number of faces in the mesh.
-     * @param i_faMeDa mapping of face ids: mesh-to-data.
-     * @param i_faDaMe mapping of face ids: data-to-mesh.
-     * @param i_elMeDa mapping of element ids: mesh-to-data.
-     * @param i_elDaMe mapping of element ids: data-to-mesh.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_faceAdjacentElements elements adjacent to the faces.
-     * @param i_elementAdjacentFaces faces adjacent to the elements.
+     * @param i_elFa faces adjacent to the elements.
+     * @param i_elFaEl adjacent elements (faces as bridge).
      * @param i_vertexChars vertex characteristics.
      * @param i_faceChars mesh characteristics of the faces.
      * @param i_bgPars backgrorund parameters (velocities).
      * @param o_fluxSolvers will be set to the flux solvers.
      **/
-    static void setupSolvers(       int_el                 i_nElements,
-                                    int_el                 i_nFaces,
-                              const std::vector< int_el > &i_faMeDa,
-                              const std::vector< int_el > &i_faDaMe,
-                              const std::vector< int_el > &i_elMeDa,
-                              const std::vector< int_el > &i_elDaMe,
-                              const int_el               (*i_elVe)[ C_ENT[T_SDISC.ELEMENT].N_VERTICES ],
-                              const int_el               (*i_faceAdjacentElements)[2],
-                              const int_el               (*i_elementAdjacentFaces)[C_ENT[T_SDISC.ELEMENT].N_FACES],
+    static void setupSolvers(       std::size_t            i_nElements,
+                                    std::size_t            i_nFaces,
+                              const std::size_t          (*i_elVe)[ C_ENT[T_SDISC.ELEMENT].N_VERTICES ],
+                              const std::size_t          (*i_faceAdjacentElements)[2],
+                              const std::size_t          (*i_elFa)[C_ENT[T_SDISC.ELEMENT].N_FACES],
+                              const std::size_t          (*i_elFaEl)[C_ENT[T_SDISC.ELEMENT].N_FACES],
                               const t_vertexChars         *i_vertexChars,
                               const t_faceChars           *i_faceChars,
                               const t_bgPars             (*i_bgPars)[1],
                                     real_base            (*o_fluxSolvers)[C_ENT[T_SDISC.ELEMENT].N_FACES*2] ) {
       // iterate over elements and reset flux solvers
-      for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
+      for( std::size_t l_el = 0; l_el < i_nElements; l_el++ ) {
         for( int_md l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES*2; l_fa++ ) {
           o_fluxSolvers[l_el][l_fa] = 0;
         }
       }
 
       // iterate over faces
-      for( int_el l_fa = 0; l_fa < i_nFaces; l_fa++ ) {
-        // check that the face are unique
-        EDGE_CHECK( l_fa == i_faMeDa[ i_faDaMe[l_fa] ] );
-
+      for( std::size_t l_fa = 0; l_fa < i_nFaces; l_fa++ ) {
         // get left and right element
-        int_el l_elL = i_faceAdjacentElements[l_fa][0];
-        int_el l_elR = i_faceAdjacentElements[l_fa][1];
+        std::size_t l_elL = i_faceAdjacentElements[l_fa][0];
+        std::size_t l_elR = i_faceAdjacentElements[l_fa][1];
 
         // determine existance of elements (boundary conditions)
         bool l_exL = (l_elL < i_nElements);
@@ -219,11 +211,11 @@ class edge::advection::solvers::common {
         unsigned short l_fLocIdR = std::numeric_limits<unsigned short>::max();
 
         for( unsigned int l_elFa = 0; l_elFa < C_ENT[T_SDISC.ELEMENT].N_FACES; l_elFa++ ) {
-          if( l_exL == true && i_elementAdjacentFaces[l_elL][l_elFa] == l_fa ) {
+          if( l_exL == true && i_elFaEl[l_elL][l_elFa] == l_elR ) {
             assert( l_fLocIdL == std::numeric_limits<unsigned short>::max() ); // this must be unique
             l_fLocIdL = l_elFa; // id of local contribution solver
           }
-          if( l_exR == true && i_elementAdjacentFaces[l_elR][l_elFa] == l_fa ) {
+          if( l_exR == true && i_elFaEl[l_elR][l_elFa] == l_elL ) {
             assert( l_fLocIdR == std::numeric_limits<unsigned short>::max() ); // this must be unique
             l_fLocIdR = l_elFa; // id of local contribution solver
           }
@@ -243,11 +235,9 @@ class edge::advection::solvers::common {
          */
          // check for normal direction of left element's wave speeds
          if( l_exR == false || (l_exL == true && l_advNormalL > 0) ) {
-           assert( l_exL == false || std::abs( o_fluxSolvers[l_elL][l_fLocIdL] ) < TOL.SOLVER );
-           if( l_exL ) o_fluxSolvers[l_elL][l_fLocIdL] -= l_advNormalL;
+           if( l_exL ) o_fluxSolvers[l_elL][l_fLocIdL] = -l_advNormalL;
 
-           assert( l_exR == false || std::abs( o_fluxSolvers[l_elR][l_fNegIdR] ) < TOL.SOLVER );
-           if( l_exR ) o_fluxSolvers[l_elR][l_fNegIdR] += l_advNormalL;
+           if( l_exR ) o_fluxSolvers[l_elR][l_fNegIdR] = l_advNormalL;
 
            if( l_exR == false &&  l_advNormalL < 0 ) {
              o_fluxSolvers[l_elL][l_fLocIdL] *= -1;
@@ -256,11 +246,9 @@ class edge::advection::solvers::common {
 
          // check for normal direction of right element's wave speeds
          if( l_exL == false || (l_exR == true && l_advNormalR < 0) ) {
-           assert( l_exR == false || std::abs( o_fluxSolvers[l_elR][l_fLocIdR] ) < TOL.SOLVER );
-           if( l_exR ) o_fluxSolvers[l_elR][l_fLocIdR] += l_advNormalR;
+           if( l_exR ) o_fluxSolvers[l_elR][l_fLocIdR] = l_advNormalR;
 
-           assert( l_exL == false || std::abs( o_fluxSolvers[l_elL][l_fNegIdL] ) < TOL.SOLVER );
-           if( l_exL ) o_fluxSolvers[l_elL][l_fNegIdL] -= l_advNormalR;
+           if( l_exL ) o_fluxSolvers[l_elL][l_fNegIdL] = -l_advNormalR;
 
            if( l_exL == false && l_advNormalR > 0) {
              o_fluxSolvers[l_elR][l_fNegIdR] *= -1;
@@ -272,8 +260,8 @@ class edge::advection::solvers::common {
         real_mesh l_veCoordsR[N_DIM][C_ENT[T_SDISC.ELEMENT].N_VERTICES];
 
         for( unsigned int l_ve = 0; l_ve < C_ENT[T_SDISC.ELEMENT].N_VERTICES; l_ve++ ) {
-          int_el l_veIdL = std::numeric_limits<int_el>::max();
-          int_el l_veIdR = std::numeric_limits<int_el>::max();
+          std::size_t l_veIdL = std::numeric_limits<std::size_t>::max();
+          std::size_t l_veIdR = std::numeric_limits<std::size_t>::max();
           if( l_exL == true ) l_veIdL = i_elVe[l_elL][l_ve];
           if( l_exR == true ) l_veIdR = i_elVe[l_elR][l_ve];
 
@@ -337,16 +325,6 @@ class edge::advection::solvers::common {
         if( l_exL == true ) o_fluxSolvers[l_elL][l_fNegIdL] *= 2;
         if( l_exR == true ) o_fluxSolvers[l_elR][l_fNegIdR] *= 2;
 #endif
-      }
-
-      // take care of duplicated elements
-      for( int_el l_el = 0; l_el < i_nElements; l_el++ ) {
-        // get dominant id
-        int_el l_elDo = i_elMeDa[ i_elDaMe[l_el] ];
-
-        for( int_md l_fa = 0; l_fa < C_ENT[T_SDISC.ELEMENT].N_FACES*2; l_fa++ ) {
-          o_fluxSolvers[l_el][l_fa] = o_fluxSolvers[l_elDo][l_fa];
-        }
       }
     }
 };
