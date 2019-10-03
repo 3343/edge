@@ -43,6 +43,9 @@ class edge_v::io::Config {
     //! path to the output mesh
     std::string m_meshOut = "";
 
+    //! writes time annotations to the mesh if true
+    bool m_writeTimeAn = false;
+
     //! periodic boundary conditions
     bool m_periodic = false;
 
@@ -83,6 +86,13 @@ class edge_v::io::Config {
      * @return true if the mesh has periodic boundaries, false if not.
      **/
     bool getPeriodic() const { return m_periodic; }
+
+    /**
+     * Gets the configuration for time annotations in the output mesh.
+     *
+     * @return true if the mesh is annotated with time info for every element.
+     **/
+    bool getWriteTimeAn() const { return m_writeTimeAn; }
 
     /**
      * Gets the the number of time step groups.

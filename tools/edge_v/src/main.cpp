@@ -77,6 +77,16 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "parsing xml config";
   std::string l_xml = l_args[2];
   edge_v::io::Config l_config( l_xml );
+  EDGE_V_LOG_INFO << "sharing runtime config:";
+  EDGE_V_LOG_INFO << "  mesh:";
+  EDGE_V_LOG_INFO << "    periodic:   " << l_config.getPeriodic();
+  EDGE_V_LOG_INFO << "    time_annos: " << l_config.getWriteTimeAn();
+  EDGE_V_LOG_INFO << "    in:         " << l_config.getMeshIn();
+  EDGE_V_LOG_INFO << "    out:        " << l_config.getMeshOut();
+  EDGE_V_LOG_INFO << "  time:";
+  EDGE_V_LOG_INFO << "    #time groups: " << l_config.nTsGroups();
+  EDGE_V_LOG_INFO << "    fun dt:       " << l_config.getFunDt();
+  EDGE_V_LOG_INFO << "    out:          " << l_config.getTsOut();
 
   EDGE_V_LOG_INFO << "initializing MOAB";
   std::string l_meshIn = l_config.getMeshIn();
@@ -101,8 +111,16 @@ int main( int i_argc, char *i_argv[] ) {
                            l_veMod );
   l_cfl.printStats();
 
+  if( l_config.getWriteTimeAn() ) {
+    EDGE_V_LOG_INFO << "storing elements' cfl time steps";
+    std::string l_tagCfl = "edge_v_cfl_time_steps";
+    l_moab.setEnData( l_mesh.getTypeEl(),
+                      l_tagCfl,
+                      l_cfl.getTimeSteps() );
+  }
+
   if( l_config.getTsOut() != "" ) {
-    EDGE_V_LOG_INFO << "writing time steps";
+    EDGE_V_LOG_INFO << "writing cfl time steps to ascii";
     std::string l_colNames = "ts_cfl";
     double const * l_data[1] = { l_cfl.getTimeSteps() };
     edge_v::io::Csv::write( l_config.getTsOut(),
@@ -152,7 +170,7 @@ int main( int i_argc, char *i_argv[] ) {
   delete[] l_rates;
   l_tsGroups.printStats();
 
-  EDGE_V_LOG_INFO << "storing elements' time step groups (temporarily)";
+  EDGE_V_LOG_INFO << "storing elements' time step groups";
   std::string l_tagElTg = "edge_v_element_time_groups";
   l_moab.setEnData( l_mesh.getTypeEl(),
                     l_tagElTg,
@@ -161,7 +179,10 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "reordering by time step groups";
   l_moab.reorder( l_mesh.getTypeEl(),
                   l_tagElTg );
-  l_moab.deleteTag( l_tagElTg );
+  if( !l_config.getWriteTimeAn() ) {
+    EDGE_V_LOG_INFO << "deleting elements' time step groups";
+    l_moab.deleteTag( l_tagElTg );
+  }
 
   EDGE_V_LOG_INFO << "storing number of elements per time group";
   std::string l_tagNtgEls = "edge_v_n_time_group_elements";
