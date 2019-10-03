@@ -103,25 +103,22 @@ edge::io::WaveField::WaveField( std::string             i_type,
   m_writeStep = 0;
 }
 
-void edge::io::WaveField::write( double         i_time ) {
+void edge::io::WaveField::write( double i_time ) {
   PP_INSTR_FUN("write_wf")
 
-//  if( m_type == netcdf ) writeNetcdf( i_time, i_dofs );
-  if ( m_type == vtkAscii || m_type == vtkBinary ) {
-    // create file name
-    std::string l_outFile = m_outFile;
-    l_outFile += "_" + parallel::g_rankStr + "_" + std::to_string((unsigned long long) m_writeStep) + ".vtk";
+  // create file name
+  std::string l_outFile = m_outFile;
+  l_outFile += "_" + parallel::g_rankStr + "_" + std::to_string((unsigned long long) m_writeStep) + ".vtk";
 
-    // write output
-    if( m_elPrint.size() > 0 )
-      m_vtk.write( l_outFile,
-                   m_type==vtkBinary,
-                   m_nVes,
-                   m_elPrint,
-                   m_veChars,
-                   m_elVe,
-                   m_dofs );
-  }
+  // write output
+  if( m_elPrint.size() > 0 )
+    m_vtk.write( l_outFile,
+                  m_type==vtkBinary,
+                  m_nVes,
+                  m_elPrint,
+                  m_veChars,
+                  m_elVe,
+                  m_dofs );
 
   m_writeStep++;
 }
