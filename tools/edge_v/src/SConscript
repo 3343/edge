@@ -32,6 +32,7 @@ l_sources = [ 'io/Config.cpp',
               'mesh/GeomTet4.cpp',
               'mesh/Geom.cpp',
               'mesh/Mesh.cpp',
+              'mesh/Partition.cpp',
               'models/Constant.cpp',
               'time/Cfl.cpp',
               'time/Groups.cpp' ]
@@ -65,6 +66,7 @@ if env['tests']:
               'mesh/GeomTria3.test.cpp',
               'mesh/GeomTet4.test.cpp',
               'mesh/Mesh.test.cpp',
+              'mesh/Partition.test.cpp',
               'time/Cfl.test.cpp',
               'time/Groups.test.cpp' ]
 
