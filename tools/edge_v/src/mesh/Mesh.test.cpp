@@ -31,7 +31,7 @@ namespace edge_v {
   }
 }
 
-TEST_CASE( "Tests the derivation of the extra entry in two arrays..", "[mesh][getAddEntry]" ) {
+TEST_CASE( "Tests the derivation of the extra entry in two arrays.", "[mesh][getAddEntry]" ) {
   std::size_t l_first0[3]  = { 4, 9, 1    };
   std::size_t l_second0[4] = { 1, 9, 5, 4 };
 

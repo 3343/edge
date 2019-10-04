@@ -247,28 +247,28 @@ class edge_v::mesh::Mesh {
     /**
      * Gets the vertices adjacent to the faces.
      *
-     * @return connectivity info.
+     * @return faVe info.
      **/
     std::size_t const * getFaVe() const { return m_faVe; }
 
     /**
      * Gets the elements adjacent to the faces.
      *
-     * @return adjacency info.
+     * @return faEl info.
      **/
     std::size_t const * getFaEl() const { return m_faEl; }
 
     /**
      * Gets the faces adjacent to the elements.
      *
-     * @return adjacency info.
+     * @return elFa info.
      **/
     std::size_t const * getElFa() const { return m_elFa; }
 
     /**
      * Gets the elements adjacent to the elements (faces as bridge).
      *
-     * @return adjacency info.
+     * @return elFaEl info.
      **/
     std::size_t const * getElFaEl() const { return m_elFaEl; }
 
