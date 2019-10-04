@@ -291,6 +291,18 @@ class edge_v::io::Moab {
                     unsigned short const * i_data );
 
     /**
+     * Sets the given data in MOAB.
+     * The data is stored in MOAB's native int for portability.
+     *
+     * @param i_enTy entity type to which this data belongs.
+     * @param i_tagName tag name.
+     * @param i_data data, which will be stored.
+     **/
+    void setEnData( t_entityType         i_enTy,
+                    std::string  const & i_tagName,
+                    std::size_t  const * i_data );
+
+    /**
      * Gets the data for the given entity type (stored as native int).
      *
      * @param i_enTy entity type to which this data belongs.

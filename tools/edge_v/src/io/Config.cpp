@@ -38,6 +38,7 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_meshOut  = l_mesh.child("files").child("out").text().as_string();
   m_writeTimeAn = l_mesh.child("write_time_annotations").text().as_bool();
   m_periodic = l_mesh.child("periodic").text().as_bool();
+  m_nPartitions = l_mesh.child("n_partitions").text().as_ullong();
 
   pugi::xml_node l_time = l_doc.child("edge_v").child("time");
 

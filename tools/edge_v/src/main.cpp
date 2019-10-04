@@ -28,6 +28,7 @@
 #include "mesh/Mesh.h"
 #include "time/Cfl.h"
 #include "time/Groups.h"
+#include "mesh/Partition.h"
 
 #include "io/logging.h"
 #ifdef PP_USE_EASYLOGGING
@@ -79,10 +80,11 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::io::Config l_config( l_xml );
   EDGE_V_LOG_INFO << "sharing runtime config:";
   EDGE_V_LOG_INFO << "  mesh:";
-  EDGE_V_LOG_INFO << "    periodic:   " << l_config.getPeriodic();
-  EDGE_V_LOG_INFO << "    time_annos: " << l_config.getWriteTimeAn();
-  EDGE_V_LOG_INFO << "    in:         " << l_config.getMeshIn();
-  EDGE_V_LOG_INFO << "    out:        " << l_config.getMeshOut();
+  EDGE_V_LOG_INFO << "    periodic:     " << l_config.getPeriodic();
+  EDGE_V_LOG_INFO << "    time_annos:   " << l_config.getWriteTimeAn();
+  EDGE_V_LOG_INFO << "    n_partitions: " << l_config.nPartitions();
+  EDGE_V_LOG_INFO << "    in:           " << l_config.getMeshIn();
+  EDGE_V_LOG_INFO << "    out:          " << l_config.getMeshOut();
   EDGE_V_LOG_INFO << "  time:";
   EDGE_V_LOG_INFO << "    #time groups: " << l_config.nTsGroups();
   EDGE_V_LOG_INFO << "    fun dt:       " << l_config.getFunDt();
@@ -175,6 +177,18 @@ int main( int i_argc, char *i_argv[] ) {
   l_moab.setEnData( l_mesh.getTypeEl(),
                     l_tagElTg,
                     l_tsGroups.getElTg() );
+
+  EDGE_V_LOG_INFO << "partitioning the mesh";
+  edge_v::mesh::Partition l_part( l_mesh );
+  l_part.kWay( l_config.nPartitions(),
+               l_tsGroups.getElTg() );
+  if( l_config.getWriteTimeAn() ) {
+    EDGE_V_LOG_INFO << "storing elements' partitions";
+    std::string l_tagElPa = "edge_v_partitions";
+    l_moab.setEnData( l_mesh.getTypeEl(),
+                      l_tagElPa,
+                      l_part.getElPa() );
+  }
 
   EDGE_V_LOG_INFO << "reordering by time step groups";
   l_moab.reorder( l_mesh.getTypeEl(),

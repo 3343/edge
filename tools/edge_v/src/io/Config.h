@@ -49,6 +49,9 @@ class edge_v::io::Config {
     //! periodic boundary conditions
     bool m_periodic = false;
 
+    //! number of partitions to derive
+    std::size_t m_nPartitions = 0;
+
     //! path to the output-csv for the time steps
     std::string m_tsOut = "";
 
@@ -93,6 +96,13 @@ class edge_v::io::Config {
      * @return true if the mesh is annotated with time info for every element.
      **/
     bool getWriteTimeAn() const { return m_writeTimeAn; }
+
+    /**
+     * Gets the number of partitions in the output mesh.
+     *
+     * @return number of partitions.
+     **/
+    std::size_t nPartitions() const { return m_nPartitions; }
 
     /**
      * Gets the the number of time step groups.

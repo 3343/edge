@@ -537,6 +537,30 @@ void edge_v::io::Moab::setEnData( t_entityType           i_enTy,
   delete[] l_data;
 }
 
+void edge_v::io::Moab::setEnData( t_entityType         i_enTy,
+                                  std::string  const & i_tagName,
+                                  std::size_t  const * i_data ) {
+  // convert to int
+  int l_nEns;
+  moab::ErrorCode l_err = m_moab->get_number_entities_by_type( m_root,
+                                                               getMoabType( i_enTy ),
+                                                               l_nEns );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  int *l_data = new int[l_nEns];
+  convert( l_nEns,
+           i_data,
+           l_data );
+
+  setEnData( i_enTy,
+             moab::MB_TYPE_INTEGER,
+             i_tagName,
+             l_data );
+
+  // free memory
+  delete[] l_data;
+}
+
 void edge_v::io::Moab::getEnData( t_entityType           i_enTy,
                                   std::string    const & i_tagName,
                                   unsigned short       * o_data ) const {
