@@ -79,6 +79,9 @@ edge_v::mesh::Partition::~Partition() {
   if( m_elPa != nullptr ) {
     delete[] m_elPa;
   }
+  if( m_elPr != nullptr ) {
+    delete[] m_elPr;
+  }
 }
 
 void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
@@ -206,4 +209,21 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
 
   // free intermediate partition storage
   delete[] l_elPa;
+}
+
+std::size_t const * edge_v::mesh::Partition::getElPr() {
+  // allocate memory if required
+  if( m_elPr == nullptr ) {
+    m_elPr = new std::size_t[ m_mesh.nEls() ];
+  }
+
+  // always compute priorities since the partitioning is non-constant
+  getElPr( m_mesh.getTypeEl(),
+           m_mesh.nEls(),
+           m_mesh.getElFaEl(),
+           m_elPa,
+           m_elTg,
+           m_elPr );
+
+  return m_elPr;
 }

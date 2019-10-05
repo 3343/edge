@@ -45,6 +45,9 @@ class edge_v::mesh::Partition {
     //! time groups of the elements
     unsigned short const * m_elTg = nullptr;
 
+    //! priorities of the elements
+    std::size_t * m_elPr = nullptr;
+
     /**
      * Gets the elements' priorities.
      * The priority is given as combination of the respective element's partition and time group.
@@ -99,7 +102,15 @@ class edge_v::mesh::Partition {
      *
      * @return elPa info.
      **/
-    std::size_t const * getElPa() { return m_elPa; }
+    std::size_t const * getElPa() const { return m_elPa; }
+
+    /**
+     * Gets the elements' priorities.
+     * Remark: The priorities are recomputed in every function call.
+     *
+     * @return elPr info.
+     **/
+    std::size_t const * getElPr();
 };
 
 #endif
