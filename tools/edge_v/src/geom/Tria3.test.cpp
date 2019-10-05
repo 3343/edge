@@ -22,7 +22,7 @@
  **/
 #include <catch.hpp>
 #define private public
-#include "GeomTria3.h"
+#include "Tria3.h"
 #undef private
 
 TEST_CASE( "Tests the volume computation for 3-node triangles.", "[volume][tria3]" ) {

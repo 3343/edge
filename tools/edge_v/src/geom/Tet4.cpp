@@ -20,7 +20,7 @@
  * @section DESCRIPTION
  * Geometry computations for 4-node tetrahedral elements.
  **/
-#include "GeomTet4.h"
+#include "Tet4.h"
 
 #include <limits>
 #include "io/logging.h"

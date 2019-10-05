@@ -23,7 +23,7 @@
 #include "Mesh.h"
 
 #include "../io/Moab.h"
-#include "Geom.h"
+#include "../geom/Geom.h"
 #include "io/logging.h"
 
 std::size_t edge_v::mesh::Mesh::getAddEntry( std::size_t   i_sizeFirst,

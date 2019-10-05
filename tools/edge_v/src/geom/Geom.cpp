@@ -21,9 +21,9 @@
  * Geometry computations for the mesh.
  **/
 #include "Geom.h"
-#include "GeomLine.h"
-#include "GeomTria3.h"
-#include "GeomTet4.h"
+#include "Line.h"
+#include "Tria3.h"
+#include "Tet4.h"
 
 #include <limits>
 #include "io/logging.h"

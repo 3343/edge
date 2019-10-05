@@ -20,7 +20,7 @@
  * @section DESCRIPTION
  * Geometry computations for line elements.
  **/
-#include "GeomLine.h"
+#include "Line.h"
 
 #include <Eigen/Dense>
 
