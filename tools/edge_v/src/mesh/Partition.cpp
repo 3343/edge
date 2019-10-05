@@ -78,7 +78,6 @@ edge_v::mesh::Partition::~Partition() {
 }
 
 void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
-                                    unsigned short const * i_elTg,
                                     unsigned short         i_nCuts ) {
   // get info from mesh
   edge_v::t_entityType l_elTy = m_mesh.getTypeEl();
@@ -112,13 +111,13 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
   // assemble vertex and edge weights
   idx_t * l_vwgt = nullptr;
   idx_t * l_adjwgt = nullptr;
-  if( i_elTg != nullptr ) {
+  if( m_elTg != nullptr ) {
     l_vwgt = new idx_t[ l_nEls ];
     l_adjwgt = new idx_t[ l_xadj[l_nEls] ];
 
     unsigned short l_tgMax = 0;
     for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
-      l_tgMax = std::max( l_tgMax, i_elTg[l_el] );
+      l_tgMax = std::max( l_tgMax, m_elTg[l_el] );
       l_vwgt[l_el] = 1;
     }
 
@@ -128,7 +127,7 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
     std::size_t l_adId = 0;
     for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
       // set vertex weight
-      for( unsigned short l_tg = i_elTg[l_el]; l_tg < l_tgMax; l_tg++ ) {
+      for( unsigned short l_tg = m_elTg[l_el]; l_tg < l_tgMax; l_tg++ ) {
         l_vwgt[l_el] *= 2;
       }
 
@@ -138,7 +137,7 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
         if( l_ad != std::numeric_limits< std::size_t >::max() ) {
           // larger time group elements have to sent twice the amount
           // -> comm volume is given by frequency of min time group
-          unsigned short l_minTg = std::min( i_elTg[l_el], i_elTg[l_ad] );
+          unsigned short l_minTg = std::min( m_elTg[l_el], m_elTg[l_ad] );
 
           // set edge weight
           for( unsigned short l_tg = l_minTg; l_tg < l_tgMax; l_tg++ ) {
@@ -181,7 +180,7 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
   EDGE_V_CHECK_EQ( l_err, METIS_OK );
 
   // free intermediate adjacency memory
-  if( i_elTg != nullptr ) {
+  if( m_elTg != nullptr ) {
     delete[] l_vwgt;
     delete[] l_adjwgt;
   }

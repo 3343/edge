@@ -42,6 +42,9 @@ class edge_v::mesh::Partition {
     //! partitions of the elements
     std::size_t * m_elPa = nullptr;
 
+    //! time groups of the elements
+    unsigned short const * m_elTg = nullptr;
+
     /**
      * Gets the elements' priorities.
      * The priority is given as combination of the respective element's partition and time group.
@@ -71,8 +74,11 @@ class edge_v::mesh::Partition {
      * Constructor.
      *
      * @param i_mesh mesh interface.
+     * @param i_elTg time groups of the elements.
      **/
-    Partition( Mesh const & i_mesh ): m_mesh( i_mesh ){};
+    Partition( Mesh           const & i_mesh,
+               unsigned short const * i_elTg ): m_mesh( i_mesh ),
+                                                m_elTg( i_elTg ) {};
 
     /**
      * Destructor.
@@ -83,11 +89,9 @@ class edge_v::mesh::Partition {
      * Uses Metis' PartGraphKway to determine the partitioning.
      *
      * @param i_nPars number of partitions to generate.
-     * @param i_elTg time groups of the elements.
      * @param i_nCuts number of partitionings computed; the one with lowest comm volume is stored.
      **/
     void kWay( std::size_t            i_nParts,
-               unsigned short const * i_elTg = nullptr,
                unsigned short         i_nCuts = 5 );
 
     /**

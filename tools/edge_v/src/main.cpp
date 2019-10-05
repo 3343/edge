@@ -179,9 +179,9 @@ int main( int i_argc, char *i_argv[] ) {
                     l_tsGroups.getElTg() );
 
   EDGE_V_LOG_INFO << "partitioning the mesh";
-  edge_v::mesh::Partition l_part( l_mesh );
-  l_part.kWay( l_config.nPartitions(),
-               l_tsGroups.getElTg() );
+  edge_v::mesh::Partition l_part( l_mesh,
+                                  l_tsGroups.getElTg() );
+  l_part.kWay( l_config.nPartitions() );
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' partitions";
     std::string l_tagElPa = "edge_v_partitions";

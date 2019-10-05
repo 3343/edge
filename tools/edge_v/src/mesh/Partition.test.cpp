@@ -41,11 +41,11 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
     edge_v::mesh::Mesh l_mesh( l_path );
 
     // construct partitioner
-    edge_v::mesh::Partition l_part( l_mesh );
+    edge_v::mesh::Partition l_part0( l_mesh, nullptr );
  
     // test partitioner
-    l_part.kWay( 3 );
-    std::size_t const * l_elPa = l_part.getElPa();
+    l_part0.kWay( 3 );
+    std::size_t const * l_elPa = l_part0.getElPa();
 
     for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
       REQUIRE( l_elPa[l_el] < 3 );
@@ -59,9 +59,12 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
       l_elTg[l_el] = l_el%4;
     }
 
+    // construct partitioner
+    edge_v::mesh::Partition l_part1( l_mesh, l_elTg );
+
     // test with assigned time groups
-    l_part.kWay( 4, l_elTg );
-    l_elPa = l_part.getElPa();
+    l_part1.kWay( 4 );
+    l_elPa = l_part1.getElPa();
     for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
       REQUIRE( l_elPa[l_el] < 4 );
     }
