@@ -31,8 +31,10 @@ void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
                                        std::size_t                * o_elPr ) {
   // determine number of time groups
   unsigned short l_nTgs = 0;
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
-    l_nTgs = std::max( l_nTgs, i_elTg[l_el] );
+  if( i_elTg != nullptr ) {
+    for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+      l_nTgs = std::max( l_nTgs, i_elTg[l_el] );
+    }
   }
   l_nTgs++;
 
@@ -66,7 +68,9 @@ void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
     if( l_send(l_el) ) o_elPr[l_el] += l_nTgs;
 
     // add time group priority
-    o_elPr[l_el] += i_elTg[l_el];
+    if( i_elTg != nullptr ) {
+      o_elPr[l_el] += i_elTg[l_el];
+    }
   }
 }
 
