@@ -27,12 +27,12 @@
 
 TEST_CASE( "Tests the volume computation for 3-node triangles.", "[volume][tria3]" ) {
   double l_ves1[3][3] = { {0.0, 2.0, 2.0}, {0.0, 0.0, 3.0}, {0.0, 0.0, 0.0} };
-  double l_vol1 = edge_v::mesh::GeomTria3::area( l_ves1 );
+  double l_vol1 = edge_v::geom::Tria3::area( l_ves1 );
   REQUIRE( l_vol1 == Approx((2.0 * 3.0) / 2.0) );
 
 
   double l_ves2[3][3] = { {1.2, 3.0, 4.0}, {1.0, 5.0, 2.0}, {2.0, 4.0, 3.0} };
-  double l_vol2 = edge_v::mesh::GeomTria3::area( l_ves2 );
+  double l_vol2 = edge_v::geom::Tria3::area( l_ves2 );
   REQUIRE( l_vol2 == Approx(1.27279) );
 }
 
@@ -42,9 +42,9 @@ TEST_CASE( "Tests the tangents computation for 3-node triangles.", "[tangents][t
 
   double l_tangents[2][3] = {{0}};
 
-  edge_v::mesh::GeomTria3::tangents( l_ves0,
-                                     l_np0,
-                                     l_tangents );
+  edge_v::geom::Tria3::tangents( l_ves0,
+                                 l_np0,
+                                 l_tangents );
 
   REQUIRE( l_tangents[0][0] == Approx(  std::sqrt(0.5) ) );
   REQUIRE( l_tangents[0][1] == Approx(  std::sqrt(0.5) ) );
@@ -56,9 +56,9 @@ TEST_CASE( "Tests the tangents computation for 3-node triangles.", "[tangents][t
 
   double l_np1[3] = { 4.5, 2.5, 3.0 };
 
-  edge_v::mesh::GeomTria3::tangents( l_ves0,
-                                     l_np1,
-                                     l_tangents );
+  edge_v::geom::Tria3::tangents( l_ves0,
+                                 l_np1,
+                                 l_tangents );
 
   REQUIRE( l_tangents[0][0] == Approx( -std::sqrt(0.5) ) );
   REQUIRE( l_tangents[0][1] == Approx(  std::sqrt(0.5) ) );
@@ -75,9 +75,9 @@ TEST_CASE( "Tests the normal computation for 3-node triangles.", "[normal][tria3
 
   double l_normal[3] = {0};
 
-  edge_v::mesh::GeomTria3::normal( l_ves0,
-                                   l_np0,
-                                   l_normal );
+  edge_v::geom::Tria3::normal( l_ves0,
+                               l_np0,
+                               l_normal );
 
   REQUIRE( l_normal[0] == Approx(0.0) );
   REQUIRE( l_normal[1] == Approx(0.0) );
@@ -85,9 +85,9 @@ TEST_CASE( "Tests the normal computation for 3-node triangles.", "[normal][tria3
 
   double l_np1[3] = { 4.5, 2.5, 5.0 };
 
-  edge_v::mesh::GeomTria3::normal( l_ves0,
-                                   l_np1,
-                                   l_normal );
+  edge_v::geom::Tria3::normal( l_ves0,
+                               l_np1,
+                               l_normal );
 
   REQUIRE( l_normal[0] == Approx( 0.0) );
   REQUIRE( l_normal[1] == Approx( 0.0) );
@@ -99,7 +99,7 @@ TEST_CASE( "Tests the incircle diameter computation for 3-node triangles.", "[in
   double l_ves[3][3] = { {0.0, 0.0, 0.0} , {1.0, 0.0, 0.0}, {0.5, std::sqrt(3.0)/2.0, 0.0 } };
 
   // compute diameter
-  double l_dia = edge_v::mesh::GeomTria3::inDiameter( l_ves );
+  double l_dia = edge_v::geom::Tria3::inDiameter( l_ves );
 
   // check result
   REQUIRE( l_dia == Approx( std::sqrt(3)/3.0 ) );
@@ -128,10 +128,10 @@ TEST_CASE( "Tests the vertex and face reordering for triangles.", "[normVesFas][
   std::size_t l_elFa0[3]   = { 4, 5, 6 };
   std::size_t l_elFaEl0[3] = { 7, 8, 9 };
 
-  edge_v::mesh::GeomTria3::normVesFas( l_ves0,
-                                       l_elVe0,
-                                       l_elFa0,
-                                       l_elFaEl0 );
+  edge_v::geom::Tria3::normVesFas( l_ves0,
+                                   l_elVe0,
+                                   l_elFa0,
+                                   l_elFaEl0 );
 
   REQUIRE( l_elVe0[0] == 1 );
   REQUIRE( l_elVe0[1] == 2 );
@@ -170,10 +170,10 @@ TEST_CASE( "Tests the vertex and face reordering for triangles.", "[normVesFas][
   std::size_t l_elFa1[3]   = { 4, 5, 6 };
   std::size_t l_elFaEl1[3] = { 7, 8, 9 };
 
-  edge_v::mesh::GeomTria3::normVesFas( l_ves1,
-                                       l_elVe1,
-                                       l_elFa1,
-                                       l_elFaEl1 );
+  edge_v::geom::Tria3::normVesFas( l_ves1,
+                                   l_elVe1,
+                                   l_elFa1,
+                                   l_elFaEl1 );
 
   REQUIRE( l_elVe1[0] == 1 );
   REQUIRE( l_elVe1[1] == 3 );

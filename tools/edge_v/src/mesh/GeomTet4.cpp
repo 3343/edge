@@ -26,7 +26,7 @@
 #include "io/logging.h"
 #include <Eigen/Dense>
 
-double edge_v::mesh::GeomTet4::volume( double const (*i_veCrds)[3] ) {
+double edge_v::geom::Tet4::volume( double const (*i_veCrds)[3] ) {
 
   // assembly matrix
   Eigen::Matrix4d l_mat;
@@ -44,7 +44,7 @@ double edge_v::mesh::GeomTet4::volume( double const (*i_veCrds)[3] ) {
   return l_vol;
 }
 
-double edge_v::mesh::GeomTet4::inDiameter( double const (*i_veCrds)[3] ) {
+double edge_v::geom::Tet4::inDiameter( double const (*i_veCrds)[3] ) {
   /*
    * Reference: John Burkardt
    *            The Inscribed Sphere of a Tetrahedron
@@ -75,10 +75,10 @@ double edge_v::mesh::GeomTet4::inDiameter( double const (*i_veCrds)[3] ) {
   return l_dia;
 }
 
-void edge_v::mesh::GeomTet4::normVesFas( double      const (* i_veCrds)[3],
-                                         std::size_t        * io_elVe,
-                                         std::size_t        * io_elFa,
-                                         std::size_t        * io_elFaEl ) {
+void edge_v::geom::Tet4::normVesFas( double      const (* i_veCrds)[3],
+                                     std::size_t        * io_elVe,
+                                     std::size_t        * io_elFa,
+                                     std::size_t        * io_elFaEl ) {
   // get vectors point from 0->1, 0->2 and 0->3
   Eigen::Matrix3d l_m;
   for( unsigned short l_d0 = 0; l_d0 < 3; l_d0++ )

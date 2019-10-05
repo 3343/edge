@@ -29,42 +29,42 @@
 #include "io/logging.h"
 #include <Eigen/Dense>
 
-double edge_v::mesh::Geom::volume( t_entityType         i_enTy,
+double edge_v::geom::Geom::volume( t_entityType         i_enTy,
                                    double       const (*i_veCrds)[3] ) {
   double l_vol = std::numeric_limits< double >::max();
 
   if( i_enTy == LINE ) {
-    l_vol = GeomLine::length( i_veCrds );
+    l_vol = Line::length( i_veCrds );
   }
   else if( i_enTy == TRIA3 ) {
-    l_vol = GeomTria3::area( i_veCrds );
+    l_vol = Tria3::area( i_veCrds );
   }
   else if( i_enTy == TET4 ) {
-    l_vol = GeomTet4::volume( i_veCrds );
+    l_vol = Tet4::volume( i_veCrds );
   }
   else EDGE_V_LOG_FATAL;
 
   return l_vol;
 }
 
-void edge_v::mesh::Geom::normal( t_entityType         i_enTy,
+void edge_v::geom::Geom::normal( t_entityType         i_enTy,
                                  double       const (*i_veCrds)[3],
                                  double       const   i_nPt[3],
                                  double               o_normal[3] ) {
   if( i_enTy == LINE ) {
-    GeomLine::normal( i_veCrds,
-                      i_nPt,
-                      o_normal );
+    Line::normal( i_veCrds,
+                  i_nPt,
+                  o_normal );
   }
   else if( i_enTy == TRIA3 ) {
-    GeomTria3::normal( i_veCrds,
-                       i_nPt,
-                       o_normal );
+    Tria3::normal( i_veCrds,
+                   i_nPt,
+                   o_normal );
   }
   else EDGE_V_LOG_FATAL;
 }
 
-void edge_v::mesh::Geom::tangents( t_entityType         i_enTy,
+void edge_v::geom::Geom::tangents( t_entityType         i_enTy,
                                    double       const (*i_veCrds)[3],
                                    double       const   i_nPt[3],
                                    double               o_tangents[2][3] ) {
@@ -73,48 +73,48 @@ void edge_v::mesh::Geom::tangents( t_entityType         i_enTy,
     o_tangents[0][l_di] = o_tangents[1][l_di] = 0;
 
   if( i_enTy == LINE ) {
-    GeomLine::tangent( i_veCrds,
-                       i_nPt,
-                       o_tangents[0] );
+    Line::tangent( i_veCrds,
+                   i_nPt,
+                   o_tangents[0] );
   }
   else if( i_enTy == TRIA3 ) {
-    GeomTria3::tangents( i_veCrds,
-                         i_nPt,
-                         o_tangents );
+    Tria3::tangents( i_veCrds,
+                     i_nPt,
+                     o_tangents );
   }
   else EDGE_V_LOG_FATAL;
 }
 
-double edge_v::mesh::Geom::inDiameter( t_entityType         i_enTy,
+double edge_v::geom::Geom::inDiameter( t_entityType         i_enTy,
                                        double       const (*i_veCrds)[3] ) {
   double l_dia = std::numeric_limits< double >::max();
   if( i_enTy == TRIA3 ) {
-    l_dia = GeomTria3::inDiameter( i_veCrds );
+    l_dia = Tria3::inDiameter( i_veCrds );
   }
   else if( i_enTy == TET4 ) {
-    l_dia = GeomTet4::inDiameter( i_veCrds );
+    l_dia = Tet4::inDiameter( i_veCrds );
   }
   else EDGE_V_LOG_FATAL;
 
   return l_dia;
 }
 
-void edge_v::mesh::Geom::normVesFas( t_entityType         i_elTy,
+void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
                                      double      const (* i_veCrds)[3],
                                      std::size_t        * io_elVe,
                                      std::size_t        * io_elFa,
                                      std::size_t        * io_elFaEl ) {
   if( i_elTy == TRIA3 ) {
-    GeomTria3::normVesFas( i_veCrds,
-                           io_elVe,
-                           io_elFa,
-                           io_elFaEl );
+    Tria3::normVesFas( i_veCrds,
+                       io_elVe,
+                       io_elFa,
+                       io_elFaEl );
   }
   else if( i_elTy == TET4 ) {
-    GeomTet4::normVesFas( i_veCrds,
-                          io_elVe,
-                          io_elFa,
-                          io_elFaEl );
+    Tet4::normVesFas( i_veCrds,
+                      io_elVe,
+                      io_elFa,
+                      io_elFaEl );
   }
   else EDGE_V_LOG_FATAL;
 }

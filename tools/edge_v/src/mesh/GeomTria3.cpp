@@ -25,7 +25,7 @@
 #include "io/logging.h"
 #include "GeomTria3.h"
 
-double edge_v::mesh::GeomTria3::area( double const (*i_veCrds)[3] ) {
+double edge_v::geom::Tria3::area( double const (*i_veCrds)[3] ) {
   // get edges
   Eigen::Vector3d l_a, l_b;
   l_a[0] = i_veCrds[1][0] - i_veCrds[0][0];
@@ -45,9 +45,9 @@ double edge_v::mesh::GeomTria3::area( double const (*i_veCrds)[3] ) {
   return l_vol;
 }
 
-void edge_v::mesh::GeomTria3::tangents( double const (*i_veCrds)[3],
-                                        double const   i_nPt[3],
-                                        double         o_tangents[2][3] ) {
+void edge_v::geom::Tria3::tangents( double const (*i_veCrds)[3],
+                                    double const   i_nPt[3],
+                                    double         o_tangents[2][3] ) {
   /*
    * we can derive the second (normal) tangent from the first tangent
    *
@@ -100,9 +100,9 @@ void edge_v::mesh::GeomTria3::tangents( double const (*i_veCrds)[3],
   }
 }
 
-void edge_v::mesh::GeomTria3::normal( double const (*i_veCrds)[3],
-                                      double const   i_nPt[3],
-                                      double         o_normal[3] ) {
+void edge_v::geom::Tria3::normal( double const (*i_veCrds)[3],
+                                  double const   i_nPt[3],
+                                  double         o_normal[3] ) {
   // compute tangents
   double l_ts[2][3] = {{0}};
   tangents( i_veCrds,
@@ -119,7 +119,7 @@ void edge_v::mesh::GeomTria3::normal( double const (*i_veCrds)[3],
     o_normal[l_di] = l_n[l_di];
 }
 
-double edge_v::mesh::GeomTria3::inDiameter( double const (*i_veCrds)[3] ) {
+double edge_v::geom::Tria3::inDiameter( double const (*i_veCrds)[3] ) {
   // check zero last dimension
   EDGE_V_CHECK_EQ( i_veCrds[0][2], 0 );
   EDGE_V_CHECK_EQ( i_veCrds[1][2], 0 );
@@ -146,10 +146,10 @@ double edge_v::mesh::GeomTria3::inDiameter( double const (*i_veCrds)[3] ) {
   return l_dia;
 }
 
-void edge_v::mesh::GeomTria3::normVesFas( double      const (* i_veCrds)[3],
-                                          std::size_t        * io_elVe,
-                                          std::size_t        * io_elFa,
-                                          std::size_t        * io_elFaEl ) {
+void edge_v::geom::Tria3::normVesFas( double      const (* i_veCrds)[3],
+                                      std::size_t        * io_elVe,
+                                      std::size_t        * io_elFa,
+                                      std::size_t        * io_elFaEl ) {
   /*
    * reorder face-information in ascending order of vertex ids:
    * id0--fa0-->id1--fa1-->id2--fa2-->

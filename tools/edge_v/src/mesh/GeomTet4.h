@@ -20,18 +20,18 @@
  * @section DESCRIPTION
  * Geometry computations for 4-node tetrahedral elements.
  **/
-#ifndef EDGE_V_MESH_GEOM_TET4_H
-#define EDGE_V_MESH_GEOM_TET4_H
+#ifndef EDGE_V_GEOM_TET4_H
+#define EDGE_V_GEOM_TET4_H
 
 #include <cstdlib>
 
 namespace edge_v {
-  namespace mesh {
-    class GeomTet4;
+  namespace geom {
+    class Tet4;
   }
 }
 
-class edge_v::mesh::GeomTet4 {
+class edge_v::geom::Tet4 {
   public:
     /**
      * Computes the volume.

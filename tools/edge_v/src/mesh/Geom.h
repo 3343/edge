@@ -20,19 +20,19 @@
  * @section DESCRIPTION
  * Geometry computations for the mesh.
  **/
-#ifndef EDGE_V_MESH_GEOM_H
-#define EDGE_V_MESH_GEOM_H
+#ifndef EDGE_V_GEOM_GEOM_H
+#define EDGE_V_GEOM_GEOM_H
 
 #include "../constants.h"
 #include <cmath>
 
 namespace edge_v {
-  namespace mesh {
+  namespace geom {
     class Geom;
   }
 }
 
-class edge_v::mesh::Geom {
+class edge_v::geom::Geom {
   public:
     /**
      * Computes the volume of the given entity.

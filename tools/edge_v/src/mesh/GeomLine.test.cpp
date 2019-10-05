@@ -28,7 +28,7 @@
 TEST_CASE( "Tests the volume computation for lines.", "[volume][line]" ) {
   double l_ves[2][3] = { {1, 0, 2}, {2, 1, 3} };
 
-  double l_vol = edge_v::mesh::GeomLine::length( l_ves );
+  double l_vol = edge_v::geom::Line::length( l_ves );
 
   REQUIRE( l_vol == Approx( std::sqrt(3.0) ) );
 }
@@ -40,7 +40,7 @@ TEST_CASE( "Tests the normal computation for lines.", "[normal][line]" ) {
 
   double l_normal[3] = {0};
 
-  edge_v::mesh::GeomLine::normal( l_ves0, l_np0, l_normal );
+  edge_v::geom::Line::normal( l_ves0, l_np0, l_normal );
 
   REQUIRE( l_normal[0] == Approx( 0.0) );
   REQUIRE( l_normal[1] == Approx(-1.0) );
@@ -48,7 +48,7 @@ TEST_CASE( "Tests the normal computation for lines.", "[normal][line]" ) {
 
   double l_np1[3] = {0.0, -10.0, 0.0};
 
-  edge_v::mesh::GeomLine::normal( l_ves0, l_np1, l_normal );
+  edge_v::geom::Line::normal( l_ves0, l_np1, l_normal );
 
   REQUIRE( l_normal[0] == Approx( 0.0) );
   REQUIRE( l_normal[1] == Approx( 1.0) );
@@ -62,14 +62,14 @@ TEST_CASE( "Tests the tangent computation for lines.", "[tangent][line]" ) {
 
   double l_tangent[3] = {0};
 
-  edge_v::mesh::GeomLine::tangent( l_ves0, l_np0, l_tangent );
+  edge_v::geom::Line::tangent( l_ves0, l_np0, l_tangent );
 
   REQUIRE( l_tangent[0] == Approx( 1.0) );
   REQUIRE( l_tangent[1] == Approx( 0.0) );
   REQUIRE( l_tangent[2] == Approx( 0.0) );
 
   double l_np1[3] = {0.0, -10.0, 0.0};
-  edge_v::mesh::GeomLine::tangent( l_ves0, l_np1, l_tangent );
+  edge_v::geom::Line::tangent( l_ves0, l_np1, l_tangent );
 
   REQUIRE( l_tangent[0] == Approx(-1.0) );
   REQUIRE( l_tangent[1] == Approx( 0.0) );

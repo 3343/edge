@@ -20,18 +20,18 @@
  * @section DESCRIPTION
  * Geometry computations for 3-node triangle elements.
  **/
-#ifndef EDGE_V_MESH_GEOM_TRIA3_H
-#define EDGE_V_MESH_GEOM_TRIA3_H
+#ifndef EDGE_V_GEOM_TRIA3_H
+#define EDGE_V_GEOM_TRIA3_H
 
 #include <cstdlib>
 
 namespace edge_v {
-  namespace mesh {
-    class GeomTria3;
+  namespace geom {
+    class Tria3;
   }
 }
 
-class edge_v::mesh::GeomTria3 {
+class edge_v::geom::Tria3 {
   public:
     /**
      * Computes the area.

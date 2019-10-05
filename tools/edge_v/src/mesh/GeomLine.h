@@ -20,16 +20,16 @@
  * @section DESCRIPTION
  * Geometry computations for line elements.
  **/
-#ifndef EDGE_V_MESH_GEOM_LINE_H
-#define EDGE_V_MESH_GEOM_LINE_H
+#ifndef EDGE_V_GEOM_LINE_H
+#define EDGE_V_GEOM_LINE_H
 
 namespace edge_v {
-  namespace mesh {
-    class GeomLine;
+  namespace geom {
+    class Line;
   }
 }
 
-class edge_v::mesh::GeomLine {
+class edge_v::geom::Line {
   public:
     /**
      * Computes the length.

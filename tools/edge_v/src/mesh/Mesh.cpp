@@ -86,8 +86,8 @@ void edge_v::mesh::Mesh::setInDiameter( t_entityType          i_enTy,
                  l_veCrds );
 
     // compute diameter
-    o_inDia[l_en] = Geom::inDiameter( i_enTy,
-                                      l_veCrds );
+    o_inDia[l_en] = geom::Geom::inDiameter( i_enTy,
+                                            l_veCrds );
   }
 }
 
@@ -293,11 +293,11 @@ void edge_v::mesh::Mesh::normOrder( t_entityType         i_elTy,
                  i_veCrds,
                  l_veCrds );
 
-    Geom::normVesFas( i_elTy,
-                      l_veCrds,
-                      io_elVe+l_el*l_nElVes,
-                      io_elFa+l_el*l_nElFas,
-                      io_elFaEl+l_el*l_nElFas );
+    geom::Geom::normVesFas( i_elTy,
+                            l_veCrds,
+                            io_elVe+l_el*l_nElVes,
+                            io_elFa+l_el*l_nElFas,
+                            io_elFaEl+l_el*l_nElFas );
   }
 }
 
@@ -428,8 +428,8 @@ double const * edge_v::mesh::Mesh::getAreasFa() {
                    l_veCrds );
 
       // compute "volume"
-      m_volFa[l_fa] = Geom::volume( l_faTy,
-                                    l_veCrds );
+      m_volFa[l_fa] = geom::Geom::volume( l_faTy,
+                                          l_veCrds );
     }
   }
 
@@ -456,8 +456,8 @@ double const * edge_v::mesh::Mesh::getVolumesEl() {
                    l_veCrds );
 
       // compute volume
-      m_volEl[l_el] = Geom::volume( m_elTy,
-                                    l_veCrds );
+      m_volEl[l_el] = geom::Geom::volume( m_elTy,
+                                          l_veCrds );
     }
   }
 
@@ -494,10 +494,10 @@ double const (* edge_v::mesh::Mesh::getNormalsFa() )[3] {
       EDGE_V_CHECK_NE( l_np, std::numeric_limits< std::size_t >::max() );
 
       // compute normals
-      Geom::normal( l_faTy,
-                    l_veCrds,
-                    m_veCrds[l_np],
-                    m_normals[l_fa] );
+      geom::Geom::normal( l_faTy,
+                          l_veCrds,
+                          m_veCrds[l_np],
+                          m_normals[l_fa] );
     }
   }
 
@@ -534,10 +534,10 @@ double const (* edge_v::mesh::Mesh::getTangentsFa() )[2][3] {
       EDGE_V_CHECK_NE( l_np, std::numeric_limits< std::size_t >::max() );
 
       // compute tangents
-      Geom::tangents( l_faTy,
-                      l_veCrds,
-                      m_veCrds[l_np],
-                      m_tangents[l_fa] );
+      geom::Geom::tangents( l_faTy,
+                            l_veCrds,
+                            m_veCrds[l_np],
+                            m_tangents[l_fa] );
     }
   }
 

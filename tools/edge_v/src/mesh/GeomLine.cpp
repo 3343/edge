@@ -24,7 +24,7 @@
 
 #include <Eigen/Dense>
 
-double edge_v::mesh::GeomLine::length( double const (*i_veCrds)[3] ) {
+double edge_v::geom::Line::length( double const (*i_veCrds)[3] ) {
   double l_len = 0;
 
   for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
@@ -36,9 +36,9 @@ double edge_v::mesh::GeomLine::length( double const (*i_veCrds)[3] ) {
   return l_len;
 }
 
-void edge_v::mesh::GeomLine::normal( double const (*i_veCrds)[3],
-                                     double const   i_nPt[3],
-                                     double         o_normal[3] ) {
+void edge_v::geom::Line::normal( double const (*i_veCrds)[3],
+                                 double const   i_nPt[3],
+                                 double         o_normal[3] ) {
   // unit vector: v0 -> v1
   Eigen::Vector2d l_v0( i_veCrds[0] );
   Eigen::Vector2d l_v1( i_veCrds[1] );
@@ -89,9 +89,9 @@ void edge_v::mesh::GeomLine::normal( double const (*i_veCrds)[3],
   o_normal[2] = 0;
 }
 
-void edge_v::mesh::GeomLine::tangent( double const (*i_veCrds)[3],
-                                      double const   i_nPt[3],
-                                      double         o_tangent[3] ) {
+void edge_v::geom::Line::tangent( double const (*i_veCrds)[3],
+                                  double const   i_nPt[3],
+                                  double         o_tangent[3] ) {
   double l_n[3] = {0};
   normal( i_veCrds, i_nPt, l_n );
 

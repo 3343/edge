@@ -33,7 +33,7 @@ TEST_CASE( "Tests the volume computation of 4-node tetrahedrons.", "[volume][tet
                          {0.5, 0.5, 1.2} };
 
   // compute diameter
-  double l_vol = edge_v::mesh::GeomTet4::volume( l_ves );
+  double l_vol = edge_v::geom::Tet4::volume( l_ves );
 
   // check results
   REQUIRE( l_vol == Approx(0.112667) );
@@ -47,7 +47,7 @@ TEST_CASE( "Tests the insphere diameter computation for 4-node tetrahedrons.", "
                          {0.5, 0.5, 1.0} };
 
   // compute diameter
-  double l_dia = edge_v::mesh::GeomTet4::inDiameter( l_ves );
+  double l_dia = edge_v::geom::Tet4::inDiameter( l_ves );
 
   // check result
   REQUIRE( l_dia == Approx(0.45358449083204) );
