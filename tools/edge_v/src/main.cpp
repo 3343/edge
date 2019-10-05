@@ -172,11 +172,13 @@ int main( int i_argc, char *i_argv[] ) {
   delete[] l_rates;
   l_tsGroups.printStats();
 
-  EDGE_V_LOG_INFO << "storing elements' time step groups";
-  std::string l_tagElTg = "edge_v_element_time_groups";
-  l_moab.setEnData( l_mesh.getTypeEl(),
-                    l_tagElTg,
-                    l_tsGroups.getElTg() );
+  if( l_config.getWriteElAn() ) {
+    EDGE_V_LOG_INFO << "storing elements' time step groups";
+    std::string l_tagElTg = "edge_v_element_time_groups";
+    l_moab.setEnData( l_mesh.getTypeEl(),
+                      l_tagElTg,
+                      l_tsGroups.getElTg() );
+  }
 
   EDGE_V_LOG_INFO << "partitioning the mesh";
   edge_v::mesh::Partition l_part( l_mesh,
@@ -190,12 +192,19 @@ int main( int i_argc, char *i_argv[] ) {
                       l_part.getElPa() );
   }
 
-  EDGE_V_LOG_INFO << "reordering by time step groups";
+  EDGE_V_LOG_INFO << "computing and storing elements' priorities";
+  std::string l_tagElPr = "edge_v_element_priorities";
+  l_moab.setEnData( l_mesh.getTypeEl(),
+                    l_tagElPr,
+                    l_part.getElPr() );
+
+  EDGE_V_LOG_INFO << "reordering by rank and time group";
   l_moab.reorder( l_mesh.getTypeEl(),
-                  l_tagElTg );
+                  l_tagElPr );
+
   if( !l_config.getWriteElAn() ) {
-    EDGE_V_LOG_INFO << "deleting elements' time step groups";
-    l_moab.deleteTag( l_tagElTg );
+    EDGE_V_LOG_INFO << "deleting elements' priorities";
+    l_moab.deleteTag( l_tagElPr );
   }
 
   if( l_config.getWriteElAn() ) {
