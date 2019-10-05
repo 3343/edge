@@ -43,8 +43,8 @@ class edge_v::io::Config {
     //! path to the output mesh
     std::string m_meshOut = "";
 
-    //! writes time annotations to the mesh if true
-    bool m_writeTimeAn = false;
+    //! writes element annotations if true
+    bool m_writeElAn = false;
 
     //! periodic boundary conditions
     bool m_periodic = false;
@@ -91,11 +91,11 @@ class edge_v::io::Config {
     bool getPeriodic() const { return m_periodic; }
 
     /**
-     * Gets the configuration for time annotations in the output mesh.
+     * Gets the configuration for element annotations in the output mesh.
      *
-     * @return true if the mesh is annotated with time info for every element.
+     * @return true if the mesh's elements are annotated.
      **/
-    bool getWriteTimeAn() const { return m_writeTimeAn; }
+    bool getWriteElAn() const { return m_writeElAn; }
 
     /**
      * Gets the number of partitions in the output mesh.

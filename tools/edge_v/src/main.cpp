@@ -81,7 +81,7 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "sharing runtime config:";
   EDGE_V_LOG_INFO << "  mesh:";
   EDGE_V_LOG_INFO << "    periodic:     " << l_config.getPeriodic();
-  EDGE_V_LOG_INFO << "    time_annos:   " << l_config.getWriteTimeAn();
+  EDGE_V_LOG_INFO << "    annotations:  " << l_config.getWriteElAn();
   EDGE_V_LOG_INFO << "    n_partitions: " << l_config.nPartitions();
   EDGE_V_LOG_INFO << "    in:           " << l_config.getMeshIn();
   EDGE_V_LOG_INFO << "    out:          " << l_config.getMeshOut();
@@ -113,7 +113,7 @@ int main( int i_argc, char *i_argv[] ) {
                            l_veMod );
   l_cfl.printStats();
 
-  if( l_config.getWriteTimeAn() ) {
+  if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' cfl time steps";
     std::string l_tagCfl = "edge_v_cfl_time_steps";
     l_moab.setEnData( l_mesh.getTypeEl(),
@@ -182,7 +182,7 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::mesh::Partition l_part( l_mesh );
   l_part.kWay( l_config.nPartitions(),
                l_tsGroups.getElTg() );
-  if( l_config.getWriteTimeAn() ) {
+  if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' partitions";
     std::string l_tagElPa = "edge_v_partitions";
     l_moab.setEnData( l_mesh.getTypeEl(),
@@ -193,9 +193,22 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "reordering by time step groups";
   l_moab.reorder( l_mesh.getTypeEl(),
                   l_tagElTg );
-  if( !l_config.getWriteTimeAn() ) {
+  if( !l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "deleting elements' time step groups";
     l_moab.deleteTag( l_tagElTg );
+  }
+
+  if( l_config.getWriteElAn() ) {
+    EDGE_V_LOG_INFO << "storing element ids";
+    std::size_t * l_elIds = new std::size_t[ l_mesh.nEls() ];
+    for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
+      l_elIds[l_el] = l_el;
+    }
+    std::string l_tagElIds = "edge_v_element_ids";
+    l_moab.setEnData( l_mesh.getTypeEl(),
+                      l_tagElIds,
+                      l_elIds );
+    delete[] l_elIds;
   }
 
   EDGE_V_LOG_INFO << "storing number of elements per time group";
