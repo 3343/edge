@@ -42,6 +42,30 @@ class edge_v::mesh::Partition {
     //! partitions of the elements
     std::size_t * m_elPa = nullptr;
 
+    /**
+     * Gets the elements' priorities.
+     * The priority is given as combination of the respective element's partition and time group.
+     * Assume npa partitions and ntg time groups:
+     *
+     * * Inner elements of the first partition have priority based on their time group in [0, ntg-1].
+     * * Send elements of the first parititon have priority based on their time group in [ntg, 2ntg-1].
+     * * Inner elements of the second partition have priority based on their time group in [2ntg, 3ntg-1].
+     * * [...]
+     *
+     * @param i_elTy element type.
+     * @parma i_nEls number of elements.
+     * @param i_elFaEl elements adjacent to elements (faces as bridge).
+     * @param i_elPa partitions of the elements.
+     * @param i_elTg time groups of the elements.
+     * @param o_elPr will be set to elements' priorities.
+     **/
+    static void getElPr( edge_v::t_entityType         i_elTy,
+                         std::size_t                  i_nEls,
+                         std::size_t          const * i_elFaEl,
+                         std::size_t          const * i_elPa,
+                         unsigned short       const * i_elTg,
+                         std::size_t                * o_elPr );
+
   public:
     /**
      * Constructor.
