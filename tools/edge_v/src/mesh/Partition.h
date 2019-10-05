@@ -105,7 +105,7 @@ class edge_v::mesh::Partition {
     std::size_t const * getElPa() const { return m_elPa; }
 
     /**
-     * Gets the elements' priorities.
+     * Gets the elements' priorities (lower value = higher priority).
      * Remark: The priorities are recomputed in every function call.
      *
      * @return elPr info.
