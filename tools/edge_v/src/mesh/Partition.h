@@ -72,6 +72,11 @@ class edge_v::mesh::Partition {
                          unsigned short       const * i_elTg,
                          std::size_t                * o_elPr );
 
+    /**
+     * Sets the element priorities.
+     **/
+    void setElPr();
+
   public:
     /**
      * Constructor.
@@ -106,11 +111,10 @@ class edge_v::mesh::Partition {
 
     /**
      * Gets the elements' priorities (lower value = higher priority).
-     * Remark: The priorities are recomputed in every function call.
      *
      * @return elPr info.
      **/
-    std::size_t const * getElPr();
+    std::size_t const * getElPr() const { return m_elPr; };
 };
 
 #endif
