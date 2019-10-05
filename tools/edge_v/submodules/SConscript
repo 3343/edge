@@ -82,6 +82,11 @@ if env['hdf5'] != False:
   conf.CheckLibWithHeaderFlags( 'hdf5' )
   conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
 
+# enable METIS if available
+if( conf.CheckLibWithHeaderFlags( 'metis', 'metis.h' ) ):
+  # enable METIS-dependencies
+  env.AppendUnique( CPPDEFINES =['PP_USE_METIS'] )
+
 # forward MOAB
 if env['moab'] != False:
   if env['moab'] != True:
