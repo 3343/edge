@@ -99,17 +99,18 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
         o_spTys[l_el] |= i_adEq[l_fa];
         l_elEq = true;
       }
-      else if( l_tgEl < l_tgAd ) {
+      else if( l_tgEl == l_tgAd+1 ) {
         o_spTys[l_el] |= i_adLt[l_fa];
         l_elLt = true;
       }
-      else if( l_tgEl > l_tgAd ) {
+      else if( l_tgEl+1 == l_tgAd ) {
         o_spTys[l_el] |= i_adGt[l_fa];
         l_elGt = true;
       }
+      else EDGE_LOG_FATAL;
     }
 
-    // set elements LTS configuration
+    // set element's LTS configuration
     if( l_elEq ) {
       o_spTys[l_el] |= i_elEq;
     }
