@@ -72,11 +72,6 @@ class edge_v::mesh::Partition {
                          unsigned short       const * i_elTg,
                          std::size_t                * o_elPr );
 
-    /**
-     * Sets the element priorities.
-     **/
-    void setElPr();
-
   public:
     /**
      * Constructor.
@@ -85,8 +80,7 @@ class edge_v::mesh::Partition {
      * @param i_elTg time groups of the elements.
      **/
     Partition( Mesh           const & i_mesh,
-               unsigned short const * i_elTg ): m_mesh( i_mesh ),
-                                                m_elTg( i_elTg ) {};
+               unsigned short const * i_elTg );
 
     /**
      * Destructor.
@@ -99,8 +93,8 @@ class edge_v::mesh::Partition {
      * @param i_nPars number of partitions to generate.
      * @param i_nCuts number of partitionings computed; the one with lowest comm volume is stored.
      **/
-    void kWay( std::size_t            i_nParts,
-               unsigned short         i_nCuts = 5 );
+    void kWay( std::size_t    i_nParts,
+               unsigned short i_nCuts = 5 );
 
     /**
      * Gets the element to partition assignment.

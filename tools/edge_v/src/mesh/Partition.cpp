@@ -23,14 +23,34 @@
 #include "Partition.h"
 #include <metis.h>
 
+edge_v::mesh::Partition::Partition( Mesh           const & i_mesh,
+                                    unsigned short const * i_elTg ): m_mesh( i_mesh ),
+                                                                     m_elTg( i_elTg ) {
+  // allocate memory
+  m_elPa = new std::size_t[ i_mesh.nEls() ];
+  m_elPr = new std::size_t[ i_mesh.nEls() ];
+
+  // init partitions and priorities
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < m_mesh.nEls(); l_el++ ) {
+    m_elPa[l_el] = 0;
+    m_elPr[l_el] = 0;
+  }
+
+  getElPr( m_mesh.getTypeEl(),
+           m_mesh.nEls(),
+           m_mesh.getElFaEl(),
+           m_elPa,
+           m_elTg,
+           m_elPr );
+}
+
 edge_v::mesh::Partition::~Partition() {
   // free memory
-  if( m_elPa != nullptr ) {
-    delete[] m_elPa;
-  }
-  if( m_elPr != nullptr ) {
-    delete[] m_elPr;
-  }
+  delete[] m_elPa;
+  delete[] m_elPr;
 }
 
 void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
@@ -84,22 +104,8 @@ void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
   }
 }
 
-void edge_v::mesh::Partition::setElPr() {
-  // allocate memory if required
-  if( m_elPr == nullptr ) {
-    m_elPr = new std::size_t[ m_mesh.nEls() ];
-  }
-
-  getElPr( m_mesh.getTypeEl(),
-           m_mesh.nEls(),
-           m_mesh.getElFaEl(),
-           m_elPa,
-           m_elTg,
-           m_elPr );
-}
-
-void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
-                                    unsigned short         i_nCuts ) {
+void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
+                                    unsigned short i_nCuts ) {
   // get info from mesh
   edge_v::t_entityType l_elTy = m_mesh.getTypeEl();
   unsigned short l_nElFas = CE_N_FAS( l_elTy );
@@ -208,11 +214,6 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
   delete[] l_adjncy;
   delete[] l_xadj;
 
-  // allocate memory for the results
-  if( m_elPa == nullptr ) {
-    m_elPa = new std::size_t[ l_nEls ];
-  }
-
   // store results
 #ifdef PP_USE_OMP
 #pragma omp parallel for
@@ -225,5 +226,10 @@ void edge_v::mesh::Partition::kWay( std::size_t            i_nParts,
   delete[] l_elPa;
 
   // derive and store element priorities
-  setElPr();
+  getElPr( m_mesh.getTypeEl(),
+           m_mesh.nEls(),
+           m_mesh.getElFaEl(),
+           m_elPa,
+           m_elTg,
+           m_elPr );
 }
