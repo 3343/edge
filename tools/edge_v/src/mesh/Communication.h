@@ -26,6 +26,7 @@
 #include "../constants.h"
 #include <cstddef>
 #include <set>
+#include <vector>
 
 namespace edge_v {
   namespace mesh {
@@ -38,8 +39,69 @@ namespace edge_v {
  **/
 class edge_v::mesh::Communication {
   private:
+    //! message of a single time group of a single partition
+    struct Message {
+      //! remote partition
+      std::size_t pa;
+      //! remote time group
+      unsigned short tg;
+      //! communicating elements of the time group
+      std::vector< std::size_t > el;
+      //! communicating element-faces of the time group
+      std::vector< unsigned short > fa;
+    };
+
+    //! communication structure of a time region of a single partition
+    struct TimeRegion {
+      //! time group
+      unsigned short tg;
+      //! outgoing messages
+      std::vector< Message > send;
+      //! incoming messages
+      std::vector< Message > recv;
+    };
+
+    //! communication structure of a single partition, composed of communicating time regions
+    struct Partition {
+      //! time regions of the partition
+      std::vector< TimeRegion > tr;
+    };
+
+    //! global communication structure, composed of communicating partitions
+    std::vector< Partition > m_struct;
+
     /**
-     * Gets the partition-time group pairs in the given send-region.
+     * Determines if an element is communicating.
+     *
+     * @param i_elTy type of the element.
+     * @param i_el id of the element.
+     * @param i_elFaEl elements adjacent to elements (faces as bridge).
+     * @param i_elPa partitions of the elements.
+     * @return true if comm, false if not.
+     **/
+    static bool isComm( t_entityType         i_elTy,
+                        std::size_t          i_el,
+                        std::size_t  const * i_elFaEl,
+                        std::size_t  const * i_elPa );
+
+    /**
+     * Gets the partitions' elements which are communicating with elements of other partitions.
+     *
+     * @param i_elTy element type.
+     * @param i_nEls number of elements.
+     * @param i_elFaEl elements adjacent to elements, faces as bridge.
+     * @param i_elPa partitions of the elements.
+     * @param o_first will be set to first elements of the comm regions.
+     * @param o_size will be set to the number of elements of the comm regions.
+     **/
+    static void getPaElComm( t_entityType        i_elTy,
+                             std::size_t         i_nEls,
+                             std::size_t const * i_elFaEl,
+                             std::size_t const * i_elPa,
+                             std::size_t       * o_first,
+                             std::size_t       * o_size );
+    /**
+     * Gets the partition-time group pairs in the given comm-region.
      *
      * @param i_elTy type of the elements.
      * @param i_first first element of the region.
@@ -58,6 +120,43 @@ class edge_v::mesh::Communication {
                               std::set<
                                std::pair< std::size_t,
                                           unsigned short > >       & o_pairs  );
+
+    /**
+     * Gets the send messages for a single communication region.
+     *
+     * @param i_elTy element type.
+     * @param i_first first element of the communication region.
+     * @param i_size number of elements in the communication region.
+     * @param i_elFaEl elements adjacent to elements, faces as bridge.
+     * @param i_elPa partitions of the elements.
+     * @param i_elTg time groups of the elements.
+     * @param o_send will be set to send messags of the communication region.
+     **/
+    static void getMsgsSend( t_entityType                   i_elTy,
+                             std::size_t                    i_first,
+                             std::size_t                    i_size,
+                             std::size_t            const * i_elFaEl,
+                             std::size_t            const * i_elPa,
+                             unsigned short         const * i_elTg,
+                             std::vector< Message >       & o_send );
+
+    /**
+     * Gets the global communication structure.
+     * The input data is assumed to be sorted by partition and time group.
+     *
+     * @param i_elTy element type.
+     * @param i_nEls number of elements.
+     * @param i_elFaEl elements adjacent to elements (faces as bridge).
+     * @param i_elPa partitions of the elements.
+     * @param i_elTg time groups of the elements.
+     * @param o_struct will be set to global communication structure.
+     **/
+    static void getStruct( t_entityType                   i_elTy,
+                           std::size_t                    i_nEls,
+                           std::size_t            const * i_elFaEl,
+                           std::size_t            const * i_elPa,
+                           unsigned short         const * i_elTg,
+                           std::vector< Partition >     & o_struct );
 };
 
 #endif
