@@ -36,7 +36,6 @@ l_sources = [ 'data/Expression.cpp',
               'data/Dynamic.cpp',
               'data/EntityLayout.cpp',
               'mesh/EdgeV.cpp',
-              'mesh/Regular.cpp',
               'dg/Basis.cpp',
               'io/OptionParser.cpp',
               'io/logging.cpp',
@@ -51,10 +50,6 @@ l_sources = [ 'data/Expression.cpp',
               'parallel/global.cpp',
               'setups/Cpu.cpp',
               'time/Manager.cpp' ]
-if env['element_type'] == 'tet4':
-  l_sources = l_sources + ['mesh/regular/Tet.cpp']
-if env['moab'] != False:
-  l_sources = l_sources + ['mesh/Unstructured.cpp', 'mesh/Moab.cpp']
 
 if 'elastic' in env['equations']:
   l_sources = l_sources + [ 'impl/seismic/io/Config.cpp',
@@ -85,7 +80,6 @@ if env['tests']:
              'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
              'mesh/EdgeV.test.cpp',
-             'mesh/regular/Base.test.cpp',
              'monitor/Timer.test.cpp',
              'parallel/Shared.test.cpp',
              'parallel/LoadBalancing.test.cpp',
@@ -103,16 +97,11 @@ if env['tests']:
              'io/InternalBoundary.test.cpp',
              'impl/swe/solvers/Fwave.test.cpp'
               ]
-  if env['moab'] != False:
-    l_tests = l_tests + [ 'mesh/Moab.test.cpp' ]
-
-  if env['element_type'] == 'tet4':
-    l_tests = l_tests + ['mesh/regular/Tet.test.cpp']
 
   if not env['xsmm']:
     l_tests = l_tests + [ 'sc/Kernels.test.cpp' ]
 
-  if env['order'] == '3':
+  if env['element_type'] == 'tet4' and env['order'] == '3':
     l_tests = l_tests + ['impl/advection/kernels/TimePred.test.cpp']
 
   if 'elastic' in env['equations']:
