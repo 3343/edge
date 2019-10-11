@@ -37,14 +37,14 @@ void edge::time::Manager::schedule() {
 #endif
 }
 
-edge::time::Manager::Manager( double                               i_dt,
-                              parallel::Shared                   & i_shared,
-                              parallel::Mpi                      & i_mpi,
-                              std::vector< TimeGroupStatic  >    & i_timeGroups,
-                              io::Receivers                      & i_recvs ): m_dTfun(   i_dt      ),
-                                                                              m_shared(  i_shared  ),
-                                                                              m_mpi(     i_mpi     ),
-                                                                              m_recvs(   i_recvs   ) {
+edge::time::Manager::Manager( double                            i_dt,
+                              parallel::Shared                & i_shared,
+                              parallel::Mpi                   & i_mpi,
+                              std::vector< TimeGroupStatic  > & i_timeGroups,
+                              io::Receivers                   & i_recvs ): m_dTfun(  i_dt     ),
+                                                                           m_shared( i_shared ),
+                                                                           m_mpi(    i_mpi    ),
+                                                                           m_recvs(  i_recvs  ) {
   for( std::size_t l_tg = 0; l_tg < i_timeGroups.size(); l_tg++ ) {
     m_timeGroups.push_back( &i_timeGroups[l_tg] );
   }
