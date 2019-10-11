@@ -132,9 +132,9 @@ class edge::seismic::kernels::TimePred {
                                            TL_T_REAL       (*o_preDofs)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) {
       for( unsigned short l_pt = 0; l_pt < i_nPts; l_pt++ ) {
         // init dofs
-        for( int_qt l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-          for( int_md l_md = 0; l_md < TL_N_MDS; l_md++ )
-            for( int_cfr l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) o_preDofs[l_pt][l_qt][l_md][l_ru] = i_der[0][l_qt][l_md][l_ru];
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ ) o_preDofs[l_pt][l_qt][l_md][l_ru] = i_der[0][l_qt][l_md][l_ru];
 
         // evaluate time derivatives at given point in time
         TL_T_REAL l_scalar = 1.0;
@@ -144,9 +144,9 @@ class edge::seismic::kernels::TimePred {
           // update scalar
           l_scalar *= i_pts[l_pt] / l_de;
 
-          for( int_qt l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-            for( int_md l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
-              for( int_cfr l_ru = 0; l_ru < TL_N_CRS; l_ru++ )
+          for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+            for( unsigned short l_md = 0; l_md < CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ); l_md++ ) {
+              for( unsigned short l_ru = 0; l_ru < TL_N_CRS; l_ru++ )
                 o_preDofs[l_pt][l_qt][l_md][l_ru] += l_scalar * i_der[l_de][l_qt][l_md][l_ru];
             }
           }
@@ -161,9 +161,9 @@ class edge::seismic::kernels::TimePred {
      * @param i_derE elastic derivatives.
      * @param o_tIntE will be set to elastic time-integrated DOFs.
      **/
-    static void integrate( TL_T_REAL         i_dt,
-                           TL_T_REAL const   i_derE[TL_O_TI][TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                           TL_T_REAL         o_tIntE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) {
+    static void integrate( TL_T_REAL       i_dt,
+                           TL_T_REAL const i_derE[TL_O_TI][TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
+                           TL_T_REAL       o_tIntE[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) {
       // scalar for the time integration
       TL_T_REAL l_sca = i_dt;
 

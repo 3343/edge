@@ -297,7 +297,7 @@ class edge::seismic::kernels::TimePredVanilla: public edge::seismic::kernels::Ti
 
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ ) {
-            for( int_cfr l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               o_tIntE[l_qt][l_md][l_cr] += l_scalar * o_derE[l_de][l_qt][l_md][l_cr];
             }
           }
