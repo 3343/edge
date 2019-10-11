@@ -99,11 +99,13 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
         o_spTys[l_el] |= i_adEq[l_fa];
         l_elEq = true;
       }
-      else if( l_tgEl == l_tgAd+1 ) {
+      else if( l_tgEl < l_tgAd ) {
+        EDGE_CHECK_EQ( l_tgEl+1, l_tgAd );
         o_spTys[l_el] |= i_adLt[l_fa];
         l_elLt = true;
       }
-      else if( l_tgEl+1 == l_tgAd ) {
+      else if( l_tgEl > l_tgAd ) {
+        EDGE_CHECK_EQ( l_tgEl, l_tgAd+1 );
         o_spTys[l_el] |= i_adGt[l_fa];
         l_elGt = true;
       }
@@ -194,7 +196,7 @@ void edge::mesh::EdgeV::setLtsTypes( t_elementChars * io_elChars ) const {
   }
 
   // set the LTS types
-  edge_v::t_entityType l_elTy = m_moab.getElType();
+  edge_v::t_entityType l_elTy = m_mesh.getTypeEl();
   unsigned short l_nElFas = edge_v::CE_N_FAS( l_elTy );
 
   setLtsTypes( l_nEls,
