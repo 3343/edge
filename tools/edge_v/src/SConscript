@@ -35,6 +35,7 @@ l_sources = [ 'io/Config.cpp',
               'mesh/Partition.cpp',
               'mesh/Communication.cpp',
               'models/Constant.cpp',
+              'models/seismic/Expression.cpp',
               'time/Cfl.cpp',
               'time/Groups.cpp' ]
 
@@ -69,6 +70,7 @@ if env['tests']:
               'mesh/Mesh.test.cpp',
               'mesh/Partition.test.cpp',
               'mesh/Communication.test.cpp',
+              'models/seismic/Expression.test.cpp',
               'time/Cfl.test.cpp',
               'time/Groups.test.cpp' ]
 
