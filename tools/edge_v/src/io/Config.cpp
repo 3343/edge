@@ -36,6 +36,8 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   pugi::xml_node l_mesh = l_doc.child("edge_v").child("mesh");
   m_meshIn   = l_mesh.child("files").child("in").text().as_string();
   m_meshOut  = l_mesh.child("files").child("out").text().as_string();
+  m_meshOutPa[0] = l_mesh.child("files").child("out_by_partition").child("base").text().as_string();
+  m_meshOutPa[1] = l_mesh.child("files").child("out_by_partition").child("extension").text().as_string();
   m_writeElAn = l_mesh.child("write_element_annotations").text().as_bool();
   m_periodic = l_mesh.child("periodic").text().as_bool();
   m_nPartitions = l_mesh.child("n_partitions").text().as_ullong();

@@ -39,6 +39,12 @@ class edge_v::mesh::Partition {
     //! mesh interface
     Mesh const & m_mesh;
 
+    //! number of partitions
+    std::size_t m_nPas;
+
+    //! number of elements per partition
+    std::size_t *m_nPaEls = nullptr;
+
     //! partitions of the elements
     std::size_t * m_elPa = nullptr;
 
@@ -47,6 +53,17 @@ class edge_v::mesh::Partition {
 
     //! priorities of the elements
     std::size_t * m_elPr = nullptr;
+
+    /**
+     * Gets the number of elements per partition.
+     *
+     * @param i_nEls number of elements.
+     * @param i_elPa partitions of the elements.
+     * @param o_nPaEls will be set to the number of elements for the partitions.
+     **/
+    static void nPaEls( std::size_t         i_nEls,
+                        std::size_t const * i_elPa,
+                        std::size_t       * o_nPaEls );
 
     /**
      * Gets the elements' priorities.
@@ -108,7 +125,21 @@ class edge_v::mesh::Partition {
      *
      * @return elPr info.
      **/
-    std::size_t const * getElPr() const { return m_elPr; };
+    std::size_t const * getElPr() const { return m_elPr; }
+
+    /**
+     * Gets the number of partitions.
+     *
+     * @return number of partitions.
+     **/
+    std::size_t nPas() const { return m_nPas; }
+
+    /**
+     * Gets the number of elements per partition.
+     *
+     * @return number of elements for every partition.
+     **/
+    std::size_t const * nPaEls() const { return m_nPaEls; }
 };
 
 #endif

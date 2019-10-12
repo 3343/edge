@@ -51,7 +51,28 @@ edge_v::mesh::Partition::~Partition() {
   // free memory
   delete[] m_elPa;
   delete[] m_elPr;
+  if( m_nPaEls != nullptr ) delete[] m_nPaEls;
 }
+
+void edge_v::mesh::Partition::nPaEls( std::size_t         i_nEls,
+                                      std::size_t const * i_elPa,
+                                      std::size_t       * o_nPaEls ) {
+  // init the output
+  std::size_t l_nPas = 0;
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    std::size_t l_pa = i_elPa[l_el];
+    l_nPas = std::max( l_nPas, l_pa );
+  }
+  l_nPas++;
+  for( std::size_t l_pa = 0; l_pa < l_nPas; l_pa++ ) o_nPaEls[l_pa] = 0;
+
+  // derive the number of elements per partition
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    std::size_t l_pa = i_elPa[l_el];
+    o_nPaEls[l_pa]++;
+  }
+}
+
 
 void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
                                        std::size_t                  i_nEls,
@@ -232,4 +253,12 @@ void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
            m_elPa,
            m_elTg,
            m_elPr );
+
+  // store the number of partitions and elements per partition
+  m_nPas = i_nParts;
+  if( m_nPaEls != nullptr ) delete[] m_nPaEls;
+  m_nPaEls = new std::size_t[ i_nParts ];
+  nPaEls( m_mesh.nEls(),
+          m_elPa,
+          m_nPaEls );
 }

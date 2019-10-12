@@ -43,6 +43,9 @@ class edge_v::io::Config {
     //! path to the output mesh
     std::string m_meshOut = "";
 
+    //! base name for the mesh output by partition
+    std::string m_meshOutPa[2] = {"", ""};
+
     //! writes element annotations if true
     bool m_writeElAn = false;
 
@@ -82,6 +85,20 @@ class edge_v::io::Config {
      * @return output mesh.
      **/
     std::string const & getMeshOut() const { return m_meshOut; }
+
+    /**
+     * Gets the base name of the by partition mesh output.
+     *
+     * @return base name of the mesh output.
+     **/
+    std::string const & getMeshOutPaBase() const { return m_meshOutPa[0]; }
+
+    /**
+     * Gets the file extension of the by partition mesh output.
+     *
+     * @return file extension the mesh output.
+     **/
+    std::string const & getMeshOutPaExt() const { return m_meshOutPa[1]; }
 
     /**
      * Gets the configuration of periodic boundary conditions.
