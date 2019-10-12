@@ -353,6 +353,46 @@ void edge_v::io::Moab::writeMesh( std::string const & i_pathToMesh ) {
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 
+void edge_v::io::Moab::writeMesh( std::size_t         i_nEls,
+                                  std::size_t const * i_elIds,
+                                  std::string const & i_pathToMesh ) {
+  // create a new meshset for entities
+  moab::EntityHandle l_ms;
+  moab::ErrorCode l_err = m_moab->create_meshset( moab::MESHSET_ORDERED,
+                                                  l_ms );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get the elements
+  std::vector< moab::EntityHandle > l_els;
+  l_err = m_moab->get_entities_by_type( 0,
+                                        getMoabType( getElType() ),
+                                        l_els );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // add the elements to the mesh set
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    std::size_t l_elId = i_elIds[l_el];
+    EDGE_V_CHECK_LT( l_elId, l_els.size() );
+
+    l_err = m_moab->add_entities(  l_ms,
+                                  &l_els[l_elId],
+                                   1 );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+  }
+
+  // write the meshset and its entities
+  l_err = m_moab->write_file(  i_pathToMesh.c_str(),
+                               0,
+                               0,
+                              &l_ms,
+                               1 );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // remove the meshset
+  l_err = m_moab->delete_entities( &l_ms, 1 );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+}
+
 void edge_v::io::Moab::setGlobalData( moab::DataType         i_daTy,
                                       std::string    const & i_tagName,
                                       std::size_t            i_nValues,

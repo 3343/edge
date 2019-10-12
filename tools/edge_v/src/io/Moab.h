@@ -357,6 +357,17 @@ class edge_v::io::Moab {
      * @param i_pathToMesh path to the mesh.
      **/
     void writeMesh( std::string const & i_pathToMesh );
+
+    /**
+     * Writes the given elements of the MOAB database to the file.
+     *
+     * @param i_nEls number of elements.
+     * @param i_elIds ids of the elements which are written.
+     * @param i_pathToMesh path to the mesh.
+     **/
+    void writeMesh( std::size_t         i_nEls,
+                    std::size_t const * i_elIds,
+                    std::string const & i_pathToMesh );
 };
 
 #endif
