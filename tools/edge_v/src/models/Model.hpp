@@ -37,6 +37,11 @@ namespace edge_v {
 class edge_v::models::Model {
   public:
     /**
+     * Virtual destructor for base class.
+     **/
+    virtual ~Model(){};
+
+    /**
      * Inits the velocity model at the given points.
      *
      * @param i_nPts number of points.
