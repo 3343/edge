@@ -46,6 +46,8 @@ class edge_v::io::Config {
     //! base name for the mesh output by partition
     std::string m_meshOutPa[2] = {"", ""};
 
+    std::string m_seismicExpr = "";
+
     //! writes element annotations if true
     bool m_writeElAn = false;
 
@@ -99,6 +101,13 @@ class edge_v::io::Config {
      * @return file extension the mesh output.
      **/
     std::string const & getMeshOutPaExt() const { return m_meshOutPa[1]; }
+
+    /**
+     * Gets the expression string for a seismic expression-based velocity model.
+     *
+     * @return expression string.
+     **/
+    std::string const & getVelModSeismicExpr() const { return m_seismicExpr; }
 
     /**
      * Gets the configuration of periodic boundary conditions.

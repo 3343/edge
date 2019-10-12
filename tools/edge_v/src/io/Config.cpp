@@ -42,9 +42,12 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_periodic = l_mesh.child("periodic").text().as_bool();
   m_nPartitions = l_mesh.child("n_partitions").text().as_ullong();
 
-  pugi::xml_node l_time = l_doc.child("edge_v").child("time");
+  // read velocity model
+  pugi::xml_node l_velMod = l_doc.child("edge_v").child("velocity_model");
+  m_seismicExpr = l_velMod.child("seismic_expression").text().as_string();
 
   // time info
+  pugi::xml_node l_time = l_doc.child("edge_v").child("time");
   m_nTsGroups = l_time.child("n_groups").text().as_uint();
   m_funDt     = l_time.child("fundamental_time_step").text().as_double();
   m_tsOut     = l_time.child("files").child("out_time_steps").text().as_string();
