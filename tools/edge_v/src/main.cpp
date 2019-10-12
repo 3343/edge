@@ -25,6 +25,7 @@
 #include "io/Config.h"
 #include "io/Csv.h"
 #include "models/Constant.h"
+#include "models/seismic/Expression.h"
 #include "mesh/Mesh.h"
 #include "time/Cfl.h"
 #include "time/Groups.h"
@@ -88,6 +89,14 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "    out by partition: ";
   EDGE_V_LOG_INFO << "      base:           " << l_config.getMeshOutPaBase();
   EDGE_V_LOG_INFO << "      extension:      " << l_config.getMeshOutPaExt();
+  EDGE_V_LOG_INFO << "  velocity model:";
+  if( l_config.getVelModSeismicExpr() != "" ) {
+    EDGE_V_LOG_INFO << "  seismic expression: ";
+    EDGE_V_LOG_INFO << "    " << l_config.getVelModSeismicExpr();
+  }
+  else {
+    EDGE_V_LOG_INFO << "  constant";
+  }
   EDGE_V_LOG_INFO << "  time:";
   EDGE_V_LOG_INFO << "    #time groups: " << l_config.nTsGroups();
   EDGE_V_LOG_INFO << "    fun dt:       " << l_config.getFunDt();
@@ -105,15 +114,23 @@ int main( int i_argc, char *i_argv[] ) {
                              l_config.getPeriodic() );
   l_mesh.printStats();
 
+  EDGE_V_LOG_INFO << "initializing velocity model";
+  edge_v::models::Model *l_velMod = nullptr;
+  if( l_config.getVelModSeismicExpr() != ""  ) {
+    l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
+  }
+  else {
+    l_velMod = new edge_v::models::Constant( 1 );
+  }
+
   EDGE_V_LOG_INFO << "computing CFL time steps";
-  edge_v::models::Constant l_veMod( 2 );
-  edge_v::time::Cfl l_cfl( l_mesh.getTypeEl(),
-                           l_mesh.nVes(),
-                           l_mesh.nEls(),
-                           l_mesh.getElVe(),
-                           l_mesh.getVeCrds(),
-                           l_mesh.getInDiasEl(),
-                           l_veMod );
+  edge_v::time::Cfl l_cfl(  l_mesh.getTypeEl(),
+                            l_mesh.nVes(),
+                            l_mesh.nEls(),
+                            l_mesh.getElVe(),
+                            l_mesh.getVeCrds(),
+                            l_mesh.getInDiasEl(),
+                           *l_velMod );
   l_cfl.printStats();
 
   if( l_config.getWriteElAn() ) {
@@ -261,6 +278,7 @@ int main( int i_argc, char *i_argv[] ) {
     l_moab.writeMesh( l_config.getMeshOut() );
   }
 
+  delete l_velMod;
   delete[] l_rates;
 
   return EXIT_SUCCESS;
