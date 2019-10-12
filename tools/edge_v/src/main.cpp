@@ -80,11 +80,14 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::io::Config l_config( l_xml );
   EDGE_V_LOG_INFO << "sharing runtime config:";
   EDGE_V_LOG_INFO << "  mesh:";
-  EDGE_V_LOG_INFO << "    periodic:     " << l_config.getPeriodic();
-  EDGE_V_LOG_INFO << "    annotations:  " << l_config.getWriteElAn();
-  EDGE_V_LOG_INFO << "    n_partitions: " << l_config.nPartitions();
-  EDGE_V_LOG_INFO << "    in:           " << l_config.getMeshIn();
-  EDGE_V_LOG_INFO << "    out:          " << l_config.getMeshOut();
+  EDGE_V_LOG_INFO << "    periodic:         " << l_config.getPeriodic();
+  EDGE_V_LOG_INFO << "    annotations:      " << l_config.getWriteElAn();
+  EDGE_V_LOG_INFO << "    n_partitions:     " << l_config.nPartitions();
+  EDGE_V_LOG_INFO << "    in:               " << l_config.getMeshIn();
+  EDGE_V_LOG_INFO << "    out:              " << l_config.getMeshOut();
+  EDGE_V_LOG_INFO << "    out by partition: ";
+  EDGE_V_LOG_INFO << "      base:           " << l_config.getMeshOutPaBase();
+  EDGE_V_LOG_INFO << "      extension:      " << l_config.getMeshOutPaExt();
   EDGE_V_LOG_INFO << "  time:";
   EDGE_V_LOG_INFO << "    #time groups: " << l_config.nTsGroups();
   EDGE_V_LOG_INFO << "    fun dt:       " << l_config.getFunDt();
@@ -169,7 +172,6 @@ int main( int i_argc, char *i_argv[] ) {
                                     l_rates,
                                     l_funDt,
                                     l_cfl.getTimeSteps() );
-  delete[] l_rates;
   l_tsGroups.printStats();
 
   if( l_config.getWriteElAn() ) {
@@ -236,10 +238,30 @@ int main( int i_argc, char *i_argv[] ) {
                         l_tsGroups.nGroups()+1,
                         l_tsGroups.getTsIntervals() );
 
+  if( l_config.nPartitions() > 1 ) {
+    EDGE_V_LOG_INFO << "writing mesh by partition";
+    std::string l_base = l_config.getMeshOutPaBase();
+    std::string l_ext = l_config.getMeshOutPaExt();
+
+    std::size_t l_first = 0;
+    for( std::size_t l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
+      std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
+      std::string l_name = l_base + "_" + std::to_string(l_pa) + l_ext;
+
+      l_moab.writeMesh( l_first,
+                        l_nPaEls,
+                        l_name );
+
+      l_first += l_nPaEls;
+    }
+  }
+
   if( l_config.getMeshOut() != "" ) {
     EDGE_V_LOG_INFO << "writing mesh";
     l_moab.writeMesh( l_config.getMeshOut() );
   }
+
+  delete[] l_rates;
 
   return EXIT_SUCCESS;
 }
