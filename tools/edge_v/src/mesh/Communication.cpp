@@ -301,3 +301,36 @@ void edge_v::mesh::Communication::getStruct( t_entityType                   i_el
   delete[] l_firstComm;
   delete[] l_sizeComm;
 }
+
+edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
+                                            std::size_t            i_nEls,
+                                            std::size_t    const * i_elFaEl,
+                                            std::size_t            i_nPas,
+                                            std::size_t    const * i_nPaEls,
+                                            unsigned short const * i_elTg ) {
+  EDGE_V_CHECK_GT( i_nPas, 0 );
+
+  // init temporary data structure for the parts
+  std::size_t * l_elPa = new std::size_t[ i_nEls ];
+  std::size_t l_paFirst = 0;
+
+  for( std::size_t l_pa = 0; l_pa < i_nPas; l_pa++ ) {
+    std::size_t l_paSize = i_nPaEls[l_pa];
+    EDGE_V_CHECK_LE( l_paFirst+l_paSize, i_nEls );
+    for( std::size_t l_el = l_paFirst; l_el < l_paFirst+l_paSize; l_el++ ) {
+      l_elPa[l_el] = l_pa;
+    }
+
+    l_paFirst += i_nPaEls[l_pa];
+  }
+
+  // derive communication structure
+  getStruct( i_elTy,
+             i_nEls,
+             i_elFaEl,
+             l_elPa,
+             i_elTg,
+             m_struct );
+
+  delete[] l_elPa;
+}

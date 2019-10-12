@@ -157,6 +157,24 @@ class edge_v::mesh::Communication {
                            std::size_t            const * i_elPa,
                            unsigned short         const * i_elTg,
                            std::vector< Partition >     & o_struct );
+
+  public:
+    /**
+     * Constructor which initializes the communication structures.
+     *
+     * @param i_elTy element type.
+     * @param i_nEls number of elements.
+     * @param i_elFaEl elements adjacent to elements (faces as bridge).
+     * @param i_nPas number of partitions.
+     * @param i_nPaEls number of elements per partition.
+     * @param i_elTg time groups of the elements.
+     **/
+    Communication( t_entityType           i_elTy,
+                   std::size_t            i_nEls,
+                   std::size_t    const * i_elFaEl,
+                   std::size_t            i_nPas,
+                   std::size_t    const * i_nPaEls,
+                   unsigned short const * i_elTg );
 };
 
 #endif
