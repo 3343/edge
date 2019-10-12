@@ -83,7 +83,8 @@ if env['hdf5'] != False:
   conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
 
 # enable METIS if available
-if( conf.CheckLibWithHeaderFlags( 'metis', 'metis.h' ) ):
+if( conf.CheckLibWithHeaderFlags( 'metis', 'metis.h' ) or
+    conf.CheckLibWithHeaderFlags( 'metis', 'metis.h', 'C', [], [], True) ):
   # enable METIS-dependencies
   env.AppendUnique( CPPDEFINES =['PP_USE_METIS'] )
 
