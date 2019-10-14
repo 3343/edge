@@ -70,6 +70,12 @@ class edge_v::mesh::Communication {
     //! global communication structure, composed of communicating partitions
     std::vector< Partition > m_struct;
 
+    //! offsets for the channels of the partitions
+    std::size_t * m_chOff = nullptr;
+
+    //! communication channels of the partitions
+    std::size_t * m_chs = nullptr;
+
     /**
      * Determines if an element is communicating.
      *
@@ -158,6 +164,26 @@ class edge_v::mesh::Communication {
                            unsigned short         const * i_elTg,
                            std::vector< Partition >     & o_struct );
 
+    /**
+     * Sets the channel offsets.
+     *
+     * @param i_struct global communication structure.
+     * @param o_chOff will be set to the per-partition offsets of the channels.
+     **/
+    static void setChOff( std::vector< Partition > const & i_struct,
+                          std::size_t                    * o_chOff );
+
+    /**
+     * Sets the structure for the communication channels.
+     *
+     * @param i_struct global communication structure.
+     * @param i_chOff per-partition offsets of the channels.
+     * @param o_chs will be set to the communication channels.
+     **/
+    static void setChs( std::vector< Partition > const & i_struct,
+                        std::size_t              const * i_chOff,
+                        std::size_t                    * o_chs );
+
   public:
     /**
      * Constructor which initializes the communication structures.
@@ -175,6 +201,33 @@ class edge_v::mesh::Communication {
                    std::size_t            i_nPas,
                    std::size_t    const * i_nPaEls,
                    unsigned short const * i_elTg );
+
+    /**
+     * Destructor
+     **/
+    ~Communication();
+
+    /**
+     * Gets the communication structure for a given partition.
+     * The first entry is the number of communication channels.
+     * Next, for each channel, the following 4D structure follows:
+     *   First, the local time group.
+     *   Next, the remote partition.
+     *   Third, the remote time group
+     *   Last the number of faces to which this applies.
+     *
+     * For example [2, 0, 2, 4, 15, 1, 1, 3, 20] means:
+     *   Two channels with structure: [0, 2, 4, 15] and [1, 1, 3, 20].
+     *
+     *   The first channel belongs to local time group 0 and communicates with remote time group 4 of partition 2.
+     *   The number of faces to which this applies is 15.
+     *
+     *   The second channel belongs to local time group 1 and communicates with the third time group on partition 1.
+     *   The number of faces is 20.
+     *
+     * @return number of messages for the partitions.
+     **/
+    std::size_t const * getStruct( std::size_t i_pa ) const;
 };
 
 #endif

@@ -492,4 +492,68 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
   REQUIRE( l_struct[5].tr[1].recv[1].fa.size() == 1 );
   REQUIRE( l_struct[5].tr[1].recv[1].el[0] == 10 );
   REQUIRE( l_struct[5].tr[1].recv[1].fa[0] ==  2 );
+
+  // go through the constructor
+  std::size_t l_nPaEls[6] = {2, 1, 5, 1, 2, 2};
+
+  edge_v::mesh::Communication l_comm( edge_v::TRIA3,
+                                      13,
+                                      l_elFaEl[0],
+                                      6,
+                                      l_nPaEls,
+                                      l_elTg );
+
+  // check simplified comm structure
+  REQUIRE( l_comm.getStruct(0)[4*0+0+0] == 3 );
+
+  REQUIRE( l_comm.getStruct(0)[4*0+1+0] == 2 );
+  REQUIRE( l_comm.getStruct(0)[4*0+1+1] == 1 );
+  REQUIRE( l_comm.getStruct(0)[4*0+1+2] == 0 );
+  REQUIRE( l_comm.getStruct(0)[4*0+1+3] == 2 );
+
+  REQUIRE( l_comm.getStruct(0)[4*1+1+0] == 2 );
+  REQUIRE( l_comm.getStruct(0)[4*1+1+1] == 2 );
+  REQUIRE( l_comm.getStruct(0)[4*1+1+2] == 1 );
+  REQUIRE( l_comm.getStruct(0)[4*1+1+3] == 1 );
+
+  REQUIRE( l_comm.getStruct(0)[4*2+1+0] == 2 );
+  REQUIRE( l_comm.getStruct(0)[4*2+1+1] == 2 );
+  REQUIRE( l_comm.getStruct(0)[4*2+1+2] == 3 );
+  REQUIRE( l_comm.getStruct(0)[4*2+1+3] == 1 );
+
+  REQUIRE( l_comm.getStruct(1)[4*0+0+0] == 2 );
+
+  REQUIRE( l_comm.getStruct(1)[4*0+1+0] == 0 );
+  REQUIRE( l_comm.getStruct(1)[4*0+1+1] == 0 );
+  REQUIRE( l_comm.getStruct(1)[4*0+1+2] == 2 );
+  REQUIRE( l_comm.getStruct(1)[4*0+1+3] == 2 );
+
+  REQUIRE( l_comm.getStruct(1)[4*1+1+0] == 0 );
+  REQUIRE( l_comm.getStruct(1)[4*1+1+1] == 2 );
+  REQUIRE( l_comm.getStruct(1)[4*1+1+2] == 2 );
+  REQUIRE( l_comm.getStruct(1)[4*1+1+3] == 1 );
+
+  REQUIRE( l_comm.getStruct(2)[4*0+0+0] == 7 );
+
+  REQUIRE( l_comm.getStruct(2)[4*0+1+0] == 1 );
+  REQUIRE( l_comm.getStruct(2)[4*0+1+1] == 0 );
+  REQUIRE( l_comm.getStruct(2)[4*0+1+2] == 2 );
+  REQUIRE( l_comm.getStruct(2)[4*0+1+3] == 1 );
+
+  REQUIRE( l_comm.getStruct(2)[4*1+1+0] == 1 );
+  REQUIRE( l_comm.getStruct(2)[4*1+1+1] == 3 );
+  REQUIRE( l_comm.getStruct(2)[4*1+1+2] == 1 );
+  REQUIRE( l_comm.getStruct(2)[4*1+1+3] == 1 );
+
+  REQUIRE( l_comm.getStruct(2)[4*2+1+0] == 2 );
+  REQUIRE( l_comm.getStruct(2)[4*2+1+1] == 1 );
+  REQUIRE( l_comm.getStruct(2)[4*2+1+2] == 0 );
+  REQUIRE( l_comm.getStruct(2)[4*2+1+3] == 1 );
+
+  REQUIRE( l_comm.getStruct(2)[4*3+1+0] == 2 );
+  REQUIRE( l_comm.getStruct(2)[4*3+1+1] == 5 );
+  REQUIRE( l_comm.getStruct(2)[4*3+1+2] == 2 );
+  REQUIRE( l_comm.getStruct(2)[4*3+1+3] == 2 );
+
+  // [...]
 }

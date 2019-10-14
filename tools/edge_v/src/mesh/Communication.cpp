@@ -302,6 +302,38 @@ void edge_v::mesh::Communication::getStruct( t_entityType                   i_el
   delete[] l_sizeComm;
 }
 
+void edge_v::mesh::Communication::setChOff( std::vector< Partition > const & i_struct,
+                                            std::size_t                    * o_chOff ) {
+  o_chOff[0] = 0;
+  for( std::size_t l_pa = 0; l_pa < i_struct.size(); l_pa++ ) {
+    o_chOff[l_pa+1] = o_chOff[l_pa];
+
+    for( unsigned short l_tg = 0; l_tg < i_struct[l_pa].tr.size(); l_tg++ ) {
+      o_chOff[l_pa+1] += i_struct[l_pa].tr[l_tg].send.size();
+    }
+  }
+}
+
+void edge_v::mesh::Communication::setChs( std::vector< Partition > const & i_struct,
+                                          std::size_t              const * i_chOff,
+                                          std::size_t                    * o_chs ) {
+  for( std::size_t l_pa = 0; l_pa < i_struct.size(); l_pa++ ) {
+    std::size_t l_off = i_chOff[l_pa]*4 + l_pa;
+    o_chs[l_off] = i_chOff[l_pa+1] - i_chOff[l_pa];
+    l_off++;
+
+    for( unsigned short l_tg = 0; l_tg < i_struct[l_pa].tr.size(); l_tg++ ) {
+      for( unsigned short l_se = 0; l_se < i_struct[l_pa].tr[l_tg].send.size(); l_se++ ) {
+        o_chs[l_off+0] = i_struct[l_pa].tr[l_tg].tg;
+        o_chs[l_off+1] = i_struct[l_pa].tr[l_tg].send[l_se].pa;
+        o_chs[l_off+2] = i_struct[l_pa].tr[l_tg].send[l_se].tg;
+        o_chs[l_off+3] = i_struct[l_pa].tr[l_tg].send[l_se].el.size();
+        l_off += 4;
+      }
+    }
+  }
+}
+
 edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
                                             std::size_t            i_nEls,
                                             std::size_t    const * i_elFaEl,
@@ -333,4 +365,24 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
              m_struct );
 
   delete[] l_elPa;
+
+  // get channels offsets
+  m_chOff = new std::size_t[i_nPas+1];
+  setChOff( m_struct,
+            m_chOff );
+
+  // assign simplified comm structure
+  m_chs = new std::size_t[ i_nPas + m_chOff[i_nPas]*4 ];
+  setChs( m_struct,
+          m_chOff,
+          m_chs );
+}
+
+edge_v::mesh::Communication::~Communication() {
+  delete[] m_chOff;
+  delete[] m_chs;
+}
+
+std::size_t const * edge_v::mesh::Communication::getStruct( std::size_t i_pa ) const {
+  return m_chs+m_chOff[i_pa]*4 + i_pa;
 }
