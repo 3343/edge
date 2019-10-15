@@ -102,7 +102,6 @@ if env['moab'] != False:
   conf.CheckLibWithHeaderFlags( 'ifcore' )
 
   if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
-    env.AppendUnique( CPPDEFINES=['PP_T_MESH_UNSTRUCTURED'] )
     env.AppendUnique( CPPDEFINES=['PP_USE_MOAB'] )
   else:
     warnings.warn( 'Warning: Could not find MOAB, falling back to structured meshes.' )
