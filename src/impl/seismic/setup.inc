@@ -33,9 +33,7 @@
                                        t_spTypeElastic::FREE_SURFACE,
                                        t_spTypeElastic::FREE_SURFACE,
                                        l_internal.m_faceChars,
-                                       l_internal.m_elementChars,
-                                       &l_mesh.getInMap()->elDaMe[0],
-                                       &l_mesh.getInMap()->elMeDa[0] );
+                                       l_internal.m_elementChars );
 
 #ifdef PP_USE_MPI
   edge::parallel::Mpi::syncSpTypes( l_enLayouts[2],
@@ -46,12 +44,12 @@
 // allocate flex data for time buffers and DOFs
 {
   int_spType  l_spTypes[2] = { C_LTS_EL[t_ltsEl::EL_INT_LT], C_LTS_EL[t_ltsEl::EL_INT_GT] };
-  std::size_t l_spSizes[2] = { N_QUANTITIES,                  N_QUANTITIES                 };
+  std::size_t l_spSizes[2] = { N_QUANTITIES,                 N_QUANTITIES                 };
 
   real_base (**l_raw)[N_ELEMENT_MODES][N_CRUNS];
 
   l_raw = l_dynMem.flex<
-    real_base [N_ELEMENT_MODES][N_CRUNS] >( l_internal.m_nElements,
+    real_base [N_ELEMENT_MODES][N_CRUNS] >( l_edgeV.nEls(),
                                             2,
                                             N_QUANTITIES,
                                             l_spTypes,
@@ -62,8 +60,8 @@
                                             true );
 
   l_internal.m_globalShared6[0] = l_raw;
-  l_internal.m_globalShared6[1] = l_raw +   l_internal.m_nElements;
-  l_internal.m_globalShared6[2] = l_raw + 2*l_internal.m_nElements;
+  l_internal.m_globalShared6[1] = l_raw +   l_edgeV.nEls();
+  l_internal.m_globalShared6[2] = l_raw + 2*l_edgeV.nEls();
 }
 
 #ifdef PP_USE_MPI
@@ -92,48 +90,7 @@ PP_INSTR_REG_BEG(dofsMat,"dofs_mat")
 unsigned short l_vmMesh = std::numeric_limits< unsigned short >::max();
 EDGE_LOG_INFO << "    querying mesh for velocity model";
 
-#if defined PP_T_MESH_UNSTRUCTURED
-// allocate memory for velocity model
-double (*l_velMod)[5] = (double (*)[5]) new double[ l_internal.m_nElements * 5 ];
-std::string l_bgPars[5] = { "LAMBDA",
-                            "MU",
-                            "RHO",
-                            "QP",
-                            "QS" };
-
-l_vmMesh = l_mesh.getParsDe( N_DIM,
-                             (N_RELAXATION_MECHANISMS == 0) ? 3 : 5,
-                             l_bgPars,
-                             l_velMod[0] );
-
-if( l_vmMesh == 0 ) {
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-  for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
-    // check for valid lame parameters
-    EDGE_CHECK_GT( l_velMod[l_el][0], 0 ) << l_el;
-    EDGE_CHECK_GT( l_velMod[l_el][1], 0 ) << l_el;
-    EDGE_CHECK_GT( l_velMod[l_el][2], 0 ) << l_el;
-    // check for valid q-factors
-    if( N_RELAXATION_MECHANISMS > 0 ) {
-      EDGE_CHECK_GT( l_velMod[l_el][3], 0 ) << l_el;
-      EDGE_CHECK_GT( l_velMod[l_el][4], 0 ) << l_el;
-    }
-
-    l_internal.m_elementShared1[l_el][0].lam  = l_velMod[l_el][0];
-    l_internal.m_elementShared1[l_el][0].mu   = l_velMod[l_el][1];
-    l_internal.m_elementShared1[l_el][0].rho  = l_velMod[l_el][2];
-    if( N_RELAXATION_MECHANISMS > 0 ) {
-      l_internal.m_elementShared1[l_el][0].qp = l_velMod[l_el][3];
-      l_internal.m_elementShared1[l_el][0].qs = l_velMod[l_el][4];
-    }
-  }
-}
-
-// free memory of velocity model
-delete[] l_velMod;
-#endif
+// TODO: add velocity model queries to EDGE-V interface
 
 if( l_vmMesh == 0 ) {
   EDGE_LOG_INFO << "    successfully obtained velocity model from mesh";
@@ -172,7 +129,7 @@ else {
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
+for( int_el l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
   for( int_qt l_qt = 0; l_qt < N_QUANTITIES; l_qt++ ) {
     for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
       for( int_cfr l_ru = 0; l_ru < N_CRUNS; l_ru++ ) {
@@ -195,8 +152,8 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
     T_SDISC.ELEMENT,
     ORDER,
     N_QUANTITIES,
-    N_CRUNS >::dg( 0,
-                   l_internal.m_nElements,
+    N_CRUNS >::dg( std::size_t(0),
+                   l_edgeV.nEls(),
                    l_config.m_initValsExprStrs,
                    l_basis,
                    l_internal.m_connect.elVe,
@@ -206,7 +163,7 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
 
 // set up material parameters
 {
-  for( int_el l_el = 0; l_el < l_internal.m_nElements; l_el++ ) {
+  for( int_el l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
     // compute vertices average position in all dimension
     real_mesh l_ave[N_DIM];
     for( unsigned short l_dm = 0; l_dm < N_DIM; l_dm++ ) {
@@ -253,13 +210,11 @@ edge::seismic::solvers::AderDg<
  ORDER,
  ORDER,
  N_CRUNS,
- MM_KERNELS_SPARSE > l_aderDg( l_internal.m_nElements,
-                               l_internal.m_nFaces,
+ MM_KERNELS_SPARSE > l_aderDg( l_edgeV.nEls(),
+                               l_edgeV.nFas(),
                                l_internal.m_connect.faEl,
                                l_internal.m_connect.elVe,
-                               l_internal.m_connect.elFa,
-                               l_mesh.getInMap()->elMeDa.data(),
-                               l_mesh.getInMap()->elDaMe.data(),
+                               l_internal.m_connect.elFaEl,
                                l_internal.m_vertexChars,
                                l_internal.m_faceChars,
                                l_internal.m_elementChars,
@@ -301,7 +256,7 @@ edge::data::SparseEntities::denseToSparse( t_spTypeElastic::SOURCE,
 unsigned short l_srcLayout = l_enLayouts.size()-1;
 
 // get time step stats
-edge::seismic::common::getTimeStepStatsCFL( l_internal.m_nElements,
+edge::seismic::common::getTimeStepStatsCFL( l_edgeV.nEls(),
                                             l_internal.m_elementChars,
                                             l_internal.m_elementShared1,
                                             l_dT[0], l_dT[1], l_dT[2] );
