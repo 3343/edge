@@ -46,7 +46,6 @@ INITIALIZE_EASYLOGGINGPP
 #include "time/Manager.h"
 #include "mesh/common.hpp"
 #include "mesh/SparseTypes.hpp"
-#include "mesh/setup_dep.inc"
 #include "mesh/EdgeV.h"
 
 #include "monitor/Timer.hpp"
@@ -136,20 +135,20 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "parsing mesh";
   edge::mesh::EdgeV l_edgeV( l_config.m_meshFileIn,
                              l_config.m_periodic != std::numeric_limits< int >::max() );
-#include "mesh/setup.inc"
 
   // get the data layout
   EDGE_LOG_INFO << "taking care of data layout now";
 #include "data/setup.inc"
 
-  l_enLayouts[2] = l_edgeV.getElLayout();
+  t_enLayout l_elLayout = l_edgeV.getElLayout();
+  l_enLayouts[2] = l_elLayout;
 
   // initialize all elements/faces
   edge::data::Internal l_internal;
   l_internal.initScratch();
-  l_internal.initDense(  l_enLayouts[0].nEnts,
-                         l_enLayouts[1].nEnts,
-                         l_enLayouts[2].nEnts );
+  l_internal.initDense(  l_edgeV.nVes(),
+                         l_edgeV.nFas(),
+                         l_edgeV.nEls() );
 
   // setup constant data structures for DG
   EDGE_LOG_INFO << "setting up basis and DG-structure";
@@ -158,15 +157,80 @@ int main( int i_argc, char *i_argv[] ) {
 
 #include "dg/setup_ader.inc"
 
-  // initialize internal chars and connectivity information
-  EDGE_LOG_INFO << "initializing internal chars and connectivity info";
-  l_mesh.getVeChars( l_internal.m_vertexChars  );
-  l_mesh.getElChars( l_internal.m_elementChars );
-  l_mesh.getFaChars( l_internal.m_faceChars    );
+//TODO: add to internal
+std::vector< int_gid > l_gIdsEl, l_gIdsVe, l_gIdsFa;
 
-  l_mesh.getConnect( l_internal.m_vertexChars,
-                     l_internal.m_faceChars,
-                     l_internal.m_connect      );
+// TODO: It's all fake!
+for( std::size_t l_ve = 0; l_ve < l_edgeV.nVes(); l_ve++ ) {
+  l_gIdsVe.push_back( l_ve );
+}
+for( std::size_t l_fa = 0; l_fa < l_edgeV.nFas(); l_fa++ ) {
+  l_gIdsFa.push_back( l_fa );
+}
+for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
+  l_gIdsEl.push_back( l_el );
+}
+
+// initialize internal chars and connectivity information
+EDGE_LOG_INFO << "initializing internal chars and connectivity info";
+l_internal.m_connect.faVe   = (std::size_t (*)[C_ENT[T_SDISC.ELEMENT].N_FACE_VERTICES]) l_edgeV.getFaVe();
+l_internal.m_connect.faEl   = (std::size_t (*)[2])                                      l_edgeV.getFaEl();
+l_internal.m_connect.elVe   = (std::size_t (*)[C_ENT[T_SDISC.ELEMENT].N_VERTICES])      l_edgeV.getElVe();
+l_internal.m_connect.elFa   = (std::size_t (*)[C_ENT[T_SDISC.ELEMENT].N_FACES])         l_edgeV.getElFa();
+l_internal.m_connect.elFaEl = (std::size_t (*)[C_ENT[T_SDISC.ELEMENT].N_FACES])         l_edgeV.getElFaEl();
+
+double const (* l_veCrds)[3] = l_edgeV.getVeCrds();
+double const * l_volEl = l_edgeV.getVolumesEl();
+double const * l_volFa = l_edgeV.getAreasFa();
+double const * l_inDiaEl = l_edgeV.getInDiasEl();
+double const (* l_normalsFa)[3] = l_edgeV.getNormalsFa();
+double const (* l_tangentsFa)[2][3] = l_edgeV.getTangentsFa();
+
+// fill internal data structures
+for( std::size_t l_ve = 0; l_ve < l_edgeV.nVes(); l_ve++ ) {
+  for( unsigned short l_di = 0; l_di < 3; l_di++ )
+    l_internal.m_vertexChars[l_ve].coords[l_di] = l_veCrds[l_ve][l_di];
+
+  l_internal.m_vertexChars[l_ve].spType = 0;
+}
+
+for( std::size_t l_fa = 0; l_fa < l_edgeV.nFas(); l_fa++ ) {
+  l_internal.m_faceChars[l_fa].spType = 0;
+  l_internal.m_faceChars[l_fa].area = l_volFa[l_fa];
+
+  for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+    l_internal.m_faceChars[l_fa].outNormal[l_di] = l_normalsFa[l_fa][l_di];
+    l_internal.m_faceChars[l_fa].tangent0[l_di] = l_tangentsFa[l_fa][0][l_di];
+    l_internal.m_faceChars[l_fa].tangent1[l_di] = l_tangentsFa[l_fa][1][l_di];
+  }
+}
+
+for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
+  l_internal.m_elementChars[l_el].spType = 0;
+  l_internal.m_elementChars[l_el].volume = l_volEl[l_el];
+  l_internal.m_elementChars[l_el].inDia = l_inDiaEl[l_el];
+}
+
+l_edgeV.setSpTypes( l_internal.m_vertexChars,
+                    l_internal.m_faceChars,
+                    l_internal.m_elementChars );
+
+  // get the neighboring elements' local face ids
+  edge::mesh::common< T_SDISC.ELEMENT >::getFIdsElFaEl( l_elLayout,
+                                                        l_gIdsEl,
+                                                        l_internal.m_connect.elFa,
+                                                        l_internal.m_connect.elFaEl,
+                                                        l_internal.m_connect.fIdElFaEl );
+
+  // get the neighboring elements' local vertex ids, which match the faces' first vertex
+  edge::mesh::common< T_SDISC.ELEMENT >::getVIdsElFaEl( l_elLayout,
+                                                        l_gIdsVe,
+                                                        l_internal.m_connect.elFaEl,
+                                                        l_internal.m_connect.elVe,
+                                                        l_internal.m_connect.fIdElFaEl,
+                                                        l_internal.m_connect.vIdElFaEl,
+                                                        true,
+                                                        l_internal.m_vertexChars );
 
   l_edgeV.setLtsTypes( l_internal.m_elementChars );
 
@@ -174,7 +238,7 @@ int main( int i_argc, char *i_argv[] ) {
   if( l_config.m_spTypesDoms[0].size() > 0 ) EDGE_LOG_FATAL << "not implemented";
   if( l_config.m_spTypesDoms[1].size() > 0 ) edge::mesh::SparseTypes<
                                                T_SDISC.FACE
-                                             >::set(  l_enLayouts[1].nEnts,
+                                             >::set(  l_edgeV.nFas(),
                                                       l_internal.m_connect.faVe,
                                                      &l_config.m_spTypesVals[1][0],
                                                       l_config.m_spTypesDoms[1],
@@ -182,7 +246,7 @@ int main( int i_argc, char *i_argv[] ) {
                                                       l_internal.m_faceChars );
   if( l_config.m_spTypesDoms[2].size() > 0 ) edge::mesh::SparseTypes<
                                                T_SDISC.ELEMENT
-                                             >::set(  l_enLayouts[2].nEnts,
+                                             >::set(  l_edgeV.nEls(),
                                                       l_internal.m_connect.elVe,
                                                      &l_config.m_spTypesVals[2][0],
                                                       l_config.m_spTypesDoms[2],
@@ -191,14 +255,10 @@ int main( int i_argc, char *i_argv[] ) {
 
   EDGE_VLOG(2) << "  printing neigh relations (loc_fa-nei_fa-nei_ve):";
   if (EDGE_VLOG_IS_ON(2)) {
-    edge::mesh::common< T_SDISC.ELEMENT> ::printNeighRel( l_enLayouts[2],
+    edge::mesh::common< T_SDISC.ELEMENT> ::printNeighRel( l_elLayout,
                                                           l_internal.m_connect.fIdElFaEl[0],
                                                           l_internal.m_connect.vIdElFaEl[0] );
   }
-
-//TODO: add to internal
-std::vector< int_gid > l_gIdsEl;
-l_mesh.getGIdsEl( l_gIdsEl );
 
   // setup receivers
 #include "io/inc/setup_recv.inc"
@@ -234,7 +294,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   // assemble LTS groups
   std::vector< edge::time::TimeGroupStatic > l_tgs;
 
-  unsigned short l_nTgs = l_enLayouts[2].timeGroups.size();
+  unsigned short l_nTgs = l_elLayout.timeGroups.size();
   for( unsigned short l_tg = 0; l_tg < l_nTgs; l_tg++ ) {
     l_tgs.push_back( edge::time::TimeGroupStatic( l_nTgs,
                                                   l_tg,
@@ -266,8 +326,8 @@ l_mesh.getGIdsEl( l_gIdsEl );
   // create a wave field writer
   edge::io::WaveField l_writer( l_config.m_waveFieldType,
                                 l_config.m_waveFieldFile,
-                                l_enLayouts[2],
-                                l_mesh.getInMap(),
+                                l_edgeV.nVes(),
+                                l_elLayout,
                                 l_internal.m_vertexChars,
                                 l_internal.m_elementChars,
                                 l_internal.m_connect.elVe,
@@ -279,8 +339,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
   EDGE_LOG_INFO << "  simulation time: " << l_simTime;
   if( l_config.m_waveFieldInt > TOL.TIME ) {
     EDGE_LOG_INFO << "  writing wave field #0";
-    l_writer.write( 0,
-                    l_internal.m_globalShared2[0].limSync );
+    l_writer.write( 0 );
   }
 
   // print mem stats
@@ -332,8 +391,7 @@ l_mesh.getGIdsEl( l_gIdsEl );
     // write this sync step
     if( l_simTime + TOL.TIME > (l_stepWf+1)*l_config.m_waveFieldInt ) {
       EDGE_LOG_INFO << "  writing wave field #" << l_stepWf+1;
-      l_writer.write( l_stepTime,
-                      l_internal.m_globalShared2[0].limSync );
+      l_writer.write( l_stepTime );
       l_stepWf++;
     }
 
