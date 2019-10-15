@@ -155,15 +155,29 @@ void edge_v::mesh::Communication::getMsgsSend( t_entityType                   i_
   // get the communication region's partition and time region
   std::size_t l_paReg = i_elPa[i_first];
 
+  unsigned short l_nElFas = CE_N_FAS( i_elTy );
+
   // lambda, which inserts an element-face pair into the send messages
-  auto l_insert = [ & o_send ]( std::size_t    i_el,
-                                unsigned short i_fa,
-                                std::size_t    i_pa,
-                                unsigned short i_tg ) mutable {
+  auto l_insert = [   i_elFaEl,
+                      l_nElFas,
+                    & o_send    ]( std::size_t    i_el,
+                                   unsigned short i_fa,
+                                   std::size_t    i_pa,
+                                   unsigned short i_tg ) mutable {
     for( std::size_t l_se = 0; l_se < o_send.size(); l_se++ ) {
       if( o_send[l_se].pa == i_pa && o_send[l_se].tg == i_tg ) {
         o_send[l_se].el.push_back( i_el );
         o_send[l_se].fa.push_back( i_fa );
+
+        std::size_t l_elAd = i_elFaEl[i_el*l_nElFas + i_fa];
+        unsigned short l_faAd = std::numeric_limits< unsigned short >::max();
+        for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+          if( i_elFaEl[l_elAd*l_nElFas + l_fa] == i_el ) l_faAd = l_fa;
+        }
+        EDGE_V_CHECK_NE( l_faAd, std::numeric_limits< unsigned short >::max() );
+        o_send[l_se].elAd.push_back( l_elAd );
+        o_send[l_se].faAd.push_back( l_faAd );
+
         break;
       }
       EDGE_V_CHECK_NE( l_se, o_send.size()-1 );
@@ -171,7 +185,6 @@ void edge_v::mesh::Communication::getMsgsSend( t_entityType                   i_
   };
 
   // assemble the messages
-  unsigned short l_nElFas = CE_N_FAS( i_elTy );
   for( std::size_t l_el = i_first; l_el < i_first+i_size; l_el++ ) {
     for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
       std::size_t l_ad = i_elFaEl[l_el*l_nElFas + l_fa];

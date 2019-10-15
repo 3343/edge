@@ -171,9 +171,9 @@ TEST_CASE( "Tests the derivation of send messages for a single communication reg
    * Our test case:
    *
    *  id | elFaEl   | partition | time group | pairs
-   *   0 |          | 0         | 2          |
-   *   1 |          | 0         | 2          |
-   *   2 |          | 1         | 0          |
+   *   0 |     7    | 0         | 2          |
+   *   1 |  4       | 0         | 2          |
+   *   2 |     5 3  | 1         | 0          |
    *  ==============|===========|============|
    *   3 |  6  4  2 | 2         | 1          | (1, 0)
    *   4 |  1  5  9 | 2         | 1          | (0, 2), (4, 2)
@@ -182,10 +182,10 @@ TEST_CASE( "Tests the derivation of send messages for a single communication reg
    *   7 |  3 11  0 | 2         | 1          | (5, 2), (0, 2)
    *  ==============|===========|============|
    *   8 |          | 3         | 1          |
-   *   9 |          | 4         | 2          |
-   *  10 |          | 4         | 1          |
-   *  11 |          | 5         | 2          |
-   *  12 |          | 5         | 0
+   *   9 |  4       | 4         | 2          |
+   *  10 |        6 | 4         | 1          |
+   *  11 |        7 | 5         | 2          |
+   *  12 |     5    | 5         | 0
    *
    * Sorted, unique pairs: (0, 2), (1, 0), (4, 1), (4, 2), (5, 0), (5, 2)
    */
@@ -200,6 +200,15 @@ TEST_CASE( "Tests the derivation of send messages for a single communication reg
   l_elFaEl[5][0] =  7; l_elFaEl[5][1] =  2; l_elFaEl[5][2] = 12;
   l_elFaEl[6][0] = 10; l_elFaEl[6][1] =  5; l_elFaEl[6][2] =  4;
   l_elFaEl[7][0] =  3; l_elFaEl[7][1] = 11; l_elFaEl[7][2] =  0;
+
+  l_elFaEl[ 0][1] = 7;
+  l_elFaEl[ 1][0] = 4;
+  l_elFaEl[ 2][1] = 5;
+  l_elFaEl[ 2][2] = 3;
+  l_elFaEl[ 9][0] = 4;
+  l_elFaEl[10][2] = 6;
+  l_elFaEl[11][2] = 7;
+  l_elFaEl[12][1] = 5;
 
   //                            0  1  2  3  4  5  6  7  8  9 10 11 12
   std::size_t l_elPa[13]    = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };

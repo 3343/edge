@@ -49,6 +49,10 @@ class edge_v::mesh::Communication {
       std::vector< std::size_t > el;
       //! communicating element-faces of the time group
       std::vector< unsigned short > fa;
+      //! communicating element of the adjacent partition
+      std::vector< std::size_t > elAd;
+      //! communicating face of the adjacent partition
+      std::vector< unsigned short > faAd;
     };
 
     //! communication structure of a time region of a single partition
