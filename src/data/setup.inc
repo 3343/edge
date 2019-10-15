@@ -24,9 +24,6 @@
 // get basic entity-layouts from mesh
 std::vector< t_enLayout > l_enLayouts;
 l_enLayouts.resize( 3 );
-l_enLayouts[0] = l_mesh.getVeLayout();
-l_enLayouts[1] = l_mesh.getFaLayout();
-l_enLayouts[2] = l_mesh.getElLayout();
 
 // dynamic memory allocations
 edge::data::Dynamic l_dynMem;
