@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * All rights reserved.
  *
@@ -80,13 +81,7 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
    EDGE_LOG_FATAL << "not good, more element types are required! " << T_SDISC.ELEMENT;
   }
 
-#if defined PP_T_MESH_REGULAR
-  std::string l_meshType = "regular";
-#elif defined PP_T_MESH_UNSTRUCTURED
   std::string l_meshType = "unstructured";
-#else
-#error "that's not right, strange mesh type.."
-#endif
 
 #if defined PP_T_EQUATIONS_ADVECTION
   std::string l_equations = "advection";
@@ -139,17 +134,6 @@ void edge::io::Config::printConfig() {
   EDGE_LOG_INFO << "  synchronization:";
   EDGE_LOG_INFO << "    max_int (possibly using default settings): " << m_syncMaxInt;
   EDGE_LOG_INFO << "  mesh:";
-#ifdef PP_T_MESH_REGULAR
-  EDGE_LOG_INFO << "    n_elements: ";
-  EDGE_LOG_INFO << "      x: " << m_nElementsX;
-  EDGE_LOG_INFO << "      y: " << m_nElementsY;
-  EDGE_LOG_INFO << "      z: " << m_nElementsZ;
-
-  EDGE_LOG_INFO << "    size: ";
-  EDGE_LOG_INFO << "      x: " << m_sizeX;
-  EDGE_LOG_INFO << "      y: " << m_sizeY;
-  EDGE_LOG_INFO << "      z: " << m_sizeZ;
-#elif defined PP_T_MESH_UNSTRUCTURED
   EDGE_LOG_INFO << "    read options: " << m_meshOptRead;
   EDGE_LOG_INFO << "    files:";
   EDGE_LOG_INFO << "      in: " << m_meshFileIn;
@@ -161,7 +145,6 @@ void edge::io::Config::printConfig() {
   for( unsigned int l_bn = 0; l_bn < m_bndConId.size(); l_bn++ ) {
     EDGE_LOG_INFO << "      " << m_bndConName[l_bn] << ": " << m_bndConId[l_bn];
   }
-#endif
 
   // print info about sparse type domains
   for( unsigned short l_et = 0; l_et < 3; l_et++ ) {
