@@ -101,15 +101,8 @@ if env['moab'] != False:
   # forward ifcore if available
   conf.CheckLibWithHeaderFlags( 'ifcore' )
 
-  if conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
-    env.AppendUnique( CPPDEFINES=['PP_USE_MOAB'] )
-  else:
-    warnings.warn( 'Warning: Could not find MOAB, falling back to structured meshes.' )
-    env['moab'] = False
-
-# use regular meshes if not MOAB
-if env['moab'] == False:
-  env.AppendUnique( CPPDEFINES=['PP_T_MESH_REGULAR'] )
+  if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
+    warnings.error( 'Warning: Could not find MOAB, falling back to structured meshes.' )
 
 # forward EDGE-V
 if env['edge_v'] != False:
