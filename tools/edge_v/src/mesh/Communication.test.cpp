@@ -324,16 +324,20 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
   REQUIRE( l_struct[0].tr[0].send[0].fa.size() == 2 );
   REQUIRE( l_struct[0].tr[0].send[0].el[0] == 0 );
   REQUIRE( l_struct[0].tr[0].send[0].fa[0] == 1 );
+  REQUIRE( l_struct[0].tr[0].send[0].elAd[0] == 2 );
+  REQUIRE( l_struct[0].tr[0].send[0].faAd[0] == 0 );
   REQUIRE( l_struct[0].tr[0].send[0].el[1] == 1 );
   REQUIRE( l_struct[0].tr[0].send[0].fa[1] == 1 );
+  REQUIRE( l_struct[0].tr[0].send[0].elAd[1] == 2 );
+  REQUIRE( l_struct[0].tr[0].send[0].faAd[1] == 1 );
   REQUIRE( l_struct[0].tr[0].recv[0].pa == 1 );
   REQUIRE( l_struct[0].tr[0].recv[0].tg == 0 );
   REQUIRE( l_struct[0].tr[0].recv[0].el.size() == 2 );
   REQUIRE( l_struct[0].tr[0].recv[0].fa.size() == 2 );
-  REQUIRE( l_struct[0].tr[0].recv[0].el[0] == 2 );
-  REQUIRE( l_struct[0].tr[0].recv[0].fa[0] == 0 );
-  REQUIRE( l_struct[0].tr[0].recv[0].el[1] == 2 );
-  REQUIRE( l_struct[0].tr[0].recv[0].fa[1] == 1 );
+  REQUIRE( l_struct[0].tr[0].recv[0].elAd[0] == 2 );
+  REQUIRE( l_struct[0].tr[0].recv[0].faAd[0] == 0 );
+  REQUIRE( l_struct[0].tr[0].recv[0].elAd[1] == 2 );
+  REQUIRE( l_struct[0].tr[0].recv[0].faAd[1] == 1 );
 
   REQUIRE( l_struct[0].tr[0].send[1].pa == 2 );
   REQUIRE( l_struct[0].tr[0].send[1].tg == 1 );
@@ -490,17 +494,17 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
   REQUIRE( l_struct[5].tr[1].recv[0].tg == 2 );
   REQUIRE( l_struct[5].tr[1].recv[0].el.size() == 2 );
   REQUIRE( l_struct[5].tr[1].recv[0].fa.size() == 2 );
-  REQUIRE( l_struct[5].tr[1].recv[0].el[0] == 4 );
-  REQUIRE( l_struct[5].tr[1].recv[0].fa[0] == 0 );
-  REQUIRE( l_struct[5].tr[1].recv[0].el[1] == 5 );
-  REQUIRE( l_struct[5].tr[1].recv[0].fa[1] == 1 );
+  REQUIRE( l_struct[5].tr[1].recv[0].elAd[0] == 4 );
+  REQUIRE( l_struct[5].tr[1].recv[0].faAd[0] == 0 );
+  REQUIRE( l_struct[5].tr[1].recv[0].elAd[1] == 5 );
+  REQUIRE( l_struct[5].tr[1].recv[0].faAd[1] == 1 );
 
   REQUIRE( l_struct[5].tr[1].recv[1].pa == 4 );
   REQUIRE( l_struct[5].tr[1].recv[1].tg == 1 );
   REQUIRE( l_struct[5].tr[1].recv[1].el.size() == 1 );
   REQUIRE( l_struct[5].tr[1].recv[1].fa.size() == 1 );
-  REQUIRE( l_struct[5].tr[1].recv[1].el[0] == 10 );
-  REQUIRE( l_struct[5].tr[1].recv[1].fa[0] ==  2 );
+  REQUIRE( l_struct[5].tr[1].recv[1].elAd[0] == 10 );
+  REQUIRE( l_struct[5].tr[1].recv[1].faAd[0] ==  2 );
 
   // go through the constructor
   std::size_t l_nPaEls[6] = {2, 1, 5, 1, 2, 2};

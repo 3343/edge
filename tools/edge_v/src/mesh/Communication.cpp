@@ -298,6 +298,15 @@ void edge_v::mesh::Communication::getStruct( t_entityType                   i_el
             for( std::size_t l_s1 = 0; l_s1 < o_struct[l_paAd].tr[l_t1].send.size(); l_s1++ ) {
               if( o_struct[l_paAd].tr[l_t1].send[l_s1].pa == l_pa ) {
                 o_struct[l_pa].tr[l_t0].recv[l_s0] = o_struct[l_paAd].tr[l_t1].send[l_s1];
+                // reverse order of local and remote
+                std::vector< std::size_t > l_tmpEl = o_struct[l_pa].tr[l_t0].recv[l_s0].el;
+                o_struct[l_pa].tr[l_t0].recv[l_s0].el = o_struct[l_pa].tr[l_t0].recv[l_s0].elAd;
+                o_struct[l_pa].tr[l_t0].recv[l_s0].elAd = l_tmpEl;
+
+                std::vector< unsigned short > l_tmpFa = o_struct[l_pa].tr[l_t0].recv[l_s0].fa;
+                o_struct[l_pa].tr[l_t0].recv[l_s0].fa = o_struct[l_pa].tr[l_t0].recv[l_s0].faAd;
+                o_struct[l_pa].tr[l_t0].recv[l_s0].faAd = l_tmpFa;
+
                 o_struct[l_pa].tr[l_t0].recv[l_s0].pa = l_paAd;
                 o_struct[l_pa].tr[l_t0].recv[l_s0].tg = l_tgAd;
                 break;
