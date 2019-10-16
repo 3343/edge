@@ -356,6 +356,42 @@ void edge_v::mesh::Communication::setChs( std::vector< Partition > const & i_str
   }
 }
 
+void edge_v::mesh::Communication::setSeReElFaOff( std::vector< Partition > const & i_struct,
+                                                  std::size_t                    * o_off ) {
+  o_off[0] = 0;
+
+  for( std::size_t l_pa = 0; l_pa < i_struct.size(); l_pa++ ) {
+    o_off[l_pa+1] = o_off[l_pa];
+
+    for( std::size_t l_tg = 0; l_tg < i_struct[l_pa].tr.size(); l_tg++ ) {
+      for( std::size_t l_ms = 0; l_ms < i_struct[l_pa].tr[l_tg].send.size(); l_ms++ ) {
+        o_off[l_pa+1] += i_struct[l_pa].tr[l_tg].send[l_ms].el.size();
+      }
+    }
+  }
+}
+
+void edge_v::mesh::Communication::setSeReElFa( std::vector< Partition > const & i_struct,
+                                               unsigned short                 * o_sendFa,
+                                               std::size_t                    * o_sendEl,
+                                               unsigned short                 * o_recvFa,
+                                               std::size_t                    * o_recvEl ) {
+  std::size_t l_id = 0;
+  for( std::size_t l_pa = 0; l_pa < i_struct.size(); l_pa++ ) {
+    for( std::size_t l_tg = 0; l_tg < i_struct[l_pa].tr.size(); l_tg++ ) {
+      for( std::size_t l_ms = 0; l_ms < i_struct[l_pa].tr[l_tg].send.size(); l_ms++ ) {
+        for( std::size_t l_en = 0; l_en < i_struct[l_pa].tr[l_tg].send[l_ms].fa.size(); l_en++ ) {
+          o_sendFa[l_id] = i_struct[l_pa].tr[l_tg].send[l_ms].fa[l_en];
+          o_sendEl[l_id] = i_struct[l_pa].tr[l_tg].send[l_ms].el[l_en];
+          o_recvFa[l_id] = i_struct[l_pa].tr[l_tg].recv[l_ms].fa[l_en];
+          o_recvEl[l_id] = i_struct[l_pa].tr[l_tg].recv[l_ms].el[l_en];
+          l_id++;
+        }
+      }
+    }
+  }
+}
+
 edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
                                             std::size_t            i_nEls,
                                             std::size_t    const * i_elFaEl,
@@ -398,11 +434,31 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
   setChs( m_struct,
           m_chOff,
           m_chs );
+
+  m_sendRecvOff = new std::size_t[ i_nPas+1 ];
+  setSeReElFaOff( m_struct,
+                  m_sendRecvOff );
+
+  std::size_t l_nSeRe = m_sendRecvOff[ i_nPas ];
+  m_sendFa = new unsigned short[ l_nSeRe ];
+  m_sendEl = new std::size_t[ l_nSeRe ];
+  m_recvFa = new unsigned short[ l_nSeRe ];
+  m_recvEl = new std::size_t[ l_nSeRe ];
+  setSeReElFa( m_struct,
+               m_sendFa,
+               m_sendEl,
+               m_recvFa,
+               m_recvEl );
 }
 
 edge_v::mesh::Communication::~Communication() {
   delete[] m_chOff;
   delete[] m_chs;
+  delete[] m_sendRecvOff;
+  delete[] m_sendFa;
+  delete[] m_sendEl;
+  delete[] m_recvFa;
+  delete[] m_recvEl;
 }
 
 std::size_t const * edge_v::mesh::Communication::getStruct( std::size_t i_pa ) const {

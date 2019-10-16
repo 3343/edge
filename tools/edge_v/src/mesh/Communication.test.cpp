@@ -290,14 +290,14 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
    *   8 |  3  8  8 | 3         | 1          | (2, 1)
    *   9 | 10  9  9 | 4         | 0          |
    *  10 |  9 10 12 | 4         | 1          | (5, 0)
-   *  11 |  4  5  7 | 5         | 2          | (2, 2), (2, 2), (2, 3)
+   *  11 |  5  4  7 | 5         | 2          | (2, 2), (2, 2), (2, 3)
    *  12 |  6 11 10 | 5         | 4          | (2, 2), (4, 1)
    *
    */
   // assemble test structures
   std::size_t l_elFaEl[13][3] = { {7,  2,  1}, {  0,  2,  3}, { 0,  1,  6}, {8, 1, 4}, {11, 5, 7},
                                   {4, 11,  6}, { 12,  2,  7}, { 3, 11,  0}, {3, 8, 8}, {10, 9, 9},
-                                  {9, 10, 12}, {  4,  5,  7}, { 6, 11, 10} };
+                                  {9, 10, 12}, {  5,  4,  7}, { 6, 11, 10} };
 
   //                            0  1  2  3  4  5  6  7  8  9 10 11 12
   std::size_t l_elPa[13]    = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
@@ -567,6 +567,106 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
   REQUIRE( l_comm.getStruct(2)[4*3+1+1] == 5 );
   REQUIRE( l_comm.getStruct(2)[4*3+1+2] == 2 );
   REQUIRE( l_comm.getStruct(2)[4*3+1+3] == 2 );
+
+  // [...]
+
+  REQUIRE( l_comm.m_sendRecvOff[0] == 0 );
+  REQUIRE( l_comm.m_sendRecvOff[1] == 4 );
+  REQUIRE( l_comm.m_sendRecvOff[2] == 7 );
+  REQUIRE( l_comm.m_sendRecvOff[3] == 15 );
+  REQUIRE( l_comm.m_sendRecvOff[4] == 16 );
+  REQUIRE( l_comm.m_sendRecvOff[5] == 17 );
+  REQUIRE( l_comm.m_sendRecvOff[6] == 22 );
+
+  REQUIRE( l_comm.getSendEl(0)[0] == 0 );
+  REQUIRE( l_comm.getSendFa(0)[0] == 1 );
+
+  REQUIRE( l_comm.getSendEl(0)[1] == 1 );
+  REQUIRE( l_comm.getSendFa(0)[1] == 1 );
+
+  REQUIRE( l_comm.getSendEl(0)[2] == 1 );
+  REQUIRE( l_comm.getSendFa(0)[2] == 2 );
+
+  REQUIRE( l_comm.getSendEl(0)[3] == 0 );
+  REQUIRE( l_comm.getSendFa(0)[3] == 0 );
+
+
+  REQUIRE( l_comm.getSendEl(1)[0] == 2 );
+  REQUIRE( l_comm.getSendFa(1)[0] == 0 );
+
+  REQUIRE( l_comm.getSendEl(1)[1] == 2 );
+  REQUIRE( l_comm.getSendFa(1)[1] == 1 );
+
+  REQUIRE( l_comm.getSendEl(1)[2] == 2 );
+  REQUIRE( l_comm.getSendFa(1)[2] == 2 );
+
+
+  REQUIRE( l_comm.getSendEl(2)[0] == 3 );
+  REQUIRE( l_comm.getSendFa(2)[0] == 1 );
+
+  REQUIRE( l_comm.getSendEl(2)[1] == 3 );
+  REQUIRE( l_comm.getSendFa(2)[1] == 0 );
+
+  REQUIRE( l_comm.getSendEl(2)[2] == 6 );
+  REQUIRE( l_comm.getSendFa(2)[2] == 1 );
+
+  REQUIRE( l_comm.getSendEl(2)[3] == 4 );
+  REQUIRE( l_comm.getSendFa(2)[3] == 0 );
+
+  REQUIRE( l_comm.getSendEl(2)[4] == 5 );
+  REQUIRE( l_comm.getSendFa(2)[4] == 1 );
+
+  REQUIRE( l_comm.getSendEl(2)[5] == 6 );
+  REQUIRE( l_comm.getSendFa(2)[5] == 0 );
+
+  REQUIRE( l_comm.getSendEl(2)[6] == 7 );
+  REQUIRE( l_comm.getSendFa(2)[6] == 2 );
+
+  REQUIRE( l_comm.getSendEl(3)[0] == 8 );
+  REQUIRE( l_comm.getSendFa(3)[0] == 0 );
+
+  // [...]
+
+  REQUIRE( l_comm.getRecvEl(0)[0] == 0 );
+  REQUIRE( l_comm.getRecvFa(0)[0] == 1 );
+
+  REQUIRE( l_comm.getRecvEl(0)[1] == 1 );
+  REQUIRE( l_comm.getRecvFa(0)[1] == 1 );
+
+  REQUIRE( l_comm.getRecvEl(0)[2] == 1 );
+  REQUIRE( l_comm.getRecvFa(0)[2] == 2 );
+
+  REQUIRE( l_comm.getRecvEl(0)[3] == 0 );
+  REQUIRE( l_comm.getRecvFa(0)[3] == 0 );
+
+
+  REQUIRE( l_comm.getRecvEl(1)[0] == 2 );
+  REQUIRE( l_comm.getRecvFa(1)[0] == 0 );
+
+  REQUIRE( l_comm.getRecvEl(1)[1] == 2 );
+  REQUIRE( l_comm.getRecvFa(1)[1] == 1 );
+
+  REQUIRE( l_comm.getRecvEl(1)[2] == 2 );
+  REQUIRE( l_comm.getRecvFa(1)[2] == 2 );
+
+
+  REQUIRE( l_comm.getRecvEl(2)[0] == 3 );
+  REQUIRE( l_comm.getRecvFa(2)[0] == 1 );
+
+  REQUIRE( l_comm.getRecvEl(2)[1] == 3 );
+  REQUIRE( l_comm.getRecvFa(2)[1] == 0 );
+
+  REQUIRE( l_comm.getRecvEl(2)[2] == 6 );
+  REQUIRE( l_comm.getRecvFa(2)[2] == 1 );
+
+  REQUIRE( l_comm.getRecvEl(2)[3] == 5 );
+  REQUIRE( l_comm.getRecvFa(2)[3] == 1 );
+
+  REQUIRE( l_comm.getRecvEl(2)[4] == 4 );
+  REQUIRE( l_comm.getRecvFa(2)[4] == 0 );
+
+  REQUIRE( l_comm.getRecvEl(2)[5] == 6 );
+  REQUIRE( l_comm.getRecvFa(2)[5] == 0 );
 
   // [...]
 }

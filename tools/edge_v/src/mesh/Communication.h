@@ -80,6 +80,17 @@ class edge_v::mesh::Communication {
     //! communication channels of the partitions
     std::size_t * m_chs = nullptr;
 
+    //! per-partition offset of the send and receive element-face pairs
+    std::size_t    * m_sendRecvOff = nullptr;
+    //! send faces
+    unsigned short * m_sendFa = nullptr;
+    //! send elements
+    std::size_t    * m_sendEl = nullptr;
+    //! recv faces
+    unsigned short * m_recvFa = nullptr;
+    //! recv elements
+    std::size_t    * m_recvEl = nullptr;
+
     /**
      * Determines if an element is communicating.
      *
@@ -188,6 +199,34 @@ class edge_v::mesh::Communication {
                         std::size_t              const * i_chOff,
                         std::size_t                    * o_chs );
 
+    /**
+     * Gets the per-partition offsets for the element-face pairs of the send/recvs.
+     *
+     * @param i_struct global communication structure.
+     * @param o_off will be set to the per-partition offsets.
+     **/
+    static void setSeReElFaOff( std::vector< Partition > const & i_struct,
+                                std::size_t                    * o_off );
+
+    /**
+     * Sets the element-face pairs for sends and recvs.
+     *
+     * An element-face (el-fa) pair in o_sendEl, o_sendFa sends data to another partition.
+     * An element-face (el-fa) pair in o_recvEl, o_recvFa receives data from another partition.
+     *
+     * @param i_struct global communication structure.
+     * @param o_sendFa will be set to send-faces.
+     * @param o_sendEl will be set to send-elements.
+     * @param o_recvFa will be set to recv-faces.
+     * @param o_recvEl will be set to recv-elements.
+     **/
+    static void setSeReElFa( std::vector< Partition > const & i_struct,
+                             unsigned short                 * o_sendFa,
+                             std::size_t                    * o_sendEl,
+                             unsigned short                 * o_recvFa,
+                             std::size_t                    * o_recvEl );
+
+
   public:
     /**
      * Constructor which initializes the communication structures.
@@ -232,6 +271,38 @@ class edge_v::mesh::Communication {
      * @return number of messages for the partitions.
      **/
     std::size_t const * getStruct( std::size_t i_pa ) const;
+
+    /**
+     * Gets the face-part of the send element-face pairs.
+     *
+     * @param i_pa patition.
+     * @return face ids.
+     **/
+    unsigned short const * getSendFa( std::size_t i_pa ) const { return m_sendFa+m_sendRecvOff[i_pa]; }
+
+    /**
+     * Gets the element-part of the send element-face pairs.
+     *
+     * @param i_pa patition.
+     * @return element ids.
+     **/
+    std::size_t const * getSendEl( std::size_t i_pa ) const { return m_sendEl+m_sendRecvOff[i_pa]; }
+
+    /**
+     * Gets the face-part of the receive element-face pairs.
+     *
+     * @param i_pa patition.
+     * @return face ids.
+     **/
+    unsigned short const * getRecvFa( std::size_t i_pa ) const { return m_recvFa+m_sendRecvOff[i_pa]; }
+
+    /**
+     * Gets the element-part of the receive element-face pairs.
+     *
+     * @param i_pa patition.
+     * @return element ids.
+     **/
+    std::size_t const * getRecvEl( std::size_t i_pa ) const { return m_recvEl+m_sendRecvOff[i_pa]; }
 };
 
 #endif
