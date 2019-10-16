@@ -214,13 +214,15 @@ class edge_v::mesh::Communication {
      * An element-face (el-fa) pair in o_sendEl, o_sendFa sends data to another partition.
      * An element-face (el-fa) pair in o_recvEl, o_recvFa receives data from another partition.
      *
+     * @param i_nPaEls number of elements per partition.
      * @param i_struct global communication structure.
      * @param o_sendFa will be set to send-faces.
      * @param o_sendEl will be set to send-elements.
      * @param o_recvFa will be set to recv-faces.
      * @param o_recvEl will be set to recv-elements.
      **/
-    static void setSeReElFa( std::vector< Partition > const & i_struct,
+    static void setSeReElFa( std::size_t              const * i_nPaEls,
+                             std::vector< Partition > const & i_struct,
                              unsigned short                 * o_sendFa,
                              std::size_t                    * o_sendEl,
                              unsigned short                 * o_recvFa,
@@ -273,7 +275,7 @@ class edge_v::mesh::Communication {
     std::size_t const * getStruct( std::size_t i_pa ) const;
 
     /**
-     * Gets the face-part of the send element-face pairs.
+     * Gets the partition-local ids of the face-part of the send element-face pairs.
      *
      * @param i_pa patition.
      * @return face ids.
@@ -281,7 +283,7 @@ class edge_v::mesh::Communication {
     unsigned short const * getSendFa( std::size_t i_pa ) const { return m_sendFa+m_sendRecvOff[i_pa]; }
 
     /**
-     * Gets the element-part of the send element-face pairs.
+     * Gets the partition-local ids of the element-part of the send element-face pairs.
      *
      * @param i_pa patition.
      * @return element ids.
@@ -289,7 +291,7 @@ class edge_v::mesh::Communication {
     std::size_t const * getSendEl( std::size_t i_pa ) const { return m_sendEl+m_sendRecvOff[i_pa]; }
 
     /**
-     * Gets the face-part of the receive element-face pairs.
+     * Gets the partition-local ids of the face-part of the receive element-face pairs.
      *
      * @param i_pa patition.
      * @return face ids.
@@ -297,7 +299,7 @@ class edge_v::mesh::Communication {
     unsigned short const * getRecvFa( std::size_t i_pa ) const { return m_recvFa+m_sendRecvOff[i_pa]; }
 
     /**
-     * Gets the element-part of the receive element-face pairs.
+     * Gets the partition-local ids of the element-part of the receive element-face pairs.
      *
      * @param i_pa patition.
      * @return element ids.

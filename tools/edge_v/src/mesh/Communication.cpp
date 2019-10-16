@@ -371,24 +371,29 @@ void edge_v::mesh::Communication::setSeReElFaOff( std::vector< Partition > const
   }
 }
 
-void edge_v::mesh::Communication::setSeReElFa( std::vector< Partition > const & i_struct,
+void edge_v::mesh::Communication::setSeReElFa( std::size_t              const * i_nPaEls,
+                                               std::vector< Partition > const & i_struct,
                                                unsigned short                 * o_sendFa,
                                                std::size_t                    * o_sendEl,
                                                unsigned short                 * o_recvFa,
                                                std::size_t                    * o_recvEl ) {
   std::size_t l_id = 0;
+  std::size_t l_elFirst = 0;
+
   for( std::size_t l_pa = 0; l_pa < i_struct.size(); l_pa++ ) {
     for( std::size_t l_tg = 0; l_tg < i_struct[l_pa].tr.size(); l_tg++ ) {
       for( std::size_t l_ms = 0; l_ms < i_struct[l_pa].tr[l_tg].send.size(); l_ms++ ) {
         for( std::size_t l_en = 0; l_en < i_struct[l_pa].tr[l_tg].send[l_ms].fa.size(); l_en++ ) {
           o_sendFa[l_id] = i_struct[l_pa].tr[l_tg].send[l_ms].fa[l_en];
-          o_sendEl[l_id] = i_struct[l_pa].tr[l_tg].send[l_ms].el[l_en];
+          o_sendEl[l_id] = i_struct[l_pa].tr[l_tg].send[l_ms].el[l_en] - l_elFirst;
           o_recvFa[l_id] = i_struct[l_pa].tr[l_tg].recv[l_ms].fa[l_en];
-          o_recvEl[l_id] = i_struct[l_pa].tr[l_tg].recv[l_ms].el[l_en];
+          o_recvEl[l_id] = i_struct[l_pa].tr[l_tg].recv[l_ms].el[l_en] - l_elFirst;
           l_id++;
         }
       }
     }
+
+    l_elFirst += i_nPaEls[l_pa];
   }
 }
 
@@ -444,7 +449,8 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
   m_sendEl = new std::size_t[ l_nSeRe ];
   m_recvFa = new unsigned short[ l_nSeRe ];
   m_recvEl = new std::size_t[ l_nSeRe ];
-  setSeReElFa( m_struct,
+  setSeReElFa( i_nPaEls,
+               m_struct,
                m_sendFa,
                m_sendEl,
                m_recvFa,
