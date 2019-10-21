@@ -284,6 +284,8 @@ void edge_v::mesh::Communication::getStruct( t_entityType                   i_el
   // mirror remote send for recv
   for( std::size_t l_pa = 0; l_pa < l_nPas; l_pa++ ) {
     for( std::size_t l_t0 = 0; l_t0 < o_struct[l_pa].tr.size(); l_t0++ ) {
+      unsigned short l_tg = o_struct[l_pa].tr[l_t0].tg;
+
       std::size_t l_nSend = o_struct[l_pa].tr[l_t0].send.size();
       o_struct[l_pa].tr[l_t0].recv.resize( l_nSend );
 
@@ -296,7 +298,14 @@ void edge_v::mesh::Communication::getStruct( t_entityType                   i_el
         for( std::size_t l_t1 = 0; l_t1 < o_struct[l_paAd].tr.size(); l_t1++ ) {
           if( o_struct[l_paAd].tr[l_t1].tg == l_tgAd ) {
             for( std::size_t l_s1 = 0; l_s1 < o_struct[l_paAd].tr[l_t1].send.size(); l_s1++ ) {
-              if( o_struct[l_paAd].tr[l_t1].send[l_s1].pa == l_pa ) {
+              if(    o_struct[l_paAd].tr[l_t1].send[l_s1].tg == l_tg
+                  && o_struct[l_paAd].tr[l_t1].send[l_s1].pa == l_pa ) {
+                // check for matching sizes
+                EDGE_V_CHECK_EQ( o_struct[l_pa  ].tr[l_t0].send[l_s0].el.size(),
+                                 o_struct[l_paAd].tr[l_t1].send[l_s1].el.size() );
+                EDGE_V_CHECK_EQ( o_struct[l_pa  ].tr[l_t0].send[l_s0].fa.size(),
+                                 o_struct[l_paAd].tr[l_t1].send[l_s1].fa.size() );
+
                 o_struct[l_pa].tr[l_t0].recv[l_s0] = o_struct[l_paAd].tr[l_t1].send[l_s1];
                 // reverse order of local and remote
                 std::vector< std::size_t > l_tmpEl = o_struct[l_pa].tr[l_t0].recv[l_s0].el;
