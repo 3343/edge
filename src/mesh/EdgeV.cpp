@@ -173,11 +173,74 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
   setElLayout( m_nTgs,
                m_nTgEls,
                m_elLay );
+
+  // check if the mesh is annotated for MPI
+  unsigned short l_nMpiTags = 0;
+  for( std::size_t l_ta = 0; l_ta < l_tagNames.size(); l_ta++ ) {
+    if(      l_tagNames[l_ta] == "edge_v_communication_structure" ) l_nMpiTags++;
+    else if( l_tagNames[l_ta] == "edge_v_send_el"                 ) l_nMpiTags++;
+    else if( l_tagNames[l_ta] == "edge_v_send_fa"                 ) l_nMpiTags++;
+    else if( l_tagNames[l_ta] == "edge_v_recv_el"                 ) l_nMpiTags++;
+    else if( l_tagNames[l_ta] == "edge_v_recv_fa"                 ) l_nMpiTags++;
+  }
+#ifdef PP_USE_MPI
+  // check for all tags if compiled with MPI
+  EDGE_V_CHECK_EQ( l_nMpiTags, 5 );
+#endif
+
+  if( l_nMpiTags == 5 ) {
+    // get communication structure
+    std::size_t l_commSize = m_moab.getGlobalDataSize( "edge_v_communication_structure" );
+    EDGE_V_CHECK_EQ( l_commSize%4, 1 );
+    m_commStruct = new std::size_t[ l_commSize ];
+
+    m_moab.getGlobalData( "edge_v_communication_structure",
+                          m_commStruct );
+
+    // get communicating faces
+    std::size_t l_nSendFas = m_moab.getGlobalDataSize( "edge_v_send_fa" );
+    std::size_t l_nSendEls = m_moab.getGlobalDataSize( "edge_v_send_el" );
+    std::size_t l_nRecvFas = m_moab.getGlobalDataSize( "edge_v_recv_fa" );
+    std::size_t l_nRecvEls = m_moab.getGlobalDataSize( "edge_v_recv_el" );
+
+    EDGE_V_CHECK_EQ( l_nSendFas, l_nSendEls );
+    EDGE_V_CHECK_EQ( l_nSendFas, l_nRecvFas );
+    EDGE_V_CHECK_EQ( l_nSendFas, l_nRecvEls );
+
+    m_sendFa = new unsigned short[ l_nSendFas ];
+    m_sendEl = new std::size_t[ l_nSendEls ];
+    m_recvFa = new unsigned short[ l_nRecvFas ];
+    m_recvEl = new std::size_t[ l_nRecvEls ];
+
+    m_moab.getGlobalData( "edge_v_send_fa",
+                          m_sendFa );
+    m_moab.getGlobalData( "edge_v_send_el",
+                          m_sendEl );
+    m_moab.getGlobalData( "edge_v_recv_fa",
+                          m_recvFa );
+    m_moab.getGlobalData( "edge_v_recv_el",
+                          m_recvEl );
+  }
 }
 
 edge::mesh::EdgeV::~EdgeV() {
   delete[] m_nTgEls;
   delete[] m_relDt;
+  if( m_commStruct != nullptr ) {
+    delete[] m_commStruct;
+  }
+  if( m_sendFa != nullptr ) {
+    delete[] m_sendFa;
+  }
+  if( m_sendEl != nullptr ) {
+    delete[] m_sendEl;
+  }
+  if( m_recvFa != nullptr ) {
+    delete[] m_recvFa;
+  }
+  if( m_recvEl != nullptr ) {
+    delete[] m_recvEl;
+  }
 }
 
 void edge::mesh::EdgeV::setLtsTypes( t_elementChars * io_elChars ) const {

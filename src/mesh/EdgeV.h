@@ -55,6 +55,21 @@ class edge::mesh::EdgeV {
     //! element layout
     t_enLayout m_elLay;
 
+    //! communication structure
+    std::size_t * m_commStruct = nullptr;
+
+    //! send faces
+    unsigned short * m_sendFa = nullptr;
+
+    //! send elements
+    std::size_t    * m_sendEl = nullptr;
+
+    //! recv faces
+    unsigned short * m_recvFa = nullptr;
+
+    //! recv elements
+    std::size_t    * m_recvEl = nullptr;
+
     /**
      * Sets the data layout of the elements.
      *
@@ -252,6 +267,41 @@ class edge::mesh::EdgeV {
      * @return in-diameters.
      **/
     double const * getInDiasEl() { return m_mesh.getInDiasEl(); }
+
+    /**
+     * Gets the communication structure.
+     *
+     * @return comm structure
+     **/
+    std::size_t const * getCommStruct() { return m_commStruct; }
+
+    /**
+     * Gets the local, per-element ids of the sending faces.
+     *
+     * @return face ids.
+     **/
+    unsigned short const * getSendFa() { return m_sendFa; }
+
+    /**
+     * Gets the ids of the sending elements.
+     *
+     * @return element ids.
+     **/
+    std::size_t const * getSendEl() { return m_sendEl; }
+
+    /**
+     * Gets the local, per-element ids of the receiving faces.
+     *
+     * @return face ids.
+     **/
+    unsigned short const * getRecvFa() { return m_recvFa; }
+
+    /**
+     * Gets the ids of the receiving elements.
+     *
+     * @return element ids.
+     **/
+    std::size_t const * getRecvEl() { return m_recvEl; }
 };
 
 #endif
