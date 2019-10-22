@@ -30,6 +30,7 @@
 #include "time/Cfl.h"
 #include "time/Groups.h"
 #include "mesh/Partition.h"
+#include "mesh/Communication.h"
 
 #include "io/logging.h"
 #ifdef PP_USE_EASYLOGGING
@@ -110,9 +111,9 @@ int main( int i_argc, char *i_argv[] ) {
   // initializing and setting mesh data
   EDGE_V_LOG_INFO << "initializing mesh interface";
   if( l_config.getPeriodic() ) EDGE_V_LOG_INFO << "  assuming periodioc boundaries";
-  edge_v::mesh::Mesh l_mesh( l_moab,
-                             l_config.getPeriodic() );
-  l_mesh.printStats();
+  edge_v::mesh::Mesh* l_mesh = new edge_v::mesh::Mesh( l_moab,
+                                                       l_config.getPeriodic() );
+  l_mesh->printStats();
 
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
@@ -124,30 +125,30 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   EDGE_V_LOG_INFO << "computing CFL time steps";
-  edge_v::time::Cfl l_cfl(  l_mesh.getTypeEl(),
-                            l_mesh.nVes(),
-                            l_mesh.nEls(),
-                            l_mesh.getElVe(),
-                            l_mesh.getVeCrds(),
-                            l_mesh.getInDiasEl(),
-                           *l_velMod );
-  l_cfl.printStats();
+  edge_v::time::Cfl *l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
+                                                     l_mesh->nVes(),
+                                                     l_mesh->nEls(),
+                                                     l_mesh->getElVe(),
+                                                     l_mesh->getVeCrds(),
+                                                     l_mesh->getInDiasEl(),
+                                                    *l_velMod );
+  l_cfl->printStats();
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' cfl time steps";
     std::string l_tagCfl = "edge_v_cfl_time_steps";
-    l_moab.setEnData( l_mesh.getTypeEl(),
+    l_moab.setEnData( l_mesh->getTypeEl(),
                       l_tagCfl,
-                      l_cfl.getTimeSteps() );
+                      l_cfl->getTimeSteps() );
   }
 
   if( l_config.getTsOut() != "" ) {
     EDGE_V_LOG_INFO << "writing cfl time steps to ascii";
     std::string l_colNames = "ts_cfl";
-    double const * l_data[1] = { l_cfl.getTimeSteps() };
+    double const * l_data[1] = { l_cfl->getTimeSteps() };
     edge_v::io::Csv::write( l_config.getTsOut(),
                             1,
-                            l_mesh.nEls(),
+                            l_mesh->nEls(),
                             &l_colNames,
                             5,
                             l_data );
@@ -166,13 +167,13 @@ int main( int i_argc, char *i_argv[] ) {
   if( l_funDt == 0 ) {
     double l_dt = 1.0;
     while( l_dt > 0.5 ) {
-      edge_v::time::Groups l_tsGroups( l_mesh.getTypeEl(),
-                                       l_mesh.nEls(),
-                                       l_mesh.getElFaEl(),
+      edge_v::time::Groups l_tsGroups( l_mesh->getTypeEl(),
+                                       l_mesh->nEls(),
+                                       l_mesh->getElFaEl(),
                                        l_nRates,
                                        l_rates,
                                        l_dt,
-                                       l_cfl.getTimeSteps() );
+                                       l_cfl->getTimeSteps() );
       if( l_tsGroups.getSpeedUp() > l_speedUp ) {
         l_speedUp = l_tsGroups.getSpeedUp();
         l_funDt = l_dt;
@@ -182,45 +183,45 @@ int main( int i_argc, char *i_argv[] ) {
     }
   }
 
-  edge_v::time::Groups l_tsGroups(  l_mesh.getTypeEl(),
-                                    l_mesh.nEls(),
-                                    l_mesh.getElFaEl(),
-                                    l_nRates,
-                                    l_rates,
-                                    l_funDt,
-                                    l_cfl.getTimeSteps() );
-  l_tsGroups.printStats();
+  edge_v::time::Groups *l_tsGroups = new edge_v::time::Groups(  l_mesh->getTypeEl(),
+                                                                l_mesh->nEls(),
+                                                                l_mesh->getElFaEl(),
+                                                                l_nRates,
+                                                                l_rates,
+                                                                l_funDt,
+                                                                l_cfl->getTimeSteps() );
+  l_tsGroups->printStats();
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' time step groups";
     std::string l_tagElTg = "edge_v_element_time_groups";
-    l_moab.setEnData( l_mesh.getTypeEl(),
+    l_moab.setEnData( l_mesh->getTypeEl(),
                       l_tagElTg,
-                      l_tsGroups.getElTg() );
+                      l_tsGroups->getElTg() );
   }
 
   EDGE_V_LOG_INFO << "partitioning the mesh";
-  edge_v::mesh::Partition l_part( l_mesh,
-                                  l_tsGroups.getElTg() );
+  edge_v::mesh::Partition l_part( *l_mesh,
+                                   l_tsGroups->getElTg() );
   if( l_config.nPartitions() > 1 ) {
     l_part.kWay( l_config.nPartitions() );
   }
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' partitions";
     std::string l_tagElPa = "edge_v_partitions";
-    l_moab.setEnData( l_mesh.getTypeEl(),
+    l_moab.setEnData( l_mesh->getTypeEl(),
                       l_tagElPa,
                       l_part.getElPa() );
   }
 
   EDGE_V_LOG_INFO << "computing and storing elements' priorities";
   std::string l_tagElPr = "edge_v_element_priorities";
-  l_moab.setEnData( l_mesh.getTypeEl(),
+  l_moab.setEnData( l_mesh->getTypeEl(),
                     l_tagElPr,
                     l_part.getElPr() );
 
   EDGE_V_LOG_INFO << "reordering by rank and time group";
-  l_moab.reorder( l_mesh.getTypeEl(),
+  l_moab.reorder( l_mesh->getTypeEl(),
                   l_tagElPr );
 
   if( !l_config.getWriteElAn() ) {
@@ -230,12 +231,12 @@ int main( int i_argc, char *i_argv[] ) {
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing element ids";
-    std::size_t * l_elIds = new std::size_t[ l_mesh.nEls() ];
-    for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
+    std::size_t * l_elIds = new std::size_t[ l_mesh->nEls() ];
+    for( std::size_t l_el = 0; l_el < l_mesh->nEls(); l_el++ ) {
       l_elIds[l_el] = l_el;
     }
     std::string l_tagElIds = "edge_v_element_ids";
-    l_moab.setEnData( l_mesh.getTypeEl(),
+    l_moab.setEnData( l_mesh->getTypeEl(),
                       l_tagElIds,
                       l_elIds );
     delete[] l_elIds;
@@ -245,26 +246,102 @@ int main( int i_argc, char *i_argv[] ) {
   std::string l_tagNtgEls = "edge_v_n_time_group_elements";
   l_moab.deleteTag( l_tagNtgEls );
   l_moab.setGlobalData( l_tagNtgEls,
-                        l_tsGroups.nGroups(),
-                        l_tsGroups.nGroupEls() );
+                        l_tsGroups->nGroups(),
+                        l_tsGroups->nGroupEls() );
 
   EDGE_V_LOG_INFO << "storing relative time steps of the groups";
   std::string l_tagRelTs = "edge_v_relative_time_steps";
   l_moab.deleteTag( l_tagRelTs );
   l_moab.setGlobalData( l_tagRelTs,
-                        l_tsGroups.nGroups()+1,
-                        l_tsGroups.getTsIntervals() );
-
+                        l_tsGroups->nGroups()+1,
+                        l_tsGroups->getTsIntervals() );
   if( l_config.nPartitions() > 1 ) {
+    EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
+    delete l_tsGroups;
+    delete l_cfl;
+    delete l_mesh;
+    delete l_velMod;
+
+    EDGE_V_LOG_INFO << "re-initializing velocity model";
+    if( l_config.getVelModSeismicExpr() != ""  ) {
+      l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
+    }
+    else {
+      l_velMod = new edge_v::models::Constant( 1 );
+    }
+
+    EDGE_V_LOG_INFO << "re-initializing mesh interface with reordered data";
+    l_mesh = new edge_v::mesh::Mesh( l_moab,
+                                     l_config.getPeriodic() );
+
+    EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
+    l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
+                                    l_mesh->nVes(),
+                                    l_mesh->nEls(),
+                                    l_mesh->getElVe(),
+                                    l_mesh->getVeCrds(),
+                                    l_mesh->getInDiasEl(),
+                                   *l_velMod );
+
+    EDGE_V_LOG_INFO << "re-initializing time step groups with reordered data";
+    l_tsGroups = new edge_v::time::Groups( l_mesh->getTypeEl(),
+                                           l_mesh->nEls(),
+                                           l_mesh->getElFaEl(),
+                                           l_nRates,
+                                           l_rates,
+                                           l_funDt,
+                                           l_cfl->getTimeSteps() );
+
+    EDGE_V_LOG_INFO << "deriving communication structure";
+    edge_v::mesh::Communication l_comm( l_mesh->getTypeEl(),
+                                        l_mesh->nEls(),
+                                        l_mesh->getElFaEl(),
+                                        l_part.nPas(),
+                                        l_part.nPaEls(),
+                                        l_tsGroups->getElTg() );
+
     EDGE_V_LOG_INFO << "writing mesh by partition";
     std::string l_base = l_config.getMeshOutPaBase();
     std::string l_ext = l_config.getMeshOutPaExt();
 
     std::size_t l_first = 0;
     for( std::size_t l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
+      // annotate with comm data
+      std::string l_tagCoSt = "edge_v_communication_structure";
+      l_moab.deleteTag( l_tagCoSt );
+      std::size_t l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
+      l_moab.setGlobalData( l_tagCoSt,
+                            l_coSize,
+                            l_comm.getStruct( l_pa ) );
+
+      std::string l_tagSeEl = "edge_v_send_el";
+      l_moab.deleteTag( l_tagSeEl );
+      l_moab.setGlobalData( l_tagSeEl,
+                            l_comm.nSeRe( l_pa ),
+                            l_comm.getSendEl( l_pa ) );
+
+      std::string l_tagSeFa = "edge_v_send_fa";
+      l_moab.deleteTag( l_tagSeFa );
+      l_moab.setGlobalData( l_tagSeFa,
+                            l_comm.nSeRe( l_pa ),
+                            l_comm.getSendFa( l_pa ) );
+
+      std::string l_tagReEl = "edge_v_recv_el";
+      l_moab.deleteTag( l_tagReEl );
+      l_moab.setGlobalData( l_tagReEl,
+                            l_comm.nSeRe( l_pa ),
+                            l_comm.getRecvEl( l_pa ) );
+
+      std::string l_tagReFa = "edge_v_recv_fa";
+      l_moab.deleteTag( l_tagReFa );
+      l_moab.setGlobalData( l_tagReFa,
+                            l_comm.nSeRe( l_pa ),
+                            l_comm.getRecvFa( l_pa ) );
+
       std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
       std::string l_name = l_base + "_" + std::to_string(l_pa) + l_ext;
 
+      EDGE_V_LOG_INFO << "  writing " << l_name;
       l_moab.writeMesh( l_first,
                         l_nPaEls,
                         l_name );
@@ -278,6 +355,9 @@ int main( int i_argc, char *i_argv[] ) {
     l_moab.writeMesh( l_config.getMeshOut() );
   }
 
+  delete l_tsGroups;
+  delete l_cfl;
+  delete l_mesh;
   delete l_velMod;
   delete[] l_rates;
 
