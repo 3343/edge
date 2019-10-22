@@ -253,6 +253,15 @@ class edge_v::mesh::Communication {
     ~Communication();
 
     /**
+     * Gets the number of communicating faces for the given partition.
+     *
+     * @return number of faces.
+     **/
+    std::size_t nSeRe( std::size_t i_pa ) const {
+      return m_sendRecvOff[i_pa+1] - m_sendRecvOff[i_pa];
+    }
+
+    /**
      * Gets the communication structure for a given partition.
      * The first entry is the number of communication channels.
      * Next, for each channel, the following 4D structure follows:
