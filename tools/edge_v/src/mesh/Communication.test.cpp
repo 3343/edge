@@ -492,12 +492,10 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
 
   REQUIRE( l_struct[5].tr[1].recv[0].pa == 2 );
   REQUIRE( l_struct[5].tr[1].recv[0].tg == 2 );
-  REQUIRE( l_struct[5].tr[1].recv[0].el.size() == 2 );
-  REQUIRE( l_struct[5].tr[1].recv[0].fa.size() == 2 );
-  REQUIRE( l_struct[5].tr[1].recv[0].elAd[0] == 4 );
+  REQUIRE( l_struct[5].tr[1].recv[0].el.size() == 1 );
+  REQUIRE( l_struct[5].tr[1].recv[0].fa.size() == 1 );
+  REQUIRE( l_struct[5].tr[1].recv[0].elAd[0] == 6 );
   REQUIRE( l_struct[5].tr[1].recv[0].faAd[0] == 0 );
-  REQUIRE( l_struct[5].tr[1].recv[0].elAd[1] == 5 );
-  REQUIRE( l_struct[5].tr[1].recv[0].faAd[1] == 1 );
 
   REQUIRE( l_struct[5].tr[1].recv[1].pa == 4 );
   REQUIRE( l_struct[5].tr[1].recv[1].tg == 1 );
