@@ -224,6 +224,18 @@ class edge_v::io::Moab {
      * @param i_nValues number of values.
      * @param i_data data, which will be stored.
      **/
+    void setGlobalData( std::string    const & i_tagName,
+                        std::size_t            i_nValues,
+                        unsigned short const * i_data );
+
+    /**
+     * Stores global mesh data.
+     * The data is stored in MOAB's native int type for portability.
+     *
+     * @param i_tagName tag name.
+     * @param i_nValues number of values.
+     * @param i_data data, which will be stored.
+     **/
     void setGlobalData( std::string const & i_tagName,
                         std::size_t         i_nValues,
                         std::size_t const * i_data );
@@ -247,6 +259,24 @@ class edge_v::io::Moab {
      * @return size of the global data.
      **/
     std::size_t getGlobalDataSize( std::string const & i_tagName ) const;
+
+    /**
+     * Gets global mesh data (stored internally as int).
+     *
+     * @param i_tagName tag name.
+     * @param o_data output array.
+     **/
+    void getGlobalData( std::string const & i_tagName,
+                        int               * o_data ) const;
+
+    /**
+     * Gets global mesh data (stored internally as int).
+     *
+     * @param i_tagName tag name.
+     * @param o_data output array.
+     **/
+    void getGlobalData( std::string const & i_tagName,
+                        unsigned short    * o_data ) const;
 
     /**
      * Gets global mesh data (stored internally as int).

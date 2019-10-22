@@ -409,6 +409,25 @@ void edge_v::io::Moab::setGlobalData( moab::DataType         i_daTy,
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 
+void edge_v::io::Moab::setGlobalData( std::string    const & i_tagName,
+                                      std::size_t            i_nValues,
+                                      unsigned short const * i_data ) {
+  // convert data to int
+  int *l_data = new int[i_nValues];
+  convert( i_nValues,
+           i_data,
+           l_data );
+
+  // store in MOAB
+  setGlobalData( moab::DataType::MB_TYPE_INTEGER,
+                 i_tagName,
+                 i_nValues,
+                 l_data );
+
+  // free memory
+  delete[] l_data;
+}
+
 void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
                                       std::size_t         i_nValues,
                                       std::size_t const * i_data ) {
@@ -454,7 +473,7 @@ std::size_t edge_v::io::Moab::getGlobalDataSize( std::string const & i_tagName )
 }
 
 void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
-                                      std::size_t       * o_data ) const {
+                                      int               * o_data ) const {
   // get the tag
   moab::Tag l_tag;
   moab::ErrorCode l_err = m_moab->tag_get_handle( i_tagName.c_str(),
@@ -468,15 +487,38 @@ void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
   EDGE_V_CHECK_EQ( l_daTy, moab::DataType::MB_TYPE_INTEGER );
 
-  // get data
-  std::size_t l_nVals = getGlobalDataSize( i_tagName );
-  int *l_data = new int[l_nVals];
-
   l_err = m_moab->tag_get_data(  l_tag,
                                 &m_root,
                                  1,
-                                 l_data );
+                                 o_data );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+}
+
+void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
+                                      unsigned short    * o_data ) const {
+  // alloc int-buffer
+  std::size_t l_nVals = getGlobalDataSize( i_tagName );
+  int *l_data = new int[l_nVals];
+
+  getGlobalData( i_tagName,
+                 l_data );
+
+  convert( l_nVals,
+           l_data,
+           o_data );
+
+  // free memory
+  delete[] l_data;
+}
+
+void edge_v::io::Moab::getGlobalData( std::string const & i_tagName,
+                                      std::size_t       * o_data ) const {
+  // allco int buffer
+  std::size_t l_nVals = getGlobalDataSize( i_tagName );
+  int *l_data = new int[l_nVals];
+
+  getGlobalData( i_tagName,
+                 l_data );
 
   convert( l_nVals,
            l_data,
