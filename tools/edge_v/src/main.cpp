@@ -248,6 +248,15 @@ int main( int i_argc, char *i_argv[] ) {
   l_moab.setGlobalData( l_tagNtgElsIn,
                         l_tsGroups->nGroups(),
                         l_tsGroups->nGroupEls() );
+  // dummy number of send elements
+  std::size_t * l_nTgElsSe = new std::size_t[ l_tsGroups->nGroups() ];
+  for( unsigned short l_tg = 0; l_tg < l_tsGroups->nGroups(); l_tg++ ) l_nTgElsSe[l_tg] = 0;
+  std::string l_tagNtgElsSe = "edge_v_n_time_group_elements_send";
+  l_moab.deleteTag( l_tagNtgElsSe );
+  l_moab.setGlobalData( l_tagNtgElsSe,
+                        l_tsGroups->nGroups(),
+                        l_nTgElsSe );
+  delete[] l_nTgElsSe;
 
   EDGE_V_LOG_INFO << "storing relative time steps of the groups";
   std::string l_tagRelTs = "edge_v_relative_time_steps";
@@ -320,7 +329,6 @@ int main( int i_argc, char *i_argv[] ) {
       l_moab.setGlobalData( l_tagNtgElsIn,
                             l_tsGroups->nGroups(),
                             l_comm.nGroupElsIn( l_pa ) );
-      std::string l_tagNtgElsSe = "edge_v_n_time_group_elements_send";
       l_moab.deleteTag( l_tagNtgElsSe );
       l_moab.setGlobalData( l_tagNtgElsSe,
                             l_tsGroups->nGroups(),
