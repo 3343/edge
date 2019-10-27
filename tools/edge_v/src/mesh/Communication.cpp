@@ -365,6 +365,41 @@ void edge_v::mesh::Communication::setChs( std::vector< Partition > const & i_str
   }
 }
 
+void edge_v::mesh::Communication::nElsInSe( t_entityType           i_elTy,
+                                            std::size_t            i_nPas,
+                                            unsigned short         i_nTgs,
+                                            std::size_t            i_nEls,
+                                            std::size_t    const * i_elFaEl,
+                                            std::size_t    const * i_elPa,
+                                            unsigned short const * i_elTg,
+                                            std::size_t          * o_nElsIn,
+                                            std::size_t          * o_nElsSe ) {
+  // init
+  for( std::size_t l_pa = 0; l_pa < i_nPas; l_pa++ ) {
+    for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+      o_nElsIn[l_pa*i_nTgs + l_tg] = 0;
+      o_nElsSe[l_pa*i_nTgs + l_tg] = 0;
+    }
+  }
+
+  // assign counts
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    bool l_commEl = isComm( i_elTy,
+                            l_el,
+                            i_elFaEl,
+                            i_elPa );
+    std::size_t l_pa = i_elPa[l_el];
+    unsigned short l_tg = i_elTg[l_el];
+
+    if( !l_commEl ) {
+      o_nElsIn[l_pa*i_nTgs + l_tg]++;
+    }
+    else {
+      o_nElsSe[l_pa*i_nTgs + l_tg]++;
+    }
+  }
+}
+
 void edge_v::mesh::Communication::setSeReElFaOff( std::vector< Partition > const & i_struct,
                                                   std::size_t                    * o_off ) {
   o_off[0] = 0;
@@ -413,6 +448,11 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
                                             std::size_t    const * i_nPaEls,
                                             unsigned short const * i_elTg ) {
   EDGE_V_CHECK_GT( i_nPas, 0 );
+  m_nPas = i_nPas;
+  m_nTgs = 0;
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) m_nTgs = std::max( m_nTgs, i_elTg[l_el] );
+  m_nTgs++;
+
 
   // init temporary data structure for the parts
   std::size_t * l_elPa = new std::size_t[ i_nEls ];
@@ -436,8 +476,6 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
              i_elTg,
              m_struct );
 
-  delete[] l_elPa;
-
   // get channels offsets
   m_chOff = new std::size_t[i_nPas+1];
   setChOff( m_struct,
@@ -448,6 +486,21 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
   setChs( m_struct,
           m_chOff,
           m_chs );
+
+  m_nElsIn = new std::size_t[ i_nPas*m_nTgs ];
+  m_nElsSe = new std::size_t[ i_nPas*m_nTgs ];
+
+  nElsInSe( i_elTy,
+            m_nPas,
+            m_nTgs,
+            i_nEls,
+            i_elFaEl,
+            l_elPa,
+            i_elTg,
+            m_nElsIn,
+            m_nElsSe );
+
+  delete[] l_elPa;
 
   m_sendRecvOff = new std::size_t[ i_nPas+1 ];
   setSeReElFaOff( m_struct,
@@ -469,6 +522,8 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
 edge_v::mesh::Communication::~Communication() {
   delete[] m_chOff;
   delete[] m_chs;
+  delete[] m_nElsIn;
+  delete[] m_nElsSe;
   delete[] m_sendRecvOff;
   delete[] m_sendFa;
   delete[] m_sendEl;

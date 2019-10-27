@@ -243,9 +243,9 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   EDGE_V_LOG_INFO << "storing number of elements per time group";
-  std::string l_tagNtgEls = "edge_v_n_time_group_elements";
-  l_moab.deleteTag( l_tagNtgEls );
-  l_moab.setGlobalData( l_tagNtgEls,
+  std::string l_tagNtgElsIn = "edge_v_n_time_group_elements_inner";
+  l_moab.deleteTag( l_tagNtgElsIn );
+  l_moab.setGlobalData( l_tagNtgElsIn,
                         l_tsGroups->nGroups(),
                         l_tsGroups->nGroupEls() );
 
@@ -316,15 +316,15 @@ int main( int i_argc, char *i_argv[] ) {
       std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
 
       // write number of elements per time group partition-local
-      std::size_t *l_nGroupEls = new std::size_t[ l_tsGroups->nGroups() ];
-      l_tsGroups->nGroupEls( l_first,
-                             l_nPaEls,
-                             l_nGroupEls );
-      l_moab.deleteTag( l_tagNtgEls );
-      l_moab.setGlobalData( l_tagNtgEls,
+      l_moab.deleteTag( l_tagNtgElsIn );
+      l_moab.setGlobalData( l_tagNtgElsIn,
                             l_tsGroups->nGroups(),
-                            l_nGroupEls );
-      delete[] l_nGroupEls;
+                            l_comm.nGroupElsIn( l_pa ) );
+      std::string l_tagNtgElsSe = "edge_v_n_time_group_elements_send";
+      l_moab.deleteTag( l_tagNtgElsSe );
+      l_moab.setGlobalData( l_tagNtgElsSe,
+                            l_tsGroups->nGroups(),
+                            l_comm.nGroupElsSe( l_pa ) );
 
       // annotate with comm data
       std::string l_tagCoSt = "edge_v_communication_structure";

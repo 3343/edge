@@ -39,6 +39,12 @@ namespace edge_v {
  **/
 class edge_v::mesh::Communication {
   private:
+    //! number of partitions
+    std::size_t m_nPas = 0;
+
+    //! number of time groups
+    unsigned short m_nTgs = 0;
+
     //! message of a single time group of a single partition
     struct Message {
       //! remote partition
@@ -80,14 +86,24 @@ class edge_v::mesh::Communication {
     //! communication channels of the partitions
     std::size_t * m_chs = nullptr;
 
+    //! number of inner elements per partition and time group
+    std::size_t * m_nElsIn;
+
+    //! number of send elements per partition and time group
+    std::size_t * m_nElsSe;
+
     //! per-partition offset of the send and receive element-face pairs
     std::size_t    * m_sendRecvOff = nullptr;
+
     //! send faces
     unsigned short * m_sendFa = nullptr;
+
     //! send elements
-    std::size_t    * m_sendEl = nullptr;
+    std::size_t   * m_sendEl = nullptr;
+
     //! recv faces
     unsigned short * m_recvFa = nullptr;
+
     //! recv elements
     std::size_t    * m_recvEl = nullptr;
 
@@ -200,6 +216,29 @@ class edge_v::mesh::Communication {
                         std::size_t                    * o_chs );
 
     /**
+     * Sets the number of inner and send elements for the partitions and time groups.
+     *
+     * @param i_elTy element type.
+     * @param i_nPas number of partitions.
+     * @param i_nTgs number of time groups.
+     * @param i_nEls number of elements in the mesh.
+     * @param i_elFaEl elements adjacent to elements (faces as bridge).
+     * @param i_elPa elements' partitions.
+     * @param i_elTg elements' time group.
+     * @param o_nElsIn number of inner elements, order is inner for tg0, tg1 .. of part 0, tg0, tg1 of part1 [...].
+     * @param o_nElsSe number of send element, order is inner for tg0, tg1 .. of part 0, tg0, tg1 of part1 [...].
+     **/
+    static void nElsInSe( t_entityType           i_elTy,
+                          std::size_t            i_nPas,
+                          unsigned short         i_nTgs,
+                          std::size_t            i_nEls,
+                          std::size_t    const * i_elFaEl,
+                          std::size_t    const * i_elPa,
+                          unsigned short const * i_elTg,
+                          std::size_t          * o_nElsIn,
+                          std::size_t          * o_nElsSe );
+
+    /**
      * Gets the per-partition offsets for the element-face pairs of the send/recvs.
      *
      * @param i_struct global communication structure.
@@ -253,8 +292,25 @@ class edge_v::mesh::Communication {
     ~Communication();
 
     /**
+     * Gets the number of inner elements per time group for the given partition.
+     *
+     * @param i_pa partition.
+     * @return number of inner elements.
+     **/
+    std::size_t const * nGroupElsIn( std::size_t i_pa ){ return m_nElsIn+i_pa*m_nTgs; }
+
+    /**
+     * Gets the number of send elements per time group for the given partition.
+     *
+     * @param i_pa partition.
+     * @return number of send elements.
+     **/
+    std::size_t const * nGroupElsSe( std::size_t i_pa ){ return m_nElsSe+i_pa*m_nTgs; }
+
+    /**
      * Gets the number of communicating faces for the given partition.
      *
+     * @param i_pa partition.
      * @return number of faces.
      **/
     std::size_t nSeRe( std::size_t i_pa ) const {
