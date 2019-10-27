@@ -108,12 +108,14 @@ class edge_v::time::Groups {
     /**
      * Sets the number of elements per group.
      *
+     * @param i_first first element.
      * @param i_nEls number of elements.
      * @param i_nGroups number of groups.
      * @param i_elTg time groups of the elements.
      * @param o_nGroupEls will be set to the number of elements for every time group.
      **/
-    static void nGroupEls( std::size_t            i_nEls,
+    static void nGroupEls( std::size_t            i_first,
+                           std::size_t            i_nEls,
                            unsigned short         i_nGroups,
                            unsigned short const * i_elTg,
                            std::size_t          * o_nGroupEls );
@@ -181,6 +183,17 @@ class edge_v::time::Groups {
      * @return number of elements per group.
      **/
     std::size_t const * nGroupEls() const { return m_nGroupEls; }
+
+    /**
+     * Gets the number of elements per group for a given region.
+     *
+     * @param i_first first element of the region.
+     * @param i_nEls number of elements in the region.
+     * @param o_nGroupEls will be set to number of elements per group.
+     **/
+    void nGroupEls( std::size_t   i_first,
+                    std::size_t   i_nEls,
+                    std::size_t * o_nGroupEls ) const;
 
     /**
      * Gets the time step intervals of the groups.

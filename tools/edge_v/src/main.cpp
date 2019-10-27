@@ -255,6 +255,12 @@ int main( int i_argc, char *i_argv[] ) {
   l_moab.setGlobalData( l_tagRelTs,
                         l_tsGroups->nGroups()+1,
                         l_tsGroups->getTsIntervals() );
+
+  if( l_config.getMeshOut() != "" ) {
+    EDGE_V_LOG_INFO << "writing mesh";
+    l_moab.writeMesh( l_config.getMeshOut() );
+  }
+
   if( l_config.nPartitions() > 1 ) {
     EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
     delete l_tsGroups;
@@ -306,6 +312,20 @@ int main( int i_argc, char *i_argv[] ) {
 
     std::size_t l_first = 0;
     for( std::size_t l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
+      // get number of elements in the partition
+      std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
+
+      // write number of elements per time group partition-local
+      std::size_t *l_nGroupEls = new std::size_t[ l_tsGroups->nGroups() ];
+      l_tsGroups->nGroupEls( l_first,
+                             l_nPaEls,
+                             l_nGroupEls );
+      l_moab.deleteTag( l_tagNtgEls );
+      l_moab.setGlobalData( l_tagNtgEls,
+                            l_tsGroups->nGroups(),
+                            l_nGroupEls );
+      delete[] l_nGroupEls;
+
       // annotate with comm data
       std::string l_tagCoSt = "edge_v_communication_structure";
       l_moab.deleteTag( l_tagCoSt );
@@ -338,9 +358,7 @@ int main( int i_argc, char *i_argv[] ) {
                             l_comm.nSeRe( l_pa ),
                             l_comm.getRecvFa( l_pa ) );
 
-      std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
       std::string l_name = l_base + "_" + std::to_string(l_pa) + l_ext;
-
       EDGE_V_LOG_INFO << "  writing " << l_name;
       l_moab.writeMesh( l_first,
                         l_nPaEls,
@@ -348,11 +366,6 @@ int main( int i_argc, char *i_argv[] ) {
 
       l_first += l_nPaEls;
     }
-  }
-
-  if( l_config.getMeshOut() != "" ) {
-    EDGE_V_LOG_INFO << "writing mesh";
-    l_moab.writeMesh( l_config.getMeshOut() );
   }
 
   delete l_tsGroups;

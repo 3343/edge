@@ -99,14 +99,15 @@ void edge_v::time::Groups::setElTg( std::size_t            i_nEls,
   }
 }
 
-void edge_v::time::Groups::nGroupEls( std::size_t            i_nEls,
+void edge_v::time::Groups::nGroupEls( std::size_t            i_first,
+                                      std::size_t            i_nEls,
                                       unsigned short         i_nGroups,
                                       unsigned short const * i_elTg,
                                       std::size_t          * o_nGroupEls ) {
   for( unsigned short l_tg = 0; l_tg < i_nGroups; l_tg++ )
     o_nGroupEls[l_tg] = 0;
 
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( std::size_t l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
     unsigned short l_tg = i_elTg[l_el];
     o_nGroupEls[l_tg]++;
   }
@@ -164,7 +165,8 @@ edge_v::time::Groups::Groups( t_entityType           i_elTy,
 
   // derive number of elements per time group
   m_nGroupEls = new std::size_t[m_nGroups];
-  nGroupEls( i_nEls,
+  nGroupEls( 0,
+             i_nEls,
              m_nGroups,
              m_elTg,
              m_nGroupEls );
@@ -200,4 +202,14 @@ void edge_v::time::Groups::printStats() const {
   EDGE_V_LOG_INFO << "  per-element          over GTS:                  " << m_loads[0] / m_loads[3];
   EDGE_V_LOG_INFO << "  per-element          over grouped:              " << m_loads[1] / m_loads[3];
   EDGE_V_LOG_INFO << "  per-element          over grouped (normalized): " << m_loads[2] / m_loads[3];
+}
+
+void edge_v::time::Groups::nGroupEls( std::size_t   i_first,
+                                      std::size_t   i_nEls,
+                                      std::size_t * o_nGroupEls ) const {
+  nGroupEls( i_first,
+             i_nEls,
+             m_nGroups,
+             m_elTg,
+             o_nGroupEls );
 }
