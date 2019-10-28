@@ -543,3 +543,38 @@ double const (* edge_v::mesh::Mesh::getTangentsFa() )[2][3] {
 
   return m_tangents;
 }
+
+void edge_v::mesh::Mesh::getFaIdsAd( std::size_t            i_nFas,
+                                     std::size_t            i_elOff,
+                                     std::size_t    const * i_el,
+                                     unsigned short const * i_fa,
+                                     unsigned short       * o_faIdsAd ) const {
+  unsigned short l_nElFas = CE_N_FAS( m_elTy );
+
+  for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
+    std::size_t l_el = i_el[l_id] + i_elOff;
+    std::size_t l_fa = i_fa[l_id];
+
+    std::size_t l_elAd = m_elFaEl[l_el*l_nElFas + l_fa];
+    for( unsigned short l_ad = 0; l_ad < l_nElFas; l_ad++ ) {
+      if( m_elFaEl[l_elAd*l_nElFas + l_ad] == l_el ) {
+        o_faIdsAd[l_id] = l_ad;
+        break;
+      }
+      EDGE_V_CHECK_NE( l_ad+1, l_nElFas );
+    }
+  }
+}
+
+void edge_v::mesh::Mesh::getVeIdsAd( std::size_t            i_nFas,
+                                     std::size_t            i_elOff,
+                                     std::size_t    const * i_el,
+                                     unsigned short const * i_fa,
+                                     unsigned short       * o_veIdsAd ) const {
+  // check for tets which require an actual implementation
+  EDGE_V_CHECK_NE( m_elTy, TET4 );
+
+  for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
+    o_veIdsAd[l_id] = 0;
+  }
+}

@@ -366,6 +366,31 @@ int main( int i_argc, char *i_argv[] ) {
                             l_comm.nSeRe( l_pa ),
                             l_comm.getRecvFa( l_pa ) );
 
+      // write face- and vertex-ids for ghost elements, adjacent to the send-elements
+      unsigned short * l_idsAd = new unsigned short[ l_comm.nSeRe( l_pa ) ];
+      l_mesh->getFaIdsAd( l_comm.nSeRe( l_pa ),
+                          l_first,
+                          l_comm.getSendEl( l_pa ),
+                          l_comm.getSendFa( l_pa ),
+                          l_idsAd );
+      std::string l_tagFaIdsAd = "edge_v_send_face_ids";
+      l_moab.deleteTag( l_tagFaIdsAd );
+      l_moab.setGlobalData( l_tagFaIdsAd,
+                            l_comm.nSeRe( l_pa ),
+                            l_idsAd );
+
+      l_mesh->getVeIdsAd( l_comm.nSeRe( l_pa ),
+                          l_first,
+                          l_comm.getSendEl( l_pa ),
+                          l_comm.getSendFa( l_pa ),
+                          l_idsAd );
+      std::string l_tagVeIdsAd = "edge_v_send_vertex_ids";
+      l_moab.deleteTag( l_tagVeIdsAd );
+      l_moab.setGlobalData( l_tagVeIdsAd,
+                            l_comm.nSeRe( l_pa ),
+                            l_idsAd );
+      delete[] l_idsAd;
+
       std::string l_name = l_base + "_" + std::to_string(l_pa) + l_ext;
       EDGE_V_LOG_INFO << "  writing " << l_name;
       l_moab.writeMesh( l_first,

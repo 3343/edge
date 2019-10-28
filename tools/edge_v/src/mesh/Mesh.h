@@ -313,6 +313,37 @@ class edge_v::mesh::Mesh {
      * @return element diameter.
      **/
     double const * getInDiasEl() const { return m_inDiasEl; }
+
+    /**
+     * Gets the adjacent elements' face ids for the given element-faces.
+     *
+     * @param i_nFas number of element-faces to get ids for.
+     * @param i_elOff element offset (added to element-ids in queries).
+     * @param i_el elements to which the faces belong.
+     * @param i_fa local face ids w.r.t. the elements.
+     * @param o_faIdsAd will be set to faces ids w.r.t. to the adjacent elements.
+     **/
+    void getFaIdsAd( std::size_t            i_nFas,
+                     std::size_t            i_elOff,
+                     std::size_t    const * i_el,
+                     unsigned short const * i_fa,
+                     unsigned short       * o_faIdsAd ) const;
+
+    /**
+     * Gets the adjacent elements' vertex ids for the given element-faces.
+     * This is the local id of the vertex, which matches the faces' first vertex.
+     *
+     * @param i_nFas number of element-faces to get ids for.
+     * @param i_elOff element offset (added to element-ids in queries).
+     * @param i_el elements to which the faces belong.
+     * @param i_fa local face ids w.r.t. the elements.
+     * @param o_veIdsAd will be set to vertex ids w.r.t. to the adjacent elements.
+     **/
+    void getVeIdsAd( std::size_t            i_nFas,
+                     std::size_t            i_elOff,
+                     std::size_t    const * i_el,
+                     unsigned short const * i_fa,
+                     unsigned short       * o_veIdsAd ) const;
 };
 
 #endif
