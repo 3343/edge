@@ -108,7 +108,7 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::io::Moab l_moab( l_meshIn );
   l_moab.printStats();
 
-  // initializing and setting mesh data
+  // initialize and set mesh data
   EDGE_V_LOG_INFO << "initializing mesh interface";
   if( l_config.getPeriodic() ) EDGE_V_LOG_INFO << "  assuming periodioc boundaries";
   edge_v::mesh::Mesh* l_mesh = new edge_v::mesh::Mesh( l_moab,

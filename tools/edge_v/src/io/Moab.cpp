@@ -348,6 +348,72 @@ EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-setti
   }
 }
 
+void edge_v::io::Moab::getEnMsInter( std::vector< moab::EntityHandle > const & i_ens,
+                                     std::vector< moab::EntityHandle > const & i_ms,
+                                     std::vector< moab::EntityHandle >       & o_ms ) {
+  o_ms.resize(0);
+  for( std::size_t l_id = 0; l_id < i_ms.size(); l_id++ ) {
+    // create temporary meshset from the entities
+    moab::EntityHandle l_msEn;
+    moab::ErrorCode l_err = m_moab->create_meshset( moab::MESHSET_ORDERED,
+                                                    l_msEn );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    l_err = m_moab->add_entities( l_msEn,
+                                  i_ens.data(),
+                                  i_ens.size() );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // intersect with the input
+    l_err = m_moab->intersect_meshset( l_msEn,
+                                       i_ms[l_id] );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // store result
+    o_ms.push_back( l_msEn );
+  }
+}
+
+void edge_v::io::Moab::setTags( std::vector< moab::Tag >          const & i_tags,
+                                std::vector< moab::EntityHandle > const & i_ens,
+                                std::vector< moab::EntityHandle >       & io_ens ) {
+  EDGE_V_CHECK_EQ( i_ens.size(), io_ens.size() );
+
+  // iterate over tags
+  for( std::size_t l_ta = 0; l_ta < i_tags.size(); l_ta++ ) {
+    // get size in bytes
+    int l_size = 0;
+    moab::ErrorCode l_err = m_moab->tag_get_bytes( i_tags[l_ta],
+                                                   l_size );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+    EDGE_V_CHECK_GT( l_size, 0 );
+
+    int l_length = 0;
+    l_err = m_moab->tag_get_length( i_tags[l_ta],
+                                    l_length );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+    EDGE_V_CHECK_GT( l_length, 0 );
+
+    // store tag data in buffer
+    unsigned char *l_buf = new unsigned char[ std::size_t(l_size) * l_length * i_ens.size() ];
+    l_err = m_moab->tag_get_data( i_tags[l_ta],
+                                  i_ens.data(),
+                                  i_ens.size(),
+                                  l_buf );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // set tag data
+    l_err = m_moab->tag_set_data( i_tags[l_ta],
+                                  io_ens.data(),
+                                  io_ens.size(),
+                                  l_buf );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // free buffer
+    delete[] l_buf;
+  }
+}
+
 void edge_v::io::Moab::writeMesh( std::string const & i_pathToMesh ) {
   moab::ErrorCode l_err = m_moab->write_file( i_pathToMesh.c_str() );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
@@ -356,35 +422,92 @@ void edge_v::io::Moab::writeMesh( std::string const & i_pathToMesh ) {
 void edge_v::io::Moab::writeMesh( std::size_t         i_first,
                                   std::size_t         i_nEls,
                                   std::string const & i_pathToMesh ) {
-  // create a new meshset for entities
-  moab::EntityHandle l_ms;
-  moab::ErrorCode l_err = m_moab->create_meshset( moab::MESHSET_ORDERED,
-                                                  l_ms );
-  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-
   // get the elements
   std::vector< moab::EntityHandle > l_els;
-  l_err = m_moab->get_entities_by_type( 0,
-                                        getMoabType( getElType() ),
-                                        l_els );
+  moab::ErrorCode l_err = m_moab->get_entities_by_type( 0,
+                                                        getMoabType( getElType() ),
+                                                        l_els );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
-  // add requested elements to the mesh set
-  l_err = m_moab->add_entities(  l_ms,
-                                &l_els[i_first],
-                                 i_nEls );
+  // only continue with given subset
+  l_els = std::vector< moab::EntityHandle >( &l_els[i_first],
+                                             &l_els[i_first+i_nEls] );
+
+  // add requested elements to mesh set
+  moab::EntityHandle l_msEl;
+  l_err = m_moab->create_meshset( moab::MESHSET_ORDERED,
+                                  l_msEl );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
-  // write the meshset and its entities
-  l_err = m_moab->write_file(  i_pathToMesh.c_str(),
-                               0,
-                               0,
-                              &l_ms,
-                               1 );
+  l_err = m_moab->add_entities( l_msEl,
+                                l_els.data(),
+                                l_els.size() );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
-  // remove the meshset
-  l_err = m_moab->delete_entities( &l_ms, 1 );
+  // preserve material tag
+  moab::Tag l_tagMat;
+  l_err = m_moab->tag_get_handle( "MATERIAL_SET",
+                                  l_tagMat );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get all sets which define the material tag
+  moab::Range l_msMatRa;
+  l_err = m_moab->get_entities_by_type_and_tag( m_root,
+                                                moab::MBENTITYSET,
+                                                &l_tagMat,
+                                                nullptr,
+                                                1,
+                                                l_msMatRa );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // convert to vector
+  std::vector< moab::EntityHandle > l_msMat;
+  for( std::size_t l_ms = 0; l_ms < l_msMatRa.size(); l_ms++ ) l_msMat.push_back( l_msMatRa[l_ms] );
+
+  // output mesh sets
+  std::vector< moab::EntityHandle > l_msOut;
+  l_msOut.push_back( l_msEl );
+
+  unsigned short l_nDis = CE_N_DIS( getElType() );
+  for( unsigned short l_di = 0; l_di < l_nDis; l_di++ ) {
+    std::vector< moab::EntityHandle > l_ens;
+    l_err = m_moab->get_adjacencies( l_els.data(),
+                                     l_els.size(),
+                                     l_di,
+                                     true,
+                                     l_ens,
+                                     moab::Interface::UNION );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // intersect with material sets
+    std::vector< moab::EntityHandle > l_msInter;
+    getEnMsInter( l_ens,
+                  l_msMat,
+                  l_msInter );
+
+    // copy matrial tag values
+    std::vector< moab::Tag > l_tags;
+    l_tags.push_back( l_tagMat );
+    setTags( l_tags,
+             l_msMat,
+             l_msInter );
+
+    l_msOut.insert( l_msOut.end(),
+                    l_msInter.begin(),
+                    l_msInter.end());
+  }
+
+  // write the meshsets and their entities
+  l_err = m_moab->write_file( i_pathToMesh.c_str(),
+                              0,
+                              0,
+                              l_msOut.data(),
+                              l_msOut.size() );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // remove the created output meshsets
+  l_err = m_moab->delete_entities( l_msOut.data(),
+                                   l_msOut.size() );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 

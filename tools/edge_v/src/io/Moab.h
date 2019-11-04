@@ -130,6 +130,29 @@ class edge_v::io::Moab {
                         std::size_t            i_nValues,
                         void           const * i_data );
 
+    /**
+     * Gets the intersection of the entities and the mesh sets.
+     * Returned are newly created mesh sets for every intesection with the input mesh sets.
+     *
+     * @param i_ens entities which are intersected.
+     * @param i_ms input mesh sets.
+     * @param o_ms output mesh sets.
+     **/
+    void getEnMsInter( std::vector< moab::EntityHandle > const & i_ens,
+                       std::vector< moab::EntityHandle > const & i_ms,
+                       std::vector< moab::EntityHandle >       & o_ms );
+
+    /**
+     * Sets the tags of the output entities, based on the input entities.
+     *
+     * @param i_tags tags which are copied.
+     * @param i_ens input entities from which the tags are read.
+     * @param o_ens output entities for which the tags are set.
+     **/
+    void setTags( std::vector< moab::Tag >          const & i_tags,
+                  std::vector< moab::EntityHandle > const & i_ens,
+                  std::vector< moab::EntityHandle >       & io_ens );
+
   public:
     /**
      * Constructs a new Moab object.
