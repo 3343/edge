@@ -45,7 +45,6 @@ class edge::parallel::MpiRemix {
 #ifdef PP_USE_MPI
     //! communicator
     MPI_Comm m_comm;
-#endif
 
     //! max. version of the supported mpi-standard, 0: major, 1: minor
     int m_verStd[2] = {0, 0};
@@ -61,6 +60,7 @@ class edge::parallel::MpiRemix {
 
     //! receive buffer
     unsigned char * m_recvBuffer = nullptr;
+#endif
 
     //! pointers into the send buffer
     unsigned char ** m_sendPtrs = nullptr;
@@ -97,6 +97,7 @@ class edge::parallel::MpiRemix {
       std::size_t size;
     } t_msg;
 
+#ifdef PP_USE_MPI
     //! send messages
     t_msg * m_sendMsgs = nullptr;
 
@@ -105,6 +106,7 @@ class edge::parallel::MpiRemix {
 
     //! number of iterations used in the message progression
     std::size_t m_nIterComm = 0;
+#endif
 
     /**
      * Checks if the send message of the given channel matches the time group and less-than requirement.

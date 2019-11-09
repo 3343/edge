@@ -25,6 +25,7 @@
 #include "MpiRemix.h"
 #undef private
 
+#ifdef PP_USE_MPI
 TEST_CASE( "Tests the setup of MPI-related data structures.", "[MpiRemix][data]" ) {
   std::size_t l_commStruct[9] = {2, 0, 2, 4, 15, 3, 1, 1, 5};
 
@@ -122,3 +123,4 @@ TEST_CASE( "Tests the setup of MPI-related data structures.", "[MpiRemix][data]"
   REQUIRE( l_mpi.m_recvMsgs[1].tag  == 1*7+3                        );
   REQUIRE( l_mpi.m_recvMsgs[1].ptr  == l_mpi.m_recvBuffer + 15*17*2 );
 }
+#endif

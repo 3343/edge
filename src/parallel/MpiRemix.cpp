@@ -88,6 +88,8 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
   }
 
   // allocate send and receive buffer
+  l_sizeSend *= sizeof(unsigned char);
+  l_sizeRecv *= sizeof(unsigned char);
   m_sendBuffer = (unsigned char*) io_dynMem.allocate( l_sizeSend );
   m_recvBuffer = (unsigned char*) io_dynMem.allocate( l_sizeRecv );
 
@@ -120,15 +122,15 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
     std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
     std::size_t l_nSeRe = i_commStruct[1 + l_ch*4 + 3];
 
-    std::size_t l_sendSize = (l_tg > l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
-    std::size_t l_recvSize = (l_tg < l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
+    l_sizeSend = (l_tg > l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
+    l_sizeRecv = (l_tg < l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
 
     // assign
     m_sendMsgs[l_ch].lt      = (l_tg < l_tgAd);
     m_sendMsgs[l_ch].tg      = l_tg;
     m_sendMsgs[l_ch].rank    = l_raAd;
     m_sendMsgs[l_ch].tag     = l_tg*i_nTgs + l_tgAd;
-    m_sendMsgs[l_ch].size    = l_sendSize;
+    m_sendMsgs[l_ch].size    = l_sizeSend;
     m_sendMsgs[l_ch].ptr     = m_sendBuffer + l_offSend;
     m_sendMsgs[l_ch].test    = 0;
     m_sendMsgs[l_ch].request = MPI_REQUEST_NULL;
@@ -137,7 +139,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
     m_recvMsgs[l_ch].tg      = l_tg;
     m_recvMsgs[l_ch].rank    = l_raAd;
     m_recvMsgs[l_ch].tag     = l_tgAd*i_nTgs + l_tg;
-    m_recvMsgs[l_ch].size    = l_recvSize;
+    m_recvMsgs[l_ch].size    = l_sizeRecv;
     m_recvMsgs[l_ch].ptr     = m_recvBuffer + l_offRecv;
     m_recvMsgs[l_ch].test    = 0;
     m_recvMsgs[l_ch].request = MPI_REQUEST_NULL;
