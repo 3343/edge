@@ -203,7 +203,7 @@ class edge::seismic::solvers::AderDg {
      * @param i_nFas number of faces.
      * @param i_faEl elements adjacent to faces.
      * @param i_elVe vertices adjacent to elements.
-     * @param i_elFaEl elements adjacent to elements through faces as bridge.
+     * @param i_elFa elements adjacent to elements through faces as bridge.
      * @param i_veChars vertex characteristics.
      * @param i_faChars face characteristics.
      * @param i_elChars elements characteristics.
@@ -219,7 +219,7 @@ class edge::seismic::solvers::AderDg {
            TL_T_LID                i_nFas,
            TL_T_LID       const (* i_faEl)[2],
            TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
-           TL_T_LID       const (* i_elFaEl)[TL_N_FAS],
+           TL_T_LID       const (* i_elFa)[TL_N_FAS],
            t_vertexChars  const  * i_veChars,
            t_faceChars    const  * i_faChars,
            t_elementChars const  * i_elChars,
@@ -281,7 +281,7 @@ class edge::seismic::solvers::AderDg {
                                         i_nFas,
                                         i_faEl,
                                         i_elVe,
-                                        i_elFaEl,
+                                        i_elFa,
                                         i_veChars,
                                         i_faChars,
                                         i_elChars,
@@ -325,6 +325,7 @@ class edge::seismic::solvers::AderDg {
                 TL_T_REAL                         (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                         (* io_dofsA)[TL_N_MDS][TL_N_CRS],
                 TL_T_REAL        (* const * const    o_tDofs[3])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL        (* const * const    o_sendDofs)[TL_N_MDS][TL_N_CRS],
                 edge::io::Receivers                & io_recvs ) const {
       // counter for receivers
       unsigned int l_enRe = i_firstSpRe;
@@ -380,6 +381,34 @@ class edge::seismic::solvers::AderDg {
                                        l_derBuffer,
                                        o_tDofs[2][l_el] );
         }
+
+#ifdef PP_USE_MPI
+        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+          if( o_sendDofs[l_el*TL_N_FAS + l_fa] != nullptr ) {
+            for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                  // gts
+                  if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                    o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr] = o_tDofs[0][l_el][l_qt][l_md][l_cr];
+                  }
+                  // less than
+                  else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]) == C_LTS_AD[l_fa][AD_LT] ) {
+                    if( !i_firstTs )
+                      o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr] = o_tDofs[1][l_el][l_qt][l_md][l_cr];
+                  }
+                  // greater than
+                  else {
+                    o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr] = o_tDofs[2][l_el][l_qt][l_md][l_cr];
+                    o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E + l_qt][l_md][l_cr] = o_tDofs[0][l_el][l_qt][l_md][l_cr] -
+                                                                                      o_tDofs[2][l_el][l_qt][l_md][l_cr];
+                  }
+                }
+              }
+            }
+          }
+        }
+#endif
 
         // write receivers (if required)
         if( !( (i_elChars[l_el].spType & RECEIVER) == RECEIVER) ) {} // no receivers in the current element
@@ -471,7 +500,8 @@ class edge::seismic::solvers::AderDg {
                 unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
                 TL_T_REAL            (* const * const i_tDofs[3])[TL_N_MDS][TL_N_CRS],
                 TL_T_REAL                          (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                          (* io_dofsA)[TL_N_MDS][TL_N_CRS] ) const {
+                TL_T_REAL                          (* io_dofsA)[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL      const (* const * const i_recvDofs)[TL_N_MDS][TL_N_CRS] ) const {
       // temporary product for three-way mult
       TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
 
@@ -517,32 +547,47 @@ class edge::seismic::solvers::AderDg {
 
             // assemble the neighboring time integrated DOFs
             TL_T_REAL l_tDofs[TL_N_QTS_E][TL_N_MDS][TL_N_CRS];
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
-                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  // element and face-adjacent one have an equal time step
-                  if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
-                    l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr];
-                  }
-                  // element has a greater time step than the face-adjacent one
-                  else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
-                    l_tDofs[l_qt][l_md][l_cr] = i_tDofs[1][l_ne][l_qt][l_md][l_cr];
-                  }
-                  // element has a time step less than the adjacent one
-                  else {
-                    EDGE_CHECK_EQ( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]), C_LTS_AD[l_fa][AD_LT] );
 
-                    if( i_firstTs ) {
-                      l_tDofs[l_qt][l_md][l_cr] = i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+            if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
+              for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+                for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                    // element and face-adjacent one have an equal time step
+                    if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                      l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr];
                     }
+                    // element has a greater time step than the face-adjacent one
+                    else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+                      l_tDofs[l_qt][l_md][l_cr] = i_tDofs[1][l_ne][l_qt][l_md][l_cr];
+                    }
+                    // element has a time step less than the adjacent one
                     else {
-                      l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr] - i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+                      if( i_firstTs )
+                        l_tDofs[l_qt][l_md][l_cr] = i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+                      else
+                        l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr] - i_tDofs[2][l_ne][l_qt][l_md][l_cr];
                     }
                   }
                 }
               }
             }
+#ifdef PP_USE_MPI
+            else {
+              // derive offset
+              std::size_t l_off = 0;
+              if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]) == C_LTS_AD[l_fa][AD_LT] ) {
+                l_off = (i_firstTs) ? 0 : TL_N_QTS_E;
+              }
 
+              // copy
+              for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+                for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                    l_tDofs[l_qt][l_md][l_cr] = i_recvDofs[l_el*TL_N_FAS + l_fa][l_off + l_qt][l_md][l_cr];
+            }
+#else
+            else EDGE_LOG_FATAL;
+#endif
             /*
              * solve
              */
