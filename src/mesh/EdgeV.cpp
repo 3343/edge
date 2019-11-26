@@ -27,17 +27,21 @@
 
 
 void edge::mesh::EdgeV::setElLayout( unsigned short         i_nTgs,
-                                     std::size_t    const * i_nTgEls,
+                                     std::size_t    const * i_nTgElsIn,
+                                     std::size_t    const * i_nTgElsSe,
                                      t_enLayout           & o_elLay ) {
   // assign sizes
   o_elLay.timeGroups.resize( 0 );
   o_elLay.timeGroups.resize( i_nTgs );
 
   for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
-    o_elLay.timeGroups[l_tg].inner.size = i_nTgEls[l_tg];
-#ifdef PP_USE_MPI
-    EDGE_LOG_FATAL << "missing comm patterns";
-#endif
+    o_elLay.timeGroups[l_tg].inner.size = i_nTgElsIn[l_tg];
+
+    // TODO: dummy entries for send and receive, will be removed
+    o_elLay.timeGroups[l_tg].send.resize( 1 );
+    o_elLay.timeGroups[l_tg].send[0].size = i_nTgElsSe[l_tg];
+    o_elLay.timeGroups[l_tg].receive.resize( 1 );
+    o_elLay.timeGroups[l_tg].receive[0].size = 0;
   }
 
   // derive the rest
@@ -49,7 +53,11 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
                                      unsigned short         i_nElFas,
                                      std::size_t    const * i_elFaEl,
                                      unsigned short         i_nTgs,
-                                     std::size_t    const * i_nTgEls,
+                                     std::size_t    const * i_nTgElsIn,
+                                     std::size_t    const * i_nTgElsSe,
+                                     unsigned short const * i_sendFa,
+                                     std::size_t    const * i_sendEl,
+                                     std::size_t    const * i_commStruct,
                                      long long              i_elEq,
                                      long long              i_elLt,
                                      long long              i_elGt,
@@ -58,19 +66,55 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
                                      long long      const * i_adGt,
                                      long long            * o_spTys ) {
   // define lambda which finds the time group of an element
-  auto l_getTg = [ i_nTgs, i_nTgEls ]( std::size_t i_el ) {
+  auto l_getTg = [ i_nTgs, i_nTgElsIn, i_nTgElsSe ]( std::size_t i_el ) {
     std::size_t l_first = 0;
 
+    // check inner elements
     for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
-      if( i_el >= l_first && i_el < l_first + i_nTgEls[l_tg] ) {
+      if( i_el >= l_first && i_el < l_first + i_nTgElsIn[l_tg] ) {
         return l_tg;
       }
-      l_first += i_nTgEls[l_tg];
+      l_first += i_nTgElsIn[l_tg];
+    }
+
+    // check send elements
+    for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+      if( i_el >= l_first && i_el < l_first + i_nTgElsSe[l_tg] ) {
+        return l_tg;
+      }
+      l_first += i_nTgElsSe[l_tg];
     }
 
     // fail if we didn't find a time group
     EDGE_LOG_FATAL;
     return std::numeric_limits< unsigned short >::max();
+  };
+
+  // attempts to find the time group of an MPI adjacent element
+  auto l_getTgComm = [ i_sendFa, i_sendEl, i_commStruct ]( std::size_t    i_el,
+                                                           unsigned short i_fa ) {
+    unsigned short l_tg = std::numeric_limits< unsigned short >::max();
+
+    if( i_sendFa == nullptr ) {
+      return l_tg;
+    }
+
+    std::size_t l_nChs = i_commStruct[0];
+    std::size_t l_first = 0;
+    for( std::size_t l_ch = 0; l_ch < l_nChs; l_ch++ ) {
+      std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
+      std::size_t l_nSeRe = i_commStruct[1 + l_ch*4 + 3];
+
+      for( std::size_t l_co = l_first; l_co < l_first+l_nSeRe; l_co++ ) {
+        if( i_fa == i_sendFa[l_co] && i_el == i_sendEl[l_co] ) {
+          l_tg = l_tgAd;
+          return l_tg;
+        }
+      }
+      l_first += l_nSeRe;
+    }
+
+    return l_tg;
   };
 
   // iterate over the elements
@@ -85,14 +129,21 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
     for( unsigned short l_fa = 0; l_fa < i_nElFas; l_fa++ ) {
       std::size_t l_ad = i_elFaEl[l_el*i_nElFas + l_fa];
 
-      // set GTS at the boundary
-      if( l_ad == std::numeric_limits< std::size_t >::max() ) {
-        o_spTys[l_el] |= i_adEq[l_fa];
-        l_elEq = true;
-        continue;
-      }
+      unsigned short l_tgAd = std::numeric_limits< unsigned short >::max();
 
-      unsigned short l_tgAd = l_getTg( l_ad );
+      if( l_ad == std::numeric_limits< std::size_t >::max() ) {
+        // try to derive time group for MPI boundaries
+        l_tgAd = l_getTgComm( l_el,
+                              l_fa );
+
+        // set GTS at domain boundaries
+        if( l_tgAd == std::numeric_limits< unsigned short >::max() ) {
+          l_tgAd = l_tgEl;
+        }
+      }
+      else {
+        l_tgAd = l_getTg( l_ad );
+      }
 
       // set the LTS relations w.r.t. this face-adjacent element
       if( l_tgEl == l_tgAd ) {
@@ -135,23 +186,28 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
   // check if the the mesh is EDGE-V annotated for LTS
   unsigned short l_nLtsTags = 0;
   for( std::size_t l_ta = 0; l_ta < l_tagNames.size(); l_ta++ ) {
-    if(      l_tagNames[l_ta] == "edge_v_n_time_group_elements" ) l_nLtsTags++;
-    else if( l_tagNames[l_ta] == "edge_v_relative_time_steps"   ) l_nLtsTags++;
+    if(      l_tagNames[l_ta] == "edge_v_n_time_group_elements_inner" ) l_nLtsTags++;
+    else if( l_tagNames[l_ta] == "edge_v_n_time_group_elements_send"  ) l_nLtsTags++;
+    else if( l_tagNames[l_ta] == "edge_v_relative_time_steps"         ) l_nLtsTags++;
   }
-  EDGE_CHECK( l_nLtsTags == 0 || l_nLtsTags == 2 );
+  EDGE_CHECK( l_nLtsTags == 0 || l_nLtsTags == 3 );
 
   // get the LTS info
   m_nTgs = 1;
   if( l_nLtsTags > 0 ) {
-    m_nTgs = m_moab.getGlobalDataSize( "edge_v_n_time_group_elements" );
+    m_nTgs = m_moab.getGlobalDataSize( "edge_v_n_time_group_elements_inner" );
   }
-  m_nTgEls = new std::size_t[ m_nTgs ];
+  m_nTgElsIn = new std::size_t[ m_nTgs ];
+  m_nTgElsSe = new std::size_t[ m_nTgs ];
   if( l_nLtsTags > 0 ) {
-    m_moab.getGlobalData( "edge_v_n_time_group_elements",
-                          m_nTgEls );
+    m_moab.getGlobalData( "edge_v_n_time_group_elements_inner",
+                          m_nTgElsIn );
+    m_moab.getGlobalData( "edge_v_n_time_group_elements_send",
+                          m_nTgElsSe );
   }
   else {
-    m_nTgEls[0] = m_mesh.nEls();
+    m_nTgElsIn[0] = m_mesh.nEls();
+    m_nTgElsSe[0] = 0;
   }
 
   // allocate memory for relative time steps and init with GTS
@@ -171,7 +227,8 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
   }
 
   setElLayout( m_nTgs,
-               m_nTgEls,
+               m_nTgElsIn,
+               m_nTgElsSe,
                m_elLay );
 
   // check if the mesh is annotated for MPI
@@ -182,35 +239,43 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     else if( l_tagNames[l_ta] == "edge_v_send_fa"                 ) l_nMpiTags++;
     else if( l_tagNames[l_ta] == "edge_v_recv_el"                 ) l_nMpiTags++;
     else if( l_tagNames[l_ta] == "edge_v_recv_fa"                 ) l_nMpiTags++;
+    else if( l_tagNames[l_ta] == "edge_v_send_vertex_ids"         ) l_nMpiTags++;
+    else if( l_tagNames[l_ta] == "edge_v_send_face_ids"           ) l_nMpiTags++;
   }
 #ifdef PP_USE_MPI
   // check for all tags if compiled with MPI
-  EDGE_V_CHECK_EQ( l_nMpiTags, 5 );
+  EDGE_CHECK_EQ( l_nMpiTags, 7 );
 #endif
 
-  if( l_nMpiTags == 5 ) {
+  if( l_nMpiTags == 7 ) {
     // get communication structure
     std::size_t l_commSize = m_moab.getGlobalDataSize( "edge_v_communication_structure" );
-    EDGE_V_CHECK_EQ( l_commSize%4, 1 );
+    EDGE_CHECK_EQ( l_commSize%4, 1 );
     m_commStruct = new std::size_t[ l_commSize ];
 
     m_moab.getGlobalData( "edge_v_communication_structure",
                           m_commStruct );
 
     // get communicating faces
-    std::size_t l_nSendFas = m_moab.getGlobalDataSize( "edge_v_send_fa" );
-    std::size_t l_nSendEls = m_moab.getGlobalDataSize( "edge_v_send_el" );
-    std::size_t l_nRecvFas = m_moab.getGlobalDataSize( "edge_v_recv_fa" );
-    std::size_t l_nRecvEls = m_moab.getGlobalDataSize( "edge_v_recv_el" );
+    m_nCommElFa = m_moab.getGlobalDataSize( "edge_v_send_fa" );
+    std::size_t l_nSendEls   = m_moab.getGlobalDataSize( "edge_v_send_el" );
+    std::size_t l_nRecvFas   = m_moab.getGlobalDataSize( "edge_v_recv_fa" );
+    std::size_t l_nRecvEls   = m_moab.getGlobalDataSize( "edge_v_recv_el" );
+    std::size_t l_nSeVeIdsAd = m_moab.getGlobalDataSize( "edge_v_send_vertex_ids" );
+    std::size_t l_nSeFaIdsAd = m_moab.getGlobalDataSize( "edge_v_send_face_ids" );
 
-    EDGE_V_CHECK_EQ( l_nSendFas, l_nSendEls );
-    EDGE_V_CHECK_EQ( l_nSendFas, l_nRecvFas );
-    EDGE_V_CHECK_EQ( l_nSendFas, l_nRecvEls );
+    EDGE_CHECK_EQ( m_nCommElFa, l_nSendEls );
+    EDGE_CHECK_EQ( m_nCommElFa, l_nRecvFas );
+    EDGE_CHECK_EQ( m_nCommElFa, l_nRecvEls );
+    EDGE_CHECK_EQ( m_nCommElFa, l_nSeVeIdsAd );
+    EDGE_CHECK_EQ( m_nCommElFa, l_nSeFaIdsAd );
 
-    m_sendFa = new unsigned short[ l_nSendFas ];
-    m_sendEl = new std::size_t[ l_nSendEls ];
-    m_recvFa = new unsigned short[ l_nRecvFas ];
-    m_recvEl = new std::size_t[ l_nRecvEls ];
+    m_sendFa      = new unsigned short[ m_nCommElFa ];
+    m_sendEl      = new std::size_t[ m_nCommElFa ];
+    m_recvFa      = new unsigned short[ m_nCommElFa ];
+    m_recvEl      = new std::size_t[ m_nCommElFa ];
+    m_sendVeIdsAd = new unsigned short[ m_nCommElFa ];
+    m_sendFaIdsAd = new unsigned short[ m_nCommElFa ];
 
     m_moab.getGlobalData( "edge_v_send_fa",
                           m_sendFa );
@@ -220,27 +285,24 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
                           m_recvFa );
     m_moab.getGlobalData( "edge_v_recv_el",
                           m_recvEl );
+    m_moab.getGlobalData( "edge_v_send_vertex_ids",
+                          m_sendVeIdsAd );
+    m_moab.getGlobalData( "edge_v_send_face_ids",
+                          m_sendFaIdsAd );
   }
 }
 
 edge::mesh::EdgeV::~EdgeV() {
-  delete[] m_nTgEls;
+  delete[] m_nTgElsIn;
+  delete[] m_nTgElsSe;
   delete[] m_relDt;
-  if( m_commStruct != nullptr ) {
-    delete[] m_commStruct;
-  }
-  if( m_sendFa != nullptr ) {
-    delete[] m_sendFa;
-  }
-  if( m_sendEl != nullptr ) {
-    delete[] m_sendEl;
-  }
-  if( m_recvFa != nullptr ) {
-    delete[] m_recvFa;
-  }
-  if( m_recvEl != nullptr ) {
-    delete[] m_recvEl;
-  }
+  if( m_commStruct  != nullptr ) delete[] m_commStruct;
+  if( m_sendFa      != nullptr ) delete[] m_sendFa;
+  if( m_sendEl      != nullptr ) delete[] m_sendEl;
+  if( m_recvFa      != nullptr ) delete[] m_recvFa;
+  if( m_recvEl      != nullptr ) delete[] m_recvEl;
+  if( m_sendVeIdsAd != nullptr ) delete[] m_sendVeIdsAd;
+  if( m_sendFaIdsAd != nullptr ) delete[] m_sendFaIdsAd;
 }
 
 void edge::mesh::EdgeV::setLtsTypes( t_elementChars * io_elChars ) const {
@@ -266,7 +328,11 @@ void edge::mesh::EdgeV::setLtsTypes( t_elementChars * io_elChars ) const {
                l_nElFas,
                m_mesh.getElFaEl(),
                m_nTgs,
-               m_nTgEls,
+               m_nTgElsIn,
+               m_nTgElsSe,
+               m_sendFa,
+               m_sendEl,
+               m_commStruct,
                C_LTS_EL[EL_INT_EQ],
                C_LTS_EL[EL_INT_LT],
                C_LTS_EL[EL_INT_GT],
@@ -337,4 +403,20 @@ void edge::mesh::EdgeV::setSpTypes( t_vertexChars  * io_veChars,
   }
 
   delete[] l_dataEl;
+}
+
+void edge::mesh::EdgeV::setSeVeFaIdsAd( unsigned short * io_veIdsAd,
+                                        unsigned short * io_faIdsAd ) const {
+  edge_v::t_entityType l_elTy = m_mesh.getTypeEl();
+  unsigned short l_nElFas = edge_v::CE_N_FAS( l_elTy );
+
+  if( m_sendVeIdsAd != nullptr ) {
+    for( std::size_t l_co = 0; l_co < m_nCommElFa; l_co++ ) {
+      std::size_t l_el = m_sendEl[l_co];
+      unsigned short l_fa = m_sendFa[l_co];
+
+      io_veIdsAd[l_el*l_nElFas + l_fa] = m_sendVeIdsAd[l_co];
+      io_faIdsAd[l_el*l_nElFas + l_fa] = m_sendFaIdsAd[l_co];
+    }
+  }
 }

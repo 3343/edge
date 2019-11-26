@@ -49,14 +49,20 @@ class edge::mesh::EdgeV {
     //! number of time groups
     unsigned short m_nTgs = 1;
 
-    //! number of elements per time group
-    std::size_t * m_nTgEls = nullptr;
+    //! number of inner elements per time group
+    std::size_t * m_nTgElsIn = nullptr;
+
+    //! number of send elements per time group
+    std::size_t * m_nTgElsSe = nullptr;
 
     //! element layout
     t_enLayout m_elLay;
 
     //! communication structure
     std::size_t * m_commStruct = nullptr;
+
+    //! number of communicating element-face pairs
+    std::size_t m_nCommElFa = 0;
 
     //! send faces
     unsigned short * m_sendFa = nullptr;
@@ -70,15 +76,23 @@ class edge::mesh::EdgeV {
     //! recv elements
     std::size_t    * m_recvEl = nullptr;
 
+    //! vertex ids of the send elements' faces pointing to ghost elements
+    unsigned short * m_sendVeIdsAd = nullptr;
+
+    //! face ids of the send elements' faces pointing to ghost elements
+    unsigned short * m_sendFaIdsAd = nullptr;
+
     /**
      * Sets the data layout of the elements.
      *
      * @param i_nTgs number of time groups.
-     * @param i_nTgEls number of elements in the time groups.
+     * @param i_nTgElsIn number of inner elements in the time groups.
+     * @param i_nTgElsSe number of send elements in the time groups.
      * @param o_elLay will be set to the element layout.
      **/
     static void setElLayout( unsigned short         i_nTgs,
-                             std::size_t    const * m_nTgEls,
+                             std::size_t    const * i_nTgElsIn,
+                             std::size_t    const * i_nTgElsSe,
                              t_enLayout           & o_elLay );
 
   public:
@@ -89,7 +103,11 @@ class edge::mesh::EdgeV {
      * @param i_nElFas number of faces per element.
      * @param i_elFaEl face-adjacent elements.
      * @param i_nTgs number of time groups.
-     * @param i_nTgsEl number of elements in the time groups.
+     * @param i_nTgsElIn number of inner elements in the time groups.
+     * @param i_nTgsElSe number of send elements in the time groups.
+     * @param i_sendFa local face ids of the send element-face pairs.
+     * @param i_sendEl element ids of the send element-face pairs.
+     * @param i_commStruct communication structure.
      * @param i_elEq type if any of the face-adjacent elements has an equal relationship.
      * @param i_elLt type if any of the face-adjacent elements has an less-than relationship.
      * @param i_elGt type if any of the face-adjacent elements has an greather-than relation ship.
@@ -102,7 +120,11 @@ class edge::mesh::EdgeV {
                              unsigned short         i_nElFas,
                              std::size_t    const * i_elFaEl,
                              unsigned short         i_nTgs,
-                             std::size_t    const * i_nTgEls,
+                             std::size_t    const * i_nTgElsIn,
+                             std::size_t    const * i_nTgElsSe,
+                             unsigned short const * i_sendFa,
+                             std::size_t    const * i_sendEl,
+                             std::size_t    const * i_commStruct,
                              long long              i_elEq,
                              long long              i_elLt,
                              long long              i_elGt,
@@ -139,11 +161,18 @@ class edge::mesh::EdgeV {
     unsigned short nTgs() const { return m_nTgs; }
 
     /**
-     * Gets the number of elements for the time groups.
+     * Gets the number of elements for the time groups for the inner part.
      *
      * @return number of elements for the time groups.
      **/
-    std::size_t const * nTgEls() const { return m_nTgEls; }
+    std::size_t const * nTgElsIn() const { return m_nTgElsIn; }
+
+    /**
+     * Gets the number of elements for the time groups for the send part.
+     *
+     * @return number of elements for the time groups.
+     **/
+    std::size_t const * nTgElsSe() const { return m_nTgElsSe; }
 
     /**
      * Gets the number of vertices.
@@ -183,6 +212,15 @@ class edge::mesh::EdgeV {
     void setSpTypes( t_vertexChars  * io_veChars,
                      t_faceChars    * io_faChars,
                      t_elementChars * io_elChars ) const;
+
+    /**
+     * Sets the adjacent vertex- and face-ids for respective ghost elements.
+     *
+     * @param io_veIdsAd will be updated with the vertex ids of the adjacent ghost elements.
+     * @param io_faIdsAd will be updated with the face ids of the adjacent ghost elements.
+     **/
+    void setSeVeFaIdsAd( unsigned short * io_veIdsAd,
+                         unsigned short * io_faIdsAd ) const;
 
     /**
      * Gets the element layout.
@@ -267,6 +305,13 @@ class edge::mesh::EdgeV {
      * @return in-diameters.
      **/
     double const * getInDiasEl() { return m_mesh.getInDiasEl(); }
+
+    /**
+     * Gets the number of communicating element-face pairs.
+     *
+     * @return number of communicating element-face pairs.
+     **/
+    std::size_t nCommElFa() { return m_nCommElFa; }
 
     /**
      * Gets the communication structure.
