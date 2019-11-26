@@ -23,6 +23,7 @@
  **/
 if( i_step == 0 ) {
   // ADER-DG local
+  real_base (** l_sendPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_sendPtrs;
   m_internal.m_globalShared4[0][0].local( i_first,
                                           i_size,
                                           getUpdatesSync()%2 == 0,
@@ -37,6 +38,7 @@ if( i_step == 0 ) {
                                           nullptr,
 #endif
                                           m_internal.m_globalShared6,
+                                          l_sendPtrs,
                                           io_recvs );
 }
 else if( i_step == 1 ) {
@@ -51,6 +53,7 @@ else if( i_step == 1 ) {
 }
 else if( i_step == 2 ) {
   // ADER-DG: neigh contrib
+  real_base (** l_recvPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_recvPtrs;
   m_internal.m_globalShared4[0][0].neigh( i_first,
                                           i_size,
                                           getUpdatesSync()%2 == 0,
@@ -63,10 +66,11 @@ else if( i_step == 2 ) {
                                           m_internal.m_globalShared6,
                                           m_internal.m_elementModePrivate1,
 #if (PP_N_RELAXATION_MECHANISMS > 0)
-                                          m_internal.m_elementModePrivate2[0]
+                                          m_internal.m_elementModePrivate2[0],
 #else
-                                          nullptr
+                                          nullptr,
 #endif
+                                          l_recvPtrs
                                         );
 }
 else EDGE_LOG_FATAL << "step not supported in seismic implementation: " << i_step;
