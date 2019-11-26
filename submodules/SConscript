@@ -102,7 +102,8 @@ if env['moab'] != False:
   conf.CheckLibWithHeaderFlags( 'ifcore' )
 
   if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
-    warnings.error( 'Warning: Could not find MOAB, falling back to structured meshes.' )
+    warnings.warn( 'Warning: Could not find MOAB.' )
+    exit(1)
 
 # forward EDGE-V
 if env['edge_v'] != False:
