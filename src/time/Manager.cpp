@@ -39,7 +39,7 @@ void edge::time::Manager::schedule() {
 
 edge::time::Manager::Manager( double                            i_dt,
                               parallel::Shared                & i_shared,
-                              parallel::Mpi                   & i_mpi,
+                              parallel::MpiRemix              & i_mpi,
                               std::vector< TimeGroupStatic  > & i_timeGroups,
                               io::Receivers                   & i_recvs ): m_dTfun(  i_dt     ),
                                                                            m_shared( i_shared ),
@@ -88,9 +88,7 @@ bool edge::time::Manager::getTimePredConsumed( unsigned short i_tg ) {
 }
 
 void edge::time::Manager::communicate() {
-  m_mpi.comm( m_shared.isSched(),
-              m_finished,
-              m_shared.isCommLead() );
+  m_mpi.comm();
 }
 
 void edge::time::Manager::compute() {

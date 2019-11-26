@@ -25,6 +25,7 @@
 #ifndef EDGE_TIME_MANAGER_H
 #define EDGE_TIME_MANAGER_H
 
+#include "parallel/MpiRemix.h"
 #include "parallel/Shared.h"
 #include "constants.hpp"
 #include "io/Receivers.h"
@@ -46,7 +47,7 @@ class edge::time::Manager {
     parallel::Shared & m_shared;
 
     //! mpi parallelization
-    parallel::Mpi & m_mpi;
+    parallel::MpiRemix & m_mpi;
 
     //! receiver output
     io::Receivers & m_recvs;
@@ -103,7 +104,7 @@ class edge::time::Manager {
      **/
     Manager( double                               i_dt,
              parallel::Shared                   & i_shared,
-             parallel::Mpi                      & i_mpi,
+             parallel::MpiRemix                 & i_mpi,
              std::vector< TimeGroupStatic >     & i_timeGroups,
              io::Receivers                      & i_recvs );
 
