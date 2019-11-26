@@ -73,6 +73,12 @@ class edge::time::TimeGroupStatic {
     //! internal state
     data::Internal & m_internal;
 
+    //! send pointers
+    unsigned char ** m_sendPtrs = nullptr;
+
+    //! receive pointers
+    unsigned char ** m_recvPtrs = nullptr;
+
     /**
      * Sets the time step for the current update.
      **/
@@ -85,10 +91,14 @@ class edge::time::TimeGroupStatic {
      * @param i_nTgs number of time groups.
      * @param i_tgId id of this time group.
      * @param i_internal internal data.
+     * @param i_sendPtrs send pointers.
+     * @param i_recvPtrs receive pointers.
      **/
     TimeGroupStatic( unsigned short   i_nTgs,
                      unsigned short   i_tgId,
-                     data::Internal & i_internal );
+                     data::Internal & i_internal,
+                     unsigned char ** i_sendPtrs,
+                     unsigned char ** i_recvPtrs );
 
     /**
      * Sets up the cluster for iterations until the given synchronization point.

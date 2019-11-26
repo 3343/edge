@@ -35,7 +35,11 @@
 
 edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short   i_nTgs,
                                               unsigned short   i_tgId,
-                                              data::Internal & i_internal ): m_internal( i_internal ) {
+                                              data::Internal & i_internal,
+                                              unsigned char ** i_sendPtrs,
+                                              unsigned char ** i_recvPtrs ): m_internal( i_internal ),
+                                                                             m_sendPtrs( i_sendPtrs ),
+                                                                             m_recvPtrs( i_recvPtrs ) {
   // derive multiple of fundamental time step (rate-2 LTS)
   m_funMul = 1;
   for( unsigned short l_tg = 0; l_tg < i_tgId; l_tg++ ) {
