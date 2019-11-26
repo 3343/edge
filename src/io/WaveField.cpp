@@ -34,32 +34,22 @@
 edge::io::WaveField::WaveField( std::string             i_type,
                                 std::string             i_outFile,
                                 std::size_t             i_nVes,
-                                t_enLayout     const  & i_elLayout,
+                                std::size_t             i_nEls,
                                 t_vertexChars  const  * i_veChars,
                                 t_elementChars const  * i_elChars,
                                 std::size_t    const (* i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
                                 real_base      const (* i_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
                                 int_spType              i_spType ):
  m_veChars(i_veChars),
- m_elChars(i_elChars),
  m_elVe(i_elVe),
  m_dofs(i_dofs),
  m_nVes(i_nVes) {
-  // derive the print elements
-  for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
-    std::size_t l_first = i_elLayout.timeGroups[l_tg].inner.first;
-    std::size_t l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;
-    // iterate over owned elements of this time group
-    for( std::size_t l_el = l_first; l_el < l_first+l_size; l_el++ ) {
-      // only add if element has the desired sparse type
-      if(     i_spType == std::numeric_limits< int_spType >::max()
-          || (i_elChars[l_el].spType & i_spType) == i_spType )
-        m_elPrint.push_back( l_el );
-    }
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    // only add if element has the desired sparse type
+    if(     i_spType == std::numeric_limits< int_spType >::max()
+        || (i_elChars[l_el].spType & i_spType) == i_spType )
+      m_elPrint.push_back( l_el );
   }
-  // remove duplicates
-  std::sort( m_elPrint.begin(), m_elPrint.end() );
-  m_elPrint.erase( unique( m_elPrint.begin(), m_elPrint.end() ), m_elPrint.end() );
 
   /*
    * derive sparse ids of limited elements.

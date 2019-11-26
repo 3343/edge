@@ -59,9 +59,6 @@ class edge::io::WaveField {
     //! vertex chars
     const t_vertexChars *m_veChars;
 
-    //! element chars
-    const t_elementChars *m_elChars;
-
     //! vertices adjacent to the elements
     const std::size_t (*m_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES];
 
@@ -90,7 +87,7 @@ class edge::io::WaveField {
     WaveField( std::string             i_type,
                std::string             i_outFile,
                std::size_t             i_nVes,
-               t_enLayout     const  & i_elLayout,
+               std::size_t             i_nEls,
                t_vertexChars  const  * i_veChars,
                t_elementChars const  * i_elChars,
                std::size_t    const (* i_elVe)[C_ENT[T_SDISC.ELEMENT].N_VERTICES],
