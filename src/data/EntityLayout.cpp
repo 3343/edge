@@ -40,54 +40,26 @@ void edge::data::EntityLayout::sizesToLayout( t_enLayout &io_enLayout ) {
     }
   }
 
-  // iterate over the time groups
+  std::size_t l_off = 0;
   for( std::size_t l_tg = 0; l_tg < io_enLayout.timeGroups.size(); l_tg++ ) {
     // first element of inner entities based on previous time groups
-    if( l_tg > 0 ) {
-      io_enLayout.timeGroups[l_tg].inner.first += io_enLayout.timeGroups[l_tg-1].inner.first;
-      io_enLayout.timeGroups[l_tg].inner.first += io_enLayout.timeGroups[l_tg-1].nEntsOwn;
-      io_enLayout.timeGroups[l_tg].inner.first += io_enLayout.timeGroups[l_tg-1].nEntsNotOwn;
-    }
+    io_enLayout.timeGroups[l_tg].inner.first = l_off;
 
     // add inner elements to owned elements
     io_enLayout.timeGroups[l_tg].nEntsOwn += io_enLayout.timeGroups[l_tg].inner.size;
+    l_off += io_enLayout.timeGroups[l_tg].inner.size;
+  }
 
+  for( std::size_t l_tg = 0; l_tg < io_enLayout.timeGroups.size(); l_tg++ ) {
     // iterate over send entities
     for( unsigned int l_nr = 0; l_nr < io_enLayout.timeGroups[l_tg].send.size(); l_nr++ ) {
-      // first region is based on inner elements
-      if( l_nr == 0 ) {
-        io_enLayout.timeGroups[l_tg].send[0].first += io_enLayout.timeGroups[l_tg].inner.first;
-        io_enLayout.timeGroups[l_tg].send[0].first += io_enLayout.timeGroups[l_tg].inner.size;
-      }
-      // all other regions rely on the previous one
-      else {
-        io_enLayout.timeGroups[l_tg].send[l_nr].first += io_enLayout.timeGroups[l_tg].send[l_nr-1].first;
-        io_enLayout.timeGroups[l_tg].send[l_nr].first += io_enLayout.timeGroups[l_tg].send[l_nr-1].size;
-      }
+      io_enLayout.timeGroups[l_tg].send[l_nr].first = l_off;
 
       // add send region to owned elements
       io_enLayout.timeGroups[l_tg].nEntsOwn += io_enLayout.timeGroups[l_tg].send[l_nr].size;
+      l_off += io_enLayout.timeGroups[l_tg].send[l_nr].size;
     }
-
-    // iterate over receive entities
-    for( unsigned int l_nr = 0; l_nr < io_enLayout.timeGroups[l_tg].receive.size(); l_nr++ ) {
-      // first region is based on inner and send elements
-      if( l_nr == 0 ) {
-        io_enLayout.timeGroups[l_tg].receive[0].first += io_enLayout.timeGroups[l_tg].inner.first;
-        io_enLayout.timeGroups[l_tg].receive[0].first += io_enLayout.timeGroups[l_tg].nEntsOwn;
-      }
-      // all other regions use the previous receive region
-      else {
-        io_enLayout.timeGroups[l_tg].receive[l_nr].first += io_enLayout.timeGroups[l_tg].receive[l_nr-1].first;
-        io_enLayout.timeGroups[l_tg].receive[l_nr].first += io_enLayout.timeGroups[l_tg].receive[l_nr-1].size;
-      }
-
-      // add receive region to non-owned elements
-      io_enLayout.timeGroups[l_tg].nEntsNotOwn += io_enLayout.timeGroups[l_tg].receive[l_nr].size;
-    }
-
-    // update total number of elements
-    io_enLayout.nEnts += io_enLayout.timeGroups[l_tg].nEntsOwn;
-    io_enLayout.nEnts += io_enLayout.timeGroups[l_tg].nEntsNotOwn;
   }
+
+  io_enLayout.nEnts = l_off;
 }
