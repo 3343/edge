@@ -308,7 +308,8 @@ int main( int i_argc, char *i_argv[] ) {
                                            l_cfl->getTimeSteps() );
 
     EDGE_V_LOG_INFO << "deriving communication structure";
-    edge_v::mesh::Communication l_comm( l_mesh->getTypeEl(),
+    edge_v::mesh::Communication l_comm( l_tsGroups->nGroups(),
+                                        l_mesh->getTypeEl(),
                                         l_mesh->nEls(),
                                         l_mesh->getElFaEl(),
                                         l_part.nPas(),

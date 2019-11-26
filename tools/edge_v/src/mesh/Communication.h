@@ -272,6 +272,7 @@ class edge_v::mesh::Communication {
     /**
      * Constructor which initializes the communication structures.
      *
+     * @param i_nTgs number of time groups.
      * @param i_elTy element type.
      * @param i_nEls number of elements.
      * @param i_elFaEl elements adjacent to elements (faces as bridge).
@@ -279,7 +280,8 @@ class edge_v::mesh::Communication {
      * @param i_nPaEls number of elements per partition.
      * @param i_elTg time groups of the elements.
      **/
-    Communication( t_entityType           i_elTy,
+    Communication( unsigned short         i_nTgs,
+                   t_entityType           i_elTy,
                    std::size_t            i_nEls,
                    std::size_t    const * i_elFaEl,
                    std::size_t            i_nPas,

@@ -507,7 +507,8 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
   // go through the constructor
   std::size_t l_nPaEls[6] = {2, 1, 5, 1, 2, 2};
 
-  edge_v::mesh::Communication l_comm( edge_v::TRIA3,
+  edge_v::mesh::Communication l_comm( 5,
+                                      edge_v::TRIA3,
                                       13,
                                       l_elFaEl[0],
                                       6,

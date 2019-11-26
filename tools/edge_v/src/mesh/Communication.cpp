@@ -441,7 +441,8 @@ void edge_v::mesh::Communication::setSeReElFa( std::size_t              const * 
   }
 }
 
-edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
+edge_v::mesh::Communication::Communication( unsigned short         i_nTgs,
+                                            t_entityType           i_elTy,
                                             std::size_t            i_nEls,
                                             std::size_t    const * i_elFaEl,
                                             std::size_t            i_nPas,
@@ -449,10 +450,7 @@ edge_v::mesh::Communication::Communication( t_entityType           i_elTy,
                                             unsigned short const * i_elTg ) {
   EDGE_V_CHECK_GT( i_nPas, 0 );
   m_nPas = i_nPas;
-  m_nTgs = 0;
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) m_nTgs = std::max( m_nTgs, i_elTg[l_el] );
-  m_nTgs++;
-
+  m_nTgs = i_nTgs;
 
   // init temporary data structure for the parts
   std::size_t * l_elPa = new std::size_t[ i_nEls ];
