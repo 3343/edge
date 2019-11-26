@@ -172,6 +172,13 @@ class edge::parallel::MpiRemix {
               char * i_argv[] );
 
     /**
+     * Gets the maximum version of the support MPI standard as a string.
+     *
+     * @return max MPI version.
+     **/
+    std::string getVerStr();
+
+    /**
      * Finalizes MPI.
      **/
     void fin();

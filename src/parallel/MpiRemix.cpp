@@ -189,6 +189,10 @@ edge::parallel::MpiRemix::MpiRemix( int    i_argc,
 #endif
 }
 
+std::string edge::parallel::MpiRemix::getVerStr() {
+  return std::to_string( m_verStd[0] ) + "." + std::to_string( m_verStd[1] );
+}
+
 void edge::parallel::MpiRemix::fin() {
 #ifdef PP_USE_MPI
       MPI_Barrier(m_comm);
