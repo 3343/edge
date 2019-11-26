@@ -58,30 +58,12 @@ class edge::data::SparseEntities {
       for( std::size_t l_tg = 0; l_tg < o_spLayout.timeGroups.size(); l_tg++ ) {
         o_spLayout.timeGroups[l_tg].inner.size  = 0;
 
-        // check matching size of MPI-data
-        EDGE_CHECK_EQ( i_deLayout.timeGroups[l_tg].neRanks.size(),
-                       i_deLayout.timeGroups[l_tg].send.size() );
-        EDGE_CHECK_EQ( i_deLayout.timeGroups[l_tg].neRanks.size(),
-                       i_deLayout.timeGroups[l_tg].receive.size() );
-        EDGE_CHECK_EQ( i_deLayout.timeGroups[l_tg].neRanks.size(),
-                       i_deLayout.timeGroups[l_tg].neTgs.size() );
-
         // resize
         o_spLayout.timeGroups[l_tg].send.resize(    i_deLayout.timeGroups[l_tg].send.size()    );
         o_spLayout.timeGroups[l_tg].receive.resize( i_deLayout.timeGroups[l_tg].receive.size() );
 
         o_spLayout.timeGroups[l_tg].neRanks.resize( i_deLayout.timeGroups[l_tg].neRanks.size() );
         o_spLayout.timeGroups[l_tg].neTgs.resize(   i_deLayout.timeGroups[l_tg].neTgs.size() );
-
-        //init MPI-data
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].send.size(); l_nr++ ) {
-          o_spLayout.timeGroups[l_tg].send[l_nr].size     = 0;
-          o_spLayout.timeGroups[l_tg].receive[l_nr].size  = 0;
-
-          // copy shared data to sparse layout
-          o_spLayout.timeGroups[l_tg].neRanks[l_nr] = i_deLayout.timeGroups[l_tg].neRanks[l_nr];
-          o_spLayout.timeGroups[l_tg].neTgs[l_nr]   = i_deLayout.timeGroups[l_tg].neTgs[l_nr];
-        }
       }
     }
 
