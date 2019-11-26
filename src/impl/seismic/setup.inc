@@ -34,11 +34,6 @@
                                        t_spTypeElastic::FREE_SURFACE,
                                        l_internal.m_faceChars,
                                        l_internal.m_elementChars );
-
-#ifdef PP_USE_MPI
-  edge::parallel::Mpi::syncSpTypes( l_enLayouts[2],
-                                    l_internal.m_elementChars );
-#endif
 }
 
 // allocate flex data for time buffers and DOFs
@@ -64,17 +59,16 @@
   l_internal.m_globalShared6[2] = l_raw + 2*l_edgeV.nEls();
 }
 
-#ifdef PP_USE_MPI
-  // init mpi layout
-  EDGE_CHECK( l_enLayouts[2].timeGroups.size() == 1 );
-
-  EDGE_LOG_FATAL << "adjust for LTS";
-  l_mpi.addDefault( l_enLayouts[2],
-                    l_internal.m_globalShared6[0][0][0][0],
-                    N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
-                    0,
-                    1 );
-#endif
+l_mpiRemix.init( l_edgeV.nTgs(),
+                 C_ENT[T_SDISC.ELEMENT].N_FACES,
+                 l_edgeV.nEls(),
+                 N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
+                 l_edgeV.getCommStruct(),
+                 l_edgeV.getSendFa(),
+                 l_edgeV.getSendEl(),
+                 l_edgeV.getRecvFa(),
+                 l_edgeV.getRecvEl(),
+                 l_dynMem );
 
 // parse config specific to elastics
 edge::seismic::io::Config l_seismicConf( l_config.m_doc );
@@ -214,7 +208,7 @@ edge::seismic::solvers::AderDg<
                                l_edgeV.nFas(),
                                l_internal.m_connect.faEl,
                                l_internal.m_connect.elVe,
-                               l_internal.m_connect.elFaEl,
+                               l_internal.m_connect.elFa,
                                l_internal.m_vertexChars,
                                l_internal.m_faceChars,
                                l_internal.m_elementChars,
@@ -261,11 +255,16 @@ edge::seismic::common::getTimeStepStatsCFL( l_edgeV.nEls(),
                                             l_internal.m_elementShared1,
                                             l_dT[0], l_dT[1], l_dT[2] );
 
+std::size_t l_sendOff = 0;
+for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
+  l_sendOff += l_edgeV.nTgElsIn()[l_tg];
+}
+
 // setup shared memory parallelization
-for( std::size_t l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
+for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
   int_spType l_spType[1] = { RECEIVER };
 
-  unsigned short l_nTgs = l_enLayouts[2].timeGroups.size();
+  unsigned short l_nTgs = l_edgeV.nTgs();
 
   // local, inner
   l_shared.regWrkRgn( l_tg,
@@ -280,8 +279,7 @@ for( std::size_t l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
   l_shared.regWrkRgn( l_tg,
                       0,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 1,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first+
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
+                      l_sendOff,
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_nTgs*2 - l_tg,
@@ -296,6 +294,8 @@ for( std::size_t l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
                       l_nTgs - l_tg );
 
   // src, send
+  EDGE_CHECK_EQ( l_enLayouts[l_srcLayout].timeGroups[l_tg].nEntsOwn-
+                 l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size, 0 ); // TODO: fix
   l_shared.regWrkRgn( l_tg,
                       1,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 3,
@@ -317,9 +317,11 @@ for( std::size_t l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
   l_shared.regWrkRgn( l_tg,
                       2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 5,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first+
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
+                      l_sendOff,
                       l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
                       l_enLayouts[2].timeGroups[l_tg].inner.size,
                       l_nTgs*2 - l_tg );
+
+  l_sendOff += l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
+               l_enLayouts[2].timeGroups[l_tg].inner.size;
 }
