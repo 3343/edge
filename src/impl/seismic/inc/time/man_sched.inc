@@ -34,10 +34,6 @@
 // make sure we have our entries
 static_assert( N_ENTRIES_CONTROL_FLOW == 9, "entries of control flow not matching" );
 
-#ifdef PP_USE_MPI
-EDGE_LOG_FATAL << "fix me!";
-#endif
-
 // update control flow if any of the work regions (local, src, neigh) finished
 // outside of the regular loop for a consistent view in the next loop
 for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
@@ -58,6 +54,14 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
     m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+0 );
     m_cflow[l_tg][0] = 1;
   }
+
+  // MPI-send
+  if( m_cflow[l_tg][6] == 1 && m_mpi.finSends( m_timeGroups[l_tg]->getUpdatesSync()%2 == 1, l_tg ) )
+    m_cflow[l_tg][6] = 2;
+
+  // MPI-recv
+  if( m_cflow[l_tg][7] == 1 && m_mpi.finRecvs( m_timeGroups[l_tg]->getUpdatesSync()%2 == 0, l_tg ) )
+    m_cflow[l_tg][7] = 2;
 
   // local, inner
   if( m_cflow[l_tg][0] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+0 ) ) {
@@ -96,11 +100,23 @@ unsigned short l_nTgsFin = 0;
 for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
   unsigned short l_tgOff = N_ENTRIES_CONTROL_FLOW * l_tg;
 
-  // schedule src, send
+  // schedule sends and receives
   if( m_cflow[l_tg][1] == 2 ) {
-    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+3 );
+    m_mpi.beginSends( m_timeGroups[l_tg]->getUpdatesSync()%2 == 1,
+                      l_tg );
+    m_mpi.beginRecvs( m_timeGroups[l_tg]->getUpdatesSync()%2 == 0,
+                      l_tg );
+    m_cflow[l_tg][6] = 1;
+    m_cflow[l_tg][7] = 1;
 
     m_cflow[l_tg][1] = 3;
+  }
+
+  // schedule src, send
+  if( m_cflow[l_tg][1] == 3 ) {
+    m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+3 );
+
+    m_cflow[l_tg][1] = 4;
     m_cflow[l_tg][3] = 1;
   }
 
@@ -108,24 +124,27 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
   if( m_cflow[l_tg][0] == 2 ) {
     m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+2 );
 
-    m_cflow[l_tg][0] = 3;
+    m_cflow[l_tg][0] = 4;
     m_cflow[l_tg][2] = 1;
   }
 
   // schedule neigh, send
-  if( m_cflow[l_tg][0] >= 3 && m_cflow[l_tg][1] >= 3 && m_cflow[l_tg][3] == 2 && getTimePredAvailable(l_tg) ) {
+  if( m_cflow[l_tg][6] == 2 && m_cflow[l_tg][7] == 2 &&
+      m_cflow[l_tg][0] >= 4 && m_cflow[l_tg][1] >= 4 && m_cflow[l_tg][3] == 2 && getTimePredAvailable(l_tg) ) {
     m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+5);
 
-    m_cflow[l_tg][1] = 4;
+    m_cflow[l_tg][1] = 5;
     m_cflow[l_tg][3] = 3;
     m_cflow[l_tg][5] = 1;
+    m_cflow[l_tg][6] = 3;
+    m_cflow[l_tg][7] = 3;
   }
 
   // schedule neigh, inner
-  if( m_cflow[l_tg][0] >= 3 && m_cflow[l_tg][1] >= 3 && m_cflow[l_tg][2] == 2 && getTimePredAvailable(l_tg) ) {
+  if( m_cflow[l_tg][0] >= 4 && m_cflow[l_tg][1] >= 4 && m_cflow[l_tg][2] == 2 && getTimePredAvailable(l_tg) ) {
     m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+4);
 
-    m_cflow[l_tg][0] = 4;
+    m_cflow[l_tg][0] = 5;
     m_cflow[l_tg][2] = 3;
     m_cflow[l_tg][4] = 1;
 
@@ -148,6 +167,7 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
 
     m_cflow[l_tg][2] = m_cflow[l_tg][3] = 0;
     m_cflow[l_tg][4] = m_cflow[l_tg][5] = 0;
+    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 0;
   }
 
   // increase finished time group counter if appropiate
