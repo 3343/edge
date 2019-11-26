@@ -23,6 +23,7 @@
  **/
 
 #include "parallel/Mpi.h"
+#include "parallel/MpiRemix.h"
 #include "parallel/Shared.h"
 
 #include "io/logging.h"
@@ -88,6 +89,9 @@ int main( int i_argc, char *i_argv[] ) {
   edge::parallel::Mpi l_mpi;
   l_mpi.start( i_argc, i_argv );
 
+  edge::parallel::MpiRemix l_mpiRemix( i_argc,
+                                       i_argv );
+
   // reconfigure the logging interface with rank and thread id
   edge::io::logging::config();
 
@@ -110,8 +114,7 @@ int main( int i_argc, char *i_argv[] ) {
 
 #ifdef PP_USE_MPI
   EDGE_LOG_INFO << "our mpi settings:";
-  EDGE_LOG_INFO << "  standard-version " << edge::parallel::Mpi::m_verStd[0] << "."
-                                         << edge::parallel::Mpi::m_verStd[1];
+  EDGE_LOG_INFO << "  standard-version " << l_mpiRemix.getVerStr();
   EDGE_LOG_INFO << "  #ranks: "          << edge::parallel::g_nRanks;
 #endif
 
@@ -133,7 +136,10 @@ int main( int i_argc, char *i_argv[] ) {
 
   // parse mesh
   EDGE_LOG_INFO << "parsing mesh";
-  edge::mesh::EdgeV l_edgeV( l_config.m_meshFileIn,
+  std::string l_meshPath = l_config.m_meshInBase;
+  if( edge::parallel::g_nRanks > 0 ) l_meshPath += "_" + edge::parallel::g_rankStr;
+  l_meshPath += l_config.m_meshInExt;
+  edge::mesh::EdgeV l_edgeV( l_meshPath,
                              l_config.m_periodic != std::numeric_limits< int >::max() );
 
   // get the data layout
@@ -216,22 +222,21 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
                     l_internal.m_elementChars );
 
   // get the neighboring elements' local face ids
-  edge::mesh::common< T_SDISC.ELEMENT >::getFIdsElFaEl( l_elLayout,
-                                                        l_gIdsEl,
-                                                        l_internal.m_connect.elFa,
+  edge::mesh::common< T_SDISC.ELEMENT >::getFIdsElFaEl( l_edgeV.nEls(),
                                                         l_internal.m_connect.elFaEl,
                                                         l_internal.m_connect.fIdElFaEl );
 
   // get the neighboring elements' local vertex ids, which match the faces' first vertex
-  edge::mesh::common< T_SDISC.ELEMENT >::getVIdsElFaEl( l_elLayout,
-                                                        l_gIdsVe,
+  edge::mesh::common< T_SDISC.ELEMENT >::getVIdsElFaEl( l_edgeV.nEls(),
                                                         l_internal.m_connect.elFaEl,
                                                         l_internal.m_connect.elVe,
                                                         l_internal.m_connect.fIdElFaEl,
                                                         l_internal.m_connect.vIdElFaEl,
-                                                        true,
+                                                        false,
                                                         l_internal.m_vertexChars );
 
+  l_edgeV.setSeVeFaIdsAd( l_internal.m_connect.vIdElFaEl[0],
+                          l_internal.m_connect.fIdElFaEl[0] );
   l_edgeV.setLtsTypes( l_internal.m_elementChars );
 
   // enhance entity chars if set in the config
@@ -298,7 +303,9 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   for( unsigned short l_tg = 0; l_tg < l_nTgs; l_tg++ ) {
     l_tgs.push_back( edge::time::TimeGroupStatic( l_nTgs,
                                                   l_tg,
-                                                  l_internal ) );
+                                                  l_internal,
+                                                  l_mpiRemix.getSendPtrs(),
+                                                  l_mpiRemix.getRecvPtrs() ) );
   }
 
   EDGE_LOG_INFO << "time step stats coming thru (min,ave,max): "
@@ -311,7 +318,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   }
   edge::time::Manager l_time( l_edgeV.getRelDt()[0]*l_dtG[0],
                               l_shared,
-                              l_mpi,
+                              l_mpiRemix,
                               l_tgs,
                               l_receivers );
 
@@ -327,7 +334,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   edge::io::WaveField l_writer( l_config.m_waveFieldType,
                                 l_config.m_waveFieldFile,
                                 l_edgeV.nVes(),
-                                l_elLayout,
+                                l_edgeV.nEls(),
                                 l_internal.m_vertexChars,
                                 l_internal.m_elementChars,
                                 l_internal.m_connect.elVe,
@@ -376,7 +383,6 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
 #pragma warning pop
 
     l_time.simulate( l_stepTime );
-
     PP_INSTR_REG_END( sync )
 
     // update simulation time
