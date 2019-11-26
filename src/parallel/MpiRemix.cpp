@@ -74,7 +74,6 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
   // derive the number of communication channels and communicating faces
   m_nChs = i_commStruct[0];
 
-  m_nSeRe = 0;
   std::size_t l_sizeSend = 0;
   std::size_t l_sizeRecv = 0;
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
@@ -82,7 +81,6 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
     std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
     std::size_t l_nSeRe = i_commStruct[1 + l_ch*4 + 3];
 
-    m_nSeRe += l_nSeRe;
     l_sizeSend += (l_tg > l_tgAd) ? 2 * l_nSeRe * i_nByFa : l_nSeRe * i_nByFa;
     l_sizeRecv += (l_tg < l_tgAd) ? 2 * l_nSeRe * i_nByFa : l_nSeRe * i_nByFa;
   }
@@ -216,8 +214,8 @@ void edge::parallel::MpiRemix::beginSends( bool           i_lt,
                              m_sendMsgs[l_ch].tag,
                              m_comm,
                              &m_sendMsgs[l_ch].request );
-       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-       m_sendMsgs[l_ch].test = 0;
+      EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+      m_sendMsgs[l_ch].test = 0;
     }
   }
 #endif
@@ -240,8 +238,8 @@ void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
                              m_recvMsgs[l_ch].tag,
                              m_comm,
                              &m_recvMsgs[l_ch].request );
-       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-       m_recvMsgs[l_ch].test = 0;
+      EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+      m_recvMsgs[l_ch].test = 0;
     }
   }
 #endif
@@ -263,6 +261,7 @@ void edge::parallel::MpiRemix::comm() {
       EDGE_CHECK_NE( l_test, -1 );
       if( l_test == 1 ) {
         l_nFinSend++;
+        m_sendMsgs[l_ch].request = MPI_REQUEST_NULL;
         m_sendMsgs[l_ch].test = l_test;
       }
 
@@ -275,6 +274,7 @@ void edge::parallel::MpiRemix::comm() {
       EDGE_CHECK_NE( l_test, -1 );
       if( l_test == 1 ) {
         l_nFinRecv++;
+        m_recvMsgs[l_ch].request = MPI_REQUEST_NULL;
         m_recvMsgs[l_ch].test = l_test;
       }
     }
@@ -294,7 +294,7 @@ bool edge::parallel::MpiRemix::finSends( bool           i_lt,
                                   i_lt,
                                   i_tg );
 
-    if( l_match && m_sendMsgs[l_ch].test == 0 ) return false;
+    if( l_match && m_sendMsgs[l_ch].test != 1 ) return false;
   }
 #endif
 
@@ -310,7 +310,7 @@ bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
                                   i_lt,
                                   i_tg );
 
-    if( l_match && m_recvMsgs[l_ch].test == 0 ) return false;
+    if( l_match && m_recvMsgs[l_ch].test != 1 ) return false;
   }
 #endif
 

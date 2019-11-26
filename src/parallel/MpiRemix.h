@@ -52,9 +52,6 @@ class edge::parallel::MpiRemix {
     //! number of channels
     std::size_t m_nChs = 0;
 
-    //! number of send and receiver element-face pairs
-    std::size_t m_nSeRe = 0;
-
     //! send buffer
     unsigned char * m_sendBuffer = nullptr;
 
