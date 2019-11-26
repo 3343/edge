@@ -735,66 +735,37 @@ class edge::mesh::common {
      *   *       * *
      *  ***********
      *
-     * @param i_elLayout data layout of the elements.
-     * @param i_gIdsEl global ids of the elements.
+     * @param i_nEls number of elements in the mesh.
      * @param i_elFa elements' adjacent faces.
      * @param i_elFaEl elements' adjacent elememnts connected through faces.
-     * @param i_faceChars face characteristics.
      * @param o_fIdElFaEl will bet set to local face ids of face-neighboring elememts.
      **/
-    static void getFIdsElFaEl( const t_enLayout             &i_elLayout,
-                               const std::vector< int_gid > &i_gIdsEl,
-                               const std::size_t           (*i_elFa)[TL_N_EL_FAS],
-                               const int_el                (*i_elFaEl)[TL_N_EL_FAS],
-                                     unsigned short        (*o_fIdElFaEl)[TL_N_EL_FAS] ) {
-      // iterate over own entities
-      for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
-        int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
-        int_el l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;
+    static void getFIdsElFaEl(       std::size_t      i_nEls,
+                               const std::size_t    (*i_elFaEl)[TL_N_EL_FAS],
+                                     unsigned short (*o_fIdElFaEl)[TL_N_EL_FAS] ) {
+      for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+        for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
+          o_fIdElFaEl[l_el][l_fa] = std::numeric_limits< unsigned short >::max();
 
-        for( int_el l_el = l_first; l_el < l_first+l_size; l_el++ ) {
-          // global element id
-          assert( l_el < (int_el) i_gIdsEl.size() );
-          int_gid l_gIdEl = i_gIdsEl[l_el];
+          // local id of the neighbor
+          std::size_t l_lIdElNe = i_elFaEl[l_el][l_fa];
 
-          for( unsigned int l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
-            // assert an existing face
-            EDGE_CHECK( i_elFa[l_el][l_fa] != std::numeric_limits<int_el>::max() );
+          // continue for boundary conditions
+          if( l_lIdElNe > i_nEls ) continue;
 
-            o_fIdElFaEl[l_el][l_fa] = std::numeric_limits<unsigned short>::max();
+          // find the local face mapping back to our element
+          for( unsigned short l_nFa = 0; l_nFa < TL_N_EL_FAS; l_nFa++ ) {
+            if( i_elFaEl[l_lIdElNe][l_nFa] == l_el ) {
+              // this must be unique
+              EDGE_CHECK( o_fIdElFaEl[l_el][l_fa] == std::numeric_limits< unsigned short >::max() );
 
-            // continue for boundary conditions
-            if( i_elFaEl[l_el][l_fa] > i_elLayout.nEnts ) {
-              o_fIdElFaEl[l_el][l_fa] = std::numeric_limits<unsigned short>::max();
-              continue;
+              // let's store the info
+              o_fIdElFaEl[l_el][l_fa] = l_nFa;
             }
-
-            // local id of the neighbor
-            int_el l_lIdElNe = i_elFaEl[l_el][l_fa];
-
-            // assert an existing, adjacent element
-            EDGE_CHECK( l_lIdElNe < (int_el) i_gIdsEl.size() );
-
-            // find the local face mapping back to our element
-            for( unsigned int l_nFa = 0; l_nFa < TL_N_EL_FAS; l_nFa++ ) {
-              // continue for receive-elements pointing further out
-              if( i_elFaEl[l_lIdElNe][l_nFa] == std::numeric_limits< int_el >::max() ) {
-                continue;
-              }
-
-              EDGE_CHECK( i_elFaEl[l_lIdElNe][l_nFa] < (int_el) i_gIdsEl.size() );
-              if( i_gIdsEl[ i_elFaEl[l_lIdElNe][l_nFa] ] == l_gIdEl ) {
-                // this must be unique
-                EDGE_CHECK( o_fIdElFaEl[l_el][l_fa] == std::numeric_limits<unsigned short>::max() );
-
-                // let's store the info
-                o_fIdElFaEl[l_el][l_fa] = l_nFa;
-              }
-            }
-
-            // check that we found the corresponding face-id
-            EDGE_CHECK( o_fIdElFaEl[l_el][l_fa] != std::numeric_limits<unsigned short>::max() );
           }
+
+          // check that we found the corresponding face-id
+          EDGE_CHECK( o_fIdElFaEl[l_el][l_fa] != std::numeric_limits<unsigned short>::max() );
         }
       }
     }
@@ -802,8 +773,7 @@ class edge::mesh::common {
     /**
      * Gets the adjancent elements' vertex information.
      *
-     * @param i_elLayout data layout of the elements.
-     * @param i_gIdsVe global ids of the vertices.
+     * @param i_nEls number of elements.
      * @param i_elFaEl elements' face neighboring elements.
      * @param i_elVe elements vertices.
      * @param i_fIdElFaEl local face ids of face-neighboring elememts.
@@ -811,133 +781,127 @@ class edge::mesh::common {
      * @param i_periodic if true we try to go through vertex coords for periodic faces.
      * @param i_veChars vertex characteristics. used when we assume periodic boundaries (having duplicated vertices).
      **/
-    static void getVIdsElFaEl( const t_enLayout             &i_elLayout,
-                               const std::vector< int_gid > &i_gIdsVe,
-                               const int_el                (*i_elFaEl)[TL_N_EL_FAS],
-                               const int_el                (*i_elVe)[TL_N_EL_VES],
-                               const unsigned short        (*i_fIdElFaEl)[TL_N_EL_FAS],
-                                     unsigned short        (*o_vIdElFaEl)[TL_N_EL_FAS],
-                                     bool                    i_periodic=false,
-                               const t_vertexChars          *i_veChars=NULL ) {
+    static void getVIdsElFaEl(       std::size_t           i_nEls,
+                               const std::size_t         (*i_elFaEl)[TL_N_EL_FAS],
+                               const std::size_t         (*i_elVe)[TL_N_EL_VES],
+                               const unsigned short      (*i_fIdElFaEl)[TL_N_EL_FAS],
+                                     unsigned short      (*o_vIdElFaEl)[TL_N_EL_FAS],
+                                     bool                  i_periodic=false,
+                               const t_vertexChars        *i_veChars=NULL ) {
       // init
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-      for( int_el l_el = 0; l_el < i_elLayout.nEnts; l_el++ )
+      for( int_el l_el = 0; l_el < i_nEls; l_el++ )
         for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ )
           o_vIdElFaEl[l_el][l_fa] = std::numeric_limits< unsigned short >::max();
 
-      for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
-        int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
-        int_el l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;
-
-        for( int_el l_el = l_first; l_el < l_first+l_size; l_el++ ) {
+      for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
 #if defined PP_T_MESH_REGULAR || defined PP_T_ELEMENTS_TRIA3
-          for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
-            // no rotation possible.
-            o_vIdElFaEl[l_el][l_fa] = 0;
-          }
-#elif defined PP_T_ELEMENTS_TET4
-          // iterate over element's faces
-          for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
-            // neighboring element
-            int_el l_ne = i_elFaEl[l_el][l_fa];
-
-            // set invalid and continue for boundary conditions
-            if( i_elFaEl[l_el][l_fa] == std::numeric_limits<int_el>::max() ) {
-              o_vIdElFaEl[l_el][l_fa] = std::numeric_limits<unsigned short>::max();
-              continue;
-            }
-
-            // check if we are at a periodic boundary
-            unsigned int l_nSharedVes = 0;
-            for( unsigned l_ve1 = 0; l_ve1 < 4; l_ve1++ ) {
-              for( unsigned int l_ve2 = 0; l_ve2 < 4; l_ve2++ ) {
-                if( i_elVe[l_el][l_ve1] == i_elVe[l_ne][l_ve2] ) l_nSharedVes++;
-              }
-            }
-            // this might fail for very small meshes, where all tets are connected to each other (l_nSharedVes)
-            // we keep the check as this is unrealistic
-            EDGE_CHECK( l_nSharedVes == 3 || l_nSharedVes == 0 );
-
-            // global ids of neighboring vertices
-            int_gid l_neVe[4];
-
-            // default, we found a neighbor
-            if( l_nSharedVes == 3 ) {
-              for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) l_neVe[l_ve] = i_gIdsVe[ i_elVe[l_ne][l_ve] ];
-            }
-            // either abort or try to save things for periodic boundaries
-            else {
-              if( i_periodic == false ) EDGE_LOG_FATAL << "couldn't derive vertex ids, assuming a non-periodic mesh";
-
-              // go through geometric properties and set dummy values to the 'neighboring' vertices
-              setPeriodicVesTet4( i_gIdsVe, l_el, l_ne, l_fa, i_elVe, i_veChars, l_neVe );
-            }
-
-            // dominant vertex, which dictates the vertex id
-            int_gid l_domVe;
-
-            // in the case of faces 0-2 we are interested in the position of local vertex 0
-            if( l_fa <= 2 ) l_domVe = i_gIdsVe[ i_elVe[l_el][0] ];
-            // face 3 requires the position of local vertex 1 w.r.t. the neighboring face
-            else            l_domVe = i_gIdsVe[ i_elVe[l_el][1] ];
-
-            // find the position of the vertex in the other element
-            unsigned short l_locNe = 4;
-
-            for( unsigned int l_ve2 = 0; l_ve2 < 4; l_ve2++ ) {
-              if( l_neVe[l_ve2] == l_domVe ) {
-                EDGE_CHECK_EQ( l_locNe, 4 );
-                l_locNe = l_ve2;
-              }
-            }
-            assert( l_locNe != 4 );
-
-            /*
-             * decide, depending on the neighboring face, what vertex combination we have
-             *
-             * Example:
-             *
-             *      face 0                   face 1
-             *         3                       2
-             *         *                         *
-             *       *    *         neighbors    *  *
-             *     *        *                    *     *
-             * 0  ************* 1              0 ********** 3 <-- dominant 0 goes here
-             *
-             * -> We have vertex combi 1 out of possible 0-2.
-             */
-             if( i_fIdElFaEl[l_el][l_fa] == 0 ) {
-               if(      l_locNe == 0 ) o_vIdElFaEl[l_el][l_fa] = 0;
-               else if( l_locNe == 2 ) o_vIdElFaEl[l_el][l_fa] = 1;
-               else if( l_locNe == 1 ) o_vIdElFaEl[l_el][l_fa] = 2;
-               else assert( false );
-             }
-             else if( i_fIdElFaEl[l_el][l_fa] == 1 ) {
-               if(      l_locNe == 0 ) o_vIdElFaEl[l_el][l_fa] = 0;
-               else if( l_locNe == 1 ) o_vIdElFaEl[l_el][l_fa] = 1;
-               else if( l_locNe == 3 ) o_vIdElFaEl[l_el][l_fa] = 2;
-               else assert( false );
-             }
-             else if( i_fIdElFaEl[l_el][l_fa] == 2 ) {
-               if(      l_locNe == 0 ) o_vIdElFaEl[l_el][l_fa] = 0;
-               else if( l_locNe == 3 ) o_vIdElFaEl[l_el][l_fa] = 1;
-               else if( l_locNe == 2 ) o_vIdElFaEl[l_el][l_fa] = 2;
-               else assert( false );
-             }
-             else if( i_fIdElFaEl[l_el][l_fa] == 3 ) {
-               if(      l_locNe == 1 ) o_vIdElFaEl[l_el][l_fa] = 0;
-               else if( l_locNe == 2 ) o_vIdElFaEl[l_el][l_fa] = 1;
-               else if( l_locNe == 3 ) o_vIdElFaEl[l_el][l_fa] = 2;
-               else assert( false );
-             }
-             else assert( false );
-          }
-#else
-         assert( false );
-#endif
+        for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
+          // no rotation possible.
+          o_vIdElFaEl[l_el][l_fa] = 0;
         }
+#elif defined PP_T_ELEMENTS_TET4
+        // iterate over element's faces
+        for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
+          // neighboring element
+          std::size_t l_ne = i_elFaEl[l_el][l_fa];
+
+          // set invalid and continue for boundary conditions
+          if( i_elFaEl[l_el][l_fa] == std::numeric_limits< std::size_t >::max() ) {
+            o_vIdElFaEl[l_el][l_fa] = std::numeric_limits< unsigned short >::max();
+            continue;
+          }
+
+          // check if we are at a periodic boundary
+          unsigned int l_nSharedVes = 0;
+          for( unsigned l_ve1 = 0; l_ve1 < 4; l_ve1++ ) {
+            for( unsigned int l_ve2 = 0; l_ve2 < 4; l_ve2++ ) {
+              if( i_elVe[l_el][l_ve1] == i_elVe[l_ne][l_ve2] ) l_nSharedVes++;
+            }
+          }
+          // this might fail for very small meshes, where all tets are connected to each other (l_nSharedVes)
+          // we keep the check as this is unrealistic
+          EDGE_CHECK( l_nSharedVes == 3 || l_nSharedVes == 0 );
+
+          // global ids of neighboring vertices
+          int_gid l_neVe[4];
+
+          // default, we found a neighbor
+          if( l_nSharedVes == 3 ) {
+            for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) l_neVe[l_ve] = i_elVe[l_ne][l_ve];
+          }
+          // either abort or try to save things for periodic boundaries
+          else {
+            if( i_periodic == false ) EDGE_LOG_FATAL << "couldn't derive vertex ids, assuming a non-periodic mesh";
+EDGE_LOG_FATAL;
+            // go through geometric properties and set dummy values to the 'neighboring' vertices
+            // setPeriodicVesTet4( i_gIdsVe, l_el, l_ne, l_fa, i_elVe, i_veChars, l_neVe );
+          }
+
+          // dominant vertex, which dictates the vertex id
+          int_gid l_domVe;
+
+          // in the case of faces 0-2 we are interested in the position of local vertex 0
+          if( l_fa <= 2 ) l_domVe = i_elVe[l_el][0];
+          // face 3 requires the position of local vertex 1 w.r.t. the neighboring face
+          else            l_domVe = i_elVe[l_el][1]
+
+          // find the position of the vertex in the other element
+          unsigned short l_locNe = 4;
+
+          for( unsigned int l_ve2 = 0; l_ve2 < 4; l_ve2++ ) {
+            if( l_neVe[l_ve2] == l_domVe ) {
+              EDGE_CHECK_EQ( l_locNe, 4 );
+              l_locNe = l_ve2;
+            }
+          }
+          assert( l_locNe != 4 );
+
+          /*
+            * decide, depending on the neighboring face, what vertex combination we have
+            *
+            * Example:
+            *
+            *      face 0                   face 1
+            *         3                       2
+            *         *                         *
+            *       *    *         neighbors    *  *
+            *     *        *                    *     *
+            * 0  ************* 1              0 ********** 3 <-- dominant 0 goes here
+            *
+            * -> We have vertex combi 1 out of possible 0-2.
+            */
+            if( i_fIdElFaEl[l_el][l_fa] == 0 ) {
+              if(      l_locNe == 0 ) o_vIdElFaEl[l_el][l_fa] = 0;
+              else if( l_locNe == 2 ) o_vIdElFaEl[l_el][l_fa] = 1;
+              else if( l_locNe == 1 ) o_vIdElFaEl[l_el][l_fa] = 2;
+              else assert( false );
+            }
+            else if( i_fIdElFaEl[l_el][l_fa] == 1 ) {
+              if(      l_locNe == 0 ) o_vIdElFaEl[l_el][l_fa] = 0;
+              else if( l_locNe == 1 ) o_vIdElFaEl[l_el][l_fa] = 1;
+              else if( l_locNe == 3 ) o_vIdElFaEl[l_el][l_fa] = 2;
+              else assert( false );
+            }
+            else if( i_fIdElFaEl[l_el][l_fa] == 2 ) {
+              if(      l_locNe == 0 ) o_vIdElFaEl[l_el][l_fa] = 0;
+              else if( l_locNe == 3 ) o_vIdElFaEl[l_el][l_fa] = 1;
+              else if( l_locNe == 2 ) o_vIdElFaEl[l_el][l_fa] = 2;
+              else assert( false );
+            }
+            else if( i_fIdElFaEl[l_el][l_fa] == 3 ) {
+              if(      l_locNe == 1 ) o_vIdElFaEl[l_el][l_fa] = 0;
+              else if( l_locNe == 2 ) o_vIdElFaEl[l_el][l_fa] = 1;
+              else if( l_locNe == 3 ) o_vIdElFaEl[l_el][l_fa] = 2;
+              else assert( false );
+            }
+            else assert( false );
+        }
+#else
+        assert( false );
+#endif
       }
     }
 
