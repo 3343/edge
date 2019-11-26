@@ -554,8 +554,10 @@ void edge_v::io::Moab::setGlobalData( std::string    const & i_tagName,
 void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
                                       std::size_t         i_nValues,
                                       std::size_t const * i_data ) {
+  int *l_data = nullptr;
+
   // convert data to int
-  int *l_data = new int[i_nValues];
+  if( i_nValues >  0 ) l_data = new int[i_nValues];
   convert( i_nValues,
            i_data,
            l_data );
@@ -567,7 +569,7 @@ void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
                  l_data );
 
   // free memory
-  delete[] l_data;
+  if( l_data != nullptr ) delete[] l_data;
 }
 
 void edge_v::io::Moab::setGlobalData( std::string const & i_tagName,
