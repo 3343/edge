@@ -172,7 +172,7 @@ env = Environment( variables = vars )
 
 # exit in the case of unknown variables
 if vars.UnknownVariables():
-  print "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys())
+  print( "build configuration corrupted, don't know what to do with: " + str(vars.UnknownVariables().keys()) )
   exit(1)
 
 # generate help message
@@ -316,7 +316,7 @@ SConscript( env['build_dir']+'/src/SConscript' )
 Import('env')
 
 # add a new line
-print ''
+print()
 
 # build static library from sources
 l_edgev = env.StaticLibrary( env['build_dir']+'/edge_v',
