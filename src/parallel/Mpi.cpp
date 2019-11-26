@@ -27,27 +27,6 @@
 #include "monitor/instrument.hpp"
 
 void edge::parallel::Mpi::start( int i_argc, char *i_argv[] ) {
-      // set default values for non-mpi runs
-      g_nRanks = 1;
-      g_rank = 0;
-      g_rankStr = std::to_string(0);
-      m_verStd[0] = 0; m_verStd[1] = 0;
-#ifdef PP_USE_MPI
-      // initialize MPI, get size and rank
-      if( g_nThreads == 1 ) {
-        MPI_Init( &i_argc, &i_argv );
-      }
-      else {
-        int l_tdSu;
-        MPI_Init_thread( &i_argc, &i_argv, MPI_THREAD_FUNNELED, &l_tdSu );
-        // ensure the required threading support of MPI
-        EDGE_CHECK( l_tdSu == MPI_THREAD_FUNNELED );
-      }
-      MPI_Comm_size (   m_comm, &g_nRanks   );
-      MPI_Comm_rank(    m_comm, &g_rank     );
-      MPI_Get_version(  m_verStd,   m_verStd+1 );
-      g_rankStr = std::to_string(   g_rank );
-#endif
 }
 
 #ifdef PP_USE_MPI
