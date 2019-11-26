@@ -81,8 +81,6 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
    EDGE_LOG_FATAL << "not good, more element types are required! " << T_SDISC.ELEMENT;
   }
 
-  std::string l_meshType = "unstructured";
-
 #if defined PP_T_EQUATIONS_ADVECTION
   std::string l_equations = "advection";
 #elif defined(PP_N_RELAXATION_MECHANISMS) && (PP_N_RELAXATION_MECHANISMS==0)
@@ -113,7 +111,6 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
   EDGE_LOG_INFO << "  element_type    (build / runtime): " << l_elementType << " / " << i_build.child("element_type").text().as_string();
   EDGE_LOG_INFO << "  order           (build / runtime): " << PP_ORDER      << " / " << i_build.child("order").text().as_string();
   EDGE_LOG_INFO << "  precision       (build / runtime): " << PP_PRECISION  << " / " << i_build.child("precision").text().as_string();
-  EDGE_LOG_INFO << "  mesh type build / moab runtime:    " << l_meshType    << " / " << i_build.child("moab").text().as_string();
   EDGE_LOG_INFO << "  xsmm            (build / runtime): " << l_xsmm        << " / " << i_build.child("xsmm").text().as_string();
   EDGE_LOG_INFO << "some derived parameters: ";
   EDGE_LOG_INFO << "  #element modes: " << N_ELEMENT_MODES;
@@ -134,10 +131,9 @@ void edge::io::Config::printConfig() {
   EDGE_LOG_INFO << "  synchronization:";
   EDGE_LOG_INFO << "    max_int (possibly using default settings): " << m_syncMaxInt;
   EDGE_LOG_INFO << "  mesh:";
-  EDGE_LOG_INFO << "    read options: " << m_meshOptRead;
-  EDGE_LOG_INFO << "    files:";
-  EDGE_LOG_INFO << "      in: " << m_meshFileIn;
-  EDGE_LOG_INFO << "      out: " << m_meshFileOut;
+  EDGE_LOG_INFO << "    in: ";
+  EDGE_LOG_INFO << "      base: " << m_meshInBase;
+  EDGE_LOG_INFO << "      extension: " << m_meshInExt;
   EDGE_LOG_INFO << "    boundary:";
   if( m_periodic != std::numeric_limits<int>::max() ) {
     EDGE_LOG_INFO << "      periodic: " << m_periodic;
@@ -248,16 +244,8 @@ edge::io::Config::Config( std::string i_xmlPath ):
   m_sizeY = l_mesh.child("size").child("y").text().as_double();
   m_sizeZ = l_mesh.child("size").child("z").text().as_double();
 
-  m_meshOptRead = l_mesh.child("options").child("read").text().as_string();
-  // set default read options for MPI if not specified
-  if( m_meshOptRead == "" ) {
-#ifdef PP_USE_MPI
-    m_meshOptRead  = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-#endif
-  }
-
-  m_meshFileIn = l_mesh.child("files").child("in").text().as_string();
-  m_meshFileOut = l_mesh.child("files").child("out").text().as_string();
+  m_meshInBase = l_mesh.child("in").child("base").text().as_string();
+  m_meshInExt = l_mesh.child("in").child("extension").text().as_string();
 
   // set periodic boundary value if present
   if( l_mesh.child("boundary").find_child(

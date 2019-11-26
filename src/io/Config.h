@@ -206,11 +206,11 @@ class edge::io::Config {
     //! mesh read options
     std::string m_meshOptRead;
 
-    //! mesh input file
-    std::string m_meshFileIn;
+    //! base name of the mesh
+    std::string m_meshInBase;
 
-    //! mesh output file
-    std::string m_meshFileOut;
+    //! file extension of the mesh
+    std::string m_meshInExt;
 
     /*
      * Simulation parameters
