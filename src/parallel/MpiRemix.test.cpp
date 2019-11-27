@@ -65,7 +65,6 @@ TEST_CASE( "Tests the setup of MPI-related data structures.", "[MpiRemix][data]"
               l_dynMem );
 
   REQUIRE( l_mpi.m_nChs == 2 );
-  REQUIRE( l_mpi.m_nSeRe == 20 );
 
   // check some send pointers
   REQUIRE( l_mpi.m_sendPtrs[0*4 + 0] == l_mpi.m_sendBuffer+10*17  );
