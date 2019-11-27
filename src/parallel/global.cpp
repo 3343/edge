@@ -20,8 +20,6 @@
  * @section DESCRIPTION
  * Definition of global variables for parallelization.
  **/
-
-#include "Mpi.h"
 #include "global.h"
 
 #ifdef PP_USE_OMP
@@ -40,4 +38,3 @@ t_scratchMem* edge::parallel::g_scratchMem = nullptr;
 int           edge::parallel::g_nRanks = 1;
 int           edge::parallel::g_rank = 0;
 std::string   edge::parallel::g_rankStr = std::to_string(0);
-int           edge::parallel::Mpi::m_verStd[2] = {0,0};

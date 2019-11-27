@@ -22,7 +22,6 @@
  * This is the main file of EDGE.
  **/
 
-#include "parallel/Mpi.h"
 #include "parallel/MpiRemix.h"
 #include "parallel/Shared.h"
 
@@ -85,10 +84,7 @@ int main( int i_argc, char *i_argv[] ) {
   edge::parallel::Shared l_shared;
   l_shared.init();
 
-  // start MPI
-  edge::parallel::Mpi l_mpi;
-  l_mpi.start( i_argc, i_argv );
-
+  // init MPI
   edge::parallel::MpiRemix l_mpiRemix( i_argc,
                                        i_argv );
 
@@ -434,7 +430,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   EDGE_LOG_INFO << "that was fun: EDGE over and out!";
 
   // stop MPI
-  l_mpi.fin();
+  l_mpiRemix.fin();
 
   // print duration of finalizaiton
   l_timer.end();

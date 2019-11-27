@@ -23,6 +23,8 @@
 #ifndef EDGE_CONSTANTS_HPP
 #define EDGE_CONSTANTS_HPP
 
+#include <cstddef>
+
 // entity types
 typedef enum {
   POINT    = 0,

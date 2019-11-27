@@ -20,7 +20,7 @@
  * @section DESCRIPTION
  * Dynamic load balancing of work regions.
  **/
-#include "parallel/Mpi.h"
+#include "parallel/MpiRemix.h"
 
 #include "LoadBalancing.h"
 

@@ -24,7 +24,6 @@
 #ifndef EDGE_FILE_SYSTEM_HPP_
 #define EDGE_FILE_SYSTEM_HPP_
 
-#include "parallel/Mpi.h"
 #include <sys/stat.h>
 #include "io/logging.h"
 #include <unistd.h>

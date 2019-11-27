@@ -23,7 +23,9 @@
 #ifndef EDGE_DATA_COMMON_HPP
 #define EDGE_DATA_COMMON_HPP
 
-#include "parallel/Mpi.h"
+#ifdef PP_USE_MPI
+#include <mpi.h>
+#endif
 #include "constants.hpp"
 #include <fstream>
 #include <io/logging.h>

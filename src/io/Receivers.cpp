@@ -20,7 +20,6 @@
  * @section DESCRIPTION
  * Output of receivers.
  **/
-#include "parallel/Mpi.h"
 #include "Receivers.h"
 #include "data/SparseEntities.hpp"
 #include "FileSystem.hpp"

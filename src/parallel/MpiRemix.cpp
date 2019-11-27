@@ -25,6 +25,42 @@
 #include "io/logging.h"
 #include "global.h"
 
+void edge::parallel::MpiRemix::min( std::size_t      i_nVals,
+                                    double         * i_vals,
+                                    unsigned short * o_min ){
+  // initialize to true
+  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ )
+    o_min[l_va] = 1;
+
+#ifdef PP_USE_MPI
+  // global min variables
+  std::vector< double > l_gVals;
+  l_gVals.resize( i_nVals );
+
+  // determine minimum values
+  MPI_Allreduce( i_vals, &l_gVals[0], i_nVals, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+
+  std::vector< int > l_bidsIn( i_nVals );
+  std::vector< int > l_bidsOut( i_nVals );
+
+  // perform bidding
+  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ ) {
+    // bid on the variable, if we match the minimum
+    if( i_vals[l_va] == l_gVals[l_va] )
+      l_bidsIn[l_va] = parallel::g_rank;
+    else
+      l_bidsIn[l_va] = std::numeric_limits< int >::max();
+  }
+
+  // determine minimum bidding rank
+  MPI_Allreduce( &l_bidsIn[0], &l_bidsOut[0], i_nVals, MPI_INT, MPI_MIN, MPI_COMM_WORLD );
+
+  // update results, if we won the bid
+  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ )
+    if( l_bidsOut[l_va] != parallel::g_rank ) o_min[l_va] = 0;
+#endif
+}
+
 bool edge::parallel::MpiRemix::checkSendTgLt( std::size_t    i_ch,
                                               bool           i_lt,
                                               unsigned short i_tg ) const {

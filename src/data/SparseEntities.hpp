@@ -26,7 +26,7 @@
 #define EDGE_DATA_SPARSE_ENTITIES_HPP
 
 #include <limits>
-#include "parallel/Mpi.h"
+#include "parallel/MpiRemix.h"
 #include "io/logging.h"
 #include "linalg/Geom.hpp"
 
@@ -135,139 +135,6 @@ class edge::data::SparseEntities {
         }
         l_first += i_nElsSeDe[l_tg];
       }
-    }
-
-    /**
-     * Extracts a sparse layout for the entities based on adjacent entities with sparse types.
-     *
-     * Example:     *********  el0
-     *             *  *     *
-     *        el3 *   1*0 2 *
-     *           *2   spf3 1*
-     *          *  0      * *
-     *         *****spf1****
-     *       * *   2     *
-     *    *0   *       * el2
-     *  *     2*0   spf2
-     *    *1   *  1*
-     *  el1  * * *
-     *         *
-     *
-     * Sparse adjacencies:
-     *
-     *   el0-0: spf3
-     *   el0-1: ----
-     *   el0-2: ----
-     *
-     *   el1-0: ----
-     *   el1-1: ----
-     *   el1-2: ----
-     *
-     *   el2-0: ----
-     *   el2-1: spf2
-     *   el2-2: spf1
-     *
-     *   el3-0: spf1
-     *   el3-1: spf3
-     *   el3-2: ----
-     *
-     * @param i_nAdjPerEn number entities adjacent to each of the dense entities.
-     * @param i_enEn adjacent entities (nAdjPerEn) for each of the dense entities. Assumed is a flat array, meaning: [de*i_nAdjPerEn] gives the de's dense entity and [de*i_nAdjPerEn + ae] the ae's adjacent entity.
-     * @param i_spType sparse type identitying the sparse entities through matching bits.
-     * @param i_charsAdj characteristics of the adjecent entities (having a member .spType).
-     * @param i_deLayout dense entity layout.
-     * @param o_spLayout will be set to sparse layout of entities having one or more adjacent entities with the given sparse type.
-     *
-     * @paramt TL_T_INT_LID integer type of local ids.
-     * @paramt TL_T_INT_SP integer type of the sparse type.
-     * @paramt TL_T_ADJ_CHARS struct of the adjacent entities' characteristics. Offers a member .spType for comparison with i_spType.
-     * @paramt TL_T_LAYOUT struct represnting the entity layout.
-     **/
-    template< typename TL_T_INT_LID,
-              typename TL_T_INT_SP,
-              typename TL_T_ADJ_CHARS,
-              typename TL_T_LAYOUT >
-    static void denseToSparseAdj( unsigned short           i_nAdjPerEn,
-                                  TL_T_INT_LID     const * i_enEn,
-                                  TL_T_INT_SP              i_spType,
-                                  TL_T_ADJ_CHARS * const   i_charsAdj,
-                                  TL_T_LAYOUT      const & i_deLayout,
-                                  TL_T_LAYOUT            & o_spLayout ) {
-      // init the partial layout
-      initPartLayout( i_deLayout, o_spLayout );
-
-      // iterate over the dense layout and assign sizes of the groups
-      for( std::size_t l_tg = 0; l_tg < i_deLayout.timeGroups.size(); l_tg++ ) {
-        // iterate over dense inner entities
-        for( TL_T_INT_LID l_de = i_deLayout.timeGroups[l_tg].inner.first; l_de < i_deLayout.timeGroups[l_tg].inner.first + i_deLayout.timeGroups[l_tg].inner.size; l_de++ ) {
-          // iterate over adjacent entities
-          for( unsigned short l_ae = 0; l_ae < i_nAdjPerEn; l_ae++ ) {
-            TL_T_INT_LID l_aeId = i_enEn[ l_de * i_nAdjPerEn + l_ae ];
-            if( (i_charsAdj[l_aeId].spType & i_spType) == i_spType ) {
-              o_spLayout.timeGroups[l_tg].inner.size++;
-              break;
-            }
-          }
-        }
-
-#ifdef PP_USE_MPI
-        // assemble data of dense send entities
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].send.size(); l_nr++ ) {
-          for( int_el l_de = i_deLayout.timeGroups[l_tg].send[l_nr].first; l_de < i_deLayout.timeGroups[l_tg].send[l_nr].first + i_deLayout.timeGroups[l_tg].send[l_nr].size; l_de++ ) {
-            for( unsigned short l_ae = 0; l_ae < i_nAdjPerEn; l_ae++ ) {
-              TL_T_INT_LID l_aeId = i_enEn[ l_de * i_nAdjPerEn + l_ae ];
-              if( (i_charsAdj[l_aeId].spType & i_spType) == i_spType ) {
-                o_spLayout.timeGroups[l_tg].send[l_nr].size++;
-                break;
-              }
-            }
-          }
-        }
-
-        // allocate send and receiver buffers
-        TL_T_INT_LID l_nRgns = o_spLayout.timeGroups[l_tg].neRanks.size();
-        if( l_nRgns == 0 ) continue; // continue with next time group for MPI with 1 rank
-
-        std::vector< TL_T_INT_LID > l_buffSend( l_nRgns );
-        std::vector< TL_T_INT_LID > l_buffRecv( l_nRgns );
-        std::vector< MPI_Request  > l_reqSend( l_nRgns );
-        std::vector< MPI_Request  > l_reqRecv( l_nRgns );
-
-        // copy send data to buffer
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].send.size(); l_nr++ ) {
-          l_buffSend[l_nr] = o_spLayout.timeGroups[l_tg].send[l_nr].size;
-        }
-
-        // fix MPI-tags below as the default 0 might lead to colliding messages
-        // if more than one message goes out to the same rank (multiple time groups)
-        EDGE_CHECK_EQ( l_tg, 0 );
-
-        // exchange the data
-        parallel::Mpi::iSendTgRg( (unsigned char *) &l_buffSend[0],
-                                  sizeof(TL_T_INT_LID),
-                                  l_nRgns,
-                                  &o_spLayout.timeGroups[l_tg].neRanks[0],
-                                  &l_reqSend[0] );
-        parallel::Mpi::iRecvTgRg( (unsigned char *) &l_buffRecv[0],
-                                  sizeof(TL_T_INT_LID),
-                                  l_nRgns,
-                                  &o_spLayout.timeGroups[l_tg].neRanks[0],
-                                  &l_reqRecv[0] );
-
-        parallel::Mpi::waitAll( l_nRgns,
-                                &l_reqSend[0] );
-        parallel::Mpi::waitAll( l_nRgns,
-                                &l_reqRecv[0] );
-
-        // set receive layout
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].receive.size(); l_nr++ ) {
-          o_spLayout.timeGroups[l_tg].receive[l_nr].size = l_buffRecv[l_nr];
-        }
-#endif
-      }
-
-      // complete the layout be setting remaining derivable quantities
-      edge::data::EntityLayout::sizesToLayout( o_spLayout );
     }
 
     /**
@@ -1075,9 +942,9 @@ class edge::data::SparseEntities {
 
       // derive points, which are closest to our owned entities
       unsigned short *l_own = new unsigned short [i_nPts];
-      parallel::Mpi::min( i_nPts,
-                          l_minDist,
-                          l_own );
+      parallel::MpiRemix::min( i_nPts,
+                               l_minDist,
+                               l_own );
 
       // determine #owned and set everything invalid, which is not owned
       TL_T_LID l_nOwn= 0;

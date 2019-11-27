@@ -20,7 +20,7 @@
  * @section DESCRIPTION
  * Unit tests of EDGE.
  **/
-#include "parallel/Mpi.h"
+#include "parallel/MpiRemix.h"
 #include <string>
 #include "io/logging.h"
 #ifdef PP_USE_EASYLOGGING
@@ -39,8 +39,7 @@ namespace edge {
 
 int main( int i_argc, char* i_argv[] ) {
   // init MPI for unit tests calling MPI-functions or relying on rank data
-  edge::parallel::Mpi l_mpi;
-  l_mpi.start( i_argc, i_argv );
+  edge::parallel::MpiRemix l_mpi( i_argc, i_argv );
 
   // disable logging file-IO
   edge::io::logging::config();

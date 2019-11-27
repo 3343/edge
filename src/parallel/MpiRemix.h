@@ -131,7 +131,18 @@ class edge::parallel::MpiRemix {
 
   public:
     /**
-     * Constructor.
+     * Determines, if the calling rank holds the minimum for the values
+     *
+     * @param i_nVals number of values.
+     * @param i_vals values.
+     * @param o_min 1 if rank is holds minimum, 0 otherwise.
+     */
+    static void min( std::size_t      i_nVals,
+                     double         * i_vals,
+                     unsigned short * o_min );
+
+    /**
+     * Initializes the MPI communication structure.
      *
      * @param i_nTgs number of time groups.
      * @param i_nElFas number of faces per element.
