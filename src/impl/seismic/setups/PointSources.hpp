@@ -126,14 +126,9 @@ class edge::seismic::setups::PointSources {
     TL_T_LID (*m_elSpPs)[TL_N_CRS] = nullptr;
 
     /**
-     * @brief This function operates on an array of element ids, associated to point sources.
-     *        If one of the point source is not part of the local partition, it is assumed, that the respective id is std::numeric_limit< TL_T_LID >::max().
-     *        We return the ids of the point sources and the ids of the elements, if they are part of the partition.
-     *        Additionally, if a point source belongs to a duplicated send-element, all duplicates will be returned.
-     * 
+     * Gets the active sources.
+     *
      * @param i_nPss number of point sources.
-     * @param i_laEl element layout.
-     * @param i_gIds global ids.
      * @param i_psElIds element ids of the point sources.
      * @param o_psIdsAc will be set to extracted ids of the point sources.
      * @param o_psElIdsAc will be set to extracted element ids belonging to the point sources.
@@ -141,11 +136,7 @@ class edge::seismic::setups::PointSources {
      * @tparam TL_T_GID integral type of global ids.
      * @tparam TL_T_LA_EL struct of the element layout.
      */
-    template< typename TL_T_GID,
-              typename TL_T_LA_EL >
     static void getAcDu( TL_T_LID                        i_nPss,
-                         TL_T_LA_EL              const & i_laEl,
-                         TL_T_GID                const * i_gIds,
                          TL_T_LID                const * i_psElIds,
                          std::vector< TL_T_LID >       & o_psIdsAc,
                          std::vector< TL_T_LID >       & o_psElIdsAc ) {
@@ -155,49 +146,11 @@ class edge::seismic::setups::PointSources {
       for( TL_T_LID l_ps = 0; l_ps < i_nPss; l_ps++ ) {
         // only continue for active sources
         if( i_psElIds[l_ps] != std::numeric_limits< TL_T_LID >::max() ) {
-          // derive the time group of the source
-          unsigned short l_tg = std::numeric_limits< unsigned short >::max();
-
-          for( std::size_t l_ti = 0; l_ti < i_laEl.timeGroups.size(); l_ti++ ) {
-            if(    i_psElIds[l_ps] >= i_laEl.timeGroups[l_ti].inner.first
-                && i_psElIds[l_ps]  < i_laEl.timeGroups[l_ti].inner.first + i_laEl.timeGroups[l_ti].nEntsOwn ) {
-              l_tg = l_ti;
-              break;
-            }
-          }
-          EDGE_CHECK_NE( l_tg, std::numeric_limits< unsigned short >::max() );
- 
           // get other ids
           TL_T_LID l_lId = i_psElIds[l_ps];
-          TL_T_GID l_gId = i_gIds[l_lId];
 
-          // check if this is an inner src
-          TL_T_LID l_inFirst = i_laEl.timeGroups[l_tg].inner.first;
-          TL_T_LID l_inSize  = i_laEl.timeGroups[l_tg].inner.size;
-
-          // check if this an inner-src
-          bool l_innerSrc = l_lId < l_inFirst + l_inSize;
-
-          // inner-srcs are only applied once
-          if( l_innerSrc ) {
-            o_psIdsAc.push_back( l_ps  );
-            o_psElIdsAc.push_back( l_lId );
-          }
-          // send-srcs are applied to every send-element
-          else {
-            // iterate over neighboring ranks
-            for( std::size_t l_nr = 0; l_nr < i_laEl.timeGroups[l_tg].send.size(); l_nr++ ) {
-              TL_T_LID l_sendFirst = i_laEl.timeGroups[l_tg].send[l_nr].first;
-              TL_T_LID l_sendSize  = i_laEl.timeGroups[l_tg].send[l_nr].size;
-
-              for( TL_T_LID l_el = l_sendFirst; l_el < l_sendFirst+l_sendSize; l_el++ ) {
-                if( i_gIds[l_el] == l_gId ) {
-                  o_psElIdsAc.push_back( l_el );
-                  o_psIdsAc.push_back( l_ps );
-                }
-              }
-            }
-          }
+          o_psIdsAc.push_back( l_ps  );
+          o_psElIdsAc.push_back( l_lId );
         }
       }
     }
@@ -326,8 +279,6 @@ class edge::seismic::setups::PointSources {
 
       // get the active active source elements
       getAcDu( l_ptsDis[0],
-               i_laEl,
-               i_gIdsEl,
                l_ptIds.data(),
                o_srcIds,
                o_srcEls );

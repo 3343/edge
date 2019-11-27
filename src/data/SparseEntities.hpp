@@ -93,51 +93,48 @@ class edge::data::SparseEntities {
     }
 
     /**
-     * Extracts a sparse layout based from a dense layout based on the given sparse type.
+     * Extracts the number of sparse inner and send elements per time group from the given dense setup.
      *
      * Remark: The sparse type is handle as a bit flag.
      *         An entity in the dense layout is assumed to be in the sparse layout if all corresponding bits are set.
      *
      * @param i_spType value of the sparse type, which is used (as a bit mask) to derive entities of the sparse layout.
      * @param i_chars entity characteristics corresponding to the dense layout (includes the sparse type).
-     * @param i_deLayout dense entity layout.
-     * @param o_spLayout will be set to sparse entity layout.
+     * @param i_nElsInDe number of dense inner elements per time group.
+     * @param i_nElsSeDe number of dense send elements per time group.
+     * @param o_nElsInSp will be set to number of sparse inner elements per time group.
+     * @param o_nElsSeSp will be set to number of sparse send elements per time group.
      *
      * @paramt TL_T_INT_SP integer type of the sparse type.
      * @paramt TL_T_EN_CHARS struct of the entity characteristics.
      **/
     template <typename TL_T_INT_SP, typename TL_T_EN_CHARS>
-    static void denseToSparse( TL_T_INT_SP               i_spType,
-                               TL_T_EN_CHARS     const * i_chars,
-                               t_enLayout        const & i_deLayout,
-                               t_enLayout              & o_spLayout ) {
-      // init the partial layout
-      initPartLayout( i_deLayout, o_spLayout );
+    static void denseToSparse( unsigned short        i_nTgs,
+                               TL_T_INT_SP           i_spType,
+                               TL_T_EN_CHARS const * i_chars,
+                               std::size_t   const * i_nElsInDe,
+                               std::size_t   const * i_nElsSeDe,
+                               std::size_t         * o_nElsInSp,
+                               std::size_t         * o_nElsSeSp ) {
+      std::size_t l_first = 0;
+      // inner
+      for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+        o_nElsInSp[l_tg] = 0;
 
-      // iterate over the dense layout and assign sizes of the groups
-      for( std::size_t l_tg = 0; l_tg < i_deLayout.timeGroups.size(); l_tg++ ) {
-        // iterate over dense inner entities
-        for( int_el l_de = i_deLayout.timeGroups[l_tg].inner.first; l_de < i_deLayout.timeGroups[l_tg].inner.first + i_deLayout.timeGroups[l_tg].inner.size; l_de++ ) {
-          if( (i_chars[l_de].spType & i_spType) == i_spType ) o_spLayout.timeGroups[l_tg].inner.size++;
+        for( std::size_t l_el = l_first; l_el < l_first+i_nElsInDe[l_tg]; l_el++ ) {
+          if( (i_chars[l_el].spType & i_spType) == i_spType ) o_nElsInSp[l_tg]++;
         }
-
-        // iter over dense send entities
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].send.size(); l_nr++ ) {
-          for( int_el l_de = i_deLayout.timeGroups[l_tg].send[l_nr].first; l_de < i_deLayout.timeGroups[l_tg].send[l_nr].first + i_deLayout.timeGroups[l_tg].send[l_nr].size; l_de++ ) {
-            if( (i_chars[l_de].spType & i_spType) == i_spType ) o_spLayout.timeGroups[l_tg].send[l_nr].size++;
-          }
-        }
-
-        // iter over dense receive entities
-        for( unsigned int l_nr = 0; l_nr < o_spLayout.timeGroups[l_tg].receive.size(); l_nr++ ) {
-          for( int_el l_de = i_deLayout.timeGroups[l_tg].receive[l_nr].first; l_de < i_deLayout.timeGroups[l_tg].receive[l_nr].first + i_deLayout.timeGroups[l_tg].receive[l_nr].size; l_de++ ) {
-            if( (i_chars[l_de].spType & i_spType) == i_spType ) o_spLayout.timeGroups[l_tg].receive[l_nr].size++;
-          }
-        }
+        l_first += i_nElsInDe[l_tg];
       }
+      // send
+      for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+        o_nElsSeSp[l_tg] = 0;
 
-      // complete the layout be setting remaining derivable quantities
-      edge::data::EntityLayout::sizesToLayout( o_spLayout );
+        for( std::size_t l_el = l_first; l_el < l_first+i_nElsSeDe[l_tg]; l_el++ ) {
+          if( (i_chars[l_el].spType & i_spType) == i_spType ) o_nElsSeSp[l_tg]++;
+        }
+        l_first += i_nElsSeDe[l_tg];
+      }
     }
 
     /**

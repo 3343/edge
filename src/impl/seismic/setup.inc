@@ -242,12 +242,15 @@ if( l_seismicConf.m_ptSrcs.size() > 0 ) {
 }
 
 // get layout of sparse source elements
-l_enLayouts.resize( l_enLayouts.size() + 1 );
-edge::data::SparseEntities::denseToSparse( t_spTypeElastic::SOURCE,
+std::size_t *l_nTgElsInSrc = new std::size_t[ l_edgeV.nTgs() ];
+std::size_t *l_nTgElsSeSrc = new std::size_t[ l_edgeV.nTgs() ];
+edge::data::SparseEntities::denseToSparse( l_edgeV.nTgs(),
+                                           t_spTypeElastic::SOURCE,
                                            l_internal.m_elementChars,
-                                           l_enLayouts[2],
-                                           l_enLayouts.back() );
-unsigned short l_srcLayout = l_enLayouts.size()-1;
+                                           l_edgeV.nTgElsIn(),
+                                           l_edgeV.nTgElsSe(),
+                                           l_nTgElsInSrc,
+                                           l_nTgElsSeSrc );
 
 // get time step stats
 edge::seismic::common::getTimeStepStatsCFL( l_edgeV.nEls(),
@@ -255,73 +258,73 @@ edge::seismic::common::getTimeStepStatsCFL( l_edgeV.nEls(),
                                             l_internal.m_elementShared1,
                                             l_dT[0], l_dT[1], l_dT[2] );
 
-std::size_t l_sendOff = 0;
-for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
-  l_sendOff += l_edgeV.nTgElsIn()[l_tg];
-}
+std::size_t l_firstDe = 0;
+std::size_t l_firstSrc = 0;
 
 // setup shared memory parallelization
 for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
   int_spType l_spType[1] = { RECEIVER };
 
-  unsigned short l_nTgs = l_edgeV.nTgs();
-
   // local, inner
   l_shared.regWrkRgn( l_tg,
                       0,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 0,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first,
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs - l_tg,
-                      1, l_spType, l_internal.m_elementChars );
-
-  // local, send
-  l_shared.regWrkRgn( l_tg,
-                      0,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 1,
-                      l_sendOff,
-                      l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs*2 - l_tg,
+                      l_firstDe,
+                      l_edgeV.nTgElsIn()[l_tg],
+                      l_edgeV.nTgs() - l_tg,
                       1, l_spType, l_internal.m_elementChars );
 
   // src, inner
   l_shared.regWrkRgn( l_tg,
                       1,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 2,
-                      l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.first,
-                      l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
-                      l_nTgs - l_tg );
-
-  // src, send
-  EDGE_CHECK_EQ( l_enLayouts[l_srcLayout].timeGroups[l_tg].nEntsOwn-
-                 l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size, 0 ); // TODO: fix
-  l_shared.regWrkRgn( l_tg,
-                      1,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 3,
-                      l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.first+
-                      l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
-                      l_enLayouts[l_srcLayout].timeGroups[l_tg].nEntsOwn-
-                      l_enLayouts[l_srcLayout].timeGroups[l_tg].inner.size,
-                      l_nTgs*2 - l_tg );
+                      l_firstSrc,
+                      l_nTgElsInSrc[l_tg],
+                      l_edgeV.nTgs() - l_tg );
 
   // neigh, inner
   l_shared.regWrkRgn( l_tg,
                       2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 4,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first,
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs - l_tg );
+                      l_firstDe,
+                      l_edgeV.nTgElsIn()[l_tg],
+                      l_edgeV.nTgs() - l_tg );
+
+  l_firstDe  += l_edgeV.nTgElsIn()[l_tg];
+  l_firstSrc += l_nTgElsInSrc[l_tg];
+}
+
+for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
+  int_spType l_spType[1] = { RECEIVER };
+
+  // local, send
+  l_shared.regWrkRgn( l_tg,
+                      0,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 1,
+                      l_firstDe,
+                      l_edgeV.nTgElsSe()[l_tg],
+                      l_edgeV.nTgs()*2 - l_tg,
+                      1, l_spType, l_internal.m_elementChars );
+
+  // src, send
+  l_shared.regWrkRgn( l_tg,
+                      1,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 3,
+                      l_firstSrc,
+                      l_nTgElsSeSrc[l_tg],
+                      l_edgeV.nTgs()*2 - l_tg );
 
   // neigh, send
   l_shared.regWrkRgn( l_tg,
                       2,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 5,
-                      l_sendOff,
-                      l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs*2 - l_tg );
+                      l_firstDe,
+                      l_edgeV.nTgElsSe()[l_tg],
+                      l_edgeV.nTgs()*2 - l_tg );
 
-  l_sendOff += l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
-               l_enLayouts[2].timeGroups[l_tg].inner.size;
+  l_firstDe  += l_edgeV.nTgElsSe()[l_tg];
+  l_firstSrc += l_nTgElsSeSrc[l_tg];
 }
+
+delete[] l_nTgElsInSrc;
+delete[] l_nTgElsSeSrc;
