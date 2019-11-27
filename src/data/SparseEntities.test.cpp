@@ -60,91 +60,15 @@ TEST_CASE( "SparseEnts: Extract a sparse from a dense entity layout.", "[denseTo
    * #time regions: 2
    *
    * Dense Layout
-   *                                13-0       13-1       2-2          13-0         13-1      2-2     mpi-tg
-   * tg 0: [ 0, 1, 2, 1234, 3 || 4, 1234, 5 | 1234, 6 | 7, 8, 9 || 1234, 10, 11 | 12, 13 | 14, 1234 ] 
-   *       <------ inner -----><------------- send -------------><---------- recv ----------------->
+   *                 5/1                     8/2                               7/2
+   * inner: [ 0, 1, 2, 1234, 3 || 4, 1234, 5, 1234, 6, 7, 8, 9 || 1234, 10, 11, 12, 13, 14, 1234 ] 
+   *        <------ tg0 ------><------------ tg1 --------------><------------ tg2 --------------->
    *
-   *                                                          4-3     5-1  5-2        4-3      5-1    5-2
-   * tg 1: [ 15, 16, 1234, 1234, 17, 1234, 18, 19, 1234 || 20, 1234 | 21 | 1234 || 22, 1234 | 23 24 | 25 ]
-   *       <------------------- inner ------------------><------ send ----------><-------- recv -------->
+   *                               9/4                             4/2                  5/1
+   * send: [ 15, 16, 1234, 1234, 17, 1234, 18, 19, 1234 || 20, 1234, 21, 1234 || 22, 1234, 23, 24, 25 ]
+   *       <------------------- tg0 --------------------><------- tg1 --------><--------- tg2 -------->
    */
   l_spType = 1234;
-
-  // setup the dense layout
-  l_deLayout.nEnts = 38;
-  l_deLayout.timeGroups.resize( 2 );
-
-  l_deLayout.timeGroups[0].nEntsOwn    = 13;
-  l_deLayout.timeGroups[0].nEntsNotOwn =  7;
-  l_deLayout.timeGroups[0].inner.first =  0;
-  l_deLayout.timeGroups[0].inner.size  =  5;
-
-  l_deLayout.timeGroups[0].neRanks.resize( 3 );
-  l_deLayout.timeGroups[0].neRanks[0] = 13;
-  l_deLayout.timeGroups[0].neRanks[1] = 13;
-  l_deLayout.timeGroups[0].neRanks[2] = 2;
-
-  l_deLayout.timeGroups[0].neTgs.resize( 3 );
-  l_deLayout.timeGroups[0].neTgs[0] = 0;
-  l_deLayout.timeGroups[0].neTgs[1] = 1;
-  l_deLayout.timeGroups[0].neTgs[2] = 2;
-
-  l_deLayout.timeGroups[0].send.resize(    3 );
-  l_deLayout.timeGroups[0].receive.resize( 3 );
-
-  l_deLayout.timeGroups[0].send[0].first    = 5;
-  l_deLayout.timeGroups[0].send[0].size     = 3;
-
-  l_deLayout.timeGroups[0].send[1].first    = 8;
-  l_deLayout.timeGroups[0].send[1].size     = 2;
-
-  l_deLayout.timeGroups[0].send[2].first    = 10;
-  l_deLayout.timeGroups[0].send[2].size     = 3;
-
-  l_deLayout.timeGroups[0].receive[0].first = 13;
-  l_deLayout.timeGroups[0].receive[0].size  = 3;
-
-  l_deLayout.timeGroups[0].receive[1].first = 16;
-  l_deLayout.timeGroups[0].receive[1].size  = 2;
-
-  l_deLayout.timeGroups[0].receive[2].first = 18;
-  l_deLayout.timeGroups[0].receive[2].size  = 2;
-
-  l_deLayout.timeGroups[1].nEntsOwn    = 13;
-  l_deLayout.timeGroups[1].nEntsNotOwn = 5;
-  l_deLayout.timeGroups[1].inner.first = 20;
-  l_deLayout.timeGroups[1].inner.size  = 9;
-
-  l_deLayout.timeGroups[1].neRanks.resize( 3 );
-  l_deLayout.timeGroups[1].neRanks[0] = 4;
-  l_deLayout.timeGroups[1].neRanks[1] = 5;
-  l_deLayout.timeGroups[1].neRanks[2] = 5;
-
-  l_deLayout.timeGroups[1].neTgs.resize( 3 );
-  l_deLayout.timeGroups[1].neTgs[0] = 3;
-  l_deLayout.timeGroups[1].neTgs[1] = 1;
-  l_deLayout.timeGroups[1].neTgs[2] = 2;
-
-  l_deLayout.timeGroups[1].send.resize(    3 );
-  l_deLayout.timeGroups[1].receive.resize( 3 );
-
-  l_deLayout.timeGroups[1].send[0].first    = 29;
-  l_deLayout.timeGroups[1].send[0].size     = 2;
-
-  l_deLayout.timeGroups[1].send[1].first    = 31;
-  l_deLayout.timeGroups[1].send[1].size     = 1;
-
-  l_deLayout.timeGroups[1].send[2].first    = 32;
-  l_deLayout.timeGroups[1].send[2].size     = 1;
-
-  l_deLayout.timeGroups[1].receive[0].first = 33;
-  l_deLayout.timeGroups[1].receive[0].size  = 2;
-
-  l_deLayout.timeGroups[1].receive[1].first = 35;
-  l_deLayout.timeGroups[1].receive[1].size  = 2;
-
-  l_deLayout.timeGroups[1].receive[2].first = 37;
-  l_deLayout.timeGroups[1].receive[2].size  = 1;
 
   l_faChars.resize(38);
   l_faChars[ 0].spType = 0;
@@ -186,78 +110,28 @@ TEST_CASE( "SparseEnts: Extract a sparse from a dense entity layout.", "[denseTo
   l_faChars[36].spType = 24;
   l_faChars[37].spType = 25;
 
+  std::size_t l_nElsInDe[3] = {5, 8, 7};
+  std::size_t l_nElsSeDe[3] = {9, 4, 5};
+  std::size_t l_nElsInSp[3] = {0, 0, 0};
+  std::size_t l_nElsSeSp[3] = {0, 0, 0};
 
   // derive sparse layout
-  edge::data::SparseEntities::denseToSparse(  l_spType,
+  edge::data::SparseEntities::denseToSparse(  3,
+                                              l_spType,
                                              &l_faChars[0],
-                                              l_deLayout,
-                                              l_spLayout );
+                                              l_nElsInDe,
+                                              l_nElsSeDe,
+                                              l_nElsInSp,
+                                              l_nElsSeSp );
 
   // check the results
-  REQUIRE( l_spLayout.timeGroups[0].nEntsOwn    == 3 );
-  REQUIRE( l_spLayout.timeGroups[0].nEntsNotOwn == 2 );
+  REQUIRE( l_nElsInSp[0] == 1 );
+  REQUIRE( l_nElsInSp[1] == 2 );
+  REQUIRE( l_nElsInSp[2] == 2 );
 
-  REQUIRE( l_spLayout.timeGroups[0].inner.first == 0 );
-  REQUIRE( l_spLayout.timeGroups[0].inner.size  == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[0].neRanks[0] == 13 );
-  REQUIRE( l_spLayout.timeGroups[0].neRanks[1] == 13 );
-  REQUIRE( l_spLayout.timeGroups[0].neRanks[2] == 2  );
-
-  REQUIRE( l_spLayout.timeGroups[0].neTgs[0] == 0 );
-  REQUIRE( l_spLayout.timeGroups[0].neTgs[1] == 1 );
-  REQUIRE( l_spLayout.timeGroups[0].neTgs[2] == 2 );
-
-  REQUIRE( l_spLayout.timeGroups[0].send[0].first == 1 );
-  REQUIRE( l_spLayout.timeGroups[0].send[0].size == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[0].send[1].first == 2 );
-  REQUIRE( l_spLayout.timeGroups[0].send[1].size == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[0].send[2].first == 3 );
-  REQUIRE( l_spLayout.timeGroups[0].send[2].size == 0 );
-
-  REQUIRE( l_spLayout.timeGroups[0].receive[0].first == 3 );
-  REQUIRE( l_spLayout.timeGroups[0].receive[0].size == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[0].receive[1].first == 4 );
-  REQUIRE( l_spLayout.timeGroups[0].receive[1].size == 0 );
-
-  REQUIRE( l_spLayout.timeGroups[0].receive[2].first == 4 );
-  REQUIRE( l_spLayout.timeGroups[0].receive[2].size == 1 );
-
-
-  REQUIRE( l_spLayout.timeGroups[1].nEntsOwn    == 6 );
-  REQUIRE( l_spLayout.timeGroups[1].nEntsNotOwn == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[1].inner.first == 5 );
-  REQUIRE( l_spLayout.timeGroups[1].inner.size  == 4 );
-
-  REQUIRE( l_spLayout.timeGroups[1].neRanks[0] == 4 );
-  REQUIRE( l_spLayout.timeGroups[1].neRanks[1] == 5 );
-  REQUIRE( l_spLayout.timeGroups[1].neRanks[2] == 5 );
-
-  REQUIRE( l_spLayout.timeGroups[1].neTgs[0] == 3 );
-  REQUIRE( l_spLayout.timeGroups[1].neTgs[1] == 1 );
-  REQUIRE( l_spLayout.timeGroups[1].neTgs[2] == 2 );
-
-  REQUIRE( l_spLayout.timeGroups[1].send[0].first == 9 );
-  REQUIRE( l_spLayout.timeGroups[1].send[0].size == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[1].send[1].first == 10 );
-  REQUIRE( l_spLayout.timeGroups[1].send[1].size == 0 );
-
-  REQUIRE( l_spLayout.timeGroups[1].send[2].first == 10 );
-  REQUIRE( l_spLayout.timeGroups[1].send[2].size == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[1].receive[0].first == 11 );
-  REQUIRE( l_spLayout.timeGroups[1].receive[0].size == 1 );
-
-  REQUIRE( l_spLayout.timeGroups[1].receive[1].first == 12 );
-  REQUIRE( l_spLayout.timeGroups[1].receive[1].size == 0 );
-
-  REQUIRE( l_spLayout.timeGroups[1].receive[2].first == 12 );
-  REQUIRE( l_spLayout.timeGroups[1].receive[2].size == 0 );
+  REQUIRE( l_nElsSeSp[0] == 4 );
+  REQUIRE( l_nElsSeSp[1] == 2 );
+  REQUIRE( l_nElsSeSp[2] == 1 );
 }
 
 // TODO: Adjust unit test to MPI-parallel implementation
