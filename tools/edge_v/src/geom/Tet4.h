@@ -88,6 +88,26 @@ class edge_v::geom::Tet4 {
                             std::size_t        * io_elVe,
                             std::size_t        * io_elFa,
                             std::size_t        * io_elFaEl );
+
+    /**
+     * Gets the adjacent elements' face-vertex ids for the given element-faces.
+     * This is the local id of the vertex, which matches the faces' first vertex.
+     *
+     * @param i_nFas number of element-faces to get ids for.
+     * @param i_elOff element offset (added to element-ids in queries).
+     * @param i_el elements to which the faces belong.
+     * @param i_fa local face ids w.r.t. the elements.
+     * @param i_elVe vertices adjacent to the elements.
+     * @param i_elFalEl elements adjacent to elements (faces as bridge).
+     * @param o_veIdsAd will be set to vertex ids w.r.t. to the adjacent elements.
+     **/
+    static void getVeIdsAd( std::size_t            i_nFas,
+                            std::size_t            i_elOff,
+                            std::size_t    const * i_el,
+                            unsigned short const * i_fa,
+                            std::size_t    const * i_elVe,
+                            std::size_t    const * i_elFaEl,
+                            unsigned short       * o_veIdsAd );
 };
 
 #endif

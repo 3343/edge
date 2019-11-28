@@ -21,6 +21,7 @@
  * Geometry computations for the mesh.
  **/
 #include "Geom.h"
+#include "Generic.h"
 #include "Line.h"
 #include "Tria3.h"
 #include "Tet4.h"
@@ -117,4 +118,45 @@ void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
                       io_elFaEl );
   }
   else EDGE_V_LOG_FATAL;
+}
+
+void edge_v::geom::Geom::getVeIdsAd( t_entityType           i_elTy,
+                                     std::size_t            i_nFas,
+                                     std::size_t            i_elOff,
+                                     std::size_t    const * i_el,
+                                     unsigned short const * i_fa,
+                                     std::size_t    const * i_elVe,
+                                     std::size_t    const * i_elFaEl,
+                                     unsigned short       * o_veIdsAd ) {
+  if( i_elTy == TET4 ) {
+    Tet4::getVeIdsAd( i_nFas,
+                      i_elOff,
+                      i_el,
+                      i_fa,
+                      i_elVe,
+                      i_elFaEl,
+                      o_veIdsAd );
+  }
+  else {
+    for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
+      o_veIdsAd[l_id] = 0;
+    }
+  }
+}
+
+
+void edge_v::geom::Geom::getFaIdsAd( t_entityType           i_elTy,
+                                     std::size_t            i_nFas,
+                                     std::size_t            i_elOff,
+                                     std::size_t    const * i_el,
+                                     unsigned short const * i_fa,
+                                     std::size_t    const * i_elFaEl,
+                                     unsigned short       * o_faIdsAd ) {
+  Generic::getFaIdsAd( i_elTy,
+                       i_nFas,
+                       i_elOff,
+                       i_el,
+                       i_fa,
+                       i_elFaEl,
+                       o_faIdsAd );
 }

@@ -21,6 +21,7 @@
  * Geometry computations for 4-node tetrahedral elements.
  **/
 #include "Tet4.h"
+#include "Generic.h"
 
 #include <limits>
 #include "io/logging.h"
@@ -106,5 +107,83 @@ void edge_v::geom::Tet4::normVesFas( double      const (* i_veCrds)[3],
     std::size_t l_tmpEl = io_elFaEl[0];
     io_elFaEl[0] = io_elFaEl[1];
     io_elFaEl[1] = l_tmpEl;
+  }
+}
+
+void edge_v::geom::Tet4::getVeIdsAd( std::size_t            i_nFas,
+                                     std::size_t            i_elOff,
+                                     std::size_t    const * i_el,
+                                     unsigned short const * i_fa,
+                                     std::size_t    const * i_elVe,
+                                     std::size_t    const * i_elFaEl,
+                                     unsigned short       * o_veIdsAd ) {
+  for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
+    // get element and face id
+    std::size_t l_el = i_el[l_id] + i_elOff;
+    unsigned short l_fa = i_fa[l_id];
+
+    // adjacent element
+    std::size_t l_elAd = i_elFaEl[l_el*4 + l_fa];
+
+    // vertex at position zero of the face
+    std::size_t l_ve0 = (l_fa <= 2) ? i_elVe[l_el*4+0] : i_elVe[l_el*4+1];
+
+    // get the respective position in the adjacent element
+    std::size_t l_veAd = std::numeric_limits< std::size_t >::max();
+    for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
+      if( i_elVe[l_elAd*4+l_ve] == l_ve0 ) l_veAd = l_ve;
+    }
+    EDGE_V_CHECK_LT( l_veAd, 4 );
+
+    // get the face id
+    unsigned short l_faId = std::numeric_limits< unsigned short >::max();
+    Generic::getFaIdsAd( TET4,
+                         1,
+                         0,
+                         &l_el,
+                         &l_fa,
+                         i_elFaEl,
+                         &l_faId );
+    EDGE_V_CHECK_LT( l_faId, 4 );
+
+    /*
+      * decide, depending on the neighboring face, what vertex combination we have
+      *
+      * Example:
+      *
+      *      face 0                   face 1
+      *         3                       2
+      *         *                         *
+      *       *    *         neighbors    *  *
+      *     *        *                    *     *
+      * 0  ************* 1              0 ********** 3 <-- dominant 0 goes here
+      *
+      * -> We have vertex combi 1 out of possible 0-2.
+      */
+      if( l_faId == 0 ) {
+        if(      l_veAd == 0 ) o_veIdsAd[l_id] = 0;
+        else if( l_veAd == 2 ) o_veIdsAd[l_id] = 1;
+        else if( l_veAd == 1 ) o_veIdsAd[l_id] = 2;
+        else EDGE_V_LOG_FATAL;
+      }
+      else if( l_faId == 1 ) {
+        if(      l_veAd == 0 ) o_veIdsAd[l_id] = 0;
+        else if( l_veAd == 1 ) o_veIdsAd[l_id] = 1;
+        else if( l_veAd == 3 ) o_veIdsAd[l_id] = 2;
+        else EDGE_V_LOG_FATAL;
+      }
+      else if( l_faId == 2 ) {
+        if(      l_veAd == 0 ) o_veIdsAd[l_id] = 0;
+        else if( l_veAd == 3 ) o_veIdsAd[l_id] = 1;
+        else if( l_veAd == 2 ) o_veIdsAd[l_id] = 2;
+        else EDGE_V_LOG_FATAL;
+      }
+      else if( l_faId == 3 ) {
+        if(      l_veAd == 1 ) o_veIdsAd[l_id] = 0;
+        else if( l_veAd == 2 ) o_veIdsAd[l_id] = 1;
+        else if( l_veAd == 3 ) o_veIdsAd[l_id] = 2;
+        else EDGE_V_LOG_FATAL;
+      }
+      else EDGE_V_LOG_FATAL;
   }
 }
