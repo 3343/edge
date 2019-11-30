@@ -765,14 +765,6 @@ TEST_CASE( "SparseEnts: Propagate sparse information to adjacent entities.", "[p
 }
 
 TEST_CASE( "Sparse Ents: Derivation of dense ids from Cartesian points", "[ptToMesh][SparseEnts]") {
-  t_enLayout l_elLayout;
-
-  l_elLayout.timeGroups.resize( 2 );
-  l_elLayout.timeGroups[0].nEntsOwn    = 2;
-  l_elLayout.timeGroups[0].nEntsNotOwn = 1;
-  l_elLayout.timeGroups[1].nEntsOwn    = 3;
-  l_elLayout.timeGroups[1].nEntsNotOwn = 4;
-
   // setup receiver coordinates
   real_mesh l_recvCrds[6][3] = { { -1.00, -1.00, -2.00 }, // not part of the "domain"
                                  {  0.15,  0.15,  0.15 }, // inside a tet
@@ -792,15 +784,10 @@ TEST_CASE( "Sparse Ents: Derivation of dense ids from Cartesian points", "[ptToM
                                  {{0.0, 1.0, 9.0}, 0} };
 
   // setup tets
-  int l_enVe[10][4] = { {4,5,6,7}, // tg 1
+  int l_enVe[10][4] = { {4,5,6,7},
                         {4,5,6,7},
-                        {0,0,0,0},
-                        {4,5,6,7}, // tg 2
+                        {4,5,6,7},
                         {0,1,2,3},
-                        {0,1,2,3},
-                        {0,1,2,3}, // ghost tg 2
-                        {4,5,6,7},
-                        {4,5,6,7},
                         {0,1,2,3} };
 
   // For plotting in Mathematica, you can use:
@@ -809,13 +796,19 @@ TEST_CASE( "Sparse Ents: Derivation of dense ids from Cartesian points", "[ptToM
   // dense ids
   int l_de[6];
 
-  edge::data::SparseEntities::ptToEn( TET4,
-                                      6,
-                                      l_recvCrds,
-                                      l_elLayout,
-                                      l_enVe[0],
-                                      l_veChars,
-                                      l_de );
+  int l_nEns = edge::data::SparseEntities::ptToEn( TET4,
+                                                   6,
+                                                   l_recvCrds,
+                                                   5,
+                                                   l_enVe[0],
+                                                   l_veChars,
+                                                   l_de );
 
-  REQUIRE( l_de[0] == 4 );
+  REQUIRE( l_nEns == 6 );
+  REQUIRE( l_de[0] == 3 );
+  REQUIRE( l_de[1] == 3 );
+  REQUIRE( l_de[2] == 3 );
+  REQUIRE( l_de[3] == 3 );
+  REQUIRE( l_de[4] == 3 );
+  REQUIRE( l_de[5] == 3 );
 }

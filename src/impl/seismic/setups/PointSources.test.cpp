@@ -59,45 +59,6 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
    * -1.0-11*12
    */
 
-  // setup dummy element layout
-  t_enLayout l_elLayout;
-  l_elLayout.nEnts = 7;
-  l_elLayout.timeGroups.resize(2);
-
-  l_elLayout.timeGroups[0].nEntsOwn    = 2;
-  l_elLayout.timeGroups[0].nEntsNotOwn = 1;
-  l_elLayout.timeGroups[0].inner.first = 0;
-  l_elLayout.timeGroups[0].inner.size  = 1;
-
-  l_elLayout.timeGroups[0].send.resize(2);
-  l_elLayout.timeGroups[0].send[0].first = 1;
-  l_elLayout.timeGroups[0].send[0].size  = 1;
-  l_elLayout.timeGroups[0].send[1].first = 2;
-  l_elLayout.timeGroups[0].send[1].size  = 0;
-
-  l_elLayout.timeGroups[0].receive.resize(2);
-  l_elLayout.timeGroups[0].receive[0].first = 2;
-  l_elLayout.timeGroups[0].receive[0].size  = 1;
-  l_elLayout.timeGroups[0].receive[1].first = 3;
-  l_elLayout.timeGroups[0].receive[1].size  = 0;
-
-  l_elLayout.timeGroups[1].nEntsOwn    = 4;
-  l_elLayout.timeGroups[1].nEntsNotOwn = 0;
-  l_elLayout.timeGroups[1].inner.first = 3;
-  l_elLayout.timeGroups[1].inner.size  = 2;
-
-  l_elLayout.timeGroups[1].send.resize(2);
-  l_elLayout.timeGroups[1].send[0].first = 5;
-  l_elLayout.timeGroups[1].send[0].size  = 1;
-  l_elLayout.timeGroups[1].send[1].first = 6;
-  l_elLayout.timeGroups[1].send[1].size  = 1;
-
-  l_elLayout.timeGroups[1].receive.resize(2);
-  l_elLayout.timeGroups[1].receive[0].first = 7;
-  l_elLayout.timeGroups[1].receive[0].size  = 0;
-  l_elLayout.timeGroups[1].receive[1].first = 7;
-  l_elLayout.timeGroups[1].receive[1].size  = 0;
-
   // assign vertex chars
   struct{
     double coords[3];
@@ -162,9 +123,8 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
      2,
      3 > l_pss;
     l_pss.init( l_h5Files,
-                l_gIdsEl,
                 99,
-                l_elLayout,
+                7,
                 l_elVe,
                 l_veChars,
                 l_massI,
@@ -249,9 +209,8 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
      2,
      3 > l_pss;
     l_pss.init( l_h5Files,
-                l_gIdsEl,
                 99,
-                l_elLayout,
+                7,
                 l_elVe,
                 l_veChars,
                 l_massI,
