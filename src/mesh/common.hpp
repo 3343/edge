@@ -846,7 +846,7 @@ EDGE_LOG_FATAL;
           // in the case of faces 0-2 we are interested in the position of local vertex 0
           if( l_fa <= 2 ) l_domVe = i_elVe[l_el][0];
           // face 3 requires the position of local vertex 1 w.r.t. the neighboring face
-          else            l_domVe = i_elVe[l_el][1]
+          else            l_domVe = i_elVe[l_el][1];
 
           // find the position of the vertex in the other element
           unsigned short l_locNe = 4;
