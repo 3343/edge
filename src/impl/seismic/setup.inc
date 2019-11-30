@@ -27,7 +27,7 @@
 // set up sparse types
 {
   // propagate sparse info of free-surface boundary to elements
-  edge::data::SparseEntities::propAdj( l_enLayouts[1].nEnts,
+  edge::data::SparseEntities::propAdj( l_edgeV.nFas(),
                                        2,
                                        l_internal.m_connect.faEl[0],
                                        t_spTypeElastic::FREE_SURFACE,
