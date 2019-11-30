@@ -226,7 +226,7 @@ if( l_seismicConf.m_ptSrcs.size() > 0 ) {
   EDGE_LOG_INFO << "  initializing point sources";
   bool l_psInit = l_internal.m_globalShared3[0].init( l_seismicConf.m_ptSrcs.data(),
                                                       t_spTypeElastic::SOURCE,
-                                                      l_enLayouts[2],
+                                                      l_edgeV.nEls(),
                                                       l_internal.m_connect.elVe,
                                                       l_internal.m_vertexChars,
                                                       l_internal.m_globalShared1[0].mat.massI,
