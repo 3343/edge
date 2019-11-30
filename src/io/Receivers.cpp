@@ -30,21 +30,27 @@
 #include <fstream>
 #include <sstream>
 
-void edge::io::Receivers::init(       t_entityType    i_enType,
-                                      unsigned int    i_nRecvs,
-                                const std::string    &i_outDir,
-                                const std::string   (*i_recvNames),
-                                const real_mesh     (*i_recvCrds)[3],
-                                      double          i_freq,
-                                const t_enLayout     &i_enLayout,
-                                const int_el         *i_enVe,
-                                const t_vertexChars  *i_veChars,
-                                      unsigned int    i_bufferSize,
-                                      double          i_time ) {
+void edge::io::Receivers::init( t_entityType             i_enType,
+                                unsigned short           i_nTgs,
+                                std::size_t    const   * i_nTgEnsIn,
+                                std::size_t    const   * i_nTgEnsSe,
+                                unsigned int             i_nRecvs,
+                                std::string    const   & i_outDir,
+                                std::string    const ( * i_recvNames),
+                                double         const ( * i_recvCrds)[3],
+                                double                   i_freq,
+                                std::size_t    const ( * i_enVe),
+                                t_vertexChars  const   * i_veChars,
+                                unsigned int             i_bufferSize,
+                                double                   i_time ) {
   // init class-wide vars
   m_freq = i_freq;
   m_buffSize = i_bufferSize;
   m_nQts = N_QUANTITIES;
+
+  std::size_t l_nEns = 0;
+  for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ )
+    l_nEns += i_nTgEnsIn[l_tg] + i_nTgEnsSe[l_tg];
 
   // number of vertices
   unsigned short l_nVe = C_ENT[i_enType].N_VERTICES;
@@ -54,82 +60,106 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
   edge::data::SparseEntities::ptToEn( i_enType,
                                       int_el(i_nRecvs),
                                       i_recvCrds,
-                                      i_enLayout.nEnts,
+                                      l_nEns,
                                       i_enVe,
                                       i_veChars,
                                       l_deIds );
 
-  // add the receivers
-  int_el l_first = 0;
-  for( int_tg l_tg = 0; l_tg < i_enLayout.timeGroups.size(); l_tg++ ) {
-    int_el l_size  = i_enLayout.timeGroups[l_tg].nEntsOwn;
+  // lambda which inits the receivers for an entity if any
+  auto l_addEn = [ i_enVe,
+                   i_enType,
+                   i_nRecvs,
+                   i_veChars,
+                   i_recvCrds,
+                   i_time,
+                   i_outDir,
+                   i_recvNames,
+                   l_deIds,
+                   l_nVe,
+                   this ]( unsigned short i_tg,
+                           std::size_t    i_en,
+                           std::size_t    i_enTg ) {
+    // iterate over the receivers
+    for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
+      // only continue if the receiver is owned and matches the element
+      if( i_en == l_deIds[l_re] ) {
+        // get the vertices of the entity
+        real_mesh l_tmpVe[ 3 * 8];
+        for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
+          int_el l_veId = i_enVe[i_en*l_nVe+l_ve];
 
-    // iterate over the owned entities
-    for( int_el l_en = l_first; l_en < l_first+l_size; l_en++ ) {
-      // iterate over the receivers
-      for( unsigned int l_re = 0; l_re < i_nRecvs; l_re++ ) {
-        // only continue if the receiver is owned and matches the element
-        if( l_en == l_deIds[l_re] ) {
-          // get the vertices of the entity
-          real_mesh l_tmpVe[ 3 * 8];
-          for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
-            int_el l_veId = i_enVe[l_en*l_nVe+l_ve];
-
-            for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-              l_tmpVe[l_di*l_nVe + l_ve] = i_veChars[l_veId].coords[l_di];
-            }
+          for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+            l_tmpVe[l_di*l_nVe + l_ve] = i_veChars[l_veId].coords[l_di];
           }
+        }
 
-          // init the receiver coordinates
-          real_mesh l_recvCrds[3];
-          for( unsigned short l_di = 0; l_di < 3; l_di++ )
-            l_recvCrds[l_di] = i_recvCrds[l_re][l_di];
+        // init the receiver coordinates
+        real_mesh l_recvCrds[3];
+        for( unsigned short l_di = 0; l_di < 3; l_di++ )
+          l_recvCrds[l_di] = i_recvCrds[l_re][l_di];
 
-          // project receiver to the element's surface if required
-          edge::linalg::Geom::closestPoint( i_enType,
-                                            l_tmpVe,
-                                            l_recvCrds );
+        // project receiver to the element's surface if required
+        edge::linalg::Geom::closestPoint( i_enType,
+                                          l_tmpVe,
+                                          l_recvCrds );
 
-          // set info
-          if( m_recvs.size() > 0 && m_recvs.back().en < l_en ) {
-            m_spEnToRecv.push_back( m_recvs.size() );
-          }
-          else if( m_recvs.size() == 0 ) m_spEnToRecv.push_back( 0 );
+        // set info
+        if( m_recvs.size() > 0 && m_recvs.back().en < i_en ) {
+          m_spEnToRecv.push_back( m_recvs.size() );
+        }
+        else if( m_recvs.size() == 0 ) m_spEnToRecv.push_back( 0 );
 
-          // add a new receiver
-          m_recvs.resize( m_recvs.size()+1 );
-          m_recvs.back().id = l_re;
-          for( unsigned short l_di = 0; l_di < 3; l_di++ )
-            m_recvs.back().coords[l_di] = l_recvCrds[l_di];
-          m_recvs.back().buffer.resize( N_QUANTITIES*N_CRUNS*m_buffSize );
-          m_recvs.back().buffTime.resize( m_buffSize );
-          m_recvs.back().nBuff = 0;
-          m_recvs.back().time  = i_time;
-          m_recvs.back().tg    = l_tg;
-          m_recvs.back().en    = l_en;
-          m_recvs.back().enTg  = l_en-l_first;
-          std::string l_dir = i_outDir + "/" + std::to_string(parallel::g_rank);
-          m_recvs.back().path  = l_dir + "/" + i_recvNames[l_re]+".csv";
+        // add a new receiver
+        m_recvs.resize( m_recvs.size()+1 );
+        m_recvs.back().id = l_re;
+        for( unsigned short l_di = 0; l_di < 3; l_di++ )
+          m_recvs.back().coords[l_di] = l_recvCrds[l_di];
+        m_recvs.back().buffer.resize( N_QUANTITIES*N_CRUNS*m_buffSize );
+        m_recvs.back().buffTime.resize( m_buffSize );
+        m_recvs.back().nBuff = 0;
+        m_recvs.back().time  = i_time;
+        m_recvs.back().tg    = i_tg;
+        m_recvs.back().en    = i_en;
+        m_recvs.back().enTg  = i_enTg;
+        std::string l_dir = i_outDir + "/" + std::to_string(parallel::g_rank);
+        m_recvs.back().path  = l_dir + "/" + i_recvNames[l_re]+".csv";
 
-          // determine the location in reference coordinates
-          real_mesh l_ref[3] = {0,0,0};
-          linalg::Mappings::phyToRef( i_enType, l_tmpVe, l_recvCrds, l_ref );
+        // determine the location in reference coordinates
+        real_mesh l_ref[3] = {0,0,0};
+        linalg::Mappings::phyToRef( i_enType, l_tmpVe, l_recvCrds, l_ref );
 
-          // check for reasonable coords
-          for( unsigned short l_di = 0; l_di < C_ENT[i_enType].N_DIM; l_di++ ) {
-            EDGE_CHECK_GT( l_ref[l_di], -TOL.MESH );
-            EDGE_CHECK_LT( l_ref[l_di], 1+TOL.MESH );
-          }
+        // check for reasonable coords
+        for( unsigned short l_di = 0; l_di < C_ENT[i_enType].N_DIM; l_di++ ) {
+          EDGE_CHECK_GT( l_ref[l_di], -TOL.MESH );
+          EDGE_CHECK_LT( l_ref[l_di], 1+TOL.MESH );
+        }
 
-          // evaluate the basis at the given locations
-          for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-            dg::Basis::evalBasis( l_md, T_SDISC.ELEMENT, m_recvs.back().evaBasis[l_md], l_ref[0], l_ref[1], l_ref[2] );
-          }
+        // evaluate the basis at the given locations
+        for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
+          dg::Basis::evalBasis( l_md, T_SDISC.ELEMENT, m_recvs.back().evaBasis[l_md], l_ref[0], l_ref[1], l_ref[2] );
         }
       }
     }
-    l_first += i_enLayout.timeGroups[l_tg].nEntsOwn +
-               i_enLayout.timeGroups[l_tg].nEntsNotOwn;
+  };
+
+  std::size_t l_off = 0;
+  // inner
+  for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+    for( std::size_t l_en = 0; l_en < i_nTgEnsIn[l_tg]; l_en++ ) {
+      l_addEn( l_tg,
+               l_en + l_off,
+               l_en );
+    }
+    l_off += i_nTgEnsIn[l_tg];
+  }
+  // send
+  for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+    for( std::size_t l_en = 0; l_en < i_nTgEnsSe[l_tg]; l_en++ ) {
+      l_addEn( l_tg,
+               l_en + l_off,
+               l_en );
+    }
+    l_off += i_nTgEnsSe[l_tg];
   }
 
   // create directories and touch output

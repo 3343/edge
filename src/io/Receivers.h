@@ -106,27 +106,31 @@ class edge::io::Receivers {
      *   TODO: The current implementation is limited to elements.
      *
      * @param i_enType entity type in which receivers are searched for.
+     * @param i_nTgs number of time groups.
+     * @param i_nTgEnsIn number of inner entities per time group.
+     * @param i_nTgEnsSe number of send entities per time group.
      * @param i_nRecvs number of receivers.
      * @param i_recvNames name of the receivers.
      * @param i_recvCrds coordinates of the receivers.
      * @param i_freq sampling frequency of the receivers.
-     * @param i_enLayout layout of the entities in which receivers are search for.
      * @param i_enVe vertices adjacent to the entities.
      * @param i_veChars vertex chars.
      * @param i_bufferSize size of the internal receiver buffer before data gets written to disk.
      * @param i_time time of the first receiver outout
      **/
-    void init(       t_entityType     i_enType,
-                     unsigned int     i_nRecvs,
-               const std::string     &i_outDir,
-               const std::string    (*i_recvNames),
-               const real_mesh      (*i_recvCrds)[3],
-                     double           i_freq,
-               const t_enLayout      &i_enLayout,
-               const int_el         (*i_enVe),
-               const t_vertexChars   *i_veChars,
-                     unsigned int     i_bufferSize=250,
-                     double           i_time=0 );
+    void init( t_entityType             i_enType,
+               unsigned short           i_nTgs,
+               std::size_t    const   * i_nTgEnsIn,
+               std::size_t    const   * i_nTgEnsSe,
+               unsigned int             i_nRecvs,
+               std::string    const   & i_outDir,
+               std::string    const ( * i_recvNames),
+               double         const ( * i_recvCrds)[3],
+               double                   i_freq,
+               std::size_t    const ( * i_enVe),
+               t_vertexChars  const   * i_veChars,
+               unsigned int             i_bufferSize = 250,
+               double                   i_time = 0 );
 
     /**
      * Gets the dense-entities with receivers in them.

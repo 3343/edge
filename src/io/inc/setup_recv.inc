@@ -30,12 +30,14 @@ if( l_config.m_recvCrds[0].size() > 0 ) {
 
   // init receivers and print info
   l_receivers.init(                     T_SDISC.ELEMENT,
+                                        l_edgeV.nTgs(),
+                                        l_edgeV.nTgElsIn(),
+                                        l_edgeV.nTgElsSe(),
                                         l_config.m_recvCrds[0].size(),
                                         l_config.m_recvPath[0],
                                        &l_config.m_recvNames[0][0],
                     (real_mesh (*)[3]) &l_config.m_recvCrds[0][0][0],
                                         l_config.m_recvFreq[0],
-                                        l_enLayouts[2],
                                         l_internal.m_connect.elVe[0],
                                         l_internal.m_vertexChars );
 
