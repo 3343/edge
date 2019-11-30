@@ -911,13 +911,13 @@ EDGE_LOG_FATAL;
      * The index is given by:
      *     local_face_id-neighboring_face_id-neighboring_vertex_id
      *
-     * @param i_nElements number of elements.
+     * @param i_nEls number of elements.
      * @param i_faIdElFaEl face relations.
      * @param i_veIdElFaEl vertex relations.
      **/
-    static void printNeighRel(  const t_enLayout     &i_elLayout,
-                                const unsigned short *i_fIdElFaEl,
-                                const unsigned short *i_vIdElFaEl ) {
+    static void printNeighRel(  std::size_t            i_nEls,
+                                const unsigned short * i_fIdElFaEl,
+                                const unsigned short * i_vIdElFaEl ) {
       t_entityType l_elType = TL_T_EL;
       t_entityType l_faType = TL_T_FA;
 
@@ -934,20 +934,15 @@ EDGE_LOG_FATAL;
       unsigned long *l_optsLo = new unsigned long[l_nOpts];
       for( unsigned short l_opt = 0; l_opt < l_nOpts; l_opt++ ) l_optsLo[l_opt] = 0;
 
-      for( int_tg l_tg = 0; l_tg < i_elLayout.timeGroups.size(); l_tg++ ) {
-        int_el l_first = i_elLayout.timeGroups[l_tg].inner.first;
-        int_el l_size  = i_elLayout.timeGroups[l_tg].nEntsOwn;
-
-        for( int_el l_el = l_first; l_el < l_first+l_size; l_el++ ) {
-          for( unsigned short l_fa = 0; l_fa < C_ENT[l_elType].N_FACES; l_fa++ ) {
-            if( i_fIdElFaEl[l_el*C_ENT[l_elType].N_FACES+l_fa] < C_ENT[l_elType].N_FACES ) {
-              unsigned short l_locOpt = l_fa * C_ENT[l_elType].N_FACES*l_veJump
-                                        +
-                                        i_fIdElFaEl[l_el*C_ENT[l_elType].N_FACES+l_fa] * l_veJump
-                                        +
-                                        i_vIdElFaEl[l_el*C_ENT[l_elType].N_FACES+l_fa];
-              l_optsLo[l_locOpt]++;
-            }
+      for( int_el l_el = 0; l_el < i_nEls; l_el++ ) {
+        for( unsigned short l_fa = 0; l_fa < C_ENT[l_elType].N_FACES; l_fa++ ) {
+          if( i_fIdElFaEl[l_el*C_ENT[l_elType].N_FACES+l_fa] < C_ENT[l_elType].N_FACES ) {
+            unsigned short l_locOpt = l_fa * C_ENT[l_elType].N_FACES*l_veJump
+                                      +
+                                      i_fIdElFaEl[l_el*C_ENT[l_elType].N_FACES+l_fa] * l_veJump
+                                      +
+                                      i_vIdElFaEl[l_el*C_ENT[l_elType].N_FACES+l_fa];
+            l_optsLo[l_locOpt]++;
           }
         }
       }

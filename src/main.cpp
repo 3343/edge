@@ -138,12 +138,8 @@ int main( int i_argc, char *i_argv[] ) {
   edge::mesh::EdgeV l_edgeV( l_meshPath,
                              l_config.m_periodic != std::numeric_limits< int >::max() );
 
-  // get the data layout
-  EDGE_LOG_INFO << "taking care of data layout now";
-#include "data/setup.inc"
-
-  t_enLayout l_elLayout = l_edgeV.getElLayout();
-  l_enLayouts[2] = l_elLayout;
+  // dynamic memory allocates
+  edge::data::Dynamic l_dynMem;
 
   // initialize all elements/faces
   edge::data::Internal l_internal;
@@ -242,7 +238,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
 
   EDGE_VLOG(2) << "  printing neigh relations (loc_fa-nei_fa-nei_ve):";
   if (EDGE_VLOG_IS_ON(2)) {
-    edge::mesh::common< T_SDISC.ELEMENT> ::printNeighRel( l_elLayout,
+    edge::mesh::common< T_SDISC.ELEMENT> ::printNeighRel( l_edgeV.nEls(),
                                                           l_internal.m_connect.fIdElFaEl[0],
                                                           l_internal.m_connect.vIdElFaEl[0] );
   }
@@ -281,9 +277,8 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   // assemble LTS groups
   std::vector< edge::time::TimeGroupStatic > l_tgs;
 
-  unsigned short l_nTgs = l_elLayout.timeGroups.size();
-  for( unsigned short l_tg = 0; l_tg < l_nTgs; l_tg++ ) {
-    l_tgs.push_back( edge::time::TimeGroupStatic( l_nTgs,
+  for( unsigned short l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
+    l_tgs.push_back( edge::time::TimeGroupStatic( l_edgeV.nTgs(),
                                                   l_tg,
                                                   l_internal,
                                                   l_mpiRemix.getSendPtrs(),

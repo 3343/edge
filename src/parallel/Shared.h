@@ -346,8 +346,8 @@ class edge::parallel::Shared {
      *        After all inits in a region, an OpenMP-barrier is called.
      *
      * @param i_nTgs number of time groups.
-     * @param i_nTgEnsIn number of inner entities.
-     * @param i_nTgEnsSe number of send entities.
+     * @param i_nTgEnsIn number of inner entities per time group.
+     * @param i_nTgEnsSe number of send entities per time group.
      * @param i_nWrks number of workers.
      * @param i_nVasPerEn number of values per entity
      * @param o_arr array, which will be initialized.
