@@ -225,7 +225,6 @@ if( l_seismicConf.m_ptSrcs.size() > 0 ) {
 #ifdef PP_HAS_HDF5
   EDGE_LOG_INFO << "  initializing point sources";
   bool l_psInit = l_internal.m_globalShared3[0].init( l_seismicConf.m_ptSrcs.data(),
-                                                      &l_gIdsEl[0],
                                                       t_spTypeElastic::SOURCE,
                                                       l_enLayouts[2],
                                                       l_internal.m_connect.elVe,

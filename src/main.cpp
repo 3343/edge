@@ -159,20 +159,6 @@ int main( int i_argc, char *i_argv[] ) {
 
 #include "dg/setup_ader.inc"
 
-//TODO: add to internal
-std::vector< int_gid > l_gIdsEl, l_gIdsVe, l_gIdsFa;
-
-// TODO: It's all fake!
-for( std::size_t l_ve = 0; l_ve < l_edgeV.nVes(); l_ve++ ) {
-  l_gIdsVe.push_back( l_ve );
-}
-for( std::size_t l_fa = 0; l_fa < l_edgeV.nFas(); l_fa++ ) {
-  l_gIdsFa.push_back( l_fa );
-}
-for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
-  l_gIdsEl.push_back( l_el );
-}
-
 // initialize internal chars and connectivity information
 EDGE_LOG_INFO << "initializing internal chars and connectivity info";
 l_internal.m_connect.faVe   = (std::size_t (*)[C_ENT[T_SDISC.ELEMENT].N_FACE_VERTICES]) l_edgeV.getFaVe();

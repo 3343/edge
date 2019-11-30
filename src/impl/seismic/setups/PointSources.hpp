@@ -133,7 +133,6 @@ class edge::seismic::setups::PointSources {
      * @param o_psIdsAc will be set to extracted ids of the point sources.
      * @param o_psElIdsAc will be set to extracted element ids belonging to the point sources.
      *
-     * @tparam TL_T_GID integral type of global ids.
      * @tparam TL_T_LA_EL struct of the element layout.
      */
     static void getAcDu( TL_T_LID                        i_nPss,
@@ -189,22 +188,18 @@ class edge::seismic::setups::PointSources {
      * @brief Get the ids of the active sources and corresponding elements.
      * 
      * @param i_path path to the batch of point sources.
-     * @param i_gIdsEl global ids of the elements.
      * @param i_laEl entity layout of the elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_charsVe vertex characteristics.
      * @param o_srcEls will be set to active source elements (including MPI-duplicates).
      * @param o_srcIds will be set to the ids of the sources.
      *
-     * @paramt TL_T_GID integral type of the global ids.
      * @paramt TL_T_LA_EN type of the entity layout.
      * @paramt TL_T_CHARS_VE type of the vertex characteristics, offering member .coords[3].
      */
-    template< typename TL_T_GID,
-              typename TL_T_LA_EN,
+    template< typename TL_T_LA_EN,
               typename TL_T_CHARS_VE >
     static void getIds( std::string             const  & i_path,
-                        TL_T_GID                const  * i_gIdsEl,
                         TL_T_LA_EN              const  & i_laEl,
                         TL_T_LID                const (* i_elVe)[TL_N_VES],
                         TL_T_CHARS_VE           const  * i_charsVe,
@@ -777,7 +772,6 @@ class edge::seismic::setups::PointSources {
      * @brief Initialization of the point sources, which reads the given source descriptions and inits the respective data.
      * 
      * @param i_paths path to the HDF5 source description.
-     * @param i_gIdsEl global ids of the element.
      * @param i_spTy sparse type of the sources.
      * @param i_laEl element layout.
      * @param i_elVe vertices adjacent to elements.
@@ -787,19 +781,16 @@ class edge::seismic::setups::PointSources {
      * @param io_dynMem will be used for dynamic memory allocations.
      * @return true if the point sources have been initialized, false otherwise
      *
-     * @tparam TL_T_GID integral type of the global id.
      * @tparam TL_T_SP sparse source type.
      * @tparam TL_T_EL_LA type of the element layout.
      * @tparam TL_T_CHARS_VE vertex characteristics.
      * @tparam TL_T_CHARS_EL element characteristics.
      */
-    template< typename TL_T_GID,
-              typename TL_T_SP,
+    template< typename TL_T_SP,
               typename TL_T_EL_LA,
               typename TL_T_CHARS_VE,
               typename TL_T_CHARS_EL >
     bool init( std::string         const    i_paths[TL_N_CRS],
-               TL_T_GID            const  * i_gIdsEl,
                TL_T_SP                      i_spTy,
                TL_T_EL_LA          const  & i_laEl,
                TL_T_LID            const (* i_elVe)[TL_N_VES],
@@ -826,7 +817,6 @@ class edge::seismic::setups::PointSources {
       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
         // get the ids of the active sources and corresponding elements
         getIds( i_paths[l_cr],
-                i_gIdsEl,
                 i_laEl,
                 i_elVe,
                 i_charsVe,
