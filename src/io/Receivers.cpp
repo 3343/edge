@@ -54,7 +54,7 @@ void edge::io::Receivers::init(       t_entityType    i_enType,
   edge::data::SparseEntities::ptToEn( i_enType,
                                       int_el(i_nRecvs),
                                       i_recvCrds,
-                                      i_enLayout,
+                                      i_enLayout.nEnts,
                                       i_enVe,
                                       i_veChars,
                                       l_deIds );

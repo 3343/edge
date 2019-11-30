@@ -869,12 +869,11 @@ class edge::data::SparseEntities {
     template< typename TL_T_LID,
               typename TL_T_REAL,
               typename TL_T_EN,
-              typename TL_T_EN_LA,
               typename TL_T_CHARS_VE >
     static TL_T_LID ptToEn( TL_T_EN                i_enType,
                             TL_T_LID               i_nPts,
                             TL_T_REAL     const (* i_ptCrds)[3],
-                            TL_T_EN_LA    const  & i_enLayout,
+                            TL_T_LID               i_nEns,
                             TL_T_LID      const  * i_enVe,
                             TL_T_CHARS_VE const  * i_charsVe,
                             TL_T_LID             * o_de ) {
@@ -898,45 +897,34 @@ class edge::data::SparseEntities {
 #pragma omp parallel for
 #endif
       for( TL_T_LID l_pt = 0; l_pt < i_nPts; l_pt++ ) {
-        // first considered entity
-        TL_T_LID l_first = 0;
+        for( TL_T_LID l_en = 0; l_en < i_nEns; l_en++ ) {
+          // buffer entity ves
+          EDGE_CHECK_LE( l_nVe, 8 );
+          TL_T_REAL l_tmpVe[ 3*8 ];
+          for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
+            TL_T_LID l_veId = i_enVe[l_en*l_nVe+l_ve];
 
-        // iterate over the time groups
-        for( std::size_t l_tg = 0; l_tg < i_enLayout.timeGroups.size(); l_tg++ ) {
-          TL_T_LID l_size  = i_enLayout.timeGroups[l_tg].nEntsOwn;
-
-          // iterate over the owned entities
-          for( TL_T_LID l_en = l_first; l_en < l_first+l_size; l_en++ ) {
-            // buffer entity ves
-            EDGE_CHECK_LE( l_nVe, 8 );
-            TL_T_REAL l_tmpVe[ 3*8 ];
-            for( unsigned short l_ve = 0; l_ve < l_nVe; l_ve++ ) {
-              TL_T_LID l_veId = i_enVe[l_en*l_nVe+l_ve];
-
-              for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-                l_tmpVe[l_di*l_nVe + l_ve] = i_charsVe[l_veId].coords[l_di];
-              }
-            }
-
-            // compute distance (projected if not inside)
-            TL_T_REAL l_tmpCrds[3];
             for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-              l_tmpCrds[l_di] = i_ptCrds[l_pt][l_di];
-            }
-            edge::linalg::Geom::closestPoint( i_enType,
-                                              l_tmpVe,
-                                              l_tmpCrds );
-            TL_T_REAL l_dist = edge::linalg::GeomT< 3 >::norm( l_tmpCrds,
-                                                               i_ptCrds[l_pt] );
-
-            // save if this is a new minimum
-            if( l_dist < l_minDist[l_pt] ) {
-              o_de[l_pt] = l_en;
-              l_minDist[l_pt] = l_dist;
+              l_tmpVe[l_di*l_nVe + l_ve] = i_charsVe[l_veId].coords[l_di];
             }
           }
-          l_first += i_enLayout.timeGroups[l_tg].nEntsOwn +
-                     i_enLayout.timeGroups[l_tg].nEntsNotOwn;
+
+          // compute distance (projected if not inside)
+          TL_T_REAL l_tmpCrds[3];
+          for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+            l_tmpCrds[l_di] = i_ptCrds[l_pt][l_di];
+          }
+          edge::linalg::Geom::closestPoint( i_enType,
+                                            l_tmpVe,
+                                            l_tmpCrds );
+          TL_T_REAL l_dist = edge::linalg::GeomT< 3 >::norm( l_tmpCrds,
+                                                              i_ptCrds[l_pt] );
+
+          // save if this is a new minimum
+          if( l_dist < l_minDist[l_pt] ) {
+            o_de[l_pt] = l_en;
+            l_minDist[l_pt] = l_dist;
+          }
         }
       }
 

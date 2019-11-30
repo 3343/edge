@@ -264,7 +264,7 @@ class edge::seismic::setups::PointSources {
       edge::data::SparseEntities::ptToEn( TL_T_EL,
                                           (TL_T_LID) l_ptsDis[0],
                                           l_ptsRaw3d,
-                                          i_laEl,
+                                          i_laEl.nEnts,
                                           i_elVe[0],
                                           i_charsVe,
                                           l_ptIds.data() );
