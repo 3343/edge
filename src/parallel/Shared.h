@@ -342,46 +342,43 @@ class edge::parallel::Shared {
     /**
      * @brief Performs NUMA-aware zero-initialization of the given array through first-touch.
      *        Should be called within an OpenMP-parallel region from all threads.
-     *        For every region, the inits of the workers are done as OpenMP-critical (on by one).
+     *        For every region, the inits of the workers are done as OpenMP-critical (one by one).
      *        After all inits in a region, an OpenMP-barrier is called.
      *
-     * @param i_enLa entity layout.
+     * @param i_nTgs number of time groups.
+     * @param i_nTgEnsIn number of inner entities.
+     * @param i_nTgEnsSe number of send entities.
      * @param i_nWrks number of workers.
      * @param i_nVasPerEn number of values per entity
      * @param o_arr array, which will be initialized.
      *
      * @paramt TL_T_VA type of the values.
      */
-    template< typename TL_T_VA >
-    static void numaInit( t_enLayout  const & i_enLa,
-                          unsigned int        i_nWrks,
-                          std::size_t const   i_nVasPerEn,
-                          TL_T_VA           * o_arr ) {
+    template< typename TL_T_LID,
+              typename TL_T_VA >
+    static void numaInit( unsigned short         i_nTgs,
+                          TL_T_LID       const * i_nTgEnsIn,
+                          TL_T_LID       const * i_nTgEnsSe,
+                          unsigned int           i_nWrks,
+                          std::size_t    const   i_nVasPerEn,
+                          TL_T_VA              * o_arr ) {
       // offset
       std::size_t l_off = 0;
 
-      for( unsigned short l_tg = 0; l_tg < i_enLa.timeGroups.size(); l_tg++ ) {
-        // inner
-        std::size_t l_nVas = i_enLa.timeGroups[l_tg].inner.size;
+      // inner
+      for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+        std::size_t l_nVas = i_nTgEnsIn[l_tg];
         l_nVas *= i_nVasPerEn;
 
         edge::parallel::Shared::numaInit( i_nWrks,
                                           l_nVas,
                                           o_arr+l_off );
         l_off += l_nVas;
+      }
 
-        // send
-        l_nVas  = i_enLa.timeGroups[l_tg].nEntsOwn;
-        l_nVas -= i_enLa.timeGroups[l_tg].inner.size;
-        l_nVas *= i_nVasPerEn;
-
-        edge::parallel::Shared::numaInit( i_nWrks,
-                                          l_nVas,
-                                          o_arr+l_off );
-        l_off += l_nVas;
-
-        // recv
-        l_nVas  = i_enLa.timeGroups[l_tg].nEntsNotOwn;
+      // send
+      for( unsigned short l_tg = 0; l_tg < i_nTgs; l_tg++ ) {
+        std::size_t l_nVas = i_nTgEnsSe[l_tg];
         l_nVas *= i_nVasPerEn;
 
         edge::parallel::Shared::numaInit( i_nWrks,

@@ -100,20 +100,26 @@ else {
 #endif
 {
   // elastic DOFs
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
+  edge::parallel::Shared::numaInit( l_edgeV.nTgs(),
+                                    l_edgeV.nTgElsIn(),
+                                    l_edgeV.nTgElsSe(),
                                     l_shared.m_nWrks,
                                     N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS,
                                     l_internal.m_elementModePrivate1[0][0][0] );
   // anelastic DOFs
 #if (PP_N_RELAXATION_MECHANISMS > 0)
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
+  edge::parallel::Shared::numaInit( l_edgeV.nTgs(),
+                                    l_edgeV.nTgElsIn(),
+                                    l_edgeV.nTgElsSe(),
                                     l_shared.m_nWrks,
                                     N_QUANTITIES_A*N_ELEMENT_MODES*N_CRUNS,
                                     l_internal.m_elementModePrivate2[0][0][0] );
 #endif
 
   // tDOFs
-  edge::parallel::Shared::numaInit( l_enLayouts[2],
+  edge::parallel::Shared::numaInit( l_edgeV.nTgs(),
+                                    l_edgeV.nTgElsIn(),
+                                    l_edgeV.nTgElsSe(),
                                     l_shared.m_nWrks,
                                     N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS,
                                     l_internal.m_globalShared6[0][0][0][0] );
