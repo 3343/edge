@@ -438,7 +438,6 @@ class edge::seismic::solvers::AderDgInit {
         // find ids of neighboring flux solvers in the elements
         unsigned short l_fIdL = std::numeric_limits< unsigned short >::max();
         unsigned short l_fIdR = std::numeric_limits< unsigned short >::max();
-        // TODO: this does not work for periodic boundaries, using elFaEl instead doesn't work in MPI-settings
         for( unsigned short l_fi = 0; l_fi < TL_N_FAS; l_fi++ ) {
           if( l_exL && i_elFa[l_elL][l_fi] == l_fa ) {
             // face should only by found once
@@ -451,8 +450,14 @@ class edge::seismic::solvers::AderDgInit {
             l_fIdR = l_fi;
           }
         }
-        EDGE_CHECK( !l_exL || l_fIdL != std::numeric_limits< unsigned short >::max() ) << l_fa;
-        EDGE_CHECK( !l_exR || l_fIdR != std::numeric_limits< unsigned short >::max() ) << l_fa;
+
+        bool l_periodic = (i_faChars[l_fa].spType & PERIODIC) == PERIODIC;
+        EDGE_CHECK( !l_exL || l_fIdL != std::numeric_limits< unsigned short >::max() || l_periodic ) << l_fa;
+        EDGE_CHECK( !l_exR || l_fIdR != std::numeric_limits< unsigned short >::max() || l_periodic ) << l_fa;
+
+        // disable elements without face ids (allowed for periodic faces, where elFa only points to one of them)
+        l_exL = l_exL && l_fIdL != std::numeric_limits< unsigned short >::max();
+        l_exR = l_exL && l_fIdR != std::numeric_limits< unsigned short >::max();
 
         // collect lame parameters
         TL_T_REAL l_rhoL, l_rhoR, l_lamL, l_lamR, l_muL, l_muR;
