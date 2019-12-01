@@ -141,9 +141,10 @@ const double SCALE_CFL=(1.0/N_DIM)*SCALE_CFL_ORDER[PP_ORDER-1];
  **/
 static_assert( sizeof(int_spType) >= 4, "size of entity type too small" );
 typedef enum: int_spType {
-  FREE_SURFACE = 101,  // TODO: change to bitmask
-  OUTFLOW      = 105,  // TODO: change to bitmask
-  RUPTURE      = 201,  // TODO: change to bitmask
+  FREE_SURFACE = 101,
+  OUTFLOW      = 105,
+  PERIODIC     = 106,
+  RUPTURE      = 201,
   SOURCE       = 65536 // 0b0000000000000000000000000000000000000000000000010000000000000000
 } t_spTypeElastic;
 
