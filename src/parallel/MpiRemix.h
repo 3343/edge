@@ -42,12 +42,12 @@ namespace edge {
  **/
 class edge::parallel::MpiRemix {
   private:
+    //! max. version of the supported mpi-standard, 0: major, 1: minor
+    int m_verStd[2] = {0, 0};
+
 #ifdef PP_USE_MPI
     //! communicator
     MPI_Comm m_comm;
-
-    //! max. version of the supported mpi-standard, 0: major, 1: minor
-    int m_verStd[2] = {0, 0};
 
     //! number of channels
     std::size_t m_nChs = 0;
