@@ -136,7 +136,7 @@ int main( int i_argc, char *i_argv[] ) {
   if( edge::parallel::g_nRanks > 1 ) l_meshPath += "_" + edge::parallel::g_rankStr;
   l_meshPath += l_config.m_meshInExt;
   edge::mesh::EdgeV l_edgeV( l_meshPath,
-                             l_config.m_periodic != std::numeric_limits< int >::max() );
+                             l_config.m_periodic );
 
   // dynamic memory allocates
   edge::data::Dynamic l_dynMem;

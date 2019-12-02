@@ -136,10 +136,10 @@ class edge::mesh::EdgeV {
      * Constructor.
      *
      * @param i_pathToMesh path to the mesh file.
-     * @parma i_periodic if true, periodic boundaries as enforced.
+     * @parma i_periodic type of periodic boundaries.
      **/
     EdgeV( std::string const & i_pathToMesh,
-           bool                i_periodic );
+           int                 i_periodic );
 
     /**
      * Destructor.

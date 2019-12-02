@@ -93,6 +93,8 @@ void edge_v::mesh::Mesh::setInDiameter( t_entityType          i_enTy,
 
 void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                        i_elTy,
                                           std::size_t                         i_nFas,
+                                          int                                 i_peBndTy,
+                                          int                        const  * i_faBndTys,
                                           std::size_t                const  * i_faVe,
                                           double                     const (* i_veCrds)[3],
                                           std::size_t                       * io_faEl,
@@ -104,11 +106,11 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                        i_
   // get boundary faces
   std::vector< std::size_t > l_bndFas;
   for( std::size_t l_fa = 0; l_fa < i_nFas; l_fa++ ) {
-    if( io_faEl[l_fa*2+1] == std::numeric_limits< std::size_t >::max() ) {
+    if( i_faBndTys[l_fa] == i_peBndTy ) {
+      EDGE_V_CHECK_EQ( io_faEl[l_fa*2+1], std::numeric_limits< std::size_t >::max() );
       l_bndFas.push_back( l_fa );
     }
   }
-  EDGE_V_CHECK_EQ( l_bndFas.size()%2, 0 );
 
   unsigned short l_nDis = CE_N_DIS( i_elTy );
   unsigned short l_nFaVes = CE_N_VES( CE_T_FA( i_elTy ) );
@@ -179,18 +181,26 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                        i_
         }
       }
     }
+
+    // add dummy if nothing was found (happens for periodic partition boundaries)
+    if( l_faPairs.size() != l_f0 + 1 ) {
+      l_faPairs.push_back( std::numeric_limits< std::size_t >::max() );
+    }
   }
 
-  // check that we got a partner for every face
+  // check that we got a partner for every found periodic face
   EDGE_V_CHECK_EQ( l_faPairs.size(), l_bndFas.size() );
   for( std::size_t l_fa = 0; l_fa < l_faPairs.size(); l_fa++ ) {
-    EDGE_V_CHECK_EQ( l_faPairs[ l_faPairs[l_fa] ], l_fa );
+    if( l_faPairs[l_fa] != std::numeric_limits< std::size_t >::max() ) {
+      EDGE_V_CHECK_EQ( l_faPairs[ l_faPairs[l_fa] ], l_fa );
+    }
   }
 
   // insert the missing elements and store the face with the larger adjacent element
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
   for( std::size_t l_f0 = 0; l_f0 < l_faPairs.size(); l_f0++ ) {
     std::size_t l_f1 = l_faPairs[l_f0];
+    if( l_f1 == std::numeric_limits< std::size_t >::max() ) continue;
 
     std::size_t l_f0Id = l_bndFas[ l_f0 ];
     std::size_t l_f1Id = l_bndFas[ l_f1 ];
@@ -302,7 +312,7 @@ void edge_v::mesh::Mesh::normOrder( t_entityType         i_elTy,
 }
 
 edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
-                          bool                     i_periodic ) {
+                          int                      i_periodic ) {
   // get the element type of the mesh
   m_elTy = i_moab.getElType();
   t_entityType l_faTy = CE_T_FA( m_elTy );
@@ -348,15 +358,24 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
 
   // adjust periodic boundaries
   std::vector< std::size_t > l_pFasGt;
-  if( i_periodic ) {
+  if( i_periodic != std::numeric_limits< int >::max() ) {
+    int * l_dataFa = new int[ m_nFas ];
+    i_moab.getEnDataFromSet( getTypeFa(),
+                             "MATERIAL_SET",
+                             l_dataFa );
+
     setPeriodicBnds( m_elTy,
                      m_nFas,
+                     i_periodic,
+                     l_dataFa,
                      m_faVe,
                      m_veCrds,
                      m_faEl,
                      m_elFa,
                      m_elFaEl,
                      l_pFasGt );
+
+    delete[] l_dataFa;
   }
 
   // compute mesh properties

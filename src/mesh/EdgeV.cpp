@@ -177,7 +177,7 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
 }
 
 edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
-                          bool                i_periodic ): m_moab(i_pathToMesh),
+                          int                 i_periodic ): m_moab(i_pathToMesh),
                                                             m_mesh(m_moab, i_periodic) {
   // get tag names
   std::vector< std::string > l_tagNames;

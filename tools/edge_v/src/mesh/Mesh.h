@@ -131,6 +131,8 @@ class edge_v::mesh::Mesh {
      *
      * @param i_elTy element type.
      * @param i_nFas number of faces.
+     * @param i_peBndTy periodic boundary type.
+     * @param i_faBndTys boundary types of the faces.
      * @param i_faVe vertices of the faces.
      * @param i_veCrds vertex coordinates.
      * @param io_faEl elements adjacent to the faces.
@@ -140,6 +142,8 @@ class edge_v::mesh::Mesh {
      **/
     static void setPeriodicBnds( t_entityType                        i_elTy,
                                  std::size_t                         i_nFas,
+                                 int                                 i_peBndTy,
+                                 int                        const  * i_faBndTys,
                                  std::size_t                const  * i_faVe,
                                  double                     const (* i_veCrds)[3],
                                  std::size_t                       * io_faEl,
@@ -180,10 +184,10 @@ class edge_v::mesh::Mesh {
      * Constructor.
      *
      * @param i_moab moab interface.
-     * @param i_periodic if true search insert periodic adjacency info for faces at the boundary.
+     * @param i_periodic if not max insert periodic adjacency info for faces at the boundary if available.
      **/
     Mesh( io::Moab const & i_moab,
-          bool             i_periodic = false );
+          int              i_periodic = std::numeric_limits< int >::max() );
 
     /**
      * Destructor

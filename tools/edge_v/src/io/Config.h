@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+#include <limits>
 
 namespace edge_v {
   namespace io {
@@ -52,7 +53,7 @@ class edge_v::io::Config {
     bool m_writeElAn = false;
 
     //! periodic boundary conditions
-    bool m_periodic = false;
+    int m_periodic = std::numeric_limits< int >::max();
 
     //! number of partitions to derive
     std::size_t m_nPartitions = 0;
@@ -114,7 +115,7 @@ class edge_v::io::Config {
      *
      * @return true if the mesh has periodic boundaries, false if not.
      **/
-    bool getPeriodic() const { return m_periodic; }
+    int getPeriodic() const { return m_periodic; }
 
     /**
      * Gets the configuration for element annotations in the output mesh.

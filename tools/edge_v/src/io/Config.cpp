@@ -39,7 +39,7 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_meshOutPa[0] = l_mesh.child("files").child("out_by_partition").child("base").text().as_string();
   m_meshOutPa[1] = l_mesh.child("files").child("out_by_partition").child("extension").text().as_string();
   m_writeElAn = l_mesh.child("write_element_annotations").text().as_bool();
-  m_periodic = l_mesh.child("periodic").text().as_bool();
+  m_periodic = l_mesh.child("periodic").text().as_int();
   m_nPartitions = l_mesh.child("n_partitions").text().as_ullong();
 
   // read velocity model
