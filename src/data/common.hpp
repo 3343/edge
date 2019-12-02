@@ -24,7 +24,7 @@
 #define EDGE_DATA_COMMON_HPP
 
 #ifdef PP_USE_MPI
-#include <mpi.h>
+#include "parallel/mpi_wrapper.inc"
 #endif
 #include "constants.hpp"
 #include <fstream>

@@ -25,8 +25,8 @@
 #ifndef EDGE_DATA_SPARSE_ENTITIES_HPP
 #define EDGE_DATA_SPARSE_ENTITIES_HPP
 
-#include <limits>
 #include "parallel/MpiRemix.h"
+#include <limits>
 #include "io/logging.h"
 #include "linalg/Geom.hpp"
 

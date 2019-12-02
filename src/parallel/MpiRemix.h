@@ -25,7 +25,7 @@
 #define EDGE_PARALLEL_MPI_REMIX_H
 
 #ifdef PP_USE_MPI
-#include <mpi.h>
+#include "mpi_wrapper.inc"
 #endif
 
 #include <cstddef>

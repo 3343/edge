@@ -20,8 +20,8 @@
  * @section DESCRIPTION
  * Output of receivers.
  **/
-#include "Receivers.h"
 #include "data/SparseEntities.hpp"
+#include "Receivers.h"
 #include "FileSystem.hpp"
 #include "linalg/Geom.hpp"
 #include "dg/Basis.h"
