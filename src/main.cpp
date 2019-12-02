@@ -321,7 +321,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   // write setup
   EDGE_LOG_INFO << "reached synchronization point #0";
   EDGE_LOG_INFO << "  simulation time: " << l_simTime;
-  if( l_config.m_waveFieldInt > TOL.TIME ) {
+  if( l_config.m_waveFieldInt < l_config.m_endTime ) {
     EDGE_LOG_INFO << "  writing wave field #0";
     l_writer.write( 0 );
   }
