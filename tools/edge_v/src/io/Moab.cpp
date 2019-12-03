@@ -355,7 +355,7 @@ void edge_v::io::Moab::getEnMsInter( std::vector< moab::EntityHandle > const & i
   for( std::size_t l_id = 0; l_id < i_ms.size(); l_id++ ) {
     // create temporary meshset from the entities
     moab::EntityHandle l_msEn;
-    moab::ErrorCode l_err = m_moab->create_meshset( moab::MESHSET_ORDERED,
+    moab::ErrorCode l_err = m_moab->create_meshset( moab::MESHSET_SET,
                                                     l_msEn );
     EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
@@ -424,7 +424,7 @@ void edge_v::io::Moab::writeMesh( std::size_t         i_first,
                                   std::string const & i_pathToMesh ) {
   // get the elements
   std::vector< moab::EntityHandle > l_els;
-  moab::ErrorCode l_err = m_moab->get_entities_by_type( 0,
+  moab::ErrorCode l_err = m_moab->get_entities_by_type( m_root,
                                                         getMoabType( getElType() ),
                                                         l_els );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
@@ -435,7 +435,7 @@ void edge_v::io::Moab::writeMesh( std::size_t         i_first,
 
   // add requested elements to mesh set
   moab::EntityHandle l_msEl;
-  l_err = m_moab->create_meshset( moab::MESHSET_ORDERED,
+  l_err = m_moab->create_meshset( moab::MESHSET_SET,
                                   l_msEl );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
