@@ -23,12 +23,13 @@
 #ifndef EDGE_DATA_COMMON_HPP
 #define EDGE_DATA_COMMON_HPP
 
+#include <map>
 #ifdef PP_USE_MPI
 #include "parallel/mpi_wrapper.inc"
 #endif
 #include "constants.hpp"
 #include <fstream>
-#include <io/logging.h>
+#include "io/logging.h"
 #include <string>
 #include <cstring>
 
