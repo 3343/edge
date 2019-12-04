@@ -95,6 +95,12 @@ if env['moab'] != False:
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
     env.thirdheaders.append( env['moab']+'/include/moab' )
+  # enable zlib for HDF5
+  conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' )
+  # enabled HDF5 for MOAB
+  conf.CheckLibWithHeaderFlags( 'hdf5' )
+  conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
+  # enable MOAB
   conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' )
 
 # UCVM
