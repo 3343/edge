@@ -5,6 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -72,7 +73,7 @@ cd ../..
 # build moab
 cd submodules/moab
 LANG=C autoreconf -fi
-CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" ./configure --disable-debug --disable-optimize --enable-shared=no --with-mpi --enable-static=yes --with-pic=yes  --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no --with-metis=yes --download-metis > /dev/null
+CXXFLAGS="-DEIGEN_DONT_VECTORIZE -fPIC" ./configure --disable-debug --disable-optimize --enable-shared=no --enable-static=yes --with-pic=yes --disable-fortran --enable-tools --disable-blaslapack --with-eigen3=$(pwd)/../eigen --with-hdf5=yes --with-netcdf=no --with-pnetcdf=no > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo make install > /dev/null
 cd ../..
