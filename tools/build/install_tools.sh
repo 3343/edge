@@ -63,6 +63,7 @@ then
   sudo yum install -y -q -e 0 GMT
   sudo yum install -y -q -e 0 ghostscript
   # UCVM and EDGEv dependencies
+  sudo yum install -y -q -e 0 metis metis-devel
   sudo yum install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
   sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
