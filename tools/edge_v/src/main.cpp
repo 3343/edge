@@ -274,6 +274,12 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   if( l_config.nPartitions() > 1 ) {
+    EDGE_V_LOG_INFO << "storing relative time steps of the groups";
+    l_moab.deleteTag( l_tagRelTs );
+    l_moab.setGlobalData( l_tagRelTs,
+                          l_tsGroups->nGroups()+1,
+                          l_tsGroups->getTsIntervals() );
+
     EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
     delete l_tsGroups;
     delete l_cfl;
