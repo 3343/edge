@@ -41,6 +41,7 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_writeElAn = l_mesh.child("write_element_annotations").text().as_bool();
   m_periodic = l_mesh.child("periodic").text().as_int();
   m_nPartitions = l_mesh.child("n_partitions").text().as_ullong();
+  m_nPartitions = std::max( m_nPartitions, std::size_t(1) );
 
   // read velocity model
   pugi::xml_node l_velMod = l_doc.child("edge_v").child("velocity_model");

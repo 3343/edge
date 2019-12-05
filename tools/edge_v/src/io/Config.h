@@ -56,7 +56,7 @@ class edge_v::io::Config {
     int m_periodic = std::numeric_limits< int >::max();
 
     //! number of partitions to derive
-    std::size_t m_nPartitions = 0;
+    std::size_t m_nPartitions = 1;
 
     //! path to the output-csv for the time steps
     std::string m_tsOut = "";
