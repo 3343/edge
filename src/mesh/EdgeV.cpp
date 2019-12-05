@@ -21,6 +21,7 @@
  * Mesh-interface using EDGE-V.
  **/
 #include "io/logging.h"
+#include "parallel/global.h"
 
 #include "EdgeV.h"
 #include "../data/EntityLayout.h"
@@ -242,10 +243,14 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     else if( l_tagNames[l_ta] == "edge_v_send_vertex_ids"         ) l_nMpiTags++;
     else if( l_tagNames[l_ta] == "edge_v_send_face_ids"           ) l_nMpiTags++;
   }
-#ifdef PP_USE_MPI
-  // check for all tags if compiled with MPI
-  EDGE_CHECK_EQ( l_nMpiTags, 7 );
-#endif
+
+  // check number of mpi tags
+  if( parallel::g_nRanks > 1 ) {
+    EDGE_CHECK_EQ( l_nMpiTags, 7 );
+  }
+  else {
+    EDGE_CHECK_EQ( l_nMpiTags, 0 );
+  }
 
   if( l_nMpiTags == 7 ) {
     // get communication structure
@@ -255,6 +260,15 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
     m_moab.getGlobalData( "edge_v_communication_structure",
                           m_commStruct );
+
+    // check ranks in comm structure
+    std::size_t l_nChs = m_commStruct[0];
+    EDGE_CHECK_GT( l_nChs, 0 );
+    for( std::size_t l_ch = 0; l_ch < l_nChs; l_ch++ ) {
+      std::size_t l_raAd = m_commStruct[1 + l_ch*4 + 1];
+      EDGE_CHECK_NE( parallel::g_rank,   (int) l_raAd );
+      EDGE_CHECK_GT( parallel::g_nRanks, (int) l_raAd );
+    }
 
     // get communicating faces
     m_nCommElFa = m_moab.getGlobalDataSize( "edge_v_send_fa" );
