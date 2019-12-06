@@ -30,7 +30,7 @@
   real_base (**l_raw)[N_ELEMENT_MODES][N_CRUNS];
 
   l_raw = l_dynMem.flex<
-    real_base [N_ELEMENT_MODES][N_CRUNS] >( l_internal.m_nElements,
+    real_base [N_ELEMENT_MODES][N_CRUNS] >( l_edgeV.nEls(),
                                             2,
                                             1,
                                             l_spTypes,
@@ -38,8 +38,8 @@
                                             l_internal.m_elementChars );
 
   l_internal.m_globalShared3[0] = l_raw;
-  l_internal.m_globalShared3[1] = l_raw +   l_internal.m_nElements;
-  l_internal.m_globalShared3[2] = l_raw + 2*l_internal.m_nElements;
+  l_internal.m_globalShared3[1] = l_raw +   l_edgeV.nEls();
+  l_internal.m_globalShared3[2] = l_raw + 2*l_edgeV.nEls();
 }
 
 #ifdef PP_USE_MPI
@@ -54,48 +54,46 @@
 #endif
 
 // setup shared memory parallelization
-for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
-  unsigned short l_nTgs = l_enLayouts[2].timeGroups.size();
+std::size_t l_firstDe = 0;
 
-  // local, inner-elements
+for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
+  // local, inner
   l_shared.regWrkRgn( l_tg,
                       0,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 0,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first,
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs - l_tg,
-                      0, nullptr, l_internal.m_elementChars );
-
-  // local, send-elements
-  l_shared.regWrkRgn( l_tg,
-                      0,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 1,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first+
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs*2 - l_tg,
-                      0, nullptr, l_internal.m_elementChars );
+                      l_firstDe,
+                      l_edgeV.nTgElsIn()[l_tg],
+                      l_edgeV.nTgs() - l_tg );
 
   // neigh, inner-elements
   l_shared.regWrkRgn( l_tg,
                       1,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 6,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first,
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs - l_tg,
-                      0, nullptr, l_internal.m_elementChars );
+                      l_firstDe,
+                      l_edgeV.nTgElsIn()[l_tg],
+                      l_edgeV.nTgs() - l_tg );
+
+  l_firstDe  += l_edgeV.nTgElsIn()[l_tg];
+}
+
+for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
+  // local, send
+  l_shared.regWrkRgn( l_tg,
+                      0,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 1,
+                      l_firstDe,
+                      l_edgeV.nTgElsSe()[l_tg],
+                      l_edgeV.nTgs()*2 - l_tg );
 
   // neigh, send-elements
   l_shared.regWrkRgn( l_tg,
                       1,
                       l_tg * N_ENTRIES_CONTROL_FLOW + 7,
-                      l_enLayouts[2].timeGroups[l_tg].inner.first+
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_enLayouts[2].timeGroups[l_tg].nEntsOwn-
-                      l_enLayouts[2].timeGroups[l_tg].inner.size,
-                      l_nTgs*2 - l_tg,
-                      0, nullptr, l_internal.m_elementChars );
+                      l_firstDe,
+                      l_edgeV.nTgElsSe()[l_tg],
+                      l_edgeV.nTgs()*2 - l_tg );
+
+  l_firstDe  += l_edgeV.nTgElsSe()[l_tg];
 }
 
 // initialize DOFs
@@ -115,7 +113,7 @@ for( int_tg l_tg = 0; l_tg < l_enLayouts[2].timeGroups.size(); l_tg++ ) {
 }
 
 // initialize wave speeds
-edge::advection::setups::Convergence::setConstantSpeed( l_internal.m_nElements,
+edge::advection::setups::Convergence::setConstantSpeed( l_edgeV.nEls(),
                                                         l_internal.m_elementShared1,
                                                         1, 0.5, -1 );
 
@@ -134,7 +132,7 @@ edge::advection::solvers::AderDg<
     T_SDISC.ELEMENT,
     ORDER,
     ORDER,
-    N_CRUNS >::setupStarM( l_internal.m_nElements,
+    N_CRUNS >::setupStarM( l_edgeV.nEls(),
                            l_internal.m_vertexChars,
                            l_internal.m_connect.elVe,
                            l_internal.m_elementShared1,
@@ -142,15 +140,15 @@ edge::advection::solvers::AderDg<
 #endif
 
 // get time step stats
-edge::advection::solvers::common::getTimeStepStatistics( l_internal.m_nElements,
+edge::advection::solvers::common::getTimeStepStatistics( l_edgeV.nEls(),
                                                          l_internal.m_elementChars,
                                                          l_internal.m_elementShared1,
                                                          l_dT[0],
                                                          l_dT[1],
                                                          l_dT[2] );
 
-edge::advection::solvers::common::setupSolvers( l_internal.m_nElements,
-                                                l_internal.m_nFaces,
+edge::advection::solvers::common::setupSolvers( l_edgeV.nEls(),
+                                                l_edgeV.nFas(),
                                                 l_internal.m_connect.elVe,
                                                 l_internal.m_connect.faEl,
                                                 l_internal.m_connect.elFa,
