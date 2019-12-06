@@ -38,7 +38,7 @@ else if( i_step == 1 ) {
     N_CRUNS
   >::update(                       i_first,
                                    i_size,
-                                   real_base(m_dT),
+                                   real_base(m_dt),
                                    m_internal.m_connect.faEl,
                                    m_internal.m_connect.elFa,
                                    m_internal.m_faceChars,

@@ -23,18 +23,18 @@
 
 // setup shared memory parallelization
 l_shared.regWrkRgn( 0, 0, 0,
-                    l_enLayouts[1].timeGroups[0].inner.first,
-                    l_enLayouts[1].timeGroups[0].inner.size,
+                    0,
+                    l_edgeV.nFas(),
                     0 );
 
 l_shared.regWrkRgn( 0, 1, 1,
-                    l_enLayouts[2].timeGroups[0].inner.first,
-                    l_enLayouts[2].timeGroups[0].inner.size,
+                    0,
+                    l_edgeV.nEls(),
                     0 );
 
 // initialize Bathymetry and DOFs
 {
-  for( int_el l_el = 0; l_el < l_enLayouts[2].nEnts; l_el++ )
+  for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ )
     l_internal.m_elementModeShared1[l_el][0][0] = 0;
 
   // DG
@@ -42,8 +42,8 @@ l_shared.regWrkRgn( 0, 1, 1,
     T_SDISC.ELEMENT,
     ORDER,
     N_QUANTITIES,
-    N_CRUNS >::dg( 0,
-                   l_internal.m_nElements,
+    N_CRUNS >::dg( std::size_t(0),
+                   l_edgeV.nEls(),
                    l_config.m_initValsExprStrs,
                    l_basis,
                    l_internal.m_connect.elVe,
@@ -56,7 +56,7 @@ l_shared.regWrkRgn( 0, 1, 1,
 edge::swe::solvers::FiniteVolume<
   T_SDISC.ELEMENT,
   N_CRUNS
->::getTimeStepStatistics( l_internal.m_nElements,
+>::getTimeStepStatistics( l_edgeV.nEls(),
                           l_internal.m_elementChars,
                           l_internal.m_elementModePrivate1,
                           l_dT[0],

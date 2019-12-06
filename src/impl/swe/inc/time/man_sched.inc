@@ -34,18 +34,18 @@
 static_assert( N_ENTRIES_CONTROL_FLOW == 2, "entries of control flow not matching" );
 
 // initialize control flow if neccessary
-if( m_cflow[0] == std::numeric_limits< unsigned short >::max() ) {
+if( m_cflow[0][0] == std::numeric_limits< unsigned short >::max() ) {
   m_shared.setStatusAll(parallel::Shared::RDY, 0);
-  m_cflow[0] = 1;
+  m_cflow[0][0] = 1;
 
-  m_cflow[1] = 0;
+  m_cflow[0][1] = 0;
 }
 
 // net-updates done
-if( m_cflow[0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 0) ) m_cflow[0] = 2;
+if( m_cflow[0][0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 0) ) m_cflow[0][0] = 2;
 
 // elements finished computations
-if( m_cflow[1] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 1) ) m_cflow[1] = 2;
+if( m_cflow[0][1] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, 1) ) m_cflow[0][1] = 2;
 
 // check if we are finished
 if( m_timeGroups[0]->finished() ) {
@@ -53,21 +53,21 @@ if( m_timeGroups[0]->finished() ) {
   return;
 }
 
-if( m_cflow[0] == 2 && m_cflow[1] == 0 ) {
+if( m_cflow[0][0] == 2 && m_cflow[0][1] == 0 ) {
     m_shared.setStatusAll(parallel::Shared::RDY, 1);
-    m_cflow[1] = 1;
+    m_cflow[0][1] = 1;
 
-    m_cflow[0] = 0;
+    m_cflow[0][0] = 0;
 }
 
 // updates elements
-if( m_cflow[1] == 2 && m_cflow[0] == 0 ) {
+if( m_cflow[0][1] == 2 && m_cflow[0][0] == 0 ) {
   m_timeGroups[0]->updateTsInfo();
 
   if( !m_timeGroups[0]->finished() ) {
     m_shared.setStatusAll(parallel::Shared::RDY, 0);
-    m_cflow[0] = 1;
+    m_cflow[0][0] = 1;
   }
 
-  m_cflow[1] = 0;
+  m_cflow[0][1] = 0;
 }
