@@ -263,10 +263,10 @@ edge::seismic::common::getTimeStepStatsCFL( l_edgeV.nEls(),
                                             l_internal.m_elementShared1,
                                             l_dT[0], l_dT[1], l_dT[2] );
 
+// setup shared memory parallelization
 std::size_t l_firstDe = 0;
 std::size_t l_firstSrc = 0;
 
-// setup shared memory parallelization
 for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
   int_spType l_spType[1] = { RECEIVER };
 
