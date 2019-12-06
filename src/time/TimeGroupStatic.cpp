@@ -40,6 +40,10 @@ edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short   i_nTgs,
                                               unsigned char ** i_recvPtrs ): m_internal( i_internal ),
                                                                              m_sendPtrs( i_sendPtrs ),
                                                                              m_recvPtrs( i_recvPtrs ) {
+  // touch send and recv ptrs to satisfy strict compilers
+  m_sendPtrs = nullptr;
+  m_recvPtrs = nullptr;
+
   // derive multiple of fundamental time step (rate-2 LTS)
   m_funMul = 1;
   for( unsigned short l_tg = 0; l_tg < i_tgId; l_tg++ ) {
