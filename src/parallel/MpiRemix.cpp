@@ -109,6 +109,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
 
   // derive the number of communication channels and communicating faces
   m_nChs = i_commStruct[0];
+  m_nSeRe = (std::size_t *) io_dynMem.allocate( m_nChs * sizeof(std::size_t) );
 
   std::size_t l_sizeSend = 0;
   std::size_t l_sizeRecv = 0;
@@ -116,6 +117,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
     std::size_t l_tg    = i_commStruct[1 + l_ch*4 + 0];
     std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
     std::size_t l_nSeRe = i_commStruct[1 + l_ch*4 + 3];
+    m_nSeRe[l_ch] = l_nSeRe;
 
     l_sizeSend += (l_tg > l_tgAd) ? 2 * l_nSeRe * i_nByFa : l_nSeRe * i_nByFa;
     l_sizeRecv += (l_tg < l_tgAd) ? 2 * l_nSeRe * i_nByFa : l_nSeRe * i_nByFa;
@@ -355,4 +357,55 @@ bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
 #endif
 
   return true;
+}
+
+void edge::parallel::MpiRemix::syncData( std::size_t           i_nByFa,
+                                         unsigned char const * i_sendData,
+                                         unsigned char       * o_recvData ) {
+#ifdef PP_USE_MPI
+  MPI_Request * l_sendReqs = new MPI_Request[ m_nChs ];
+  MPI_Request * l_recvReqs = new MPI_Request[ m_nChs ];
+
+  unsigned char const * l_sendPtr = i_sendData;
+  unsigned char       * l_recvPtr = o_recvData;
+
+  // issue communication
+  for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
+    std::size_t l_size = m_nSeRe[l_ch] * i_nByFa;
+
+    int l_err = MPI_Irecv( l_recvPtr,
+                           l_size,
+                           MPI_BYTE,
+                           m_recvMsgs[l_ch].rank,
+                           m_recvMsgs[l_ch].tag,
+                           m_comm,
+                           l_recvReqs+l_ch );
+    EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+    l_err = MPI_Isend( l_sendPtr,
+                       l_size,
+                       MPI_BYTE,
+                       m_sendMsgs[l_ch].rank,
+                       m_sendMsgs[l_ch].tag,
+                       m_comm,
+                       l_sendReqs+l_ch );
+    EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+    l_sendPtr += l_size;
+    l_recvPtr += l_size;
+  }
+
+  // wait for communication to finish
+  int l_err = MPI_Waitall( m_nChs,
+                           l_recvReqs,
+                           MPI_STATUSES_IGNORE );
+  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+  l_err = MPI_Waitall( m_nChs,
+                       l_sendReqs,
+                       MPI_STATUSES_IGNORE );
+  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+  delete[] l_sendReqs;
+  delete[] l_recvReqs;
+#endif
 }

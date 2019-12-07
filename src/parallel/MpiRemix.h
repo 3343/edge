@@ -52,6 +52,9 @@ class edge::parallel::MpiRemix {
     //! number of channels
     std::size_t m_nChs = 0;
 
+    //! number of send-receive faces
+    std::size_t *m_nSeRe = nullptr;
+
     //! send buffer
     unsigned char * m_sendBuffer = nullptr;
 
@@ -250,6 +253,17 @@ class edge::parallel::MpiRemix {
      * @return receive pointers.
      **/
     unsigned char ** getRecvPtrs() { return m_recvPtrs; }
+
+    /**
+     * Syncs the given data according to the communication structure.
+     *
+     * @param i_nByFa number of bytes for every communicating face.
+     * @param i_sendData data of the communicating faces, which will be send to adjacent ranks.
+     * @param i_recvData data of the adjacent communicating faces, which will be received from adjacent ranks.
+     **/
+    void syncData( std::size_t           i_nByFa,
+                   unsigned char const * i_sendData,
+                   unsigned char       * o_recvData );
 };
 
 #endif
