@@ -43,14 +43,16 @@
 }
 
 #ifdef PP_USE_MPI
-  // init mpi layout
-  EDGE_CHECK( l_enLayouts[2].timeGroups.size() == 1 );
-
-  l_mpi.addDefault( l_enLayouts[2],
-                    l_internal.m_globalShared3[0][0][0][0],
-                    N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
-                    0,
-                    1 );
+  l_mpiRemix.init( l_edgeV.nTgs(),
+                   C_ENT[T_SDISC.ELEMENT].N_FACES,
+                   l_edgeV.nEls(),
+                   N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
+                   l_edgeV.getCommStruct(),
+                   l_edgeV.getSendFa(),
+                   l_edgeV.getSendEl(),
+                   l_edgeV.getRecvFa(),
+                   l_edgeV.getRecvEl(),
+                   l_dynMem );
 #endif
 
 // setup shared memory parallelization
@@ -68,7 +70,7 @@ for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
   // neigh, inner-elements
   l_shared.regWrkRgn( l_tg,
                       1,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 6,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 2,
                       l_firstDe,
                       l_edgeV.nTgElsIn()[l_tg],
                       l_edgeV.nTgs() - l_tg );
@@ -88,7 +90,7 @@ for( std::size_t l_tg = 0; l_tg < l_edgeV.nTgs(); l_tg++ ) {
   // neigh, send-elements
   l_shared.regWrkRgn( l_tg,
                       1,
-                      l_tg * N_ENTRIES_CONTROL_FLOW + 7,
+                      l_tg * N_ENTRIES_CONTROL_FLOW + 3,
                       l_firstDe,
                       l_edgeV.nTgElsSe()[l_tg],
                       l_edgeV.nTgs()*2 - l_tg );
@@ -117,7 +119,6 @@ edge::advection::setups::Convergence::setConstantSpeed( l_edgeV.nEls(),
                                                         l_internal.m_elementShared1,
                                                         1, 0.5, -1 );
 
-#if PP_ORDER > 1
 // initialize ADER-DG solver
 edge::advection::solvers::AderDg< real_base,
                                   T_SDISC.ELEMENT,
@@ -137,7 +138,6 @@ edge::advection::solvers::AderDg<
                            l_internal.m_connect.elVe,
                            l_internal.m_elementShared1,
                            l_internal.m_elementShared2 );
-#endif
 
 // get time step stats
 edge::advection::solvers::common::getTimeStepStatistics( l_edgeV.nEls(),
@@ -147,13 +147,37 @@ edge::advection::solvers::common::getTimeStepStatistics( l_edgeV.nEls(),
                                                          l_dT[1],
                                                          l_dT[2] );
 
-edge::advection::solvers::common::setupSolvers( l_edgeV.nEls(),
-                                                l_edgeV.nFas(),
-                                                l_internal.m_connect.elVe,
-                                                l_internal.m_connect.faEl,
-                                                l_internal.m_connect.elFa,
-                                                l_internal.m_connect.elFaEl,
-                                                l_internal.m_vertexChars,
-                                                l_internal.m_faceChars,
-                                                l_internal.m_elementShared1,
-                                                l_internal.m_elementShared3 );
+// sync background parameters and set up flux solvers
+{
+  std::size_t l_nComm = l_edgeV.nCommElFa();
+
+  t_bgPars *l_bgParsIn  = new t_bgPars[l_nComm];
+  t_bgPars *l_bgParsOut = new t_bgPars[l_nComm];
+
+  for( std::size_t l_co = 0; l_co < l_nComm; l_co++ ) {
+    std::size_t l_el = l_edgeV.getSendEl()[l_co];
+    l_bgParsOut[l_co] = l_internal.m_elementShared1[l_el][0];
+  }
+
+  l_mpiRemix.syncData( sizeof(t_bgPars),
+                       (unsigned char *) l_bgParsOut,
+                       (unsigned char *) l_bgParsIn );
+  delete[] l_bgParsOut;
+
+  edge::advection::solvers::common::setupSolvers( l_edgeV.nElsIn(),
+                                                  l_edgeV.nElsSe(),
+                                                  l_edgeV.nFas(),
+                                                  l_edgeV.nCommElFa(),
+                                                  l_edgeV.getRecvFa(),
+                                                  l_edgeV.getRecvEl(),
+                                                  l_internal.m_connect.elVe,
+                                                  l_internal.m_connect.faEl,
+                                                  l_internal.m_connect.elFa,
+                                                  l_internal.m_connect.elFaEl,
+                                                  l_internal.m_vertexChars,
+                                                  l_internal.m_faceChars,
+                                                  l_internal.m_elementShared1,
+                                                  l_bgParsIn,
+                                                  l_internal.m_elementShared3 );
+  delete[] l_bgParsIn;
+}

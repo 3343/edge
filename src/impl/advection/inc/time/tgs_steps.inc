@@ -22,13 +22,7 @@
  * Steps for the advection equation.
  **/
 if( i_step == 0 ) {
-#if PP_ORDER == 1
-  edge::advection::solvers::FiniteVolume::timeInt( i_first,
-                                                   i_size,
-                                                   m_dt,
-                                                   m_internal.m_elementModePrivate1,
-                                                   m_internal.m_globalShared3[0] );
-#else
+  real_base (** l_sendPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_sendPtrs;
   m_internal.m_globalShared4[0]->local(  i_first,
                                          i_size,
                                          getUpdatesSync()%2 == 0,
@@ -37,18 +31,11 @@ if( i_step == 0 ) {
                                          m_internal.m_elementShared2,
                                          m_internal.m_elementShared3,
                                          m_internal.m_elementModePrivate1,
-                                         m_internal.m_globalShared3 );
-#endif
+                                         m_internal.m_globalShared3,
+                                         l_sendPtrs );
 }
 else if( i_step == 1 ) {
-#if PP_ORDER == 1
-  edge::advection::solvers::FiniteVolume::update( i_first,
-                                                  i_size,
-                                                  m_internal.m_connect.elFaEl,
-                                                  m_internal.m_elementShared3,
-                                                  m_internal.m_globalShared3[0],
-                                                  m_internal.m_elementModePrivate1 );
-#else
+  real_base (** l_recvPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_recvPtrs;
   m_internal.m_globalShared4[0]->neigh( i_first,
                                         i_size,
                                         getUpdatesSync()%2 == 0,
@@ -60,7 +47,7 @@ else if( i_step == 1 ) {
                                         m_internal.m_connect.fIdElFaEl,
                                         m_internal.m_connect.vIdElFaEl,
                                         m_internal.m_globalShared3,
-                                        m_internal.m_elementModePrivate1 );
-#endif
+                                        m_internal.m_elementModePrivate1,
+                                        l_recvPtrs );
 }
 else EDGE_LOG_FATAL << "step not supported in advection implementation: " << i_step;

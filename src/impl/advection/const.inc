@@ -25,7 +25,7 @@
 // 0) time prediction
 // 1) update
 const unsigned short N_STEPS_PER_UPDATE=2;
-const unsigned short N_ENTRIES_CONTROL_FLOW=8;
+const unsigned short N_ENTRIES_CONTROL_FLOW=6;
 
 #if PP_ORDER > 9
 #error not supported
@@ -64,7 +64,8 @@ typedef scratchMem t_scratchMem;
 
 
 typedef enum {
-  OUTFLOW = 105
+  OUTFLOW  = 105,
+  PERIODIC = 106
 } t_bndConds;
 
 /*

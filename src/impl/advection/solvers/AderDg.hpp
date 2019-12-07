@@ -189,7 +189,7 @@ class edge::advection::solvers::AderDg {
      * @param i_starM star matrices.
      * @param i_fluxSolvers flux solvers.
      * @param io_dofsDg DG DOFs which will be updates with the elements' local contributions.
-     * @param o_tDofsDg time integrated DG DOFs (==, <, >) which will be set or updated.
+     * @param o_tDofs time integrated DG DOFs (==, <, >) which will be set or updated.
      *
      * @paramt TL_T_LID integral type of local ids.
      * @paramt TL_T_CHARS_EL element characteristics, offering sparse type .spType.
@@ -204,7 +204,8 @@ class edge::advection::solvers::AderDg {
                 TL_T_REAL      const                  (*i_starM)[TL_N_DIS],
                 TL_T_REAL      const                  (*i_fluxSolvers)[TL_N_FAS*2],
                 TL_T_REAL                             (*io_dofsDg)[1][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL            (* const * const   o_tDofsDg[3])[TL_N_MDS][TL_N_CRS] ) {
+                TL_T_REAL            (* const * const   o_tDofs[3])[TL_N_MDS][TL_N_CRS],
+                TL_T_REAL            (* const * const   o_sendDofs)[TL_N_MDS][TL_N_CRS] ) const {
       // iterate over all elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // compute ader time prediction
@@ -213,7 +214,7 @@ class edge::advection::solvers::AderDg {
                     i_starM[l_el],
                     io_dofsDg[l_el][0],
                     l_derBuffer,
-                    o_tDofsDg[0][l_el][0] );
+                    o_tDofs[0][l_el][0] );
 
         // update summed time integrated DOFs, if an adjacent element has a larger time step
         if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
@@ -221,30 +222,56 @@ class edge::advection::solvers::AderDg {
           if( i_firstTs ) {
             for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                o_tDofsDg[1][l_el][0][l_md][l_cr] = 0;
+                o_tDofs[1][l_el][0][l_md][l_cr] = 0;
           }
 
           // add tDofs of this time step
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-              o_tDofsDg[1][l_el][0][l_md][l_cr] += o_tDofsDg[0][l_el][0][l_md][l_cr];
+              o_tDofs[1][l_el][0][l_md][l_cr] += o_tDofs[0][l_el][0][l_md][l_cr];
         }
 
         // compute [0, 0.5dt] time integrated DOFs, if an adjacent element has a smaller time step
         if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_GT]) == C_LTS_EL[EL_INT_GT] ) {
           m_time->integrate( TL_T_REAL(0.5*i_dt),
                              l_derBuffer,
-                             o_tDofsDg[2][l_el][0] );
+                             o_tDofs[2][l_el][0] );
         }
+
+#ifdef PP_USE_MPI
+        for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+          if( o_sendDofs[l_el*TL_N_FAS + l_fa] != nullptr ) {
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                // gts
+                if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                  o_sendDofs[l_el*TL_N_FAS + l_fa][0][l_md][l_cr] = o_tDofs[0][l_el][0][l_md][l_cr];
+                }
+                // less than
+                else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]) == C_LTS_AD[l_fa][AD_LT] ) {
+                  if( !i_firstTs )
+                    o_sendDofs[l_el*TL_N_FAS + l_fa][0][l_md][l_cr] = o_tDofs[1][l_el][0][l_md][l_cr];
+                }
+                // greater than
+                else {
+                  o_sendDofs[l_el*TL_N_FAS + l_fa][0][l_md][l_cr] = o_tDofs[2][l_el][0][l_md][l_cr];
+                  o_sendDofs[l_el*TL_N_FAS + l_fa][1][l_md][l_cr] = o_tDofs[0][l_el][0][l_md][l_cr] -
+                                                                    o_tDofs[2][l_el][0][l_md][l_cr];
+                }
+              }
+            }
+          }
+        }
+#endif
 
         // compute volume contribution
         m_volInt->apply( i_starM[l_el],
-                         o_tDofsDg[0][l_el],
+                         o_tDofs[0][l_el],
                          io_dofsDg[l_el] );
 
         // compute local surface contribution
         m_surfInt->local( i_fluxSolvers[l_el],
-                          o_tDofsDg[0][l_el],
+                          o_tDofs[0][l_el],
                           io_dofsDg[l_el] );
       }
     }
@@ -283,7 +310,8 @@ class edge::advection::solvers::AderDg {
                 unsigned short const                  (*i_fIdElFaEl)[TL_N_FAS],
                 unsigned short const                  (*i_vIdElFaEl)[TL_N_FAS],
                 TL_T_REAL            (* const * const   i_tDofs[3])[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                             (*io_dofs)[1][TL_N_MDS][TL_N_CRS] ) {
+                TL_T_REAL                             (*io_dofs)[1][TL_N_MDS][TL_N_CRS],
+                TL_T_REAL      const (* const * const  i_recvDofs)[TL_N_MDS][TL_N_CRS] ) const {
       // iterate over elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
@@ -301,29 +329,48 @@ class edge::advection::solvers::AderDg {
 
           // assemble the neighboring time integrated DOFs
           TL_T_REAL l_tDofs[1][TL_N_MDS][TL_N_CRS];
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-              // element and face-adjacent one have an equal time step
-              if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
-                l_tDofs[0][l_md][l_cr] = i_tDofs[0][l_ne][0][l_md][l_cr];
-              }
-              // element has a greater time step than the face-adjacent one
-              else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
-                l_tDofs[0][l_md][l_cr] = i_tDofs[1][l_ne][0][l_md][l_cr];
-              }
-              // element has a time step less than the adjacent one
-              else {
-                EDGE_CHECK_EQ( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]), C_LTS_AD[l_fa][AD_LT] );
 
-                if( i_firstTs ) {
-                  l_tDofs[0][l_md][l_cr] = i_tDofs[2][l_ne][0][l_md][l_cr];
+          if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                // element and face-adjacent one have an equal time step
+                if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                  l_tDofs[0][l_md][l_cr] = i_tDofs[0][l_ne][0][l_md][l_cr];
                 }
+                // element has a greater time step than the face-adjacent one
+                else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+                  l_tDofs[0][l_md][l_cr] = i_tDofs[1][l_ne][0][l_md][l_cr];
+                }
+                // element has a time step less than the adjacent one
                 else {
-                  l_tDofs[0][l_md][l_cr] = i_tDofs[0][l_ne][0][l_md][l_cr] - i_tDofs[2][l_ne][0][l_md][l_cr];
+                  EDGE_CHECK_EQ( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]), C_LTS_AD[l_fa][AD_LT] );
+
+                  if( i_firstTs ) {
+                    l_tDofs[0][l_md][l_cr] = i_tDofs[2][l_ne][0][l_md][l_cr];
+                  }
+                  else {
+                    l_tDofs[0][l_md][l_cr] = i_tDofs[0][l_ne][0][l_md][l_cr] - i_tDofs[2][l_ne][0][l_md][l_cr];
+                  }
                 }
               }
             }
           }
+#ifdef PP_USE_MPI
+          else {
+            // derive offset
+            std::size_t l_off = 0;
+            if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]) == C_LTS_AD[l_fa][AD_LT] ) {
+              l_off = (i_firstTs) ? 0 : 1;
+            }
+
+            // copy
+            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+              for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+                l_tDofs[0][l_md][l_cr] = i_recvDofs[l_el*TL_N_FAS + l_fa][l_off][l_md][l_cr];
+          }
+#else
+          else EDGE_LOG_FATAL;
+#endif
 
           // default are outflow boundaries
           unsigned short l_vId = std::numeric_limits< unsigned short >::max();

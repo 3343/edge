@@ -29,21 +29,13 @@
  * 0: ready to be progressed
  * 1: in progress
  * 2: done
- * 3: done, processed by our own control flow
+ * >=3: intermediate steps used by later items
  */
 
-
 // make sure we have our six entries
-static_assert( N_ENTRIES_CONTROL_FLOW == 8, "entries of control flow not matching" );
+static_assert( N_ENTRIES_CONTROL_FLOW == 6, "entries of control flow not matching" );
 
-#ifdef PP_USE_MPI
-EDGE_LOG_FATAL << "fix me!";
-#endif
-
-// number of finished time groups
-unsigned short l_nTgsFin = 0;
-
-// iterate over the time groups
+// update control flow
 for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
   unsigned short l_tgOff = N_ENTRIES_CONTROL_FLOW * l_tg;
 
@@ -52,12 +44,10 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
     m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+0 );
     m_shared.setStatusAll( parallel::Shared::RDY, l_tgOff+1 );
     m_cflow[l_tg][0] = m_cflow[l_tg][1] = 1;
-    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 0;
+    m_cflow[l_tg][2] = m_cflow[l_tg][3] = 0;
+    m_cflow[l_tg][4] = m_cflow[l_tg][5] = 0;
   }
 
-  /*
-   * update control flow with finished tasks
-   */
   // local, inner
   if( m_cflow[l_tg][0] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+0) ) {
     m_cflow[l_tg][0] = 2;
@@ -71,28 +61,59 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
   }
 
   // neigh, inner
-  if( m_cflow[l_tg][6] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+6) ) {
-    m_cflow[l_tg][6] = 2;
+  if( m_cflow[l_tg][2] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+2) ) {
+    m_cflow[l_tg][2] = 2;
     m_timeGroups[l_tg]->updateDofUpInner();
   }
 
   // neigh, send
-  if( m_cflow[l_tg][7] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+7) ) {
-    m_cflow[l_tg][7] = 2;
+  if( m_cflow[l_tg][3] == 1 && m_shared.getStatusAll(parallel::Shared::FIN, l_tgOff+3) ) {
+    m_cflow[l_tg][3] = 2;
     m_timeGroups[l_tg]->updateDofUpSend();
   }
 
-  // schedule neighboring updates
-  if( m_cflow[l_tg][0] == 2 && m_cflow[l_tg][1] == 2 && getTimePredAvailable(l_tg) ) {
-    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+6);
-    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+7);
+  // MPI-send
+  if( m_cflow[l_tg][4] == 1 && m_mpi.finSends( m_timeGroups[l_tg]->getUpdatesSync()%2 == 1, l_tg ) ) {
+    m_cflow[l_tg][4] = 2;
+  }
 
-    m_cflow[l_tg][0] = m_cflow[l_tg][1] = 3;
-    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 1;
+  // MPI-recv
+  if( m_cflow[l_tg][5] == 1 && m_mpi.finRecvs( m_timeGroups[l_tg]->getUpdatesSync()%2 == 0, l_tg ) ) {
+    m_cflow[l_tg][5] = 2;
+  }
+}
+
+// number of finished time groups
+unsigned short l_nTgsFin = 0;
+
+// resolve dependencies
+for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
+  unsigned short l_tgOff = N_ENTRIES_CONTROL_FLOW * l_tg;
+
+  // schedule sends and receives
+  if( m_cflow[l_tg][1] == 2 ) {
+    m_mpi.beginSends( m_timeGroups[l_tg]->getUpdatesSync()%2 == 1,
+                      l_tg );
+    m_mpi.beginRecvs( m_timeGroups[l_tg]->getUpdatesSync()%2 == 0,
+                      l_tg );
+    m_cflow[l_tg][4] = 1;
+    m_cflow[l_tg][5] = 1;
+
+    m_cflow[l_tg][1] = 3;
+  }
+
+  // schedule neighboring updates
+  if( m_cflow[l_tg][0] == 2 && m_cflow[l_tg][1] == 3 && m_cflow[l_tg][4] == 2 && m_cflow[l_tg][5] == 2 && getTimePredAvailable(l_tg) ) {
+    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+2);
+    m_shared.setStatusAll(parallel::Shared::RDY, l_tgOff+3);
+
+    m_cflow[l_tg][0] = m_cflow[l_tg][1] = 4;
+    m_cflow[l_tg][2] = m_cflow[l_tg][3] = 1;
+    m_cflow[l_tg][4] = m_cflow[l_tg][5] = 3;
   }
 
   // time step complete
-  if( m_cflow[l_tg][6] == 2 && m_cflow[l_tg][7] == 2 && getTimePredConsumed(l_tg) ) {
+  if( m_cflow[l_tg][2] == 2 && m_cflow[l_tg][3] == 2 && getTimePredConsumed(l_tg) ) {
     m_timeGroups[l_tg]->updateTsInfo();
 
     if( !m_timeGroups[l_tg]->finished() ) {
@@ -104,7 +125,8 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
       m_cflow[l_tg][0] = m_cflow[l_tg][1] = 0;
     }
 
-    m_cflow[l_tg][6] = m_cflow[l_tg][7] = 0;
+    m_cflow[l_tg][2] = m_cflow[l_tg][3] = 0;
+    m_cflow[l_tg][4] = m_cflow[l_tg][5] = 0;
   }
 
   // increase finished time group counter if appropiate
