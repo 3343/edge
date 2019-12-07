@@ -49,6 +49,12 @@ class edge::mesh::EdgeV {
     //! number of time groups
     unsigned short m_nTgs = 1;
 
+    //! number of inner elements
+    std::size_t m_nElsIn = 0;
+
+    //! number of send elements
+    std::size_t m_nElsSe = 0;
+
     //! number of inner elements per time group
     std::size_t * m_nTgElsIn = nullptr;
 
@@ -194,6 +200,20 @@ class edge::mesh::EdgeV {
      * @return number of elements.
      **/
     std::size_t nEls() const { return m_mesh.nEls(); }
+
+    /**
+     * Gets the number of inner elements.
+     *
+     * @return number of inner elements.
+     **/
+    std::size_t nElsIn() const { return m_nElsIn; }
+
+    /**
+     * Gets the number of send elements.
+     *
+     * @return number of send elements.
+     **/
+    std::size_t nElsSe() const { return m_nElsSe; }
 
     /**
      * Sets LTS type in the sparse types of the elements.

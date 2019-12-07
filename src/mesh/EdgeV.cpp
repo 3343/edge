@@ -211,6 +211,13 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     m_nTgElsSe[0] = 0;
   }
 
+  // set number of inner and send elements
+  m_nElsIn = m_nElsSe = 0;
+  for( unsigned short l_tg = 0; l_tg < m_nTgs; l_tg++ ) {
+    m_nElsIn += m_nTgElsIn[l_tg];
+    m_nElsSe += m_nTgElsSe[l_tg];
+  }
+
   // allocate memory for relative time steps and init with GTS
   m_relDt = new double[m_nTgs+1];
   m_relDt[0] = 1;
