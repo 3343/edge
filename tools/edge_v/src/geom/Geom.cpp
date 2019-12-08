@@ -23,6 +23,7 @@
 #include "Geom.h"
 #include "Generic.h"
 #include "Line.h"
+#include "Quad4r.h"
 #include "Tria3.h"
 #include "Tet4.h"
 
@@ -36,6 +37,9 @@ double edge_v::geom::Geom::volume( t_entityType         i_enTy,
 
   if( i_enTy == LINE ) {
     l_vol = Line::length( i_veCrds );
+  }
+  else if( i_enTy == QUAD4R ) {
+    l_vol = Quad4r::area( i_veCrds );
   }
   else if( i_enTy == TRIA3 ) {
     l_vol = Tria3::area( i_veCrds );
@@ -89,7 +93,10 @@ void edge_v::geom::Geom::tangents( t_entityType         i_enTy,
 double edge_v::geom::Geom::inDiameter( t_entityType         i_enTy,
                                        double       const (*i_veCrds)[3] ) {
   double l_dia = std::numeric_limits< double >::max();
-  if( i_enTy == TRIA3 ) {
+  if( i_enTy == QUAD4R ) {
+    l_dia = Quad4r::inDiameter( i_veCrds );
+  }
+  else if( i_enTy == TRIA3 ) {
     l_dia = Tria3::inDiameter( i_veCrds );
   }
   else if( i_enTy == TET4 ) {
@@ -105,7 +112,13 @@ void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
                                      std::size_t        * io_elVe,
                                      std::size_t        * io_elFa,
                                      std::size_t        * io_elFaEl ) {
-  if( i_elTy == TRIA3 ) {
+  if( i_elTy == QUAD4R ) {
+    Quad4r::normVesFas( i_veCrds,
+                        io_elVe,
+                        io_elFa,
+                        io_elFaEl );
+  }
+  else if( i_elTy == TRIA3 ) {
     Tria3::normVesFas( i_veCrds,
                        io_elVe,
                        io_elFa,
