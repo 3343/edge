@@ -108,7 +108,9 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
   m_nIterComm = i_nIterComm;
 
   // derive the number of communication channels and communicating faces
-  m_nChs = i_commStruct[0];
+  if( i_commStruct != nullptr ) {
+    m_nChs = i_commStruct[0];
+  }
   m_nSeRe = (std::size_t *) io_dynMem.allocate( m_nChs * sizeof(std::size_t) );
 
   std::size_t l_sizeSend = 0;
