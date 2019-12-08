@@ -56,12 +56,16 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
   }
 
   // MPI-send
-  if( m_cflow[l_tg][6] == 1 && m_mpi.finSends( m_timeGroups[l_tg]->getUpdatesSync()%2 == 1, l_tg ) )
+  if( m_cflow[l_tg][6] == 1 && m_mpi.finSends( m_timeGroups[l_tg]->nSendSync()%2 == 1, l_tg ) ) {
     m_cflow[l_tg][6] = 2;
+    m_timeGroups[l_tg]->updateSend();
+  }
 
   // MPI-recv
-  if( m_cflow[l_tg][7] == 1 && m_mpi.finRecvs( m_timeGroups[l_tg]->getUpdatesSync()%2 == 0, l_tg ) )
+  if( m_cflow[l_tg][7] == 1 && m_mpi.finRecvs( m_timeGroups[l_tg]->nRecvSync()%2 == 0, l_tg ) ) {
     m_cflow[l_tg][7] = 2;
+    m_timeGroups[l_tg]->updateRecv();
+  }
 
   // local, inner
   if( m_cflow[l_tg][0] == 1 && m_shared.getStatusAll( parallel::Shared::FIN, l_tgOff+0 ) ) {
@@ -102,9 +106,9 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
 
   // schedule sends and receives
   if( m_cflow[l_tg][1] == 2 ) {
-    m_mpi.beginSends( m_timeGroups[l_tg]->getUpdatesSync()%2 == 1,
+    m_mpi.beginSends( m_timeGroups[l_tg]->nSendSync()%2 == 1,
                       l_tg );
-    m_mpi.beginRecvs( m_timeGroups[l_tg]->getUpdatesSync()%2 == 0,
+    m_mpi.beginRecvs( m_timeGroups[l_tg]->nRecvSync()%2 == 0,
                       l_tg );
     m_cflow[l_tg][6] = 1;
     m_cflow[l_tg][7] = 1;

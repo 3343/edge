@@ -58,6 +58,12 @@ class edge::time::TimeGroupStatic {
     //! number of performed DOF updates (inner, send) since last sync
     std::size_t m_nDofUpSync[2];
 
+    //! number of send since last sync
+    std::size_t m_nSendSync;
+
+    //! number of receives since last sync
+    std::size_t m_nRecvSync;
+
     //! full time step of the group (without synchronization adjustments)
     double m_dtFull;
 
@@ -112,22 +118,32 @@ class edge::time::TimeGroupStatic {
     /**
      * Increases the time prediction counter for the inner elements.
      **/
-    void updateTimePredInner(){ m_nTimePredSync[0]++; };
+    void updateTimePredInner(){ m_nTimePredSync[0]++; }
 
     /**
      * Increases the time prediction counter for the send elements.
      **/
-    void updateTimePredSend(){ m_nTimePredSync[1]++; };
+    void updateTimePredSend(){ m_nTimePredSync[1]++; }
 
     /**
      * Increases the DOF update counter for the innner elements.
      **/
-    void updateDofUpInner(){ m_nDofUpSync[0]++; };
+    void updateDofUpInner(){ m_nDofUpSync[0]++; }
 
     /**
      * Increases the DOF update counter for the send elements.
      **/
-    void updateDofUpSend(){ m_nDofUpSync[1]++; };
+    void updateDofUpSend(){ m_nDofUpSync[1]++; }
+
+    /**
+     * Increase the send counter.
+     **/
+    void updateSend(){ m_nSendSync++; }
+
+    /**
+     * Increase the receive counter.
+     **/
+    void updateRecv(){ m_nRecvSync++; }
 
     /**
      * Gets the number of time predicitons since sync for inner elements.
@@ -156,6 +172,16 @@ class edge::time::TimeGroupStatic {
      * @return number of DOF updates.
      **/
     std::size_t nDofUpSend(){ return m_nDofUpSync[1]; }
+
+    /**
+     * Gets the number of sends since sync.
+     **/
+    std::size_t nSendSync(){ return m_nSendSync; }
+
+    /**
+     * Gets the number of receives since sync.
+     **/
+    std::size_t nRecvSync(){ return m_nRecvSync; }
 
     /**
      * Updates the time step info.

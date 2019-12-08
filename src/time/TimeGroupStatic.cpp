@@ -58,6 +58,7 @@ edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short   i_nTgs,
   m_nTsReqFull = 0;
   m_nTimePredSync[0] = m_nTimePredSync[1] = 0;
   m_nDofUpSync[0] = m_nDofUpSync[1] = 0;
+  m_nSendSync = m_nRecvSync = 0;
   m_dt     = std::numeric_limits< double >::max();
   m_dtFull = std::numeric_limits< double >::max();
   m_dtSync = std::numeric_limits< double >::max();
@@ -72,6 +73,7 @@ void edge::time::TimeGroupStatic::setUp( double i_dtFun,
   m_nTsSync = 0;
   m_nTimePredSync[0] = m_nTimePredSync[1] = 0;
   m_nDofUpSync[0] = m_nDofUpSync[1] = 0;
+  m_nSendSync = m_nRecvSync = 0;
 
   // derive number of full time steps
   double l_dtMax = i_dtFun * (m_funMul * m_maxDiv);
