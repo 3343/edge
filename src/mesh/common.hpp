@@ -797,7 +797,7 @@ class edge::mesh::common {
           o_vIdElFaEl[l_el][l_fa] = std::numeric_limits< unsigned short >::max();
 
       for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
-#if defined PP_T_MESH_REGULAR || defined PP_T_ELEMENTS_TRIA3
+#if defined PP_T_ELEMENTS_QUAD4R || defined PP_T_ELEMENTS_TRIA3
         for( unsigned short l_fa = 0; l_fa < TL_N_EL_FAS; l_fa++ ) {
           // no rotation possible.
           o_vIdElFaEl[l_el][l_fa] = 0;
