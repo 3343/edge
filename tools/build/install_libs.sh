@@ -119,7 +119,7 @@ bash -c "printf \"no\nno\nno\nno\nno\nyes\nno\nyes\n\" | ./get_large_files.py"
 ./stage_large_files.py
 cd ..
 # CVM-S4.26 and CVM-H
-sudo bash -c "printf \"/usr/local/ucvm\nyes\nyes\n\" | ./ucvm_setup.py"
+sudo bash -c "printf \"/usr/local/ucvm\nyes\nyes\n\" | python2 ./ucvm_setup.py"
 cd ..
 
 ##########
