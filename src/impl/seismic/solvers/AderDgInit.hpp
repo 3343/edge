@@ -372,8 +372,12 @@ class edge::seismic::solvers::AderDgInit {
     /**
      * Initializes the flux solvers.
      * 
-     * @param i_nEls number of elements.
+     * @param i_nElsIn number of inner elements.
+     * @param i_nElsSe number of send elements.
      * @param i_nFas number of faces.
+     * @param i_nCommElFa number of communicating element-face pairs.
+     * @param i_recvFa local ids of the receiving face within the elements.
+     * @param i_recvEl ids of the receiving elements.
      * @param i_faEl elements adjacent to faces.
      * @param i_elVe vertices adjacent to elements.
      * @param i_elFa faces adjacent to elements.
@@ -381,6 +385,7 @@ class edge::seismic::solvers::AderDgInit {
      * @param i_faChars face characteristics.
      * @param i_elChars element characteristics.
      * @param i_bgPars background parameters.
+     * @param i_bgParsRe background parameters of the receive elements.
      * @param o_fsA will be set to the anelastic flux solvers for the own and neighboring contributions.
      *
      * @paramt TL_T_LID local integral type.
@@ -388,8 +393,12 @@ class edge::seismic::solvers::AderDgInit {
      **/
     template< typename TL_T_LID,
               typename TL_T_REAL >
-    static void initFs( TL_T_LID                i_nEls,
+    static void initFs( TL_T_LID                i_nElsIn,
+                        TL_T_LID                i_nElsSe,
                         TL_T_LID                i_nFas,
+                        TL_T_LID                i_nCommElFa,
+                        unsigned short const  * i_recvFa,
+                        TL_T_LID       const  * i_recvEl,
                         TL_T_LID       const (* i_faEl)[2],
                         TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
                         TL_T_LID       const (* i_elFa)[TL_N_FAS],
@@ -397,15 +406,18 @@ class edge::seismic::solvers::AderDgInit {
                         t_faceChars    const  * i_faChars,
                         t_elementChars const  * i_elChars,
                         t_bgPars       const  * i_bgPars,
+                        t_bgPars       const  * i_bgParsRe,
                         TL_T_REAL            (* o_fsE[2])[TL_N_FAS][TL_N_ENS_FS_E],
                         TL_T_REAL            (* o_fsA[2])[TL_N_FAS][TL_N_ENS_FS_A] ) {
       PP_INSTR_FUN("flux_solvers")
+
+      TL_T_LID l_nEls = i_nElsIn + i_nElsSe;
 
       // init invalid to avoid silent errors
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-      for( TL_T_LID l_el = 0; l_el < i_nEls; l_el++ ) {
+      for( TL_T_LID l_el = 0; l_el < l_nEls; l_el++ ) {
         for( TL_T_LID l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
           for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
             // init elastic flux solvers
@@ -465,17 +477,34 @@ class edge::seismic::solvers::AderDgInit {
           l_rhoL = i_bgPars[l_elL].rho; l_lamL = i_bgPars[l_elL].lam; l_muL = i_bgPars[l_elL].mu;
         }
         else {
-          EDGE_CHECK( l_exR );
-          // mirror right elements paramters for non-existing left element
-          l_rhoL = i_bgPars[l_elR].rho; l_lamL = i_bgPars[l_elR].lam; l_muL = i_bgPars[l_elR].mu;
+          // by definition there's always a left element
+          EDGE_LOG_FATAL;
         }
+
+        // default: right element is in our partition
         if( l_exR ) {
           l_rhoR = i_bgPars[l_elR].rho; l_lamR = i_bgPars[l_elR].lam; l_muR = i_bgPars[l_elR].mu;
         }
-        else {
-          EDGE_CHECK( l_exL );
-          // mirror left elements paramters for non-existing right element
+        // right element is ghost and implements a boundary condition
+        else if( (!l_exR) && (    (i_faChars[l_fa].spType & OUTFLOW)      == OUTFLOW
+                               || (i_faChars[l_fa].spType & FREE_SURFACE) == FREE_SURFACE ) ) {
           l_rhoR = i_bgPars[l_elL].rho; l_lamR = i_bgPars[l_elL].lam; l_muR = i_bgPars[l_elL].mu;
+        }
+        // right element is receive, thus belongs to another partition
+        else if( l_elL >= i_nElsIn ) {
+          bool l_reR = false;
+          for( std::size_t l_co = 0; l_co < i_nCommElFa; l_co++ ) {
+            if( i_recvEl[l_co] == l_elL && i_recvFa[l_co] == l_fIdL ) {
+              l_rhoR = i_bgParsRe[l_co].rho; l_lamR = i_bgParsRe[l_co].lam; l_muR = i_bgParsRe[l_co].mu;
+              l_reR = true;
+              break;
+            }
+          }
+          EDGE_CHECK( l_reR );
+        }
+        // this should not happen
+        else {
+          EDGE_LOG_FATAL;
         }
 
         // compute solvers for the left element

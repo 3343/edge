@@ -189,6 +189,10 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
           l_internal.m_elementShared1[l_el][0].qp = l_seismicConf.m_velVals[l_do][3];
           l_internal.m_elementShared1[l_el][0].qs = l_seismicConf.m_velVals[l_do][4];
         }
+        else {
+          l_internal.m_elementShared1[l_el][0].qp = std::numeric_limits< real_base >::max();
+          l_internal.m_elementShared1[l_el][0].qs = std::numeric_limits< real_base >::max();
+        }
         break;
       }
 
@@ -202,6 +206,22 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
 }
 PP_INSTR_REG_END(dofsMat)
 
+// sync background parameters
+t_bgPars *l_bgParsIn  = new t_bgPars[l_edgeV.nCommElFa()];
+{
+  t_bgPars *l_bgParsOut = new t_bgPars[l_edgeV.nCommElFa()];
+
+  for( std::size_t l_co = 0; l_co < l_edgeV.nCommElFa(); l_co++ ) {
+    std::size_t l_el = l_edgeV.getSendEl()[l_co];
+    l_bgParsOut[l_co] = l_internal.m_elementShared1[l_el][0];
+  }
+
+  l_mpiRemix.syncData( sizeof(t_bgPars),
+                       (unsigned char *) l_bgParsOut,
+                       (unsigned char *) l_bgParsIn );
+  delete[] l_bgParsOut;
+}
+
 // initialize ADER-DG solver and determine elastic material parameters
 edge::seismic::solvers::AderDg<
  real_base,
@@ -210,8 +230,12 @@ edge::seismic::solvers::AderDg<
  ORDER,
  ORDER,
  N_CRUNS,
- MM_KERNELS_SPARSE > l_aderDg( l_edgeV.nEls(),
+ MM_KERNELS_SPARSE > l_aderDg( l_edgeV.nElsIn(),
+                               l_edgeV.nElsSe(),
                                l_edgeV.nFas(),
+                               l_edgeV.nCommElFa(),
+                               l_edgeV.getRecvFa(),
+                               l_edgeV.getRecvEl(),
                                l_internal.m_connect.faEl,
                                l_internal.m_connect.elVe,
                                l_internal.m_connect.elFa,
@@ -219,10 +243,13 @@ edge::seismic::solvers::AderDg<
                                l_internal.m_faceChars,
                                l_internal.m_elementChars,
                                (t_bgPars*) l_internal.m_elementShared1,
+                               l_bgParsIn,
                                l_seismicConf.m_attFreqs[0],
                                l_seismicConf.m_attFreqs[1],
                                l_dynMem );
 l_internal.m_globalShared4[0] = &l_aderDg;
+
+delete[] l_bgParsIn;
 
 // setup point sources
 if( l_seismicConf.m_ptSrcs.size() > 0 ) {

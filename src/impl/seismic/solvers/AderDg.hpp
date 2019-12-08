@@ -199,8 +199,12 @@ class edge::seismic::solvers::AderDg {
     /**
      * Initializes the ADER-DG solver.
      *
-     * @param i_nEls number of elements.
+     * @param i_nElsIn number of inner elements.
+     * @param i_nElsSe number of send elements.
      * @param i_nFas number of faces.
+     * @param i_nCommElFa number of communicating element-face pairs.
+     * @param i_recvFa local ids of the receiving face within the elements.
+     * @param i_recvEl ids of the receiving elements.
      * @param i_faEl elements adjacent to faces.
      * @param i_elVe vertices adjacent to elements.
      * @param i_elFa elements adjacent to elements through faces as bridge.
@@ -208,6 +212,7 @@ class edge::seismic::solvers::AderDg {
      * @param i_faChars face characteristics.
      * @param i_elChars elements characteristics.
      * @param io_bgPars background parameters (phase lambda and mu will be replaced with elastic lambda an mu if TL_N_RMS>0).
+     * @param i_bgParsRe background parameters of the receive elements.
      * @param i_freqCen central frequency for attenuation.
      * @param i_freqRat frequency ratio between upper and lower frequencies for attenuation.
      * @param io_dynMem dynamic memory management.
@@ -215,18 +220,26 @@ class edge::seismic::solvers::AderDg {
      * @paramt TL_T_LID integral type of local ids.
      */
     template< typename TL_T_LID >
-    AderDg(TL_T_LID                i_nEls,
-           TL_T_LID                i_nFas,
-           TL_T_LID       const (* i_faEl)[2],
-           TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
-           TL_T_LID       const (* i_elFa)[TL_N_FAS],
-           t_vertexChars  const  * i_veChars,
-           t_faceChars    const  * i_faChars,
-           t_elementChars const  * i_elChars,
-           t_bgPars              * io_bgPars,
-           double                  i_freqCen,
-           double                  i_freqRat,
-           data::Dynamic         & io_dynMem ) {
+    AderDg( TL_T_LID                i_nElsIn,
+            TL_T_LID                i_nElsSe,
+            TL_T_LID                i_nFas,
+            TL_T_LID                i_nCommElFa,
+            unsigned short const  * i_recvFa,
+            TL_T_LID       const  * i_recvEl,
+            TL_T_LID       const (* i_faEl)[2],
+            TL_T_LID       const (* i_elVe)[TL_N_VES_EL],
+            TL_T_LID       const (* i_elFa)[TL_N_FAS],
+            t_vertexChars  const  * i_veChars,
+            t_faceChars    const  * i_faChars,
+            t_elementChars const  * i_elChars,
+            t_bgPars              * io_bgPars,
+            t_bgPars       const  * i_bgParsRe,
+            double                  i_freqCen,
+            double                  i_freqRat,
+            data::Dynamic         & io_dynMem ) {
+      // total number of elements
+      std::size_t l_nEls = i_nElsIn + i_nElsSe;
+
       // alloc and init kernels
       TL_T_REAL *l_rfs = nullptr;
       if( TL_N_RMS > 0 ) {
@@ -251,14 +264,14 @@ class edge::seismic::solvers::AderDg {
       }
 
       // allocate constant data
-      alloc( i_nEls,
+      alloc( l_nEls,
              ALIGNMENT.BASE.HEAP,
              io_dynMem );
 
       // init anelastic source matrices and compute elastic Lame parameters in viscoelastic settings
       if( TL_N_RMS > 0 ) {
         AderDgInit< TL_T_EL,
-                    TL_MATS_SP >::initSrcA( i_nEls,
+                    TL_MATS_SP >::initSrcA( l_nEls,
                                             TL_N_RMS,
                                             i_freqCen,
                                             i_freqRat,
@@ -268,7 +281,7 @@ class edge::seismic::solvers::AderDg {
 
       // init star matrices
       AderDgInit< TL_T_EL,
-                  TL_MATS_SP >::initStar( i_nEls,
+                  TL_MATS_SP >::initStar( l_nEls,
                                           i_elVe,
                                           i_veChars,
                                           io_bgPars,
@@ -277,8 +290,12 @@ class edge::seismic::solvers::AderDg {
 
       // init flux solvers
       AderDgInit< TL_T_EL,
-                  TL_MATS_SP >::initFs( i_nEls,
+                  TL_MATS_SP >::initFs( i_nElsIn,
+                                        i_nElsSe,
                                         i_nFas,
+                                        i_nCommElFa,
+                                        i_recvFa,
+                                        i_recvEl,
                                         i_faEl,
                                         i_elVe,
                                         i_elFa,
@@ -286,6 +303,7 @@ class edge::seismic::solvers::AderDg {
                                         i_faChars,
                                         i_elChars,
                                         io_bgPars,
+                                        i_bgParsRe,
                                         m_fsE,
                                         m_fsA );
     }
