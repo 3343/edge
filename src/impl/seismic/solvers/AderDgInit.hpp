@@ -467,10 +467,6 @@ class edge::seismic::solvers::AderDgInit {
         EDGE_CHECK( !l_exL || l_fIdL != std::numeric_limits< unsigned short >::max() || l_periodic ) << l_fa;
         EDGE_CHECK( !l_exR || l_fIdR != std::numeric_limits< unsigned short >::max() || l_periodic ) << l_fa;
 
-        // disable elements without face ids (allowed for periodic faces, where elFa only points to one of them)
-        l_exL = l_exL && l_fIdL != std::numeric_limits< unsigned short >::max();
-        l_exR = l_exL && l_fIdR != std::numeric_limits< unsigned short >::max();
-
         // collect lame parameters
         TL_T_REAL l_rhoL, l_rhoR, l_lamL, l_lamR, l_muL, l_muR;
         if( l_exL ) {
@@ -506,6 +502,10 @@ class edge::seismic::solvers::AderDgInit {
         else {
           EDGE_LOG_FATAL;
         }
+
+        // disable elements without face ids (allowed for periodic faces, where elFa only points to one of them)
+        l_exL = l_exL && l_fIdL != std::numeric_limits< unsigned short >::max();
+        l_exR = l_exL && l_fIdR != std::numeric_limits< unsigned short >::max();
 
         // compute solvers for the left element
         if( l_exL ) {
