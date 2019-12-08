@@ -102,7 +102,7 @@ TEST_CASE( "Tests the mesh interface in the case of periodic boundaries.", "[mes
 
     // construct the mesh-interface with periodic boundaries
     edge_v::mesh::Mesh l_mesh1( l_path,
-                                true );
+                                106 );
 
     REQUIRE( l_mesh1.getFaEl()[0*2 + 0] == 5 );
     REQUIRE( l_mesh1.getFaEl()[0*2 + 1] == 2 );
