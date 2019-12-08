@@ -62,7 +62,7 @@ class edge_v::io::Config {
     std::string m_tsOut = "";
 
     //! number of time step groups
-    unsigned short m_nTsGroups = 0;
+    unsigned short m_nTsGroups = 1;
 
     //! relative minimum time step
     double m_funDt = 0;
