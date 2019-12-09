@@ -123,7 +123,7 @@ constexpr unsigned short CE_N_ENS_FS_A_DE( unsigned short i_nDis ) {
 }
 
 // number of entries in the control flow
-const unsigned short N_ENTRIES_CONTROL_FLOW=9;
+const unsigned short N_ENTRIES_CONTROL_FLOW=8;
 
 // number of relaxation mechanisms
 const unsigned short N_RELAXATION_MECHANISMS=PP_N_RELAXATION_MECHANISMS;
