@@ -26,13 +26,6 @@
 TEST_CASE( "Receivers: Initialization", "[receivers][init]" ) {
   edge::io::Receivers l_recv;
 
-  t_enLayout l_elLayout;
-
-  l_elLayout.timeGroups.resize( 2 );
-  l_elLayout.timeGroups[0].nEntsOwn    = 2;
-  l_elLayout.timeGroups[0].nEntsNotOwn = 1;
-  l_elLayout.timeGroups[1].nEntsOwn    = 3;
-  l_elLayout.timeGroups[1].nEntsNotOwn = 4;
 #ifdef PP_T_ELEMENTS_TET4
   // setup receiver coordinates
   real_mesh l_recvCrds[6][3] = { { -1.00, -1.00, -2.00 }, // not part of the "domain"
@@ -55,11 +48,11 @@ TEST_CASE( "Receivers: Initialization", "[receivers][init]" ) {
   // setup tets
   int_el l_enVe[10][4] = { {4,5,6,7}, // tg 1
                            {4,5,6,7},
-                           {0,0,0,0},
                            {4,5,6,7}, // tg 2
                            {0,1,2,3},
                            {0,1,2,3},
-                           {0,1,2,3}, // ghost tg 2
+                           {0,1,2,3}, // ghost
+                           {0,0,0,0},
                            {4,5,6,7},
                            {4,5,6,7},
                            {0,1,2,3} };
@@ -70,7 +63,21 @@ TEST_CASE( "Receivers: Initialization", "[receivers][init]" ) {
   std::string l_recvNames[6] = {"1", "2", "3", "4", "5", "6"};
   std::string l_oDir = "/tmp";
 
-  l_recv.init( TET4, 6, l_oDir, l_recvNames, l_recvCrds, 0.01, l_elLayout, l_enVe[0], l_veChars, 10 );
+  std::size_t l_nTgElsIn[2] = {2, 3};
+  std::size_t l_nTgElsSe[2] = {0, 0};
+
+  l_recv.init( TET4,
+               2,
+               l_nTgElsIn,
+               l_nTgElsSe,
+               6,
+               l_oDir,
+               l_recvNames,
+               l_recvCrds,
+               0.01,
+               l_enVe[0], 
+               l_veChars,
+               10 );
 
   std::vector< int_el > l_enRecv;
   l_recv.getEnRecv( l_enRecv );
