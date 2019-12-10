@@ -191,6 +191,9 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
       m_cflow[l_tg][2] = m_cflow[l_tg][3] = 0;
       m_cflow[l_tg][4] = m_cflow[l_tg][5] = 0;
     }
+    else {
+      m_cflow[l_tg][4] = m_cflow[l_tg][5] = 4;
+    }
   }
 
   // increase finished time group counter if appropiate
