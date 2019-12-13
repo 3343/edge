@@ -116,6 +116,7 @@ cp -r ${EIGEN_DIR} .
 cp -r ${MOAB_DIR} .
 cd $(basename ${MOAB_DIR})
 
+autoreconf -fi
 CXXFLAGS="-fPIC" LIBS="${ZLIB_INSTALL_DIR}/lib/libz.a" ./configure --disable-debug                 \
                                                                    --disable-optimize              \
                                                                    --enable-shared=no              \
