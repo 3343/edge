@@ -91,11 +91,6 @@ TEST_CASE( "Point sources, applied to quad4r elements.", "[pointSources][quad4r]
   l_elVe[5][0] = 11; l_elVe[5][1] = 12; l_elVe[5][2] =  5; l_elVe[5][3] = 2;
   l_elVe[6][0] = 11; l_elVe[6][1] = 12; l_elVe[6][2] =  5; l_elVe[6][3] = 2;
 
-  // assign global ids
-  unsigned int l_gIdsEl[7];
-  l_gIdsEl[0] = 3; l_gIdsEl[1] = 2; l_gIdsEl[2] = 4; l_gIdsEl[3] = 1;
-  l_gIdsEl[4] = 0; l_gIdsEl[5] = 5; l_gIdsEl[6] = 5;
-
   std::string l_h5File = "cont/unit_tests/elastic/sources/point_sources_2d_0.h5";
 
   // DOFs
