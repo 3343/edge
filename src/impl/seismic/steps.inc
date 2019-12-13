@@ -23,7 +23,7 @@
  **/
 if( i_step == 0 ) {
   // ADER-DG local
-  real_base (** l_sendPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_sendPtrs;
+  real_base (** l_sendPtrs)[N_FACE_MODES][N_CRUNS] = (real_base (**) [N_FACE_MODES][N_CRUNS]) m_sendPtrs;
   m_internal.m_globalShared4[0][0].local( i_first,
                                           i_size,
                                           getUpdatesSync()%2 == 0,
@@ -31,6 +31,7 @@ if( i_step == 0 ) {
                                           m_dt,
                                           i_enSp[0],
                                           m_internal.m_elementChars,
+                                          m_internal.m_connect.vIdElFaEl,
                                           m_internal.m_elementModePrivate1,
 #if (PP_N_RELAXATION_MECHANISMS > 0)
                                           m_internal.m_elementModePrivate2[0],
@@ -53,7 +54,7 @@ else if( i_step == 1 ) {
 }
 else if( i_step == 2 ) {
   // ADER-DG: neigh contrib
-  real_base (** l_recvPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_recvPtrs;
+  real_base (** l_recvPtrs)[N_FACE_MODES][N_CRUNS] = (real_base (**) [N_FACE_MODES][N_CRUNS]) m_recvPtrs;
   m_internal.m_globalShared4[0][0].neigh( i_first,
                                           i_size,
                                           getUpdatesSync()%2 == 0,

@@ -83,8 +83,11 @@ class edge::seismic::solvers::AderDg {
     //! number of faces
     static unsigned short const TL_N_FAS = C_ENT[TL_T_EL].N_FACES;
 
-    //! number of DG modes
-    static unsigned short const TL_N_MDS = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
+    //! number of DG face modes
+    static unsigned short const TL_N_MDS_FA = CE_N_ELEMENT_MODES( C_ENT[TL_T_EL].TYPE_FACES, TL_O_SP );
+
+    //! number of DG element modes
+    static unsigned short const TL_N_MDS_EL = CE_N_ELEMENT_MODES( TL_T_EL, TL_O_SP );
 
     //! number of elastic quantities
     static unsigned short const TL_N_QTS_E = CE_N_QTS_E( TL_N_DIS );
@@ -340,28 +343,29 @@ class edge::seismic::solvers::AderDg {
                 double                               i_dt,
                 TL_T_LID                             i_firstSpRe,
                 t_elementChars              const  * i_elChars,
-                TL_T_REAL                         (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                         (* io_dofsA)[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL        (* const * const    o_tDofs[3])[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL        (* const * const    o_sendDofs)[TL_N_MDS][TL_N_CRS],
+                unsigned short const              (* i_vIdElFaEl)[TL_N_FAS],
+                TL_T_REAL                         (* io_dofsE)[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL                         (* io_dofsA)[TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL        (* const * const    o_tDofs[3])[TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL        (* const * const    o_sendDofs)[TL_N_MDS_FA][TL_N_CRS],
                 edge::io::Receivers                & io_recvs ) const {
       // counter for receivers
       unsigned int l_enRe = i_firstSpRe;
 
       // temporary data structurre for product for two-way mult and receivers
-      TL_T_REAL (*l_tmp)[TL_N_MDS][TL_N_CRS] = parallel::g_scratchMem->tRes[0];
+      TL_T_REAL (*l_tmp)[TL_N_MDS_EL][TL_N_CRS] = parallel::g_scratchMem->tRes[0];
 
       // buffer for derivatives
-      TL_T_REAL (*l_derBuffer)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] = parallel::g_scratchMem->dBuf;
+      TL_T_REAL (*l_derBuffer)[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = parallel::g_scratchMem->dBuf;
 
       // iterate over all elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // pointer to anelastic dofs
-        TL_T_REAL (*l_dofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS] =
-          (TL_T_REAL (*) [TL_N_QTS_M][TL_N_MDS][TL_N_CRS]) (io_dofsA+l_el*std::size_t(TL_N_RMS)*std::size_t(TL_N_QTS_M));
+        TL_T_REAL (*l_dofsA)[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS] =
+          (TL_T_REAL (*) [TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS]) (io_dofsA+l_el*std::size_t(TL_N_RMS)*std::size_t(TL_N_QTS_M));
 
-        TL_T_REAL l_tDofsA[CE_MAX(int(TL_N_RMS),1)][TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
-        TL_T_REAL l_derA[CE_MAX(int(TL_N_RMS),1)][TL_O_SP][TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
+        TL_T_REAL l_tDofsA[CE_MAX(int(TL_N_RMS),1)][TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
+        TL_T_REAL l_derA[CE_MAX(int(TL_N_RMS),1)][TL_O_SP][TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
 
         // compute ADER time integration
         m_kernels->m_time.ck( i_dt,
@@ -381,14 +385,14 @@ class edge::seismic::solvers::AderDg {
           // reset, if required
           if( i_firstTs ) {
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+              for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                   o_tDofs[1][l_el][l_qt][l_md][l_cr] = 0;
           }
 
           // add tDofs of this time step
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 o_tDofs[1][l_el][l_qt][l_md][l_cr] += o_tDofs[0][l_el][l_qt][l_md][l_cr];
         }
@@ -402,24 +406,46 @@ class edge::seismic::solvers::AderDg {
 
 #ifdef PP_USE_MPI
         for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
+          unsigned short l_vId = i_vIdElFaEl[l_el][l_fa];
+
           if( o_sendDofs[l_el*TL_N_FAS + l_fa] != nullptr ) {
-            for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-              for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
-                for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                  // gts
-                  if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
-                    o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr] = o_tDofs[0][l_el][l_qt][l_md][l_cr];
-                  }
-                  // less than
-                  else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]) == C_LTS_AD[l_fa][AD_LT] ) {
-                    if( !i_firstTs )
-                      o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr] = o_tDofs[1][l_el][l_qt][l_md][l_cr];
-                  }
-                  // greater than
-                  else {
-                    o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr] = o_tDofs[2][l_el][l_qt][l_md][l_cr];
-                    o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E + l_qt][l_md][l_cr] = o_tDofs[0][l_el][l_qt][l_md][l_cr] -
-                                                                                      o_tDofs[2][l_el][l_qt][l_md][l_cr];
+            // gts
+            if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+              m_kernels->m_surfInt.neighFluxInt( std::numeric_limits< unsigned short >::max(),
+                                                 l_vId,
+                                                 l_fa,
+                                                 o_tDofs[0][l_el],
+                                                 o_sendDofs[l_el*TL_N_FAS + l_fa] );
+            }
+            // less than
+            else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_LT]) == C_LTS_AD[l_fa][AD_LT] ) {
+              if( !i_firstTs ) {
+                m_kernels->m_surfInt.neighFluxInt( std::numeric_limits< unsigned short >::max(),
+                                                   l_vId,
+                                                   l_fa,
+                                                   o_tDofs[1][l_el],
+                                                   o_sendDofs[l_el*TL_N_FAS + l_fa] );
+              }
+            }
+            // greater than
+            else {
+              m_kernels->m_surfInt.neighFluxInt( std::numeric_limits< unsigned short >::max(),
+                                                 l_vId,
+                                                 l_fa,
+                                                 o_tDofs[2][l_el],
+                                                 o_sendDofs[l_el*TL_N_FAS + l_fa] );
+
+              m_kernels->m_surfInt.neighFluxInt( std::numeric_limits< unsigned short >::max(),
+                                                 l_vId,
+                                                 l_fa,
+                                                 o_tDofs[0][l_el],
+                                                 o_sendDofs[l_el*TL_N_FAS + l_fa]+TL_N_QTS_E );
+
+              // move second integral from [0, dt] to [1/2dt, dt]
+              for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+                for( unsigned short l_md = 0; l_md < TL_N_MDS_FA; l_md++ ) {
+                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+                    o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E+l_qt][l_md][l_cr] -= o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr];
                   }
                 }
               }
@@ -460,8 +486,8 @@ class edge::seismic::solvers::AderDg {
                                    l_tmp );
 
         // prefetches for next iteration
-        const TL_T_REAL (* l_preDofs)[TL_N_MDS][TL_N_CRS] = nullptr;
-        const TL_T_REAL (* l_preTint)[TL_N_MDS][TL_N_CRS] = nullptr;
+        const TL_T_REAL (* l_preDofs)[TL_N_MDS_EL][TL_N_CRS] = nullptr;
+        const TL_T_REAL (* l_preTint)[TL_N_MDS_EL][TL_N_CRS] = nullptr;
 
         if( l_el < i_first+i_nEls-1 ) {
           l_preDofs = io_dofsE[l_el+1];
@@ -516,20 +542,20 @@ class edge::seismic::solvers::AderDg {
                 TL_T_LID       const               (* i_elFaEl)[TL_N_FAS],
                 unsigned short const               (* i_fIdElFaEl)[TL_N_FAS],
                 unsigned short const               (* i_vIdElFaEl)[TL_N_FAS],
-                TL_T_REAL            (* const * const i_tDofs[3])[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                          (* io_dofsE)[TL_N_QTS_E][TL_N_MDS][TL_N_CRS],
-                TL_T_REAL                          (* io_dofsA)[TL_N_MDS][TL_N_CRS],
-                TL_T_REAL      const (* const * const i_recvDofs)[TL_N_MDS][TL_N_CRS] ) const {
+                TL_T_REAL            (* const * const i_tDofs[3])[TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL                          (* io_dofsE)[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL                          (* io_dofsA)[TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL      const (* const * const i_recvDofs)[TL_N_MDS_FA][TL_N_CRS] ) const {
       // temporary product for three-way mult
       TL_T_REAL (*l_tmpFa)[N_QUANTITIES][N_FACE_MODES][N_CRUNS] = parallel::g_scratchMem->tResSurf;
 
       // iterate over elements
       for( TL_T_LID l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
         // anelastic updates (excluding frequency scaling)
-        TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
+        TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
         if( TL_N_RMS > 0) {
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-            for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+            for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 l_upA[l_qt][l_md][l_cr] = 0;
         }
@@ -549,7 +575,7 @@ class edge::seismic::solvers::AderDg {
             /*
              * prefetches
              */
-            const TL_T_REAL (* l_pre)[TL_N_MDS][TL_N_CRS] = nullptr;
+            const TL_T_REAL (* l_pre)[TL_N_MDS_EL][TL_N_CRS] = nullptr;
             TL_T_LID l_neUp = std::numeric_limits<TL_T_LID>::max();
             // prefetch for the upcoming surface integration of this element
             if( l_fa < TL_N_FAS-1 ) l_neUp = i_elFaEl[l_el][l_fa+1];
@@ -564,11 +590,12 @@ class edge::seismic::solvers::AderDg {
             else                                                 l_pre = io_dofsE[l_el];
 
             // assemble the neighboring time integrated DOFs
-            TL_T_REAL l_tDofs[TL_N_QTS_E][TL_N_MDS][TL_N_CRS];
+            TL_T_REAL l_tDofs[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS];
+            TL_T_REAL const (*l_tDofsFiE)[TL_N_MDS_FA][TL_N_CRS] = nullptr;
 
             if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
               for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-                for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+                for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
                   for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                     // element and face-adjacent one have an equal time step
                     if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
@@ -597,11 +624,7 @@ class edge::seismic::solvers::AderDg {
                 l_off = (i_firstTs) ? 0 : TL_N_QTS_E;
               }
 
-              // copy
-              for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-                for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-                    l_tDofs[l_qt][l_md][l_cr] = i_recvDofs[l_el*TL_N_FAS + l_fa][l_off + l_qt][l_md][l_cr];
+              l_tDofsFiE = i_recvDofs[l_el*TL_N_FAS + l_fa]+l_off;
             }
 #else
             else EDGE_LOG_FATAL;
@@ -624,6 +647,7 @@ class edge::seismic::solvers::AderDg {
                                         m_fsE[1][l_el][l_fa],
                                         (TL_N_RMS > 0) ? m_fsA[1][l_el][l_fa] : nullptr,
                                         l_tDofs,
+                                        l_tDofsFiE,
                                         io_dofsE[l_el],
                                         l_upA,
                                         l_tmpFa,
@@ -633,8 +657,8 @@ class edge::seismic::solvers::AderDg {
 
         // update anelastic DOFs
         if( TL_N_RMS > 0 ) {
-          TL_T_REAL (*l_dofsA)[TL_N_QTS_M][TL_N_MDS][TL_N_CRS] =
-            (TL_T_REAL (*) [TL_N_QTS_M][TL_N_MDS][TL_N_CRS]) (io_dofsA+l_el*std::size_t(TL_N_RMS)*std::size_t(TL_N_QTS_M));
+          TL_T_REAL (*l_dofsA)[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS] =
+            (TL_T_REAL (*) [TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS]) (io_dofsA+l_el*std::size_t(TL_N_RMS)*std::size_t(TL_N_QTS_M));
 
           m_kernels->m_surfInt.scatterUpdateA( l_upA, l_dofsA );
         }

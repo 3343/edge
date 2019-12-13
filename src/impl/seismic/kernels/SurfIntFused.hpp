@@ -493,6 +493,37 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
     }
 
     /**
+     * Applies the first first face-integration matrix to the elastic DOFs.
+     *
+     * @param i_fa local face.
+     * @param i_vId id of the vertex, matching the element's vertex 0, from the perspective of the adjacent element w.r.t. to the reference element.
+     * @param i_fId id of the face from the perspective of the adjacent element w.r.t. to the reference element.
+     * @param i_tDofsE elastic time integrated DOFs.
+     * @param o_tDofsFiE elastic time integrated DOFs after application of the first face-int matrix.
+     * @param i_pre DOFs or tDOFs for prefetching.
+     **/
+    void neighFluxInt( unsigned short       i_fa,
+                       unsigned short       i_vId,
+                       unsigned short       i_fId,
+                       TL_T_REAL      const i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
+                       TL_T_REAL            o_tDofsFiE[TL_N_QTS_E][TL_N_MDS_FA][TL_N_CRS],
+                       TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) const {
+      // derive the id of the neighboring flux matrix
+      unsigned short l_fMatId = std::numeric_limits< unsigned short >::max();
+      if( i_vId != std::numeric_limits< unsigned short >::max() ) {
+        l_fMatId = TL_N_FAS + this->fMatId( i_vId, i_fId );
+      }
+      else {
+        l_fMatId = i_fa;
+      }
+
+      // local or neighboring flux matrix
+      m_mm.m_kernels[0][l_fMatId]( i_tDofsE[0][0],
+                                   m_fIntLN[l_fMatId],
+                                   o_tDofsFiE[0][0] );
+    }
+
+    /**
      * Neighboring contribution of a single adjacent element for fused simulations.
      *
      * @param i_fa local face.
@@ -512,31 +543,33 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                 TL_T_REAL      const i_fsE[TL_N_ENS_FS_E],
                 TL_T_REAL      const i_fsA[TL_N_ENS_FS_A],
                 TL_T_REAL      const i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
+                TL_T_REAL      const i_tDofsFiE[TL_N_QTS_E][TL_N_MDS_FA][TL_N_CRS],
                 TL_T_REAL            io_dofsE[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
                 TL_T_REAL            io_dofsA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS],
                 TL_T_REAL            o_scratch[2][TL_N_QTS_E][TL_N_MDS_FA][TL_N_CRS],
                 TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) const {
-      // derive the id of the neighboring flux matrix
-      unsigned short l_fMatId = std::numeric_limits< unsigned short >::max();
-      if( i_vId != std::numeric_limits< unsigned short >::max() ) {
-        l_fMatId = TL_N_FAS + this->fMatId( i_vId, i_fId );
+      // apply first face integration matrix or set pointer to pre-computed data
+      TL_T_REAL const * l_tDofsFiE = o_scratch[0][0][0];
+
+      if( i_tDofsFiE == nullptr ) {
+        neighFluxInt( i_fa,
+                      i_vId,
+                      i_fId,
+                      i_tDofsE,
+                      o_scratch[0],
+                      i_pre );
       }
       else {
-        l_fMatId = i_fa;
+        l_tDofsFiE = i_tDofsFiE[0][0];
       }
 
-      // local or neighboring flux matrix
-      m_mm.m_kernels[0][l_fMatId]( i_tDofsE[0][0],
-                                   m_fIntLN[l_fMatId],
-                                   o_scratch[0][0][0] );
-
       // flux solver
-      m_mm.m_kernels[1][0]( i_fsE,
-                            o_scratch[0][0][0],
-                            o_scratch[1][0][0],
-                            nullptr,
-                            i_pre[0][0],
-                            nullptr );
+      m_mm.m_kernels[1][0](                     i_fsE,
+                                                l_tDofsFiE,
+                                                o_scratch[1][0][0],
+                                                nullptr,
+                            (TL_T_REAL const *) i_pre,
+                                                nullptr );
 
       // transposed flux matrix
       m_mm.m_kernels[2][i_fa]( o_scratch[1][0][0],

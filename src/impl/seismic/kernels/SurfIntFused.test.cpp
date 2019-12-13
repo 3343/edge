@@ -106,6 +106,7 @@ TEST_CASE( "Neighboring elastic surface integration for fused simulations.", "[e
                 l_fSolvE[0][0],
                 nullptr,
                 l_tDofsFused,
+                nullptr,
                 l_dofsFused,
                 nullptr,
                 l_scratch );
@@ -155,6 +156,7 @@ TEST_CASE( "Neighboring elastic surface integration in the presence of a free su
                 l_fSolvE[0][0],
                 nullptr,
                 l_tDofsFused,
+                nullptr,
                 l_dofsFused,
                 nullptr,
                 l_scratch );
@@ -266,6 +268,7 @@ TEST_CASE( "Neighboring viscoelastic surface integration for fused simulations."
                 l_fSolvE[0][0],
                 l_fSolvA[0][0],
                 l_tDofsFusedE,
+                nullptr,
                 l_dofsFusedE,
                 l_upsFusedA,
                 l_scratch );
@@ -328,6 +331,7 @@ TEST_CASE( "Neighboring viscoelastic surface integration in the presence of a fr
                 l_fSolvE[0][0],
                 l_fSolvA[0][0],
                 l_tDofsFusedE,
+                nullptr,
                 l_dofsFusedE,
                 l_upsFusedA,
                 l_scratch );

@@ -76,6 +76,7 @@ TEST_CASE( "Neighboring surface integration for single seismic forward simulatio
                 (float (*))        l_fSolvE[0],
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
+                                   nullptr,
                 (float (*)[10][1]) l_dofsE,
                                    nullptr,
                                    l_scratch );
@@ -109,6 +110,7 @@ TEST_CASE( "Neighboring surface integration in the presence of a free surface fo
                 (float (*))        l_fSolvE[0],
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
+                                   nullptr,
                 (float (*)[10][1]) l_dofsE,
                                    nullptr,
                                    l_scratch );
@@ -185,6 +187,7 @@ TEST_CASE( "Viscoelastic neighboring surface integration in the presence of a fr
                 (float (*))        l_fSolvE[0],
                                    l_fSolvA[0][0],
                 (float (*)[10][1]) l_tDofsE,
+                                   nullptr,
                 (float (*)[10][1]) l_dofsE,
                 (float (*)[10][1]) l_upsA,
                                    l_scratch );

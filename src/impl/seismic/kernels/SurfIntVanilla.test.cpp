@@ -78,6 +78,7 @@ TEST_CASE( "Elastic neighboring surface integration using vanilla kernels.", "[e
                 (float (*))        l_fSolvE[0],
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
+                                   nullptr,
                 (float (*)[10][1]) l_dofsE,
                                    nullptr,
                                    l_scratch );
@@ -112,6 +113,7 @@ TEST_CASE( "Elastic neighboring surface integration in the presence of a free su
                 (float (*))        l_fSolvE[0],
                                    nullptr,
                 (float (*)[10][1]) l_tDofsE,
+                                   nullptr,
                 (float (*)[10][1]) l_dofsE,
                                    nullptr,
                                    l_scratch );
@@ -189,6 +191,7 @@ TEST_CASE( "Viscoelastic neighboring surface integration in the presence of a fr
                 (float (*))        l_fSolvE[0],
                                    l_fSolvA[0][0],
                 (float (*)[10][1]) l_tDofsE,
+                                   nullptr,
                 (float (*)[10][1]) l_dofsE,
                 (float (*)[10][1]) l_upsA,
                                    l_scratch );

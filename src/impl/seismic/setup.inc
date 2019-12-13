@@ -24,6 +24,33 @@
  * Setup for seismic simulations.
  **/
 
+// adjust vertex ids of send elements as we are performing the first face-int in the local update
+{
+  /*
+   * Adjust for "local":
+   *  Distance to 0 in counter-clockwise orientation is the local id:
+   *
+   *  2                 1
+   *  *  *              *  *
+   *  *    *        ->  *    *
+   *  *      *          *      *
+   *  *         *       *        *
+   *  0 * * * * * 1     2 < dist >  0
+   */
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_co = 0; l_co < l_edgeV.nCommElFa(); l_co++ ) {
+    std::size_t    l_el = l_edgeV.getSendEl()[l_co];
+    unsigned short l_fa = l_edgeV.getSendFa()[l_co];
+    unsigned short l_vId = l_internal.m_connect.vIdElFaEl[l_el][l_fa];
+    unsigned short l_nElVes = C_ENT[T_SDISC.ELEMENT].N_VERTICES;
+
+    unsigned short l_dist = (l_nElVes - l_vId)%l_nElVes;
+    l_internal.m_connect.vIdElFaEl[l_el][l_fa] = l_dist;
+  }
+}
+
 // set up sparse types
 {
   // propagate sparse info of free-surface boundary to elements
@@ -62,7 +89,7 @@
 l_mpiRemix.init( l_edgeV.nTgs(),
                  C_ENT[T_SDISC.ELEMENT].N_FACES,
                  l_edgeV.nEls(),
-                 N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
+                 N_QUANTITIES*N_FACE_MODES*N_CRUNS*sizeof(real_base),
                  l_edgeV.getCommStruct(),
                  l_edgeV.getSendFa(),
                  l_edgeV.getSendEl(),

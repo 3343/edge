@@ -255,6 +255,40 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
     }
 
     /**
+     * Applies the first first face-integration matrix to the elastic DOFs.
+     *
+     * @param i_fa local face.
+     * @param i_vId id of the vertex, matching the element's vertex 0, from the perspective of the adjacent element w.r.t. to the reference element.
+     * @param i_fId id of the face from the perspective of the adjacent element w.r.t. to the reference element.
+     * @param i_tDofsE elastic time integrated DOFs.
+     * @param o_tDofsFiE elastic time integrated DOFs after application of the first face-int matrix.
+     * @param i_pre DOFs or tDOFs for prefetching.
+     **/
+    void neighFluxInt( unsigned short       i_fa,
+                       unsigned short       i_vId,
+                       unsigned short       i_fId,
+                       TL_T_REAL      const i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
+                       TL_T_REAL            o_tDofsFiE[TL_N_QTS_E][TL_N_MDS_FA][1],
+                       TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][1] = nullptr ) const {
+      // derive the id of the neighboring flux matrix
+      unsigned short l_fMatId = std::numeric_limits< unsigned short >::max();
+      if( i_vId != std::numeric_limits< unsigned short >::max() ) {
+        l_fMatId = TL_N_FAS + this->fMatId( i_vId, i_fId );
+      }
+      else {
+        l_fMatId = i_fa;
+      }
+
+      // multiply with first face integration matrix
+      m_mm.m_kernels[0][0](                     m_fIntLN[l_fMatId],
+                                                i_tDofsE[0][0],
+                                                o_tDofsFiE[0][0],
+                                                nullptr,
+                            (TL_T_REAL const *) i_pre,
+                                                nullptr );
+    }
+
+    /**
      * Neighboring contribution of a single adjacent element for single forward simulations.
      *
      * @param i_fa local face.
@@ -263,6 +297,7 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
      * @param i_fsE elastic flux solver.
      * @param i_fsA anelastic flux solver
      * @param i_tDofsE elastic time integrated DG-DOFs.
+     * @param i_tDofsFiE elastic time integrated DG-DOFs multiplied with first flux integration matrix.
      * @param io_dofsE will be updated with the elastic contribution of the adjacent element to the surface integral.
      * @param io_dofsA will be updated with the unscaled (w.r.t. frequencies) anelastic contribution of the adjacent element tot the surface integral, use nullptr for TL_N_RMS==0.
      * @param o_scratch will be used as scratch space for the computations.
@@ -274,39 +309,38 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
                 TL_T_REAL      const i_fsE[TL_N_ENS_FS_E],
                 TL_T_REAL      const i_fsA[TL_N_ENS_FS_A],
                 TL_T_REAL      const i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
+                TL_T_REAL      const i_tDofsFiE[TL_N_QTS_E][TL_N_MDS_FA][1],
                 TL_T_REAL            io_dofsE[TL_N_QTS_E][TL_N_MDS_EL][1],
                 TL_T_REAL            io_dofsA[TL_N_QTS_M][TL_N_MDS_EL][1],
                 TL_T_REAL            o_scratch[2][TL_N_QTS_E][TL_N_MDS_FA][1],
                 TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][1] = nullptr ) const {
-      // derive the id of the neighboring flux matrix
-      unsigned short l_fMatId = std::numeric_limits< unsigned short >::max();
-      if( i_vId != std::numeric_limits< unsigned short >::max() ) {
-        l_fMatId = TL_N_FAS + this->fMatId( i_vId, i_fId );
+      // apply first face integration matrix or set pointer to pre-computed data
+      TL_T_REAL const * l_tDofsFiE = o_scratch[0][0][0];
+
+      if( i_tDofsFiE == nullptr ) {
+        neighFluxInt( i_fa,
+                      i_vId,
+                      i_fId,
+                      i_tDofsE,
+                      o_scratch[0],
+                      i_pre );
       }
       else {
-        l_fMatId = i_fa;
+        l_tDofsFiE = i_tDofsFiE[0][0];
       }
 
-      // multiply with first face integration matrix
-      m_mm.m_kernels[0][0]( m_fIntLN[l_fMatId],
-                            i_tDofsE[0][0],
-                            o_scratch[0][0][0],
-                            nullptr,
-                            i_pre[0][0],
-                            nullptr );
-
       // multiply with flux solver
-      m_mm.m_kernels[0][1]( o_scratch[0][0][0],
+      m_mm.m_kernels[0][1]( l_tDofsFiE,
                             i_fsE,
                             o_scratch[1][0][0] );
 
       // multiply with second face integration matrix
-      m_mm.m_kernels[0][2]( m_fIntT[i_fa],
-                            o_scratch[1][0][0],
-                            io_dofsE[0][0],
-                            nullptr,
-                            i_pre[0][0],
-                            nullptr );
+      m_mm.m_kernels[0][2](                     m_fIntT[i_fa],
+                                                o_scratch[1][0][0],
+                                                io_dofsE[0][0],
+                                                nullptr,
+                            (TL_T_REAL const *) i_pre,
+                                                nullptr );
 
       if( TL_N_RMS > 0 ) {
         // multiply with anelastic flux solver
