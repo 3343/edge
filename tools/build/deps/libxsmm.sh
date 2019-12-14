@@ -35,7 +35,7 @@ EOF
 while getopts "hi:o:j:" opt; do
   case "$opt" in
     h)
-      show_help
+      help
       exit 0
       ;;
     i)
@@ -48,7 +48,7 @@ while getopts "hi:o:j:" opt; do
       N_BUILD_PROCS=$OPTARG
       ;;
     '?')
-       show_help >&2
+       help >&2
        exit 1
        ;;
     esac
