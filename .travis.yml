@@ -337,13 +337,16 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # install zlib
-  - if [ "$SYSTEM_SETUP" = "1" ]; then ./tools/build/deps/zlib.sh -o /usr/local -j ${N_BUILD_PROC}; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./edge/tools/build/deps/zlib.sh -o /usr/local -j ${N_BUILD_PROC}; fi;
 
   # install hdf5
-  - if [ "$SYSTEM_SETUP" = "1" ]; then ./tools/build/deps/hdf5.sh -z /usr/local -o /usr/local -j ${N_BUILD_PROC}; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./edge/tools/build/deps/hdf5.sh -z /usr/local -o /usr/local -j ${N_BUILD_PROC}; fi;
 
   # install moab
-  - if [ "$SYSTEM_SETUP" = "1" ]; then ./tools/build/deps/moab.sh -z /usr/local -5 /usr/local -e $(pwd)/submodules/eigen -i $(pwd)/submodules/moab -o /usr/local -j ${N_BUILD_PROC}; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./edge/tools/build/deps/moab.sh -z /usr/local -5 /usr/local -e $(pwd)/edge/submodules/eigen -i $(pwd)/edge/submodules/moab -o /usr/local -j ${N_BUILD_PROC}; fi;
+
+  # install libxsmm
+  - if [ "$SYSTEM_SETUP" = "1" ]; then ./edge/tools/build/deps/libxsmm.sh -i $(pwd)/edge/submodules/libxsmm -o /usr/local -j ${N_BUILD_PROC}; fi;
 
   # install intel sde
   - "wget --delete-after --no-check-certificate --save-cookies cookie.txt --keep-session-cookies --post-data=\"accept_license=1&op=Continue&form_id=intel_licensed_dls_step_1\"  https://software.intel.com/protected-download/267266/144917"
@@ -352,11 +355,6 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd sde-external-8.16.0-2018-01-30-lin; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/sde64 /usr/local/bin/sde64; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
-
-  # install LIBXSMM
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/submodules/libxsmm; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo make install PREFIX=/usr/local FORTRAN=0 BLAS=0 -j $N_BUILD_PROC; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ../../..; fi;
 
   # clone EDGE's asset repository
   - git lfs clone --exclude=* https://opt.dial3343.org/3343/edge_opt.git
