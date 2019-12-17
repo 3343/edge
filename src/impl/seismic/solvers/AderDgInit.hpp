@@ -468,7 +468,12 @@ class edge::seismic::solvers::AderDgInit {
         EDGE_CHECK( !l_exR || l_fIdR != std::numeric_limits< unsigned short >::max() || l_periodic ) << l_fa;
 
         // collect lame parameters
-        TL_T_REAL l_rhoL, l_rhoR, l_lamL, l_lamR, l_muL, l_muR;
+        TL_T_REAL l_rhoL = std::numeric_limits< TL_T_REAL >::max();
+        TL_T_REAL l_rhoR = std::numeric_limits< TL_T_REAL >::max();
+        TL_T_REAL l_lamL = std::numeric_limits< TL_T_REAL >::max();
+        TL_T_REAL l_lamR = std::numeric_limits< TL_T_REAL >::max();
+        TL_T_REAL l_muL = std::numeric_limits< TL_T_REAL >::max();
+        TL_T_REAL l_muR = std::numeric_limits< TL_T_REAL >::max();
         if( l_exL ) {
           l_rhoL = i_bgPars[l_elL].rho; l_lamL = i_bgPars[l_elL].lam; l_muL = i_bgPars[l_elL].mu;
         }
