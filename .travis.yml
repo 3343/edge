@@ -69,6 +69,7 @@ matrix:
         FORT_COMPILER=gfortran-7
         SYSTEM_SETUP=1
         USE_MPI=1
+        N_BUILD_PROC=3
         COVERITY=1
         COVERITY_SCAN_PROJECT_NAME=3343/edge
 
