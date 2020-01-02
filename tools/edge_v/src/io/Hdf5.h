@@ -113,18 +113,26 @@ class edge_v::io::Hdf5 {
     /**
      * Constructor.
      *
-     * @param i_path path to the HDF5 file which is opened/created.
-     * @param i_create if true the file is created, read-only opened otherwise.
+     * @param i_path path to the HDF5 file which is opened.
+     * @param i_readOnly if true the file is opened read only, r+w otherwise.
      * @param i_group group under which the data is stored.
      **/
     Hdf5( std::string const & i_path,
-          bool                i_create = false,
+          bool                i_readOnly = true,
           std::string const & i_group = "/edge_v" );
 
     /**
      * Destructor
      **/
     ~Hdf5();
+
+    /**
+     * Tests if the given link in the interface's group exists.
+     *
+     * @param i_path path of the link.
+     * @return true if it exists, false if not.
+     **/
+    bool exists( std::string const & i_path ) const;
 
     /**
      * Gets the number of values for the given data set.

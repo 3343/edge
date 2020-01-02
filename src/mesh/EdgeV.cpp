@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -178,33 +178,34 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
 }
 
 edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
-                          int                 i_periodic ): m_moab(i_pathToMesh),
-                                                            m_mesh(m_moab, i_periodic) {
+                          int                 i_periodic ): m_moab( i_pathToMesh ),
+                                                            m_mesh( m_moab,
+                                                                    i_periodic ) {
+  edge_v::io::Hdf5 l_hdf( i_pathToMesh );
+
   // get tag names
   std::vector< std::string > l_tagNames;
   m_moab.getTagNames( l_tagNames );
 
   // check if the the mesh is EDGE-V annotated for LTS
   unsigned short l_nLtsTags = 0;
-  for( std::size_t l_ta = 0; l_ta < l_tagNames.size(); l_ta++ ) {
-    if(      l_tagNames[l_ta] == "edge_v_n_time_group_elements_inner" ) l_nLtsTags++;
-    else if( l_tagNames[l_ta] == "edge_v_n_time_group_elements_send"  ) l_nLtsTags++;
-    else if( l_tagNames[l_ta] == "edge_v_relative_time_steps"         ) l_nLtsTags++;
-  }
+  if( l_hdf.exists( "edge_v_n_time_group_elements_inner" ) ) l_nLtsTags++;
+  if( l_hdf.exists( "edge_v_n_time_group_elements_send"  ) ) l_nLtsTags++;
+  if( l_hdf.exists( "edge_v_relative_time_steps"         ) ) l_nLtsTags++;
   EDGE_CHECK( l_nLtsTags == 0 || l_nLtsTags == 3 );
 
   // get the LTS info
   m_nTgs = 1;
   if( l_nLtsTags > 0 ) {
-    m_nTgs = m_moab.getGlobalDataSize( "edge_v_n_time_group_elements_inner" );
+    m_nTgs = l_hdf.nVas( "edge_v_n_time_group_elements_inner" );
   }
   m_nTgElsIn = new std::size_t[ m_nTgs ];
   m_nTgElsSe = new std::size_t[ m_nTgs ];
   if( l_nLtsTags > 0 ) {
-    m_moab.getGlobalData( "edge_v_n_time_group_elements_inner",
-                          m_nTgElsIn );
-    m_moab.getGlobalData( "edge_v_n_time_group_elements_send",
-                          m_nTgElsSe );
+    l_hdf.get( "edge_v_n_time_group_elements_inner",
+               m_nTgElsIn );
+    l_hdf.get( "edge_v_n_time_group_elements_send",
+               m_nTgElsSe );
   }
   else {
     m_nTgElsIn[0] = m_mesh.nEls();
@@ -225,8 +226,8 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   if( m_nTgs > 1 ) {
     // get relative time steps and check for rate-2
-    m_moab.getGlobalData( "edge_v_relative_time_steps",
-                          m_relDt );
+    l_hdf.get( "edge_v_relative_time_steps",
+               m_relDt );
 
     for( unsigned short l_tg = 0; l_tg < m_nTgs-1; l_tg++ ) {
       double l_rate = m_relDt[l_tg+1] / m_relDt[l_tg];
@@ -241,15 +242,13 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   // check if the mesh is annotated for MPI
   unsigned short l_nMpiTags = 0;
-  for( std::size_t l_ta = 0; l_ta < l_tagNames.size(); l_ta++ ) {
-    if(      l_tagNames[l_ta] == "edge_v_communication_structure" ) l_nMpiTags++;
-    else if( l_tagNames[l_ta] == "edge_v_send_el"                 ) l_nMpiTags++;
-    else if( l_tagNames[l_ta] == "edge_v_send_fa"                 ) l_nMpiTags++;
-    else if( l_tagNames[l_ta] == "edge_v_recv_el"                 ) l_nMpiTags++;
-    else if( l_tagNames[l_ta] == "edge_v_recv_fa"                 ) l_nMpiTags++;
-    else if( l_tagNames[l_ta] == "edge_v_send_vertex_ids"         ) l_nMpiTags++;
-    else if( l_tagNames[l_ta] == "edge_v_send_face_ids"           ) l_nMpiTags++;
-  }
+  if( l_hdf.exists( "edge_v_communication_structure" ) ) l_nMpiTags++;
+  if( l_hdf.exists( "edge_v_send_el"                 ) ) l_nMpiTags++;
+  if( l_hdf.exists( "edge_v_send_fa"                 ) ) l_nMpiTags++;
+  if( l_hdf.exists( "edge_v_recv_el"                 ) ) l_nMpiTags++;
+  if( l_hdf.exists( "edge_v_recv_fa"                 ) ) l_nMpiTags++;
+  if( l_hdf.exists( "edge_v_send_vertex_ids"         ) ) l_nMpiTags++;
+  if( l_hdf.exists( "edge_v_send_face_ids"           ) ) l_nMpiTags++;
 
   // check number of mpi tags
   if( parallel::g_nRanks > 1 ) {
@@ -261,12 +260,12 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   if( l_nMpiTags == 7 ) {
     // get communication structure
-    std::size_t l_commSize = m_moab.getGlobalDataSize( "edge_v_communication_structure" );
+    std::size_t l_commSize = l_hdf.nVas( "edge_v_communication_structure" );
     EDGE_CHECK_EQ( l_commSize%4, 1 );
     m_commStruct = new std::size_t[ l_commSize ];
 
-    m_moab.getGlobalData( "edge_v_communication_structure",
-                          m_commStruct );
+    l_hdf.get( "edge_v_communication_structure",
+               m_commStruct );
 
     // check ranks in comm structure
     std::size_t l_nChs = m_commStruct[0];
@@ -278,12 +277,12 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     }
 
     // get communicating faces
-    m_nCommElFa = m_moab.getGlobalDataSize( "edge_v_send_fa" );
-    std::size_t l_nSendEls   = m_moab.getGlobalDataSize( "edge_v_send_el" );
-    std::size_t l_nRecvFas   = m_moab.getGlobalDataSize( "edge_v_recv_fa" );
-    std::size_t l_nRecvEls   = m_moab.getGlobalDataSize( "edge_v_recv_el" );
-    std::size_t l_nSeVeIdsAd = m_moab.getGlobalDataSize( "edge_v_send_vertex_ids" );
-    std::size_t l_nSeFaIdsAd = m_moab.getGlobalDataSize( "edge_v_send_face_ids" );
+    m_nCommElFa = l_hdf.nVas( "edge_v_send_fa" );
+    std::size_t l_nSendEls   = l_hdf.nVas( "edge_v_send_el" );
+    std::size_t l_nRecvFas   = l_hdf.nVas( "edge_v_recv_fa" );
+    std::size_t l_nRecvEls   = l_hdf.nVas( "edge_v_recv_el" );
+    std::size_t l_nSeVeIdsAd = l_hdf.nVas( "edge_v_send_vertex_ids" );
+    std::size_t l_nSeFaIdsAd = l_hdf.nVas( "edge_v_send_face_ids" );
 
     EDGE_CHECK_EQ( m_nCommElFa, l_nSendEls );
     EDGE_CHECK_EQ( m_nCommElFa, l_nRecvFas );
@@ -298,18 +297,18 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     m_sendVeIdsAd = new unsigned short[ m_nCommElFa ];
     m_sendFaIdsAd = new unsigned short[ m_nCommElFa ];
 
-    m_moab.getGlobalData( "edge_v_send_fa",
-                          m_sendFa );
-    m_moab.getGlobalData( "edge_v_send_el",
-                          m_sendEl );
-    m_moab.getGlobalData( "edge_v_recv_fa",
-                          m_recvFa );
-    m_moab.getGlobalData( "edge_v_recv_el",
-                          m_recvEl );
-    m_moab.getGlobalData( "edge_v_send_vertex_ids",
-                          m_sendVeIdsAd );
-    m_moab.getGlobalData( "edge_v_send_face_ids",
-                          m_sendFaIdsAd );
+    l_hdf.get( "edge_v_send_fa",
+               m_sendFa );
+    l_hdf.get( "edge_v_send_el",
+               m_sendEl );
+    l_hdf.get( "edge_v_recv_fa",
+               m_recvFa );
+    l_hdf.get( "edge_v_recv_el",
+               m_recvEl );
+    l_hdf.get( "edge_v_send_vertex_ids",
+               m_sendVeIdsAd );
+    l_hdf.get( "edge_v_send_face_ids",
+               m_sendFaIdsAd );
   }
 }
 

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -90,68 +90,6 @@ TEST_CASE( "Tests the derivation of faces adjacent to elements.", "[moab][getElF
         REQUIRE( l_elFa[l_el*3 + l_fa] <  l_elFa[l_el*3 + l_fa+1] );
       }
     }
-  }
-}
-
-TEST_CASE( "Set and get global data using size_t.", "[moab][setGetGlobalDataSizeT]" ) {
-  // only continue if the unit test files are available
-  if( edge_v::test::g_files != "" ) {
-    // path to the mesh file
-    std::string l_path = edge_v::test::g_files + "/tria3.msh";
-
-    // construct the moab-reader
-    edge_v::io::Moab l_moab( l_path );
-
-    std::size_t l_dataSet[5] = { 5, 2, 4, 3, 5 };
-    std::string l_tagName = "random_tag_name";
-    l_moab.setGlobalData( l_tagName,
-                          5,
-                          l_dataSet );
-
-    std::size_t l_size = l_moab.getGlobalDataSize( l_tagName );
-    REQUIRE( l_size == 5 );
-
-    std::size_t l_dataGet[5] = {};
-    l_moab.getGlobalData( l_tagName,
-                          l_dataGet );
-
-    // check the results
-    REQUIRE( l_dataGet[0] == 5 );
-    REQUIRE( l_dataGet[1] == 2 );
-    REQUIRE( l_dataGet[2] == 4 );
-    REQUIRE( l_dataGet[3] == 3 );
-    REQUIRE( l_dataGet[4] == 5 );
-  }
-}
-
-TEST_CASE( "Set and get global data using double.", "[moab][setGetGlobalDataDouble]" ) {
-  // only continue if the unit test files are available
-  if( edge_v::test::g_files != "" ) {
-    // path to the mesh file
-    std::string l_path = edge_v::test::g_files + "/tria3.msh";
-
-    // construct the moab-reader
-    edge_v::io::Moab l_moab( l_path );
-
-    double l_dataSet[5] = { 0.5, 0.2, 0.4, 0.3, 0.5 };
-    std::string l_tagName = "random_tag_name";
-    l_moab.setGlobalData( l_tagName,
-                          5,
-                          l_dataSet );
-
-    std::size_t l_size = l_moab.getGlobalDataSize( l_tagName );
-    REQUIRE( l_size == 5 );
-
-    double l_dataGet[5] = {};
-    l_moab.getGlobalData( l_tagName,
-                          l_dataGet );
-
-    // check the results
-    REQUIRE( l_dataGet[0] == 0.5 );
-    REQUIRE( l_dataGet[1] == 0.2 );
-    REQUIRE( l_dataGet[2] == 0.4 );
-    REQUIRE( l_dataGet[3] == 0.3 );
-    REQUIRE( l_dataGet[4] == 0.5 );
   }
 }
 

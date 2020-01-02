@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -118,19 +118,6 @@ class edge_v::io::Moab {
                     void        const * i_data );
 
     /**
-     * Stores global mesh data in MOAB.
-     *
-     * @param i_daTy used MOAB data type.
-     * @param i_tagName tag name.
-     * @param i_nValues number of values.
-     * @param i_data data, which will be stored.
-     **/
-    void setGlobalData( moab::DataType         i_daTy,
-                        std::string    const & i_tagName,
-                        std::size_t            i_nValues,
-                        void           const * i_data );
-
-    /**
      * Gets the intersection of the entities and the mesh sets.
      * Returned are newly created mesh sets for every intesection with the input mesh sets.
      *
@@ -238,86 +225,6 @@ class edge_v::io::Moab {
      **/
     void getElFaEl( t_entityType   i_elTy,
                     std::size_t  * o_elFaEl ) const;
-
-    /**
-     * Stores global mesh data.
-     * The data is stored in MOAB's native int type for portability.
-     *
-     * @param i_tagName tag name.
-     * @param i_nValues number of values.
-     * @param i_data data, which will be stored.
-     **/
-    void setGlobalData( std::string    const & i_tagName,
-                        std::size_t            i_nValues,
-                        unsigned short const * i_data );
-
-    /**
-     * Stores global mesh data.
-     * The data is stored in MOAB's native int type for portability.
-     *
-     * @param i_tagName tag name.
-     * @param i_nValues number of values.
-     * @param i_data data, which will be stored.
-     **/
-    void setGlobalData( std::string const & i_tagName,
-                        std::size_t         i_nValues,
-                        std::size_t const * i_data );
-
-    /**
-     * Stores global mesh data.
-     * The data is stored in MOAB's native double type for portability.
-     *
-     * @param i_tagName tag name.
-     * @param i_nValues number of values.
-     * @param i_data data, which will be stored.
-     **/
-    void setGlobalData( std::string const & i_tagName,
-                        std::size_t         i_nValues,
-                        double      const * i_data );
-
-    /**
-     * Gets the number of values for the global data item.
-     *
-     * @param i_tagName tag name.
-     * @return size of the global data.
-     **/
-    std::size_t getGlobalDataSize( std::string const & i_tagName ) const;
-
-    /**
-     * Gets global mesh data (stored internally as int).
-     *
-     * @param i_tagName tag name.
-     * @param o_data output array.
-     **/
-    void getGlobalData( std::string const & i_tagName,
-                        int               * o_data ) const;
-
-    /**
-     * Gets global mesh data (stored internally as int).
-     *
-     * @param i_tagName tag name.
-     * @param o_data output array.
-     **/
-    void getGlobalData( std::string const & i_tagName,
-                        unsigned short    * o_data ) const;
-
-    /**
-     * Gets global mesh data (stored internally as int).
-     *
-     * @param i_tagName tag name.
-     * @param o_data output array.
-     **/
-    void getGlobalData( std::string const & i_tagName,
-                        std::size_t       * o_data ) const;
-
-    /**
-     * Gets global mesh data (stored internally as double).
-     *
-     * @param i_tagName tag name.
-     * @param o_data output array.
-     **/
-    void getGlobalData( std::string const & i_tagName,
-                        double            * o_data ) const;
 
     /**
      * Sets the given data in MOAB (stored as native double).

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -41,11 +41,8 @@ class edge_v::io::Config {
     //! path to the input mesh
     std::string m_meshIn = "";
 
-    //! path to the output mesh
-    std::string m_meshOut = "";
-
-    //! base name for the mesh output by partition
-    std::string m_meshOutPa[2] = {"", ""};
+    //! base name, mesh extension, meta data extension
+    std::string m_meshOut[2] = {"", ""};
 
     std::string m_seismicExpr = "";
 
@@ -83,25 +80,18 @@ class edge_v::io::Config {
     std::string const & getMeshIn() const { return m_meshIn; }
 
     /**
-     * Gets the output mesh.
-     *
-     * @return output mesh.
-     **/
-    std::string const & getMeshOut() const { return m_meshOut; }
-
-    /**
-     * Gets the base name of the by partition mesh output.
+     * Gets the base name of the mesh output.
      *
      * @return base name of the mesh output.
      **/
-    std::string const & getMeshOutPaBase() const { return m_meshOutPa[0]; }
+    std::string const & getMeshOutBase() const { return m_meshOut[0]; }
 
     /**
-     * Gets the file extension of the by partition mesh output.
+     * Gets the file extension of the by mesh output.
      *
      * @return file extension the mesh output.
      **/
-    std::string const & getMeshOutPaExt() const { return m_meshOutPa[1]; }
+    std::string const & getMeshOutExt() const { return m_meshOut[1]; }
 
     /**
      * Gets the expression string for a seismic expression-based velocity model.

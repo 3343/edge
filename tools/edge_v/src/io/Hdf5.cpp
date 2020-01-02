@@ -23,7 +23,7 @@
 #include "Hdf5.h"
 
 edge_v::io::Hdf5::Hdf5( std::string const & i_path,
-                        bool                i_create,
+                        bool                i_readOnly,
                         std::string const & i_group ) {
   // silence error printing
   herr_t l_err = H5Eset_auto( H5P_DEFAULT,
@@ -32,15 +32,14 @@ edge_v::io::Hdf5::Hdf5( std::string const & i_path,
   EDGE_V_CHECK_GE( l_err, 0 );
 
   // create/open the file
-  if( i_create ) {
-    m_fileId = H5Fcreate( i_path.c_str(),
-                          H5F_ACC_EXCL,
-                          H5P_DEFAULT,
-                          H5P_DEFAULT );
+  if( i_readOnly ) {
+    m_fileId = H5Fopen( i_path.c_str(),
+                        H5F_ACC_RDONLY,
+                        H5P_DEFAULT );
   }
   else {
     m_fileId = H5Fopen( i_path.c_str(),
-                        H5F_ACC_RDONLY,
+                        H5F_ACC_RDWR,
                         H5P_DEFAULT );
   }
 
@@ -52,12 +51,25 @@ edge_v::io::Hdf5::~Hdf5() {
   EDGE_V_CHECK_GE( l_err, 0 );
 }
 
+bool edge_v::io::Hdf5::exists( std::string const & i_path ) const {
+  // open group
+  hid_t l_group = openCreateGroup();
+
+  htri_t l_ex = H5Lexists( l_group,
+                           i_path.c_str(),
+                           H5P_DEFAULT );
+  EDGE_V_CHECK_GE( l_ex, 0 );
+
+  // close group
+  herr_t l_err = H5Gclose( l_group );
+  EDGE_V_CHECK_GE( l_err, 0 );
+
+  return l_ex > 0;
+}
+
 std::size_t edge_v::io::Hdf5::nVas( std::string const & i_name ) const {
   // open group
-  hid_t l_group = H5Gopen( m_fileId,
-                           m_groupStr.c_str(),
-                           H5P_DEFAULT );
-  EDGE_V_CHECK_GE( l_group, 0 );
+  hid_t l_group = openCreateGroup();
 
   // open dataset
   hid_t l_dset = H5Dopen2( l_group,
@@ -108,10 +120,7 @@ void edge_v::io::Hdf5::get( std::string const & i_name,
                             hid_t               i_memType,
                             void              * o_data ) const {
   // open group
-  hid_t l_group = H5Gopen( m_fileId,
-                           m_groupStr.c_str(),
-                           H5P_DEFAULT );
-  EDGE_V_CHECK_GE( l_group, 0 );
+  hid_t l_group = openCreateGroup();
 
   // open dataset
   hid_t l_dset = H5Dopen2( l_group,

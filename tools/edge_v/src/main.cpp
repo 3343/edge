@@ -5,7 +5,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -24,6 +24,7 @@
  **/
 #include "io/Config.h"
 #include "io/Csv.h"
+#include "io/Hdf5.h"
 #include "models/Constant.h"
 #include "models/seismic/Expression.h"
 #include "mesh/Mesh.h"
@@ -86,10 +87,9 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "    annotations:      " << l_config.getWriteElAn();
   EDGE_V_LOG_INFO << "    n_partitions:     " << l_config.nPartitions();
   EDGE_V_LOG_INFO << "    in:               " << l_config.getMeshIn();
-  EDGE_V_LOG_INFO << "    out:              " << l_config.getMeshOut();
-  EDGE_V_LOG_INFO << "    out by partition: ";
-  EDGE_V_LOG_INFO << "      base:           " << l_config.getMeshOutPaBase();
-  EDGE_V_LOG_INFO << "      extension:      " << l_config.getMeshOutPaExt();
+  EDGE_V_LOG_INFO << "    out: ";
+  EDGE_V_LOG_INFO << "      base:           " << l_config.getMeshOutBase();
+  EDGE_V_LOG_INFO << "      extension:      " << l_config.getMeshOutExt();
   EDGE_V_LOG_INFO << "  velocity model:";
   if( l_config.getVelModSeismicExpr() != "" ) {
     EDGE_V_LOG_INFO << "  seismic expression: ";
@@ -247,39 +247,32 @@ int main( int i_argc, char *i_argv[] ) {
   std::string l_tagRelTs = "edge_v_relative_time_steps";
 
   if( l_config.nPartitions() == 1 ) {
-    EDGE_V_LOG_INFO << "storing number of elements per time group";
-    l_moab.deleteTag( l_tagNtgElsIn );
-    l_moab.setGlobalData( l_tagNtgElsIn,
-                          l_tsGroups->nGroups(),
-                          l_tsGroups->nGroupEls() );
+    std::string l_pathMesh = l_config.getMeshOutBase() + l_config.getMeshOutExt();
+    EDGE_V_LOG_INFO << "writing mesh: " << l_pathMesh;
+    l_moab.writeMesh( l_pathMesh );
+
+    EDGE_V_LOG_INFO << "adding meta data: " << l_pathMesh;
+    edge_v::io::Hdf5 l_hdf( l_pathMesh,
+                            false );
+
+    l_hdf.set( l_tagNtgElsIn,
+               l_tsGroups->nGroups(),
+               l_tsGroups->nGroupEls() );
+
     // dummy number of send elements
     std::size_t * l_nTgElsSe = new std::size_t[ l_tsGroups->nGroups() ];
     for( unsigned short l_tg = 0; l_tg < l_tsGroups->nGroups(); l_tg++ ) l_nTgElsSe[l_tg] = 0;
-    l_moab.deleteTag( l_tagNtgElsSe );
-    l_moab.setGlobalData( l_tagNtgElsSe,
-                          l_tsGroups->nGroups(),
-                          l_nTgElsSe );
+    l_hdf.set( l_tagNtgElsSe,
+               l_tsGroups->nGroups(),
+               l_nTgElsSe );
     delete[] l_nTgElsSe;
 
-    EDGE_V_LOG_INFO << "storing relative time steps of the groups";
-    l_moab.deleteTag( l_tagRelTs );
-    l_moab.setGlobalData( l_tagRelTs,
-                          l_tsGroups->nGroups()+1,
-                          l_tsGroups->getTsIntervals() );
-  }
-
-  if( l_config.getMeshOut() != "" ) {
-    EDGE_V_LOG_INFO << "writing mesh";
-    l_moab.writeMesh( l_config.getMeshOut() );
+    l_hdf.set( l_tagRelTs,
+               l_tsGroups->nGroups()+1,
+               l_tsGroups->getTsIntervals() );
   }
 
   if( l_config.nPartitions() > 1 ) {
-    EDGE_V_LOG_INFO << "storing relative time steps of the groups";
-    l_moab.deleteTag( l_tagRelTs );
-    l_moab.setGlobalData( l_tagRelTs,
-                          l_tsGroups->nGroups()+1,
-                          l_tsGroups->getTsIntervals() );
-
     EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
     delete l_tsGroups;
     delete l_cfl;
@@ -326,55 +319,60 @@ int main( int i_argc, char *i_argv[] ) {
                                         l_tsGroups->getElTg() );
 
     EDGE_V_LOG_INFO << "writing mesh by partition";
-    std::string l_base = l_config.getMeshOutPaBase();
-    std::string l_ext = l_config.getMeshOutPaExt();
-
     std::size_t l_first = 0;
     for( std::size_t l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
       // get number of elements in the partition
       std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
 
+      std::string l_pathMesh = l_config.getMeshOutBase() + "_" + std::to_string(l_pa) + l_config.getMeshOutExt();
+      EDGE_V_LOG_INFO << "  writing mesh: " << l_pathMesh;
+      l_moab.writeMesh( l_first,
+                        l_nPaEls,
+                        l_pathMesh );
+
+      EDGE_V_LOG_INFO << "  adding meta data: " << l_pathMesh;
+      edge_v::io::Hdf5 l_hdf( l_pathMesh,
+                              false );
+
+      // store relative time steps of the groups
+      l_hdf.set( l_tagRelTs,
+                 l_tsGroups->nGroups()+1,
+                 l_tsGroups->getTsIntervals() );
+
       // write number of elements per time group partition-local
-      l_moab.deleteTag( l_tagNtgElsIn );
-      l_moab.setGlobalData( l_tagNtgElsIn,
-                            l_tsGroups->nGroups(),
-                            l_comm.nGroupElsIn( l_pa ) );
-      l_moab.deleteTag( l_tagNtgElsSe );
-      l_moab.setGlobalData( l_tagNtgElsSe,
-                            l_tsGroups->nGroups(),
-                            l_comm.nGroupElsSe( l_pa ) );
+      l_hdf.set( l_tagNtgElsIn,
+                 l_tsGroups->nGroups(),
+                 l_comm.nGroupElsIn( l_pa ) );
+      l_hdf.set( l_tagNtgElsSe,
+                 l_tsGroups->nGroups(),
+                 l_comm.nGroupElsSe( l_pa ) );
 
       // annotate with comm data
       std::string l_tagCoSt = "edge_v_communication_structure";
-      l_moab.deleteTag( l_tagCoSt );
       std::size_t l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
-      l_moab.setGlobalData( l_tagCoSt,
-                            l_coSize,
-                            l_comm.getStruct( l_pa ) );
+      l_hdf.set( l_tagCoSt,
+                 l_coSize,
+                 l_comm.getStruct( l_pa ) );
 
       std::string l_tagSeEl = "edge_v_send_el";
-      l_moab.deleteTag( l_tagSeEl );
-      l_moab.setGlobalData( l_tagSeEl,
-                            l_comm.nSeRe( l_pa ),
-                            l_comm.getSendEl( l_pa ) );
+      l_hdf.set( l_tagSeEl,
+                 l_comm.nSeRe( l_pa ),
+                 l_comm.getSendEl( l_pa ) );
 
       std::string l_tagSeFa = "edge_v_send_fa";
-      l_moab.deleteTag( l_tagSeFa );
-      l_moab.setGlobalData( l_tagSeFa,
-                            l_comm.nSeRe( l_pa ),
-                            l_comm.getSendFa( l_pa ) );
+      l_hdf.set( l_tagSeFa,
+                 l_comm.nSeRe( l_pa ),
+                 l_comm.getSendFa( l_pa ) );
 
       std::string l_tagReEl = "edge_v_recv_el";
-      l_moab.deleteTag( l_tagReEl );
-      l_moab.setGlobalData( l_tagReEl,
-                            l_comm.nSeRe( l_pa ),
-                            l_comm.getRecvEl( l_pa ) );
+      l_hdf.set( l_tagReEl,
+                 l_comm.nSeRe( l_pa ),
+                 l_comm.getRecvEl( l_pa ) );
 
       std::string l_tagReFa = "edge_v_recv_fa";
-      l_moab.deleteTag( l_tagReFa );
-      l_moab.setGlobalData( l_tagReFa,
-                            l_comm.nSeRe( l_pa ),
-                            l_comm.getRecvFa( l_pa ) );
+      l_hdf.set( l_tagReFa,
+                 l_comm.nSeRe( l_pa ),
+                 l_comm.getRecvFa( l_pa ) );
 
       // write face- and vertex-ids for ghost elements, adjacent to the send-elements
       unsigned short * l_idsAd = new unsigned short[ l_comm.nSeRe( l_pa ) ];
@@ -384,10 +382,9 @@ int main( int i_argc, char *i_argv[] ) {
                           l_comm.getSendFa( l_pa ),
                           l_idsAd );
       std::string l_tagFaIdsAd = "edge_v_send_face_ids";
-      l_moab.deleteTag( l_tagFaIdsAd );
-      l_moab.setGlobalData( l_tagFaIdsAd,
-                            l_comm.nSeRe( l_pa ),
-                            l_idsAd );
+      l_hdf.set( l_tagFaIdsAd,
+                 l_comm.nSeRe( l_pa ),
+                 l_idsAd );
 
       l_mesh->getVeIdsAd( l_comm.nSeRe( l_pa ),
                           l_first,
@@ -395,17 +392,10 @@ int main( int i_argc, char *i_argv[] ) {
                           l_comm.getSendFa( l_pa ),
                           l_idsAd );
       std::string l_tagVeIdsAd = "edge_v_send_vertex_ids";
-      l_moab.deleteTag( l_tagVeIdsAd );
-      l_moab.setGlobalData( l_tagVeIdsAd,
-                            l_comm.nSeRe( l_pa ),
-                            l_idsAd );
+      l_hdf.set( l_tagVeIdsAd,
+                 l_comm.nSeRe( l_pa ),
+                 l_idsAd );
       delete[] l_idsAd;
-
-      std::string l_name = l_base + "_" + std::to_string(l_pa) + l_ext;
-      EDGE_V_LOG_INFO << "  writing " << l_name;
-      l_moab.writeMesh( l_first,
-                        l_nPaEls,
-                        l_name );
 
       l_first += l_nPaEls;
     }
