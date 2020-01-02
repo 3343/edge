@@ -26,6 +26,7 @@ Import('env')
 l_sources = [ 'io/Config.cpp',
               'io/Csv.cpp',
               'io/GmshView.cpp',
+              'io/Hdf5.cpp',
               'io/Moab.cpp',
               'geom/Generic.cpp',
               'geom/Line.cpp',
@@ -45,6 +46,7 @@ l_headers = [ 'edge_v.h',
               'constants.h',
               'io/logging.h',
               'io/Config.h',
+              'io/Hdf5.h',
               'io/Moab.h',
               'mesh/Mesh.h',
               'models/Constant.h',
@@ -65,6 +67,7 @@ env.standalone = env.Object( "main.cpp" )
 
 if env['tests']:
   l_tests = [ 'tests.cpp',
+              'io/Hdf5.test.cpp',
               'io/Moab.test.cpp',
               'geom/Line.test.cpp',
               'geom/Quad4r.test.cpp',
