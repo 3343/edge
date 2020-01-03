@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2019, Alexander Breuer
+# Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -166,9 +166,9 @@ vars.AddVariables(
                 'location where the code is build',
                 'build',
                 PathVariable.PathIsDirCreate ),
-  PathVariable( 'install_dir',
+  PathVariable( 'prefix',
                 'location where the code is installed',
-                'edge_v',
+                '/usr/local/',
                 PathVariable.PathIsDirCreate ),
 )
 
@@ -361,13 +361,14 @@ if env['tests']:
   l_tests = env.Program( env['build_dir']+'/tests', source = env.tests )
 
 # do the installation
-env.Install( env['install_dir']+'/lib', [l_edgev] )
-env.Install( env['install_dir']+'/bin', [l_main]  )
+env.Install( env['prefix']+'/lib', [l_edgev] )
+env.Install( env['prefix']+'/bin', [l_main]  )
 
 for l_he in env.headers:
   l_dir = os.path.dirname( l_he.srcnode().path )
   l_dir = l_dir.split('src')[1]
-  env.Install( env['install_dir']+'/include/edge_v' + l_dir, l_he )
+  env.Install( env['prefix']+'/include/edge_v' + l_dir, l_he )
 
 for l_he in env.thirdheaders:
-  env.Install( env['install_dir']+'/include/third', l_he )
+  env.Install( env['prefix']+'/include/third', l_he )
+env.Alias('install', env['prefix'])
