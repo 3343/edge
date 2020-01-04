@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2019, Alexander Breuer
+# Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -94,7 +94,6 @@ if env['moab'] != False:
     env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
     env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
-    env.thirdheaders.append( env['moab']+'/include/moab' )
   conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' )
 
 # UCVM
