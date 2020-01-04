@@ -58,7 +58,8 @@ for l_he in l_headers:
   env.headers.append( env.File(l_he) )
 
 if 'ucvm' in env and env['ucvm']:
-  l_sources = l_sources + [ 'models/Ucvm.cpp' ]
+  l_sources = l_sources + [ 'io/Ucvm.cpp',
+                            'models/seismic/Ucvm.cpp' ]
 
 for l_src in l_sources:
   env.sources.append( env.Object( l_src ) )
@@ -79,6 +80,9 @@ if env['tests']:
               'models/seismic/Expression.test.cpp',
               'time/Cfl.test.cpp',
               'time/Groups.test.cpp' ]
+
+  if 'ucvm' in env and env['ucvm']:
+    l_tests += ['io/Ucvm.test.cpp']
 
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )
