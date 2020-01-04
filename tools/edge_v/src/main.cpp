@@ -78,6 +78,7 @@ int main( int i_argc, char *i_argv[] ) {
     return EXIT_FAILURE;
   }
 
+  EDGE_V_LOG_INFO << "EDGE version: " << PP_EDGE_VERSION;
   EDGE_V_LOG_INFO << "parsing xml config";
   std::string l_xml = l_args[2];
   edge_v::io::Config l_config( l_xml );
