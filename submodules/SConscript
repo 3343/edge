@@ -67,7 +67,7 @@ if env['xsmm'] != False:
     else:
       env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM'] )
   else:
-    warnings.warn('  Warning: Could not find libxsmm, continuing without.' )
+    warnings.warn('  Warning: Could not enable libxsmm, continuing without.' )
     env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )
     env['xsmm'] = False
 else:
@@ -78,7 +78,8 @@ if env['zlib'] != False:
   if env['zlib'] != True:
     env.AppendUnique( CPPPATH=[ env['zlib']+'/include'] )
     env.AppendUnique( LIBPATH=[ env['zlib']+'/lib']     )
-  conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' )
+  if not conf.CheckLibWithHeaderFlags( 'z', 'zlib.h', 'CXX' ):
+    warnings.warn( '  Warning: Could not enable zlib.' )
 
 # enable HDF5 if available
 if env['hdf5'] != False:
@@ -87,6 +88,8 @@ if env['hdf5'] != False:
     env.AppendUnique( LIBPATH=[ env['hdf5']+'/lib']     )
   if conf.CheckLibWithHeaderFlags( 'hdf5' ) and conf.CheckLibWithHeaderFlags( 'hdf5_hl' ):
     env.AppendUnique( CPPDEFINES = ['PP_HAS_HDF5'] )
+  else:
+    warnings.warn( '  Warning: Could not enable HDF5.' )
 
 # forward MOAB
 if env['moab'] != False:
@@ -102,8 +105,7 @@ if env['moab'] != False:
   conf.CheckLibWithHeaderFlags( 'ifcore' )
 
   if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
-    warnings.warn( 'Warning: Could not find MOAB.' )
-    exit(1)
+    warnings.warn( '  Warning: Could not enable MOAB.' )
 
 # forward EDGE-V
 if env['edge_v'] != False:
@@ -112,9 +114,8 @@ if env['edge_v'] != False:
     env.AppendUnique( CPPPATH=[ env['edge_v']+'/include/third'] )
     env.AppendUnique( LIBPATH=[ env['edge_v']+'/lib']     )
 
-  conf.CheckLibWithHeaderFlags( 'edge_v', 'edge_v/edge_v.h' )
-else:
-  warnings.warn( 'Warning: Could not find EDGE-V. There is no fallback in place.' )
+  if not conf.CheckLibWithHeaderFlags( 'edge_v', 'edge_v/edge_v.h' ):
+    warnings.warn( '  Warning: Could not enable EDGE-V.' )
 
 # create visit writer separately to get around "format string" warnings
 env.sources.append( env.Object( 'visit_writer/visit_writer.cpp',
