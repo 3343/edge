@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
@@ -346,7 +346,7 @@ class edge::seismic::kernels::SurfIntVanilla: public edge::seismic::kernels::Sur
       if( TL_N_RMS > 0 ) {
         // anelastic flux solver
         m_mm.m_kernels[1][0]( i_fsA,
-                              o_scratch[0][0][0],
+                              l_tDofsFiE,
                               o_scratch[1][0][0] );
 
         // transposed face integration matrix
