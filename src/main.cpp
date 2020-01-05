@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -85,8 +85,8 @@ int main( int i_argc, char *i_argv[] ) {
   l_shared.init();
 
   // init MPI
-  edge::parallel::MpiRemix l_mpiRemix( i_argc,
-                                       i_argv );
+  edge::parallel::MpiRemix l_distributed( i_argc,
+                                          i_argv );
 
   // reconfigure the logging interface with rank and thread id
   edge::io::logging::config();
@@ -110,7 +110,7 @@ int main( int i_argc, char *i_argv[] ) {
 
 #ifdef PP_USE_MPI
   EDGE_LOG_INFO << "our mpi settings:";
-  EDGE_LOG_INFO << "  standard-version " << l_mpiRemix.getVerStr();
+  EDGE_LOG_INFO << "  standard-version " << l_distributed.getVerStr();
   EDGE_LOG_INFO << "  #ranks: "          << edge::parallel::g_nRanks;
 #endif
 
@@ -281,8 +281,8 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
     l_tgs.push_back( edge::time::TimeGroupStatic( l_edgeV.nTgs(),
                                                   l_tg,
                                                   l_internal,
-                                                  l_mpiRemix.getSendPtrs(),
-                                                  l_mpiRemix.getRecvPtrs() ) );
+                                                  l_distributed.getSendPtrs(),
+                                                  l_distributed.getRecvPtrs() ) );
   }
 
   EDGE_LOG_INFO << "time step stats coming thru (min,ave,max): "
@@ -295,7 +295,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   }
   edge::time::Manager l_time( l_edgeV.getRelDt()[0]*l_dtG[0],
                               l_shared,
-                              l_mpiRemix,
+                              l_distributed,
                               l_tgs,
                               l_receivers );
 
@@ -411,7 +411,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
   EDGE_LOG_INFO << "that was fun: EDGE over and out!";
 
   // stop MPI
-  l_mpiRemix.fin();
+  l_distributed.fin();
 
   // print duration of finalizaiton
   l_timer.end();

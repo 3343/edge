@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
@@ -86,16 +86,16 @@
   l_internal.m_globalShared6[2] = l_raw + 2*l_edgeV.nEls();
 }
 
-l_mpiRemix.init( l_edgeV.nTgs(),
-                 C_ENT[T_SDISC.ELEMENT].N_FACES,
-                 l_edgeV.nEls(),
-                 N_QUANTITIES*N_FACE_MODES*N_CRUNS*sizeof(real_base),
-                 l_edgeV.getCommStruct(),
-                 l_edgeV.getSendFa(),
-                 l_edgeV.getSendEl(),
-                 l_edgeV.getRecvFa(),
-                 l_edgeV.getRecvEl(),
-                 l_dynMem );
+l_distributed.init( l_edgeV.nTgs(),
+                    C_ENT[T_SDISC.ELEMENT].N_FACES,
+                    l_edgeV.nEls(),
+                    N_QUANTITIES*N_FACE_MODES*N_CRUNS*sizeof(real_base),
+                    l_edgeV.getCommStruct(),
+                    l_edgeV.getSendFa(),
+                    l_edgeV.getSendEl(),
+                    l_edgeV.getRecvFa(),
+                    l_edgeV.getRecvEl(),
+                    l_dynMem );
 
 // parse config specific to elastics
 edge::seismic::io::Config l_seismicConf( l_config.m_doc );
@@ -243,10 +243,10 @@ t_bgPars *l_bgParsIn  = new t_bgPars[l_edgeV.nCommElFa()];
     l_bgParsOut[l_co] = l_internal.m_elementShared1[l_el][0];
   }
 
-  l_mpiRemix.syncData( 0,
-                       sizeof(t_bgPars),
-                       (unsigned char *) l_bgParsOut,
-                       (unsigned char *) l_bgParsIn );
+  l_distributed.syncData( 0,
+                          sizeof(t_bgPars),
+                          (unsigned char *) l_bgParsOut,
+                          (unsigned char *) l_bgParsIn );
   delete[] l_bgParsOut;
 }
 

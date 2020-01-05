@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -43,16 +43,16 @@
 }
 
 #ifdef PP_USE_MPI
-  l_mpiRemix.init( l_edgeV.nTgs(),
-                   C_ENT[T_SDISC.ELEMENT].N_FACES,
-                   l_edgeV.nEls(),
-                   N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
-                   l_edgeV.getCommStruct(),
-                   l_edgeV.getSendFa(),
-                   l_edgeV.getSendEl(),
-                   l_edgeV.getRecvFa(),
-                   l_edgeV.getRecvEl(),
-                   l_dynMem );
+  l_distributed.init( l_edgeV.nTgs(),
+                      C_ENT[T_SDISC.ELEMENT].N_FACES,
+                      l_edgeV.nEls(),
+                      N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base),
+                      l_edgeV.getCommStruct(),
+                      l_edgeV.getSendFa(),
+                      l_edgeV.getSendEl(),
+                      l_edgeV.getRecvFa(),
+                      l_edgeV.getRecvEl(),
+                      l_dynMem );
 #endif
 
 // setup shared memory parallelization
@@ -159,10 +159,10 @@ edge::advection::solvers::common::getTimeStepStatistics( l_edgeV.nEls(),
     l_bgParsOut[l_co] = l_internal.m_elementShared1[l_el][0];
   }
 
-  l_mpiRemix.syncData( 0,
-                       sizeof(t_bgPars),
-                       (unsigned char *) l_bgParsOut,
-                       (unsigned char *) l_bgParsIn );
+  l_distributed.syncData( 0,
+                          sizeof(t_bgPars),
+                          (unsigned char *) l_bgParsOut,
+                          (unsigned char *) l_bgParsIn );
   delete[] l_bgParsOut;
 
   edge::advection::solvers::common::setupSolvers( l_edgeV.nElsIn(),
