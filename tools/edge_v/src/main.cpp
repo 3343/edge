@@ -84,17 +84,17 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::io::Config l_config( l_xml );
   EDGE_V_LOG_INFO << "sharing runtime config:";
   EDGE_V_LOG_INFO << "  mesh:";
-  EDGE_V_LOG_INFO << "    periodic:         " << l_config.getPeriodic();
-  EDGE_V_LOG_INFO << "    annotations:      " << l_config.getWriteElAn();
-  EDGE_V_LOG_INFO << "    n_partitions:     " << l_config.nPartitions();
-  EDGE_V_LOG_INFO << "    in:               " << l_config.getMeshIn();
-  EDGE_V_LOG_INFO << "    out: ";
-  EDGE_V_LOG_INFO << "      base:           " << l_config.getMeshOutBase();
-  EDGE_V_LOG_INFO << "      extension:      " << l_config.getMeshOutExt();
+  EDGE_V_LOG_INFO << "    periodic:                  " << l_config.getPeriodic();
+  EDGE_V_LOG_INFO << "    write_element_annotations: " << l_config.getWriteElAn();
+  EDGE_V_LOG_INFO << "    n_partitions:              " << l_config.nPartitions();
+  EDGE_V_LOG_INFO << "    in:                        " << l_config.getMeshIn();
+  EDGE_V_LOG_INFO << "    out:";
+  EDGE_V_LOG_INFO << "      base:                    " << l_config.getMeshOutBase();
+  EDGE_V_LOG_INFO << "      extension:               " << l_config.getMeshOutExt();
   EDGE_V_LOG_INFO << "  velocity model:";
   if( l_config.getVelModSeismicExpr() != "" ) {
-    EDGE_V_LOG_INFO << "  seismic expression: ";
-    EDGE_V_LOG_INFO << "    " << l_config.getVelModSeismicExpr();
+    EDGE_V_LOG_INFO << "    seismic expression: ";
+    EDGE_V_LOG_INFO << "      " << l_config.getVelModSeismicExpr();
   }
   else {
     EDGE_V_LOG_INFO << "  constant";
