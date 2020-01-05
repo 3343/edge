@@ -28,17 +28,17 @@
 TEST_CASE( "Tests CVM-S4 queries via UCVM.", "[ucvm][cvms]" ) {
   // derivation of reference data
 #if 0
-[alex@fedalex ucvm-19.4.0]$ echo -e "-118 34 0\n-118 34 50\n-118 34 100\n-118 34 500\n-118 34 1000" |  ./bin/ucvm_query -f conf/ucvm.conf -m cvmsi
+[alex@fedalex ucvm-19.4.0]$ echo -e "-118 34 0\n-118 34 50\n-118 34 100\n-118 34 500\n-118 34 1000" |  ./bin/ucvm_query -f conf/ucvm.conf -m cvms
 Using Geo Depth coordinates as default mode.
- -118.0000    34.0000      0.000    281.668    468.400      cvmsi    696.491    213.000   1974.976       none      0.000      0.000      0.000      crust    696.491    213.000   1974.976
- -118.0000    34.0000     50.000    281.668    468.400      cvmsi   1669.540    548.000   2128.620       none      0.000      0.000      0.000      crust   1669.540    548.000   2128.620
- -118.0000    34.0000    100.000    281.668    468.400      cvmsi   1683.174    603.470   2130.773       none      0.000      0.000      0.000      crust   1683.174    603.470   2130.773
- -118.0000    34.0000    500.000    281.668    468.400      cvmsi   2701.216   1475.608   2354.105       none      0.000      0.000      0.000      crust   2701.216   1475.608   2354.105
- -118.0000    34.0000   1000.000    281.668    468.400      cvmsi   3330.909   1945.594   2443.042       none      0.000      0.000      0.000      crust   3330.909   1945.594   2443.042
+ -118.0000    34.0000      0.000    281.668    468.400       cvms    696.491    213.000   1974.976       none      0.000      0.000      0.000      crust    696.491    213.000   1974.976
+ -118.0000    34.0000     50.000    281.668    468.400       cvms   1669.540    548.000   2128.620       none      0.000      0.000      0.000      crust   1669.540    548.000   2128.620
+ -118.0000    34.0000    100.000    281.668    468.400       cvms   1683.174    603.470   2130.773       none      0.000      0.000      0.000      crust   1683.174    603.470   2130.773
+ -118.0000    34.0000    500.000    281.668    468.400       cvms   3097.562   1656.495   2354.105       none      0.000      0.000      0.000      crust   3097.562   1656.495   2354.105
+ -118.0000    34.0000   1000.000    281.668    468.400       cvms   3660.809   2056.628   2443.042       none      0.000      0.000      0.000      crust   3660.809   2056.628   2443.042
 #endif
 
   std::string l_cfg = PP_UCVM_CONF;
-  std::string l_models = "cvmsi";
+  std::string l_models = "cvms";
   std::string l_mode = "UCVM_COORD_GEO_DEPTH";
 
   double l_trafoSrc[3][3] = { {1, 0, 0},
@@ -76,14 +76,14 @@ Using Geo Depth coordinates as default mode.
   REQUIRE( l_vps[0] == Approx( 696.491) );
   REQUIRE( l_vps[1] == Approx(1669.540) );
   REQUIRE( l_vps[2] == Approx(1683.174) );
-  REQUIRE( l_vps[3] == Approx(2701.216) );
-  REQUIRE( l_vps[4] == Approx(3330.909) );
+  REQUIRE( l_vps[3] == Approx(3097.562) );
+  REQUIRE( l_vps[4] == Approx(3660.809) );
 
   REQUIRE( l_vss[0] == Approx(  213.000) );
   REQUIRE( l_vss[1] == Approx(  548.000) );
   REQUIRE( l_vss[2] == Approx(  603.470) );
-  REQUIRE( l_vss[3] == Approx( 1475.608) );
-  REQUIRE( l_vss[4] == Approx( 1945.594) );
+  REQUIRE( l_vss[3] == Approx( 1656.495) );
+  REQUIRE( l_vss[4] == Approx( 2056.628) );
 
   REQUIRE( l_rhos[0] == Approx(1974.976) );
   REQUIRE( l_rhos[1] == Approx(2128.620) );
