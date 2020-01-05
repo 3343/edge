@@ -183,10 +183,6 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
                                                                     i_periodic ) {
   edge_v::io::Hdf5 l_hdf( i_pathToMesh );
 
-  // get tag names
-  std::vector< std::string > l_tagNames;
-  m_moab.getTagNames( l_tagNames );
-
   // check if the the mesh is EDGE-V annotated for LTS
   unsigned short l_nLtsTags = 0;
   if( l_hdf.exists( "edge_v_n_time_group_elements_inner" ) ) l_nLtsTags++;
