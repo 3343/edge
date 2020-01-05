@@ -21,16 +21,10 @@
  * @section DESCRIPTION
  * Interface to UCVM.
  **/
-#ifndef EDGEV_IO_UCVM_H
-#define EDGEV_IO_UCVM_H
+#ifndef EDGE_V_IO_UCVM_H
+#define EDGE_V_IO_UCVM_H
 
-#include "io/logging.h"
 #include <string>
-
-extern "C" {
-#include <ucvm.h>
-}
-#include <proj_api.h>
 
 namespace edge_v {
   namespace io {

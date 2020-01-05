@@ -22,6 +22,11 @@
  * Interface to UCVM.
  **/
 #include "Ucvm.h"
+extern "C" {
+#include <ucvm.h>
+}
+#include <proj_api.h>
+#include "io/logging.h"
 
 edge_v::io::Ucvm::Ucvm( std::string const & i_config,
                         std::string const & i_models,
