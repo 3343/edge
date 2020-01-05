@@ -38,6 +38,9 @@ namespace edge {
  **/
 class edge::parallel::Distributed {
   protected:
+    //! max. version of the supported mpi-standard, 0: major, 1: minor
+    int m_verStd[2] = {0, 0};
+
     //! number of time groups
     std::size_t m_nTgs = 0;
 
@@ -76,6 +79,9 @@ class edge::parallel::Distributed {
       //! neighboring rank
       int rank;
 
+      //! tag of this message
+      int tag;
+
       //! size of the message in bytes
       std::size_t size;
 
@@ -113,6 +119,133 @@ class edge::parallel::Distributed {
                unsigned short const * i_recvFa,
                std::size_t    const * i_recvEl,
                data::Dynamic        & io_dynMem );
+
+    /**
+     * Checks if the send message of the given channel matches the time group and less-than requirement.
+     *
+     * @param i_ch communication channel.
+     * @param i_lt less-than relationship. If the message is less-than, than this argument has also be true for true return.
+     * @param i_tg time group.
+     * @return true if the conditions match, false if not.
+     **/
+    bool checkSendTgLt( std::size_t    i_ch,
+                        bool           i_lt,
+                        unsigned short i_tg ) const;
+
+    /**
+     * Checks if the recv message of the given channel matches the time group and less-than requirement.
+     *
+     * @param i_ch communication channel.
+     * @param i_lt less-than relationship. If the message is less-than, than this argument has also be true for true return.
+     * @param i_tg time group.
+     * @return true if the conditions match, false if not.
+     **/
+    bool checkRecvTgLt( std::size_t    i_ch,
+                        bool           i_lt,
+                        unsigned short i_tg ) const;
+
+  public:
+    /**
+     * Constructor which initializes MPI if available.
+     *
+     * @param i_argc number of command line parameters.
+     * @param i_argv values of command line parameters.
+     **/
+    Distributed( int    i_argc,
+                 char * i_argv[] );
+
+    /**
+     * Finalizes MPI if initialized.
+     **/
+    void fin();
+
+    /**
+     * Gets the maximum version of the support MPI standard as a string.
+     *
+     * @return max MPI version.
+     **/
+    std::string getVerStr();
+
+    /**
+     * Initiates the sends for the given time group.
+     *
+     * @param i_lt if true sends are also issued for less-than LTS relations.
+     * @param i_tg time group for which data is send.
+     **/
+    virtual void beginSends( bool           i_lt,
+                             unsigned short i_tg ) = 0;
+
+    /**
+     * Initiates the receives for the given time group.
+     *
+     * @param i_lt if true receives are also issued for less-than LTS relations.
+     * @param i_tg time group for which data is received.
+     **/
+    virtual void beginRecvs( bool           i_lt,
+                             unsigned short i_tg ) = 0;
+
+    /**
+     * Progresses communication.
+     **/
+    virtual void comm() = 0;
+
+    /**
+     * Checks if all sends for the specified time group are finished.
+     *
+     * @param i_lt if true if sends for regions in less-than LTS relations should also be checked.
+     * @param i_tg time group for which the sends are checked.
+     * @return true if all sends are finished, false if sends are ongoing.
+     **/
+    virtual bool finSends( bool           i_lt,
+                           unsigned short i_tg ) const = 0;
+
+    /**
+     * Checks if all receives for the specified time group are finished.
+     *
+     * @param i_lt if true if receives for regions in less-than LTS relations should also be checked.
+     * @param i_tg time group for which the receives are checked.
+     * @return true if all receives are finished, false if receives are ongoing.
+     **/
+    virtual bool finRecvs( bool           i_lt,
+                           unsigned short i_tg ) const = 0;
+
+    /**
+     * Gets the pointers to the send buffer.
+     *
+     * @return send pointers.
+     **/
+    unsigned char ** getSendPtrs() { return m_sendPtrs; }
+
+    /**
+     * Gets the pointers to the receive buffer.
+     *
+     * @return receive pointers.
+     **/
+    unsigned char ** getRecvPtrs() { return m_recvPtrs; }
+
+    /**
+     * Determines, if the calling rank holds the minimum for the values
+     *
+     * @param i_nVals number of values.
+     * @param i_vals values.
+     * @param o_min 1 if rank is holds minimum, 0 otherwise.
+     */
+    static void min( std::size_t      i_nVals,
+                     double         * i_vals,
+                     unsigned short * o_min );
+
+    /**
+     * Syncs the given data according to the communication structure.
+     *
+     * @param i_nByChs number of bytes for every channels (excluding face-data below).
+     * @param i_nByFa number of bytes for every communicating face.
+     * @param i_sendData data of the communicating faces, which will be send to adjacent ranks.
+     * @param i_recvData data of the adjacent communicating faces, which will be received from adjacent ranks.
+     **/
+    void syncData( std::size_t           i_nByCh,
+                   std::size_t           i_nByFa,
+                   unsigned char const * i_sendData,
+                   unsigned char       * o_recvData );
 };
 
 #endif

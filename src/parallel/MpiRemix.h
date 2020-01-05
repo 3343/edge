@@ -41,18 +41,6 @@ namespace edge {
  **/
 class edge::parallel::MpiRemix: public Distributed {
   protected:
-    //! max. version of the supported mpi-standard, 0: major, 1: minor
-    int m_verStd[2] = {0, 0};
-
-    //! communicator
-    MPI_Comm m_comm;
-
-    //! send tags
-    int *m_sendTags = nullptr;
-
-    //! receive tags
-    int *m_recvTags = nullptr;
-
     //! send test flags
     volatile int *m_sendTests = nullptr;
 
@@ -68,41 +56,13 @@ class edge::parallel::MpiRemix: public Distributed {
     //! number of iterations used in the message progression
     std::size_t m_nIterComm = 0;
 
-    /**
-     * Checks if the send message of the given channel matches the time group and less-than requirement.
-     *
-     * @param i_ch communication channel.
-     * @param i_lt less-than relationship. If the message is less-than, than this argument has also be true for true return.
-     * @param i_tg time group.
-     * @return true if the conditions match, false if not.
-     **/
-    bool checkSendTgLt( std::size_t    i_ch,
-                        bool           i_lt,
-                        unsigned short i_tg ) const;
-
-    /**
-     * Checks if the recv message of the given channel matches the time group and less-than requirement.
-     *
-     * @param i_ch communication channel.
-     * @param i_lt less-than relationship. If the message is less-than, than this argument has also be true for true return.
-     * @param i_tg time group.
-     * @return true if the conditions match, false if not.
-     **/
-    bool checkRecvTgLt( std::size_t    i_ch,
-                        bool           i_lt,
-                        unsigned short i_tg ) const;
-
   public:
     /**
-     * Determines, if the calling rank holds the minimum for the values
-     *
-     * @param i_nVals number of values.
-     * @param i_vals values.
-     * @param o_min 1 if rank is holds minimum, 0 otherwise.
-     */
-    static void min( std::size_t      i_nVals,
-                     double         * i_vals,
-                     unsigned short * o_min );
+     * Constructor.
+     **/
+    MpiRemix( int    i_argc,
+              char * i_argv[] ): Distributed( i_argc,
+                                              i_argv ){};
 
     /**
      * Initializes the MPI communication structure.
@@ -130,32 +90,6 @@ class edge::parallel::MpiRemix: public Distributed {
                std::size_t    const * i_recvEl,
                data::Dynamic        & io_dynMem,
                std::size_t            i_nIterComm = 100 );
-
-    /**
-     * Destructor.
-     **/
-    ~MpiRemix(){};
-
-    /**
-     * Initializes MPI.
-     *
-     * @param i_argc number of command line parameters.
-     * @param i_argv values of command line parameters.
-     **/
-    MpiRemix( int    i_argc,
-              char * i_argv[] );
-
-    /**
-     * Gets the maximum version of the support MPI standard as a string.
-     *
-     * @return max MPI version.
-     **/
-    std::string getVerStr();
-
-    /**
-     * Finalizes MPI.
-     **/
-    void fin();
 
     /**
      * Calls MPI to initiate the sends for the given time group.
@@ -199,33 +133,6 @@ class edge::parallel::MpiRemix: public Distributed {
      **/
     bool finRecvs( bool           i_lt,
                    unsigned short i_tg ) const;
-
-    /**
-     * Gets the pointers to the send buffer.
-     *
-     * @return send pointers.
-     **/
-    unsigned char ** getSendPtrs() { return m_sendPtrs; }
-
-    /**
-     * Gets the pointers to the receive buffer.
-     *
-     * @return receive pointers.
-     **/
-    unsigned char ** getRecvPtrs() { return m_recvPtrs; }
-
-    /**
-     * Syncs the given data according to the communication structure.
-     *
-     * @param i_nByChs number of bytes for every channels (excluding face-data below).
-     * @param i_nByFa number of bytes for every communicating face.
-     * @param i_sendData data of the communicating faces, which will be send to adjacent ranks.
-     * @param i_recvData data of the adjacent communicating faces, which will be received from adjacent ranks.
-     **/
-    void syncData( std::size_t           i_nByCh,
-                   std::size_t           i_nByFa,
-                   unsigned char const * i_sendData,
-                   unsigned char       * o_recvData );
 };
 
 #endif

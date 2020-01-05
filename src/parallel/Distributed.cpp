@@ -22,6 +22,72 @@
  * Basic interface for distributed memory parallelizations.
  **/
 #include "Distributed.h"
+#ifdef PP_USE_MPI
+#include "mpi_wrapper.inc"
+#endif
+
+edge::parallel::Distributed::Distributed( int    i_argc,
+                                          char * i_argv[] ) {
+      // set default values for non-mpi runs
+      g_nRanks = 1;
+      g_rank = 0;
+      g_rankStr = std::to_string(0);
+#ifdef PP_USE_MPI
+      // initialize MPI, get size and rank
+      if( g_nThreads == 1 ) {
+        MPI_Init( &i_argc,
+                  &i_argv );
+      }
+      else {
+        int l_tdSu;
+        MPI_Init_thread( &i_argc,
+                         &i_argv,
+                         MPI_THREAD_SERIALIZED,
+                         &l_tdSu );
+        // ensure the required threading support of MPI
+        EDGE_CHECK( l_tdSu == MPI_THREAD_SERIALIZED );
+      }
+      MPI_Comm_size ( MPI_COMM_WORLD, &g_nRanks );
+      MPI_Comm_rank( MPI_COMM_WORLD, &g_rank );
+      MPI_Get_version( m_verStd, m_verStd+1 );
+      g_rankStr = std::to_string( g_rank );
+#endif
+}
+
+void edge::parallel::Distributed::fin() {
+#ifdef PP_USE_MPI
+      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Finalize();
+#endif
+}
+
+std::string edge::parallel::Distributed::getVerStr() {
+  return std::to_string( m_verStd[0] ) + "." + std::to_string( m_verStd[1] );
+}
+
+bool edge::parallel::Distributed::checkSendTgLt( std::size_t    i_ch,
+                                                 bool           i_lt,
+                                                 unsigned short i_tg ) const {
+  // message's time group has to match
+  bool l_match = (m_sendMsgs[i_ch].tg == i_tg);
+  // either message is greater-equal or less-than was requested
+  if( m_sendMsgs[i_ch].lt ) {
+    l_match = l_match && i_lt;
+  }
+  return l_match;
+}
+
+bool edge::parallel::Distributed::checkRecvTgLt( std::size_t    i_ch,
+                                                 bool           i_lt,
+                                                 unsigned short i_tg ) const {
+  // message's time group has to match
+  bool l_match = (m_recvMsgs[i_ch].tg == i_tg);
+  // either message is greater-equal or less-than was requested
+  if( m_recvMsgs[i_ch].lt ) {
+    l_match = l_match && i_lt;
+  }
+  return l_match;
+}
 
 void edge::parallel::Distributed::init( unsigned short         i_nTgs,
                                         unsigned short         i_nElFas,
@@ -97,12 +163,14 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
     m_sendMsgs[l_ch].lt      = (l_tg < l_tgAd);
     m_sendMsgs[l_ch].tg      = l_tg;
     m_sendMsgs[l_ch].rank    = l_raAd;
+    m_sendMsgs[l_ch].tag     = l_tg*i_nTgs + l_tgAd;
     m_sendMsgs[l_ch].size    = l_sizeSend;
     m_sendMsgs[l_ch].offL    = l_offSend;
 
     m_recvMsgs[l_ch].lt      = (l_tg < l_tgAd);
     m_recvMsgs[l_ch].tg      = l_tg;
     m_recvMsgs[l_ch].rank    = l_raAd;
+    m_recvMsgs[l_ch].tag     = l_tgAd*i_nTgs + l_tg;
     m_recvMsgs[l_ch].size    = l_sizeRecv;
     m_recvMsgs[l_ch].offL    = l_offRecv;
 
@@ -120,4 +188,92 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
     }
     l_first += l_nSeRe;
   }
+}
+
+void edge::parallel::Distributed::min( std::size_t      i_nVals,
+                                       double         * i_vals,
+                                       unsigned short * o_min ){
+  // initialize to true
+  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ )
+    o_min[l_va] = 1;
+
+#ifdef PP_USE_MPI
+  // global min variables
+  std::vector< double > l_gVals;
+  l_gVals.resize( i_nVals );
+
+  // determine minimum values
+  MPI_Allreduce( i_vals, &l_gVals[0], i_nVals, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+
+  std::vector< int > l_bidsIn( i_nVals );
+  std::vector< int > l_bidsOut( i_nVals );
+
+  // perform bidding
+  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ ) {
+    // bid on the variable, if we match the minimum
+    if( i_vals[l_va] == l_gVals[l_va] )
+      l_bidsIn[l_va] = parallel::g_rank;
+    else
+      l_bidsIn[l_va] = std::numeric_limits< int >::max();
+  }
+
+  // determine minimum bidding rank
+  MPI_Allreduce( &l_bidsIn[0], &l_bidsOut[0], i_nVals, MPI_INT, MPI_MIN, MPI_COMM_WORLD );
+
+  // update results, if we won the bid
+  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ )
+    if( l_bidsOut[l_va] != parallel::g_rank ) o_min[l_va] = 0;
+#endif
+}
+
+void edge::parallel::Distributed::syncData( std::size_t           i_nByCh,
+                                            std::size_t           i_nByFa,
+                                            unsigned char const * i_sendData,
+                                            unsigned char       * o_recvData ) {
+#ifdef PP_USE_MPI
+  MPI_Request * l_sendReqs = new MPI_Request[ m_nChs ];
+  MPI_Request * l_recvReqs = new MPI_Request[ m_nChs ];
+
+  unsigned char const * l_sendPtr = i_sendData;
+  unsigned char       * l_recvPtr = o_recvData;
+
+  // issue communication
+  for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
+    std::size_t l_size = m_nSeRe[l_ch] * i_nByFa + i_nByCh;
+
+    int l_err = MPI_Irecv( l_recvPtr,
+                           l_size,
+                           MPI_BYTE,
+                           m_recvMsgs[l_ch].rank,
+                           m_recvMsgs[l_ch].tag,
+                           MPI_COMM_WORLD,
+                           l_recvReqs+l_ch );
+    EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+    l_err = MPI_Isend( l_sendPtr,
+                       l_size,
+                       MPI_BYTE,
+                       m_sendMsgs[l_ch].rank,
+                       m_sendMsgs[l_ch].tag,
+                       MPI_COMM_WORLD,
+                       l_sendReqs+l_ch );
+    EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+    l_sendPtr += l_size;
+    l_recvPtr += l_size;
+  }
+
+  // wait for communication to finish
+  int l_err = MPI_Waitall( m_nChs,
+                           l_recvReqs,
+                           MPI_STATUSES_IGNORE );
+  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+  l_err = MPI_Waitall( m_nChs,
+                       l_sendReqs,
+                       MPI_STATUSES_IGNORE );
+  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+  delete[] l_sendReqs;
+  delete[] l_recvReqs;
+#endif
 }

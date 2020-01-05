@@ -25,74 +25,6 @@
 #include "io/logging.h"
 #include "global.h"
 
-void edge::parallel::MpiRemix::min( std::size_t      i_nVals,
-                                    double         * i_vals,
-                                    unsigned short * o_min ){
-  // initialize to true
-  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ )
-    o_min[l_va] = 1;
-
-#ifdef PP_USE_MPI
-  // global min variables
-  std::vector< double > l_gVals;
-  l_gVals.resize( i_nVals );
-
-  // determine minimum values
-  MPI_Allreduce( i_vals, &l_gVals[0], i_nVals, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
-
-  std::vector< int > l_bidsIn( i_nVals );
-  std::vector< int > l_bidsOut( i_nVals );
-
-  // perform bidding
-  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ ) {
-    // bid on the variable, if we match the minimum
-    if( i_vals[l_va] == l_gVals[l_va] )
-      l_bidsIn[l_va] = parallel::g_rank;
-    else
-      l_bidsIn[l_va] = std::numeric_limits< int >::max();
-  }
-
-  // determine minimum bidding rank
-  MPI_Allreduce( &l_bidsIn[0], &l_bidsOut[0], i_nVals, MPI_INT, MPI_MIN, MPI_COMM_WORLD );
-
-  // update results, if we won the bid
-  for( std::size_t l_va = 0; l_va < i_nVals; l_va++ )
-    if( l_bidsOut[l_va] != parallel::g_rank ) o_min[l_va] = 0;
-#endif
-}
-
-bool edge::parallel::MpiRemix::checkSendTgLt( std::size_t    i_ch,
-                                              bool           i_lt,
-                                              unsigned short i_tg ) const {
-#ifdef PP_USE_MPI
-  // message's time group has to match
-  bool l_match = (m_sendMsgs[i_ch].tg == i_tg);
-  // either message is greater-equal or less-than was requested
-  if( m_sendMsgs[i_ch].lt ) {
-    l_match = l_match && i_lt;
-  }
-  return l_match;
-#else
-  return true;
-#endif
-}
-
-bool edge::parallel::MpiRemix::checkRecvTgLt( std::size_t    i_ch,
-                                              bool           i_lt,
-                                              unsigned short i_tg ) const {
-#ifdef PP_USE_MPI
-  // message's time group has to match
-  bool l_match = (m_recvMsgs[i_ch].tg == i_tg);
-  // either message is greater-equal or less-than was requested
-  if( m_recvMsgs[i_ch].lt ) {
-    l_match = l_match && i_lt;
-  }
-  return l_match;
-#else
-  return true;
-#endif
-}
-
 void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
                                      unsigned short         i_nElFas,
                                      std::size_t            i_nEls,
@@ -120,63 +52,16 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
   m_nIterComm = i_nIterComm;
 
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
-    std::size_t l_tg    = i_commStruct[1 + l_ch*4 + 0];
-    std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
-
-    m_sendTags[l_ch]  = l_tg*i_nTgs + l_tgAd;
     m_sendTests[l_ch] = 0;
     m_sendReqs[l_ch]  = MPI_REQUEST_NULL;
 
-    m_recvTags[l_ch]  = l_tgAd*i_nTgs + l_tg;
     m_recvTests[l_ch] = 0;
     m_recvReqs[l_ch]  = MPI_REQUEST_NULL;
   }
 }
 
-edge::parallel::MpiRemix::MpiRemix( int    i_argc,
-                                    char * i_argv[] ) {
-      // set default values for non-mpi runs
-      g_nRanks = 1;
-      g_rank = 0;
-      g_rankStr = std::to_string(0);
-#ifdef PP_USE_MPI
-      m_comm = MPI_COMM_WORLD;
-
-      // initialize MPI, get size and rank
-      if( g_nThreads == 1 ) {
-        MPI_Init( &i_argc,
-                  &i_argv );
-      }
-      else {
-        int l_tdSu;
-        MPI_Init_thread( &i_argc,
-                         &i_argv,
-                         MPI_THREAD_SERIALIZED,
-                         &l_tdSu );
-        // ensure the required threading support of MPI
-        EDGE_CHECK( l_tdSu == MPI_THREAD_SERIALIZED );
-      }
-      MPI_Comm_size ( m_comm, &g_nRanks );
-      MPI_Comm_rank( m_comm, &g_rank );
-      MPI_Get_version( m_verStd, m_verStd+1 );
-      g_rankStr = std::to_string( g_rank );
-#endif
-}
-
-std::string edge::parallel::MpiRemix::getVerStr() {
-  return std::to_string( m_verStd[0] ) + "." + std::to_string( m_verStd[1] );
-}
-
-void edge::parallel::MpiRemix::fin() {
-#ifdef PP_USE_MPI
-      MPI_Barrier(m_comm);
-      MPI_Finalize();
-#endif
-}
-
 void edge::parallel::MpiRemix::beginSends( bool           i_lt,
                                            unsigned short i_tg ) {
-#ifdef PP_USE_MPI
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     // only send if the message's time group matches
     bool l_match = checkSendTgLt( l_ch,
@@ -189,19 +74,17 @@ void edge::parallel::MpiRemix::beginSends( bool           i_lt,
                              m_sendMsgs[l_ch].size,
                              MPI_BYTE,
                              m_sendMsgs[l_ch].rank,
-                             m_sendTags[l_ch],
-                             m_comm,
+                             m_sendMsgs[l_ch].tag,
+                             MPI_COMM_WORLD,
                              &m_sendReqs[l_ch] );
       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
       m_sendTests[l_ch] = 0;
     }
   }
-#endif
 }
 
 void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
                                            unsigned short i_tg ) {
-#ifdef PP_USE_MPI
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     bool l_match = checkRecvTgLt( l_ch,
                                   i_lt,
@@ -213,18 +96,16 @@ void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
                              m_recvMsgs[l_ch].size,
                              MPI_BYTE,
                              m_recvMsgs[l_ch].rank,
-                             m_recvTags[l_ch],
-                             m_comm,
+                             m_recvMsgs[l_ch].tag,
+                             MPI_COMM_WORLD,
                              &m_recvReqs[l_ch] );
       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
       m_recvTests[l_ch] = 0;
     }
   }
-#endif
 }
 
 void edge::parallel::MpiRemix::comm() {
-#ifdef PP_USE_MPI
   for( std::size_t l_it = 0; l_it < m_nIterComm; l_it++ ) {
     std::size_t l_nFinSend = 0;
     std::size_t l_nFinRecv = 0;
@@ -260,12 +141,10 @@ void edge::parallel::MpiRemix::comm() {
     // abort early if everything is finished already
     if( l_nFinSend == m_nChs && l_nFinRecv == m_nChs ) break;
   }
-#endif
 }
 
 bool edge::parallel::MpiRemix::finSends( bool           i_lt,
                                          unsigned short i_tg ) const {
-#ifdef PP_USE_MPI
   // iterate over send messages of the time group
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     bool l_match = checkSendTgLt( l_ch,
@@ -274,14 +153,12 @@ bool edge::parallel::MpiRemix::finSends( bool           i_lt,
 
     if( l_match && m_sendTests[l_ch] != 1 ) return false;
   }
-#endif
 
   return true;
 }
 
 bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
                                          unsigned short i_tg ) const {
-#ifdef PP_USE_MPI
   // iterate over recv messages of the time group
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     bool l_match = checkRecvTgLt( l_ch,
@@ -290,59 +167,6 @@ bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
 
     if( l_match && m_recvTests[l_ch] != 1 ) return false;
   }
-#endif
 
   return true;
-}
-
-void edge::parallel::MpiRemix::syncData( std::size_t           i_nByCh,
-                                         std::size_t           i_nByFa,
-                                         unsigned char const * i_sendData,
-                                         unsigned char       * o_recvData ) {
-#ifdef PP_USE_MPI
-  MPI_Request * l_sendReqs = new MPI_Request[ m_nChs ];
-  MPI_Request * l_recvReqs = new MPI_Request[ m_nChs ];
-
-  unsigned char const * l_sendPtr = i_sendData;
-  unsigned char       * l_recvPtr = o_recvData;
-
-  // issue communication
-  for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
-    std::size_t l_size = m_nSeRe[l_ch] * i_nByFa + i_nByCh;
-
-    int l_err = MPI_Irecv( l_recvPtr,
-                           l_size,
-                           MPI_BYTE,
-                           m_recvMsgs[l_ch].rank,
-                           m_recvTags[l_ch],
-                           m_comm,
-                           l_recvReqs+l_ch );
-    EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-
-    l_err = MPI_Isend( l_sendPtr,
-                       l_size,
-                       MPI_BYTE,
-                       m_sendMsgs[l_ch].rank,
-                       m_sendTags[l_ch],
-                       m_comm,
-                       l_sendReqs+l_ch );
-    EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-
-    l_sendPtr += l_size;
-    l_recvPtr += l_size;
-  }
-
-  // wait for communication to finish
-  int l_err = MPI_Waitall( m_nChs,
-                           l_recvReqs,
-                           MPI_STATUSES_IGNORE );
-  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-  l_err = MPI_Waitall( m_nChs,
-                       l_sendReqs,
-                       MPI_STATUSES_IGNORE );
-  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-
-  delete[] l_sendReqs;
-  delete[] l_recvReqs;
-#endif
 }

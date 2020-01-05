@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -39,12 +39,12 @@ void edge::time::Manager::schedule() {
 
 edge::time::Manager::Manager( double                            i_dt,
                               parallel::Shared                & i_shared,
-                              parallel::MpiRemix              & i_mpi,
+                              parallel::Distributed           & i_distributed,
                               std::vector< TimeGroupStatic  > & i_timeGroups,
-                              io::Receivers                   & i_recvs ): m_dTfun(  i_dt     ),
-                                                                           m_shared( i_shared ),
-                                                                           m_mpi(    i_mpi    ),
-                                                                           m_recvs(  i_recvs  ) {
+                              io::Receivers                   & i_recvs ): m_dTfun(       i_dt          ),
+                                                                           m_shared(      i_shared      ),
+                                                                           m_distributed( i_distributed ),
+                                                                           m_recvs(       i_recvs       ) {
   for( std::size_t l_tg = 0; l_tg < i_timeGroups.size(); l_tg++ ) {
     m_timeGroups.push_back( &i_timeGroups[l_tg] );
   }
@@ -88,7 +88,7 @@ bool edge::time::Manager::getTimePredConsumed( unsigned short i_tg ) {
 }
 
 void edge::time::Manager::communicate() {
-  m_mpi.comm();
+  m_distributed.comm();
 }
 
 void edge::time::Manager::compute() {

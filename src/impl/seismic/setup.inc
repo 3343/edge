@@ -243,7 +243,8 @@ t_bgPars *l_bgParsIn  = new t_bgPars[l_edgeV.nCommElFa()];
     l_bgParsOut[l_co] = l_internal.m_elementShared1[l_el][0];
   }
 
-  l_mpiRemix.syncData( sizeof(t_bgPars),
+  l_mpiRemix.syncData( 0,
+                       sizeof(t_bgPars),
                        (unsigned char *) l_bgParsOut,
                        (unsigned char *) l_bgParsIn );
   delete[] l_bgParsOut;

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -25,7 +25,7 @@
 #ifndef EDGE_TIME_MANAGER_H
 #define EDGE_TIME_MANAGER_H
 
-#include "parallel/MpiRemix.h"
+#include "parallel/Distributed.h"
 #include "parallel/Shared.h"
 #include "constants.hpp"
 #include "io/Receivers.h"
@@ -46,8 +46,8 @@ class edge::time::Manager {
     //! shared memory parallelization
     parallel::Shared & m_shared;
 
-    //! mpi parallelization
-    parallel::MpiRemix & m_mpi;
+    //! distributed memory parallelization
+    parallel::Distributed & m_distributed;
 
     //! receiver output
     io::Receivers & m_recvs;
@@ -98,15 +98,15 @@ class edge::time::Manager {
      *
      * @param i_dt fundamental time step.
      * @param i_shared shared memory parallelization.
-     * @param i_mpi mpi parallelization.
+     * @param i_distributed distributed memory parallelization.
      * @param i_timeGroups time groups
      * @param i_recvs modal receivers.
      **/
-    Manager( double                               i_dt,
-             parallel::Shared                   & i_shared,
-             parallel::MpiRemix                 & i_mpi,
-             std::vector< TimeGroupStatic >     & i_timeGroups,
-             io::Receivers                      & i_recvs );
+    Manager( double                           i_dt,
+             parallel::Shared               & i_shared,
+             parallel::Distributed          & i_distributed,
+             std::vector< TimeGroupStatic > & i_timeGroups,
+             io::Receivers                  & i_recvs );
 
     /**
      * Destructor.

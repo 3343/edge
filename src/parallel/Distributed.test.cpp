@@ -22,8 +22,18 @@
  **/
 #include <catch.hpp>
 #define protected public
-#include "Distributed.h"
+
+#ifdef PP_USE_MPI
+#define PP_USE_MPI_TMP
+#undef PP_USE_MPI
+#endif
+
+#include "DistributedDummy.hpp"
 #undef protected
+
+#ifdef PP_USE_MPI_TMP
+#define PP_USE_MPI
+#endif
 
 TEST_CASE( "Tests the setup of distributed memory-related data structures.", "[Distributed][data]" ) {
   std::size_t l_commStruct[9] = {2, 0, 2, 4, 15, 3, 1, 1, 5};
@@ -50,7 +60,7 @@ TEST_CASE( "Tests the setup of distributed memory-related data structures.", "[D
 
   edge::data::Dynamic l_dynMem;
 
-  edge::parallel::Distributed l_dist;
+  edge::parallel::DistributedDummy l_dist( 0, nullptr );
   l_dist.init( 7,
                4,
                200,
