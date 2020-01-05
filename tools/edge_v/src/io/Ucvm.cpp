@@ -24,6 +24,7 @@
 #include "Ucvm.h"
 extern "C" {
 #include <ucvm.h>
+extern int ucvm_init_flag; // used as workaround for multiple objects of this class
 }
 #include <proj_api.h>
 #include "io/logging.h"
@@ -41,15 +42,22 @@ edge_v::io::Ucvm::Ucvm( std::string const & i_config,
   }
   else EDGE_V_LOG_FATAL;
 
-  // init UCVM, add models adn set parameters
-  int l_err = ucvm_init( i_config.c_str() );
-  EDGE_V_CHECK_EQ( l_err, UCVM_CODE_SUCCESS );
+  // only init UCVM once due to issues with finalize
+  if( !ucvm_init_flag ) {
+    // init UCVM, add models and set parameters
+    int l_err = ucvm_init( i_config.c_str() );
+    EDGE_V_CHECK_EQ( l_err, UCVM_CODE_SUCCESS );
 
-  l_err = ucvm_add_model_list( i_models.c_str() );
-  EDGE_V_CHECK_EQ( l_err, UCVM_CODE_SUCCESS );
+    l_err = ucvm_add_model_list( i_models.c_str() );
+    EDGE_V_CHECK_EQ( l_err, UCVM_CODE_SUCCESS );
 
-  l_err = ucvm_setparam( UCVM_PARAM_QUERY_MODE, l_crdMode );
-  EDGE_V_CHECK_EQ( l_err, UCVM_CODE_SUCCESS );
+    l_err = ucvm_setparam( UCVM_PARAM_QUERY_MODE, l_crdMode );
+    EDGE_V_CHECK_EQ( l_err, UCVM_CODE_SUCCESS );
+  }
+}
+
+edge_v::io::Ucvm::~Ucvm() {
+  // intentionally no ucvm_finalize due to memory errors of the lib
 }
 
 void edge_v::io::Ucvm::getVels( std::size_t          i_nPts,

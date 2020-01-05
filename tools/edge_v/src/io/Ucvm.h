@@ -39,6 +39,9 @@ class edge_v::io::Ucvm {
   public:
     /**
      * Constructor which initializes the UCVM interface.
+     *
+     * Note: Due to UCVM-limitations this constructor should only be called once
+     *       or with the same arguments at program runtime.
      * 
      * @param i_config path to the UCVM config.
      * @param i_models UCVM models.
@@ -47,6 +50,11 @@ class edge_v::io::Ucvm {
     Ucvm( std::string const & i_config,
           std::string const & i_models,
           std::string const & i_crdMode );
+
+    /**
+     * Destructor.
+     **/
+    ~Ucvm();
 
     /**
      * Get the velocities from UCVM.
