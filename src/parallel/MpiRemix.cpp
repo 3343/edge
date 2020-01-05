@@ -51,6 +51,14 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
   // init MPI-2 specifics
   m_nIterComm = i_nIterComm;
 
+  std::size_t l_testSize = m_nChs * sizeof( int );
+  m_sendTests = (int*) io_dynMem.allocate( l_testSize );
+  m_recvTests = (int*) io_dynMem.allocate( l_testSize );
+
+  std::size_t l_reqSize = m_nChs * sizeof( MPI_Request );
+  m_sendReqs = (MPI_Request*) io_dynMem.allocate( l_reqSize );
+  m_recvReqs = (MPI_Request*) io_dynMem.allocate( l_reqSize );
+
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     m_sendTests[l_ch] = 0;
     m_sendReqs[l_ch]  = MPI_REQUEST_NULL;
