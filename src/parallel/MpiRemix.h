@@ -28,8 +28,7 @@
 #include "mpi_wrapper.inc"
 #endif
 
-#include <cstddef>
-#include "data/Dynamic.h"
+#include "Distributed.h"
 
 namespace edge {
   namespace parallel {
@@ -40,82 +39,34 @@ namespace edge {
 /**
  * MPI interface.
  **/
-class edge::parallel::MpiRemix {
+class edge::parallel::MpiRemix: public Distributed {
   protected:
     //! max. version of the supported mpi-standard, 0: major, 1: minor
     int m_verStd[2] = {0, 0};
 
-#ifdef PP_USE_MPI
     //! communicator
     MPI_Comm m_comm;
 
-    //! number of time groups
-    std::size_t m_nTgs = 0;
+    //! send tags
+    int *m_sendTags = nullptr;
 
-    //! number of channels
-    std::size_t m_nChs = 0;
+    //! receive tags
+    int *m_recvTags = nullptr;
 
-    //! number of send-receive faces
-    std::size_t *m_nSeRe = nullptr;
+    //! send test flags
+    volatile int *m_sendTests = nullptr;
 
-    //! size of the send buffer
-    std::size_t m_sendBufferSize = 0;
+    //! receive test flags
+    volatile int *m_recvTests = nullptr;
 
-    //! send buffer
-    unsigned char * m_sendBuffer = nullptr;
+    //! send requests
+    MPI_Request *m_sendReqs = nullptr;
 
-    //! size of the receive buffer
-    std::size_t m_recvBufferSize = 0;
-
-    //! receive buffer
-    unsigned char * m_recvBuffer = nullptr;
-#endif
-
-    //! pointers into the send buffer
-    unsigned char ** m_sendPtrs = nullptr;
-
-    //! pointers into the receiver buffer
-    unsigned char ** m_recvPtrs = nullptr;
-
-    //! message structure
-    typedef struct {
-      //! true if message is part of a less-than LTS relation
-      bool lt;
-
-      //! local time group of this message
-      unsigned short tg;
-
-      //! neighboring rank
-      int rank;
-
-      //! mpi tag
-      int tag;
-
-      //! test flag
-      volatile int test;
-
-#ifdef PP_USE_MPI
-      //! MPI request
-      MPI_Request request;
-#endif
-
-      //! size of the message in bytes
-      std::size_t size;
-
-      //! offset of the message in local memory
-      std::size_t offL;
-    } t_msg;
-
-#ifdef PP_USE_MPI
-    //! send messages
-    t_msg * m_sendMsgs = nullptr;
-
-    //! receive messages
-    t_msg * m_recvMsgs = nullptr;
+    //! receive requests
+    MPI_Request *m_recvReqs = nullptr;
 
     //! number of iterations used in the message progression
     std::size_t m_nIterComm = 0;
-#endif
 
     /**
      * Checks if the send message of the given channel matches the time group and less-than requirement.

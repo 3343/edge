@@ -104,103 +104,33 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
                                      std::size_t    const * i_recvEl,
                                      data::Dynamic        & io_dynMem,
                                      std::size_t            i_nIterComm  ) {
-  m_nTgs = i_nTgs;
+  // call base init
+  Distributed::init( i_nTgs,
+                     i_nElFas,
+                     i_nEls,
+                     i_nByFa,
+                     i_commStruct,
+                     i_sendFa,
+                     i_sendEl,
+                     i_recvFa,
+                     i_recvEl,
+                     io_dynMem );
 
-#ifdef PP_USE_MPI
+  // init MPI-2 specifics
   m_nIterComm = i_nIterComm;
 
-  // derive the number of communication channels and communicating faces
-  if( i_commStruct != nullptr ) {
-    m_nChs = i_commStruct[0];
-  }
-  m_nSeRe = (std::size_t *) io_dynMem.allocate( m_nChs * sizeof(std::size_t) );
-
-  std::size_t l_sizeSend = 0;
-  std::size_t l_sizeRecv = 0;
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     std::size_t l_tg    = i_commStruct[1 + l_ch*4 + 0];
     std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
-    std::size_t l_nSeRe = i_commStruct[1 + l_ch*4 + 3];
-    m_nSeRe[l_ch] = l_nSeRe;
 
-    l_sizeSend += (l_tg > l_tgAd) ? 2 * l_nSeRe * i_nByFa : l_nSeRe * i_nByFa;
-    l_sizeRecv += (l_tg < l_tgAd) ? 2 * l_nSeRe * i_nByFa : l_nSeRe * i_nByFa;
+    m_sendTags[l_ch]  = l_tg*i_nTgs + l_tgAd;
+    m_sendTests[l_ch] = 0;
+    m_sendReqs[l_ch]  = MPI_REQUEST_NULL;
+
+    m_recvTags[l_ch]  = l_tgAd*i_nTgs + l_tg;
+    m_recvTests[l_ch] = 0;
+    m_recvReqs[l_ch]  = MPI_REQUEST_NULL;
   }
-
-  // allocate send and receive buffer
-  l_sizeSend *= sizeof(unsigned char);
-  l_sizeRecv *= sizeof(unsigned char);
-  m_sendBufferSize = l_sizeSend;
-  m_sendBuffer = (unsigned char*) io_dynMem.allocate( l_sizeSend );
-  m_recvBufferSize = l_sizeRecv;
-  m_recvBuffer = (unsigned char*) io_dynMem.allocate( l_sizeRecv );
-
-  // allocate pointer data structure
-  m_sendPtrs = (unsigned char**) io_dynMem.allocate( i_nEls * i_nElFas * sizeof(unsigned char*) );
-  m_recvPtrs = (unsigned char**) io_dynMem.allocate( i_nEls * i_nElFas * sizeof(unsigned char*) );
-
-  // init with null pointers (no communication)
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
-    for( unsigned short l_fa = 0; l_fa < i_nElFas; l_fa++ ) {
-      m_sendPtrs[ l_el*i_nElFas + l_fa ] = nullptr;
-      m_recvPtrs[ l_el*i_nElFas + l_fa ] = nullptr;
-    }
-  }
-
-  // init message structure and communication data
-  m_sendMsgs = (t_msg*) io_dynMem.allocate( m_nChs * sizeof(t_msg) );
-  m_recvMsgs = (t_msg*) io_dynMem.allocate( m_nChs * sizeof(t_msg) );
-
-  std::size_t l_offSend = 0;
-  std::size_t l_offRecv = 0;
-  std::size_t l_first = 0;
-  for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
-    // unpack channel: local time group, adjacent rank, adjacent time group, #comm faces
-    std::size_t l_tg    = i_commStruct[1 + l_ch*4 + 0];
-    std::size_t l_raAd  = i_commStruct[1 + l_ch*4 + 1];
-    std::size_t l_tgAd  = i_commStruct[1 + l_ch*4 + 2];
-    std::size_t l_nSeRe = i_commStruct[1 + l_ch*4 + 3];
-
-    l_sizeSend = (l_tg > l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
-    l_sizeRecv = (l_tg < l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
-
-    // assign
-    m_sendMsgs[l_ch].lt      = (l_tg < l_tgAd);
-    m_sendMsgs[l_ch].tg      = l_tg;
-    m_sendMsgs[l_ch].rank    = l_raAd;
-    m_sendMsgs[l_ch].tag     = l_tg*i_nTgs + l_tgAd;
-    m_sendMsgs[l_ch].size    = l_sizeSend;
-    m_sendMsgs[l_ch].offL    = l_offSend;
-    m_sendMsgs[l_ch].test    = 0;
-    m_sendMsgs[l_ch].request = MPI_REQUEST_NULL;
-
-    m_recvMsgs[l_ch].lt      = (l_tg < l_tgAd);
-    m_recvMsgs[l_ch].tg      = l_tg;
-    m_recvMsgs[l_ch].rank    = l_raAd;
-    m_recvMsgs[l_ch].tag     = l_tgAd*i_nTgs + l_tg;
-    m_recvMsgs[l_ch].size    = l_sizeRecv;
-    m_recvMsgs[l_ch].offL    = l_offRecv;
-    m_recvMsgs[l_ch].test    = 0;
-    m_recvMsgs[l_ch].request = MPI_REQUEST_NULL;
-
-    for( std::size_t l_co = 0; l_co < l_nSeRe; l_co++ ) {
-      std::size_t l_seFa = i_sendFa[l_first+l_co];
-      std::size_t l_seEl = i_sendEl[l_first+l_co];
-      std::size_t l_reFa = i_recvFa[l_first+l_co];
-      std::size_t l_reEl = i_recvEl[l_first+l_co];
-
-      m_sendPtrs[ l_seEl*i_nElFas + l_seFa ] = m_sendBuffer+l_offSend;
-      m_recvPtrs[ l_reEl*i_nElFas + l_reFa ] = m_recvBuffer+l_offRecv;
-
-      l_offSend += (l_tg > l_tgAd) ? i_nByFa * 2 : i_nByFa;
-      l_offRecv += (l_tg < l_tgAd) ? i_nByFa * 2 : i_nByFa;
-    }
-    l_first += l_nSeRe;
-  }
-#endif
 }
 
 edge::parallel::MpiRemix::MpiRemix( int    i_argc,
@@ -259,11 +189,11 @@ void edge::parallel::MpiRemix::beginSends( bool           i_lt,
                              m_sendMsgs[l_ch].size,
                              MPI_BYTE,
                              m_sendMsgs[l_ch].rank,
-                             m_sendMsgs[l_ch].tag,
+                             m_sendTags[l_ch],
                              m_comm,
-                             &m_sendMsgs[l_ch].request );
+                             &m_sendReqs[l_ch] );
       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-      m_sendMsgs[l_ch].test = 0;
+      m_sendTests[l_ch] = 0;
     }
   }
 #endif
@@ -283,11 +213,11 @@ void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
                              m_recvMsgs[l_ch].size,
                              MPI_BYTE,
                              m_recvMsgs[l_ch].rank,
-                             m_recvMsgs[l_ch].tag,
+                             m_recvTags[l_ch],
                              m_comm,
-                             &m_recvMsgs[l_ch].request );
+                             &m_recvReqs[l_ch] );
       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
-      m_recvMsgs[l_ch].test = 0;
+      m_recvTests[l_ch] = 0;
     }
   }
 #endif
@@ -302,28 +232,28 @@ void edge::parallel::MpiRemix::comm() {
     for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
       // test on send
       int l_test = -1;
-      int l_err = MPI_Test( &m_sendMsgs[l_ch].request,
+      int l_err = MPI_Test( &m_sendReqs[l_ch],
                             &l_test,
                             MPI_STATUS_IGNORE );
       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
       EDGE_CHECK_NE( l_test, -1 );
       if( l_test == 1 ) {
         l_nFinSend++;
-        m_sendMsgs[l_ch].request = MPI_REQUEST_NULL;
-        m_sendMsgs[l_ch].test = l_test;
+        m_sendReqs[l_ch] = MPI_REQUEST_NULL;
+        m_sendTests[l_ch] = l_test;
       }
 
       // test on receive
       l_test = -1;
-      l_err = MPI_Test( &m_recvMsgs[l_ch].request,
+      l_err = MPI_Test( &m_recvReqs[l_ch],
                         &l_test,
                         MPI_STATUS_IGNORE );
       EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
       EDGE_CHECK_NE( l_test, -1 );
       if( l_test == 1 ) {
         l_nFinRecv++;
-        m_recvMsgs[l_ch].request = MPI_REQUEST_NULL;
-        m_recvMsgs[l_ch].test = l_test;
+        m_recvReqs[l_ch] = MPI_REQUEST_NULL;
+        m_recvTests[l_ch] = l_test;
       }
     }
 
@@ -342,7 +272,7 @@ bool edge::parallel::MpiRemix::finSends( bool           i_lt,
                                   i_lt,
                                   i_tg );
 
-    if( l_match && m_sendMsgs[l_ch].test != 1 ) return false;
+    if( l_match && m_sendTests[l_ch] != 1 ) return false;
   }
 #endif
 
@@ -358,7 +288,7 @@ bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
                                   i_lt,
                                   i_tg );
 
-    if( l_match && m_recvMsgs[l_ch].test != 1 ) return false;
+    if( l_match && m_recvTests[l_ch] != 1 ) return false;
   }
 #endif
 
@@ -384,7 +314,7 @@ void edge::parallel::MpiRemix::syncData( std::size_t           i_nByCh,
                            l_size,
                            MPI_BYTE,
                            m_recvMsgs[l_ch].rank,
-                           m_recvMsgs[l_ch].tag,
+                           m_recvTags[l_ch],
                            m_comm,
                            l_recvReqs+l_ch );
     EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
@@ -393,7 +323,7 @@ void edge::parallel::MpiRemix::syncData( std::size_t           i_nByCh,
                        l_size,
                        MPI_BYTE,
                        m_sendMsgs[l_ch].rank,
-                       m_sendMsgs[l_ch].tag,
+                       m_sendTags[l_ch],
                        m_comm,
                        l_sendReqs+l_ch );
     EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
