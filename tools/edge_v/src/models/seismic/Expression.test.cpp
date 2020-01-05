@@ -25,8 +25,6 @@
 #include "Expression.h"
 #undef private
 
-#include "io/logging.h"
-
 TEST_CASE( "Tests the initialization.", "[expression][init]" ) {
   std::string l_exp0 = "vp := x;\
                         vs := y;\
