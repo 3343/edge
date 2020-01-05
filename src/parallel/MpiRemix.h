@@ -41,7 +41,7 @@ namespace edge {
  * MPI interface.
  **/
 class edge::parallel::MpiRemix {
-  private:
+  protected:
     //! max. version of the supported mpi-standard, 0: major, 1: minor
     int m_verStd[2] = {0, 0};
 
@@ -49,14 +49,23 @@ class edge::parallel::MpiRemix {
     //! communicator
     MPI_Comm m_comm;
 
+    //! number of time groups
+    std::size_t m_nTgs = 0;
+
     //! number of channels
     std::size_t m_nChs = 0;
 
     //! number of send-receive faces
     std::size_t *m_nSeRe = nullptr;
 
+    //! size of the send buffer
+    std::size_t m_sendBufferSize = 0;
+
     //! send buffer
     unsigned char * m_sendBuffer = nullptr;
+
+    //! size of the receive buffer
+    std::size_t m_recvBufferSize = 0;
 
     //! receive buffer
     unsigned char * m_recvBuffer = nullptr;
@@ -90,11 +99,11 @@ class edge::parallel::MpiRemix {
       MPI_Request request;
 #endif
 
-      //! pointer to start of message
-      unsigned char* ptr;
-
       //! size of the message in bytes
       std::size_t size;
+
+      //! offset of the message in local memory
+      std::size_t offL;
     } t_msg;
 
 #ifdef PP_USE_MPI
@@ -257,11 +266,13 @@ class edge::parallel::MpiRemix {
     /**
      * Syncs the given data according to the communication structure.
      *
+     * @param i_nByChs number of bytes for every channels (excluding face-data below).
      * @param i_nByFa number of bytes for every communicating face.
      * @param i_sendData data of the communicating faces, which will be send to adjacent ranks.
      * @param i_recvData data of the adjacent communicating faces, which will be received from adjacent ranks.
      **/
-    void syncData( std::size_t           i_nByFa,
+    void syncData( std::size_t           i_nByCh,
+                   std::size_t           i_nByFa,
                    unsigned char const * i_sendData,
                    unsigned char       * o_recvData );
 };

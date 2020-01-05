@@ -104,6 +104,8 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
                                      std::size_t    const * i_recvEl,
                                      data::Dynamic        & io_dynMem,
                                      std::size_t            i_nIterComm  ) {
+  m_nTgs = i_nTgs;
+
 #ifdef PP_USE_MPI
   m_nIterComm = i_nIterComm;
 
@@ -128,7 +130,9 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
   // allocate send and receive buffer
   l_sizeSend *= sizeof(unsigned char);
   l_sizeRecv *= sizeof(unsigned char);
+  m_sendBufferSize = l_sizeSend;
   m_sendBuffer = (unsigned char*) io_dynMem.allocate( l_sizeSend );
+  m_recvBufferSize = l_sizeRecv;
   m_recvBuffer = (unsigned char*) io_dynMem.allocate( l_sizeRecv );
 
   // allocate pointer data structure
@@ -169,7 +173,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
     m_sendMsgs[l_ch].rank    = l_raAd;
     m_sendMsgs[l_ch].tag     = l_tg*i_nTgs + l_tgAd;
     m_sendMsgs[l_ch].size    = l_sizeSend;
-    m_sendMsgs[l_ch].ptr     = m_sendBuffer + l_offSend;
+    m_sendMsgs[l_ch].offL    = l_offSend;
     m_sendMsgs[l_ch].test    = 0;
     m_sendMsgs[l_ch].request = MPI_REQUEST_NULL;
 
@@ -178,7 +182,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
     m_recvMsgs[l_ch].rank    = l_raAd;
     m_recvMsgs[l_ch].tag     = l_tgAd*i_nTgs + l_tg;
     m_recvMsgs[l_ch].size    = l_sizeRecv;
-    m_recvMsgs[l_ch].ptr     = m_recvBuffer + l_offRecv;
+    m_recvMsgs[l_ch].offL    = l_offRecv;
     m_recvMsgs[l_ch].test    = 0;
     m_recvMsgs[l_ch].request = MPI_REQUEST_NULL;
 
@@ -251,7 +255,7 @@ void edge::parallel::MpiRemix::beginSends( bool           i_lt,
 
     // get the message on the way
     if( l_match ) {
-      int l_err = MPI_Isend( m_sendMsgs[l_ch].ptr,
+      int l_err = MPI_Isend( m_sendBuffer + m_sendMsgs[l_ch].offL,
                              m_sendMsgs[l_ch].size,
                              MPI_BYTE,
                              m_sendMsgs[l_ch].rank,
@@ -275,7 +279,7 @@ void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
 
     // get the message on the way
     if( l_match ) {
-      int l_err = MPI_Irecv( m_recvMsgs[l_ch].ptr,
+      int l_err = MPI_Irecv( m_recvBuffer + m_recvMsgs[l_ch].offL,
                              m_recvMsgs[l_ch].size,
                              MPI_BYTE,
                              m_recvMsgs[l_ch].rank,
@@ -361,7 +365,8 @@ bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
   return true;
 }
 
-void edge::parallel::MpiRemix::syncData( std::size_t           i_nByFa,
+void edge::parallel::MpiRemix::syncData( std::size_t           i_nByCh,
+                                         std::size_t           i_nByFa,
                                          unsigned char const * i_sendData,
                                          unsigned char       * o_recvData ) {
 #ifdef PP_USE_MPI
@@ -373,7 +378,7 @@ void edge::parallel::MpiRemix::syncData( std::size_t           i_nByFa,
 
   // issue communication
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
-    std::size_t l_size = m_nSeRe[l_ch] * i_nByFa;
+    std::size_t l_size = m_nSeRe[l_ch] * i_nByFa + i_nByCh;
 
     int l_err = MPI_Irecv( l_recvPtr,
                            l_size,

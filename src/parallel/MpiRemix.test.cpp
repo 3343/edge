@@ -21,9 +21,9 @@
  * Tests the MPI interface.
  **/
 #include <catch.hpp>
-#define private public
+#define protected public
 #include "MpiRemix.h"
-#undef private
+#undef protected
 
 #ifdef PP_USE_MPI
 TEST_CASE( "Tests the setup of MPI-related data structures.", "[MpiRemix][data]" ) {
@@ -99,27 +99,27 @@ TEST_CASE( "Tests the setup of MPI-related data structures.", "[MpiRemix][data]"
   REQUIRE( l_mpi.m_sendMsgs[0].rank == 2                            );
   REQUIRE( l_mpi.m_sendMsgs[0].size == 15*17                        );
   REQUIRE( l_mpi.m_sendMsgs[0].tag  == 4                            );
-  REQUIRE( l_mpi.m_sendMsgs[0].ptr  == l_mpi.m_sendBuffer + 0       );
+  REQUIRE( l_mpi.m_sendMsgs[0].offL == 0                            );
 
   REQUIRE( l_mpi.m_sendMsgs[1].lt   == false                        );
   REQUIRE( l_mpi.m_sendMsgs[1].tg   == 3                            );
   REQUIRE( l_mpi.m_sendMsgs[1].rank == 1                            );
   REQUIRE( l_mpi.m_sendMsgs[1].size == 5*17*2                       );
   REQUIRE( l_mpi.m_sendMsgs[1].tag  == 3*7+1                        );
-  REQUIRE( l_mpi.m_sendMsgs[1].ptr  == l_mpi.m_sendBuffer + 15*17   );
+  REQUIRE( l_mpi.m_sendMsgs[1].offL == 15*17                        );
 
   REQUIRE( l_mpi.m_recvMsgs[0].lt   == true                         );
   REQUIRE( l_mpi.m_recvMsgs[0].tg   == 0                            );
   REQUIRE( l_mpi.m_recvMsgs[0].rank == 2                            );
   REQUIRE( l_mpi.m_recvMsgs[0].size == 15*17*2                      );
   REQUIRE( l_mpi.m_recvMsgs[0].tag  == 4*7                          );
-  REQUIRE( l_mpi.m_recvMsgs[0].ptr  == l_mpi.m_recvBuffer + 0       );
+  REQUIRE( l_mpi.m_recvMsgs[0].offL == 0                            );
 
   REQUIRE( l_mpi.m_recvMsgs[1].lt   == false                        );
   REQUIRE( l_mpi.m_recvMsgs[1].tg   == 3                            );
   REQUIRE( l_mpi.m_recvMsgs[1].rank == 1                            );
   REQUIRE( l_mpi.m_recvMsgs[1].size == 5*17                         );
   REQUIRE( l_mpi.m_recvMsgs[1].tag  == 1*7+3                        );
-  REQUIRE( l_mpi.m_recvMsgs[1].ptr  == l_mpi.m_recvBuffer + 15*17*2 );
+  REQUIRE( l_mpi.m_recvMsgs[1].offL == 15*17*2                      );
 }
 #endif
