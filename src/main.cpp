@@ -22,7 +22,10 @@
  * This is the main file of EDGE.
  **/
 
+#include "parallel/DistributedDummy.hpp"
+#ifdef PP_USE_MPI
 #include "parallel/MpiRemix.h"
+#endif
 #include "parallel/Shared.h"
 
 #include "io/logging.h"
@@ -84,9 +87,14 @@ int main( int i_argc, char *i_argv[] ) {
   edge::parallel::Shared l_shared;
   l_shared.init();
 
-  // init MPI
+  // init distributed memory parallelization
+#if defined(PP_USE_MPI)
   edge::parallel::MpiRemix l_distributed( i_argc,
                                           i_argv );
+#else
+  edge::parallel::DistributedDummy l_distributed( i_argc,
+                                                  i_argv );
+#endif
 
   // reconfigure the logging interface with rank and thread id
   edge::io::logging::config();

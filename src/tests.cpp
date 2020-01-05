@@ -20,7 +20,7 @@
  * @section DESCRIPTION
  * Unit tests of EDGE.
  **/
-#include "parallel/MpiRemix.h"
+#include "parallel/DistributedDummy.hpp"
 #include <string>
 #include "io/logging.h"
 #ifdef PP_USE_EASYLOGGING
@@ -38,8 +38,8 @@ namespace edge {
 }
 
 int main( int i_argc, char* i_argv[] ) {
-  // init MPI for unit tests calling MPI-functions or relying on rank data
-  edge::parallel::MpiRemix l_mpi( i_argc, i_argv );
+  // init distributed memory interface
+  edge::parallel::DistributedDummy l_distributed( i_argc, i_argv );
 
   // disable logging file-IO
   edge::io::logging::config();

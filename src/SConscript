@@ -47,10 +47,12 @@ l_sources = [ 'data/Expression.cpp',
               'parallel/Shared.cpp',
               'parallel/LoadBalancing.cpp',
               'parallel/Distributed.cpp',
-              'parallel/MpiRemix.cpp',
               'parallel/global.cpp',
               'setups/Cpu.cpp',
               'time/Manager.cpp' ]
+
+if 'mpi' in env['parallel']:
+  l_sources += [ 'parallel/MpiRemix.cpp' ]
 
 if 'elastic' in env['equations']:
   l_sources = l_sources + [ 'impl/seismic/io/Config.cpp',

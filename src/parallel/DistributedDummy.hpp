@@ -38,6 +38,42 @@ class edge::parallel::DistributedDummy: public Distributed {
 
   public:
     /**
+     * Initializes the communication structure.
+     *
+     * @param i_nTgs number of time groups.
+     * @param i_nElFas number of faces per element.
+     * @param i_nEls number of elements in the mesh.
+     * @param i_nByFa number of bytes for every communicating face (excludes LTS).
+     * @param i_commStruct communication structure as specified in EDGE-V.
+     * @param i_sendFa send faces.
+     * @param i_sendEl send elements.
+     * @param i_recvFa receive faces.
+     * @param i_recvEl receive elements.
+     * @param io_dynMem dynamic memory allocations.
+     **/
+    void init( unsigned short         i_nTgs,
+               unsigned short         i_nElFas,
+               std::size_t            i_nEls,
+               std::size_t            i_nByFa,
+               std::size_t    const * i_commStruct,
+               unsigned short const * i_sendFa,
+               std::size_t    const * i_sendEl,
+               unsigned short const * i_recvFa,
+               std::size_t    const * i_recvEl,
+               data::Dynamic        & io_dynMem ) {
+      Distributed::init( i_nTgs,
+                        i_nElFas,
+                        i_nEls,
+                        i_nByFa,
+                        i_commStruct,
+                        i_sendFa,
+                        i_sendEl,
+                        i_recvFa,
+                        i_recvEl,
+                        io_dynMem );
+    }
+
+    /**
      * Constructor.
      **/
     DistributedDummy( int    i_argc,

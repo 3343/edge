@@ -25,7 +25,7 @@
 #ifndef EDGE_DATA_SPARSE_ENTITIES_HPP
 #define EDGE_DATA_SPARSE_ENTITIES_HPP
 
-#include "parallel/MpiRemix.h"
+#include "parallel/Distributed.h"
 #include <limits>
 #include "io/logging.h"
 #include "linalg/Geom.hpp"
@@ -930,9 +930,9 @@ class edge::data::SparseEntities {
 
       // derive points, which are closest to our owned entities
       unsigned short *l_own = new unsigned short [i_nPts];
-      parallel::MpiRemix::min( i_nPts,
-                               l_minDist,
-                               l_own );
+      parallel::Distributed::min( i_nPts,
+                                  l_minDist,
+                                  l_own );
 
       // determine #owned and set everything invalid, which is not owned
       TL_T_LID l_nOwn= 0;

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2018, Regents of the University of California
+ * Copyright (c) 2018-2020, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,7 +20,10 @@
  * @section DESCRIPTION
  * Dynamic load balancing of work regions.
  **/
-#include "parallel/MpiRemix.h"
+#include <map>
+#ifdef PP_USE_MPI
+#include "mpi_wrapper.inc"
+#endif
 
 #include "LoadBalancing.h"
 
