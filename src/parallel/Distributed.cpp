@@ -107,8 +107,12 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
                                         std::size_t    const * i_sendEl,
                                         unsigned short const * i_recvFa,
                                         std::size_t    const * i_recvEl,
+                                        unsigned short         i_nCommBuffers,
                                         data::Dynamic        & io_dynMem ) {
   m_nTgs = i_nTgs;
+  m_nElFas = i_nElFas;
+  m_nEls = i_nEls;
+  m_nCommBuffers = i_nCommBuffers;
 
   // derive the number of communication channels and communicating faces
   if( i_commStruct != nullptr ) {
@@ -132,22 +136,25 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
   l_sizeSend *= sizeof(unsigned char);
   l_sizeRecv *= sizeof(unsigned char);
   m_sendBufferSize = l_sizeSend;
-  m_sendBuffer = (unsigned char*) io_dynMem.allocate( l_sizeSend );
+  m_sendBuffers = (unsigned char*) io_dynMem.allocate( l_sizeSend*m_nCommBuffers );
   m_recvBufferSize = l_sizeRecv;
-  m_recvBuffer = (unsigned char*) io_dynMem.allocate( l_sizeRecv );
+  m_recvBuffers = (unsigned char*) io_dynMem.allocate( l_sizeRecv*m_nCommBuffers );
 
   // allocate pointer data structure
-  m_sendPtrs = (unsigned char**) io_dynMem.allocate( i_nEls * i_nElFas * sizeof(unsigned char*) );
-  m_recvPtrs = (unsigned char**) io_dynMem.allocate( i_nEls * i_nElFas * sizeof(unsigned char*) );
+  std::size_t l_sizePtrs = m_nEls * m_nElFas * sizeof(unsigned char*) * m_nCommBuffers;
+  m_sendPtrs = (unsigned char**) io_dynMem.allocate( l_sizePtrs );
+  m_recvPtrs = (unsigned char**) io_dynMem.allocate( l_sizePtrs );
 
   // init with null pointers (no communication)
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
-    for( unsigned short l_fa = 0; l_fa < i_nElFas; l_fa++ ) {
-      m_sendPtrs[ l_el*i_nElFas + l_fa ] = nullptr;
-      m_recvPtrs[ l_el*i_nElFas + l_fa ] = nullptr;
+  for( std::size_t l_el = 0; l_el < m_nEls; l_el++ ) {
+    for( unsigned short l_fa = 0; l_fa < m_nElFas; l_fa++ ) {
+      for( unsigned short l_cb = 0; l_cb < m_nCommBuffers; l_cb++ ) {
+        m_sendPtrs[ l_cb*m_nEls*i_nElFas + l_el*i_nElFas + l_fa ] = nullptr;
+        m_recvPtrs[ l_cb*m_nEls*i_nElFas + l_el*i_nElFas + l_fa ] = nullptr;
+      }
     }
   }
 
@@ -189,8 +196,12 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
       std::size_t l_reFa = i_recvFa[l_first+l_co];
       std::size_t l_reEl = i_recvEl[l_first+l_co];
 
-      m_sendPtrs[ l_seEl*i_nElFas + l_seFa ] = m_sendBuffer+l_offSend;
-      m_recvPtrs[ l_reEl*i_nElFas + l_reFa ] = m_recvBuffer+l_offRecv;
+      for( unsigned short l_cb = 0; l_cb < m_nCommBuffers; l_cb++ ) {
+        std::size_t l_off = l_cb * m_nEls * m_nElFas;
+
+        m_sendPtrs[ l_off + l_seEl*i_nElFas + l_seFa ] = m_sendBuffers+l_offSend;
+        m_recvPtrs[ l_off + l_reEl*i_nElFas + l_reFa ] = m_recvBuffers+l_offRecv;
+      }
 
       l_offSend += (l_tg > l_tgAd) ? i_nByFa * 2 : i_nByFa;
       l_offRecv += (l_tg < l_tgAd) ? i_nByFa * 2 : i_nByFa;

@@ -44,28 +44,37 @@ class edge::parallel::Distributed {
     //! number of time groups
     std::size_t m_nTgs = 0;
 
+    //! number of faces per element
+    unsigned short m_nElFas = 0;
+
+    //! number of elements
+    std::size_t m_nEls = 0;
+
     //! number of channels
     std::size_t m_nChs = 0;
 
     //! number of send-receive faces
     std::size_t *m_nSeRe = nullptr;
 
-    //! size of the send buffer
+    //! number of communication buffers
+    std::size_t m_nCommBuffers = 0;
+
+    //! size of a single send buffer
     std::size_t m_sendBufferSize = 0;
 
-    //! send buffer
-    unsigned char * m_sendBuffer = nullptr;
+    //! send buffers
+    unsigned char * m_sendBuffers = nullptr;
 
-    //! size of the receive buffer
+    //! size of a single receive buffer
     std::size_t m_recvBufferSize = 0;
 
-    //! receive buffer
-    unsigned char * m_recvBuffer = nullptr;
+    //! receive buffers
+    unsigned char * m_recvBuffers = nullptr;
 
-    //! pointers into the send buffer
+    //! pointers into the send buffers
     unsigned char ** m_sendPtrs = nullptr;
 
-    //! pointers into the receiver buffer
+    //! pointers into the receive buffers
     unsigned char ** m_recvPtrs = nullptr;
 
     //! message structure
@@ -107,6 +116,7 @@ class edge::parallel::Distributed {
      * @param i_sendEl send elements.
      * @param i_recvFa receive faces.
      * @param i_recvEl receive elements.
+     * @param i_nCommBuffers number of allocated communication buffers.
      * @param io_dynMem dynamic memory allocations.
      **/
     void init( unsigned short         i_nTgs,
@@ -118,6 +128,7 @@ class edge::parallel::Distributed {
                std::size_t    const * i_sendEl,
                unsigned short const * i_recvFa,
                std::size_t    const * i_recvEl,
+               unsigned short         i_nCommBuffers,
                data::Dynamic        & io_dynMem );
 
     /**

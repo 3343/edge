@@ -46,6 +46,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
                      i_sendEl,
                      i_recvFa,
                      i_recvEl,
+                     1,
                      io_dynMem );
 
   // init MPI-2 specifics
@@ -78,7 +79,7 @@ void edge::parallel::MpiRemix::beginSends( bool           i_lt,
 
     // get the message on the way
     if( l_match ) {
-      int l_err = MPI_Isend( m_sendBuffer + m_sendMsgs[l_ch].offL,
+      int l_err = MPI_Isend( m_sendBuffers + m_sendMsgs[l_ch].offL,
                              m_sendMsgs[l_ch].size,
                              MPI_BYTE,
                              m_sendMsgs[l_ch].rank,
@@ -100,7 +101,7 @@ void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
 
     // get the message on the way
     if( l_match ) {
-      int l_err = MPI_Irecv( m_recvBuffer + m_recvMsgs[l_ch].offL,
+      int l_err = MPI_Irecv( m_recvBuffers + m_recvMsgs[l_ch].offL,
                              m_recvMsgs[l_ch].size,
                              MPI_BYTE,
                              m_recvMsgs[l_ch].rank,

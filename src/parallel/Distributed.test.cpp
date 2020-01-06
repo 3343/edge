@@ -22,18 +22,8 @@
  **/
 #include <catch.hpp>
 #define protected public
-
-#ifdef PP_USE_MPI
-#define PP_USE_MPI_TMP
-#undef PP_USE_MPI
-#endif
-
 #include "DistributedDummy.hpp"
 #undef protected
-
-#ifdef PP_USE_MPI_TMP
-#define PP_USE_MPI
-#endif
 
 TEST_CASE( "Tests the setup of distributed memory-related data structures.", "[Distributed][data]" ) {
   std::size_t l_commStruct[9] = {2, 0, 2, 4, 15, 3, 1, 1, 5};
@@ -75,54 +65,54 @@ TEST_CASE( "Tests the setup of distributed memory-related data structures.", "[D
   REQUIRE( l_dist.m_nChs == 2 );
 
   // check some send pointers
-  REQUIRE( l_dist.m_sendPtrs[0*4 + 0] == l_dist.m_sendBuffer+10*17  );
-  REQUIRE( l_dist.m_sendPtrs[0*4 + 1] == nullptr                   );
-  REQUIRE( l_dist.m_sendPtrs[0*4 + 2] == nullptr                   );
-  REQUIRE( l_dist.m_sendPtrs[0*4 + 3] == nullptr                   );
+  REQUIRE( l_dist.m_sendPtrs[0*4 + 0] == l_dist.m_sendBuffers+10*17   );
+  REQUIRE( l_dist.m_sendPtrs[0*4 + 1] == nullptr                      );
+  REQUIRE( l_dist.m_sendPtrs[0*4 + 2] == nullptr                      );
+  REQUIRE( l_dist.m_sendPtrs[0*4 + 3] == nullptr                      );
 
-  REQUIRE( l_dist.m_sendPtrs[1*4 + 0] == nullptr                   );
-  REQUIRE( l_dist.m_sendPtrs[1*4 + 1] == l_dist.m_sendBuffer+ 4*17  );
-  REQUIRE( l_dist.m_sendPtrs[1*4 + 2] == nullptr                   );
-  REQUIRE( l_dist.m_sendPtrs[1*4 + 3] == nullptr                   );
+  REQUIRE( l_dist.m_sendPtrs[1*4 + 0] == nullptr                      );
+  REQUIRE( l_dist.m_sendPtrs[1*4 + 1] == l_dist.m_sendBuffers+ 4*17   );
+  REQUIRE( l_dist.m_sendPtrs[1*4 + 2] == nullptr                      );
+  REQUIRE( l_dist.m_sendPtrs[1*4 + 3] == nullptr                      );
 
-  REQUIRE( l_dist.m_sendPtrs[2*4 + 0] == nullptr                   );
-  REQUIRE( l_dist.m_sendPtrs[2*4 + 1] == l_dist.m_sendBuffer+12*17  );
-  REQUIRE( l_dist.m_sendPtrs[2*4 + 2] == l_dist.m_sendBuffer+ 5*17  );
-  REQUIRE( l_dist.m_sendPtrs[2*4 + 3] == l_dist.m_sendBuffer+ 8*17  );
+  REQUIRE( l_dist.m_sendPtrs[2*4 + 0] == nullptr                      );
+  REQUIRE( l_dist.m_sendPtrs[2*4 + 1] == l_dist.m_sendBuffers+12*17   );
+  REQUIRE( l_dist.m_sendPtrs[2*4 + 2] == l_dist.m_sendBuffers+ 5*17   );
+  REQUIRE( l_dist.m_sendPtrs[2*4 + 3] == l_dist.m_sendBuffers+ 8*17   );
   // [...]
 
   // check some recv pointers
-  REQUIRE( l_dist.m_recvPtrs[0*4 + 0] == l_dist.m_recvBuffer+10*17*2  );
-  REQUIRE( l_dist.m_recvPtrs[0*4 + 1] == nullptr                     );
-  REQUIRE( l_dist.m_recvPtrs[0*4 + 2] == nullptr                     );
-  REQUIRE( l_dist.m_recvPtrs[0*4 + 3] == l_dist.m_recvBuffer+ 6*17*2  );
+  REQUIRE( l_dist.m_recvPtrs[0*4 + 0] == l_dist.m_recvBuffers+10*17*2 );
+  REQUIRE( l_dist.m_recvPtrs[0*4 + 1] == nullptr                      );
+  REQUIRE( l_dist.m_recvPtrs[0*4 + 2] == nullptr                      );
+  REQUIRE( l_dist.m_recvPtrs[0*4 + 3] == l_dist.m_recvBuffers+ 6*17*2 );
 
-  REQUIRE( l_dist.m_recvPtrs[1*4 + 0] == nullptr                     );
-  REQUIRE( l_dist.m_recvPtrs[1*4 + 1] == nullptr                     );
-  REQUIRE( l_dist.m_recvPtrs[1*4 + 2] == nullptr                     );
-  REQUIRE( l_dist.m_recvPtrs[1*4 + 3] == nullptr                     );
+  REQUIRE( l_dist.m_recvPtrs[1*4 + 0] == nullptr                      );
+  REQUIRE( l_dist.m_recvPtrs[1*4 + 1] == nullptr                      );
+  REQUIRE( l_dist.m_recvPtrs[1*4 + 2] == nullptr                      );
+  REQUIRE( l_dist.m_recvPtrs[1*4 + 3] == nullptr                      );
 
-  REQUIRE( l_dist.m_sendMsgs[0].lt   == true                         );
-  REQUIRE( l_dist.m_sendMsgs[0].tg   == 0                            );
-  REQUIRE( l_dist.m_sendMsgs[0].rank == 2                            );
-  REQUIRE( l_dist.m_sendMsgs[0].size == 15*17                        );
-  REQUIRE( l_dist.m_sendMsgs[0].offL == 0                            );
+  REQUIRE( l_dist.m_sendMsgs[0].lt   == true                          );
+  REQUIRE( l_dist.m_sendMsgs[0].tg   == 0                             );
+  REQUIRE( l_dist.m_sendMsgs[0].rank == 2                             );
+  REQUIRE( l_dist.m_sendMsgs[0].size == 15*17                         );
+  REQUIRE( l_dist.m_sendMsgs[0].offL == 0                             );
 
-  REQUIRE( l_dist.m_sendMsgs[1].lt   == false                        );
-  REQUIRE( l_dist.m_sendMsgs[1].tg   == 3                            );
-  REQUIRE( l_dist.m_sendMsgs[1].rank == 1                            );
-  REQUIRE( l_dist.m_sendMsgs[1].size == 5*17*2                       );
-  REQUIRE( l_dist.m_sendMsgs[1].offL == 15*17                        );
+  REQUIRE( l_dist.m_sendMsgs[1].lt   == false                         );
+  REQUIRE( l_dist.m_sendMsgs[1].tg   == 3                             );
+  REQUIRE( l_dist.m_sendMsgs[1].rank == 1                             );
+  REQUIRE( l_dist.m_sendMsgs[1].size == 5*17*2                        );
+  REQUIRE( l_dist.m_sendMsgs[1].offL == 15*17                         );
 
-  REQUIRE( l_dist.m_recvMsgs[0].lt   == true                         );
-  REQUIRE( l_dist.m_recvMsgs[0].tg   == 0                            );
-  REQUIRE( l_dist.m_recvMsgs[0].rank == 2                            );
-  REQUIRE( l_dist.m_recvMsgs[0].size == 15*17*2                      );
-  REQUIRE( l_dist.m_recvMsgs[0].offL == 0                            );
+  REQUIRE( l_dist.m_recvMsgs[0].lt   == true                          );
+  REQUIRE( l_dist.m_recvMsgs[0].tg   == 0                             );
+  REQUIRE( l_dist.m_recvMsgs[0].rank == 2                             );
+  REQUIRE( l_dist.m_recvMsgs[0].size == 15*17*2                       );
+  REQUIRE( l_dist.m_recvMsgs[0].offL == 0                             );
 
-  REQUIRE( l_dist.m_recvMsgs[1].lt   == false                        );
-  REQUIRE( l_dist.m_recvMsgs[1].tg   == 3                            );
-  REQUIRE( l_dist.m_recvMsgs[1].rank == 1                            );
-  REQUIRE( l_dist.m_recvMsgs[1].size == 5*17                         );
-  REQUIRE( l_dist.m_recvMsgs[1].offL == 15*17*2                      );
+  REQUIRE( l_dist.m_recvMsgs[1].lt   == false                         );
+  REQUIRE( l_dist.m_recvMsgs[1].tg   == 3                             );
+  REQUIRE( l_dist.m_recvMsgs[1].rank == 1                             );
+  REQUIRE( l_dist.m_recvMsgs[1].size == 5*17                          );
+  REQUIRE( l_dist.m_recvMsgs[1].offL == 15*17*2                       );
 }

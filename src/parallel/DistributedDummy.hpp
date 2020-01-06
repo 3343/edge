@@ -62,15 +62,16 @@ class edge::parallel::DistributedDummy: public Distributed {
                std::size_t    const * i_recvEl,
                data::Dynamic        & io_dynMem ) {
       Distributed::init( i_nTgs,
-                        i_nElFas,
-                        i_nEls,
-                        i_nByFa,
-                        i_commStruct,
-                        i_sendFa,
-                        i_sendEl,
-                        i_recvFa,
-                        i_recvEl,
-                        io_dynMem );
+                         i_nElFas,
+                         i_nEls,
+                         i_nByFa,
+                         i_commStruct,
+                         i_sendFa,
+                         i_sendEl,
+                         i_recvFa,
+                         i_recvEl,
+                         1,
+                         io_dynMem );
     }
 
     /**
