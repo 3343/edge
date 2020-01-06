@@ -21,7 +21,7 @@
  * @section DESCRIPTION
  * This is the main file of EDGE.
  **/
-if defined(PP_USE_MPI)
+#if defined(PP_USE_MPI)
 #include "parallel/MpiRemix.h"
 #else
 #include "parallel/DistributedDummy.hpp"
