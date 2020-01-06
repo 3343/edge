@@ -70,7 +70,7 @@ class edge::parallel::DistributedDummy: public Distributed {
                          i_sendEl,
                          i_recvFa,
                          i_recvEl,
-                         1,
+                         2,
                          io_dynMem );
     }
 

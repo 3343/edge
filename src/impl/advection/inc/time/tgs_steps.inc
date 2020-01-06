@@ -22,7 +22,7 @@
  * Steps for the advection equation.
  **/
 if( i_step == 0 ) {
-  real_base (** l_sendPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_sendPtrs;
+  real_base (** l_sendPtrs)[N_ELEMENT_MODES][N_CRUNS] = (real_base (**) [N_ELEMENT_MODES][N_CRUNS]) m_sendPtrs[getUpdatesSync()%m_nCommBuffers];
   m_internal.m_globalShared4[0]->local(  i_first,
                                          i_size,
                                          getUpdatesSync()%2 == 0,

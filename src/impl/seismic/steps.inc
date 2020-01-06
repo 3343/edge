@@ -23,7 +23,7 @@
  **/
 if( i_step == 0 ) {
   // ADER-DG local
-  real_base (** l_sendPtrs)[N_FACE_MODES][N_CRUNS] = (real_base (**) [N_FACE_MODES][N_CRUNS]) m_sendPtrs;
+  real_base (** l_sendPtrs)[N_FACE_MODES][N_CRUNS] = (real_base (**) [N_FACE_MODES][N_CRUNS]) m_sendPtrs[getUpdatesSync()%m_nCommBuffers];
   m_internal.m_globalShared4[0][0].local( i_first,
                                           i_size,
                                           getUpdatesSync()%2 == 0,

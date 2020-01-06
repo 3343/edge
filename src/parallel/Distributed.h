@@ -44,12 +44,6 @@ class edge::parallel::Distributed {
     //! number of time groups
     std::size_t m_nTgs = 0;
 
-    //! number of faces per element
-    unsigned short m_nElFas = 0;
-
-    //! number of elements
-    std::size_t m_nEls = 0;
-
     //! number of channels
     std::size_t m_nChs = 0;
 
@@ -72,10 +66,10 @@ class edge::parallel::Distributed {
     unsigned char * m_recvBuffers = nullptr;
 
     //! pointers into the send buffers
-    unsigned char ** m_sendPtrs = nullptr;
+    unsigned char *** m_sendPtrs = nullptr;
 
     //! pointers into the receive buffers
-    unsigned char ** m_recvPtrs = nullptr;
+    unsigned char *** m_recvPtrs = nullptr;
 
     //! message structure
     typedef struct {
@@ -233,7 +227,7 @@ class edge::parallel::Distributed {
      * @param i_tg time group which uses the send pointers.
      * @return send pointers.
      **/
-    unsigned char ** getSendPtrs() const { return m_sendPtrs; }
+    unsigned char *** getSendPtrs() const { return m_sendPtrs; }
 
     /**
      * Gets the pointers to the receive buffers.
@@ -241,7 +235,7 @@ class edge::parallel::Distributed {
      * @param i_tg time group which uses the send pointers.
      * @return receive pointers.
      **/
-    unsigned char ** getRecvPtrs() const { return m_recvPtrs; }
+    unsigned char *** getRecvPtrs() const { return m_recvPtrs; }
 
     /**
      * Resets intially / after synchronization.
