@@ -28,36 +28,45 @@
 
 edge::parallel::Distributed::Distributed( int    i_argc,
                                           char * i_argv[] ) {
-      // set default values for non-mpi runs
-      g_nRanks = 1;
-      g_rank = 0;
-      g_rankStr = std::to_string(0);
+  // set default values for non-mpi runs
+  g_nRanks = 1;
+  g_rank = 0;
+  g_rankStr = std::to_string(0);
 #ifdef PP_USE_MPI
-      // initialize MPI, get size and rank
-      if( g_nThreads == 1 ) {
-        MPI_Init( &i_argc,
-                  &i_argv );
-      }
-      else {
-        int l_tdSu;
-        MPI_Init_thread( &i_argc,
-                         &i_argv,
-                         MPI_THREAD_SERIALIZED,
-                         &l_tdSu );
-        // ensure the required threading support of MPI
-        EDGE_CHECK( l_tdSu == MPI_THREAD_SERIALIZED );
-      }
-      MPI_Comm_size ( MPI_COMM_WORLD, &g_nRanks );
-      MPI_Comm_rank( MPI_COMM_WORLD, &g_rank );
-      MPI_Get_version( m_verStd, m_verStd+1 );
-      g_rankStr = std::to_string( g_rank );
+  // only check if MPI is already initialized
+  int l_initialized = 0;
+  int l_err = MPI_Initialized( &l_initialized );
+  EDGE_CHECK_EQ( l_err, MPI_SUCCESS );
+
+  // init if not already done
+  if( !l_initialized ) {
+    // initialize MPI, get size and rank
+    if( g_nThreads == 1 ) {
+      MPI_Init( &i_argc,
+                &i_argv );
+    }
+    else {
+      int l_tdSu;
+      MPI_Init_thread( &i_argc,
+                        &i_argv,
+                        MPI_THREAD_SERIALIZED,
+                        &l_tdSu );
+      // ensure the required threading support of MPI
+      EDGE_CHECK( l_tdSu == MPI_THREAD_SERIALIZED );
+    }
+  }
+
+  MPI_Comm_size ( MPI_COMM_WORLD, &g_nRanks );
+  MPI_Comm_rank( MPI_COMM_WORLD, &g_rank );
+  MPI_Get_version( m_verStd, m_verStd+1 );
+  g_rankStr = std::to_string( g_rank );
 #endif
 }
 
 void edge::parallel::Distributed::fin() {
 #ifdef PP_USE_MPI
-      MPI_Barrier(MPI_COMM_WORLD);
-      MPI_Finalize();
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
 #endif
 }
 
