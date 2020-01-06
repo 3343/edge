@@ -109,6 +109,25 @@ class edge::parallel::DistributedDummy: public Distributed {
      **/
     bool finRecvs( bool,
                    unsigned short ) const { return true; };
+
+    /**
+     * Gets the pointers to the send buffer.
+     *
+     * @return send pointers.
+     **/
+    unsigned char ** getSendPtrs() const { return m_sendPtrs; }
+
+    /**
+     * Gets the pointers to the receive buffer.
+     *
+     * @return receive pointers.
+     **/
+    unsigned char ** getRecvPtrs() const { return m_recvPtrs; }
+
+    /**
+     * Dummy reset, returns immediately.
+     **/
+    void reset(){};
 };
 
 #endif

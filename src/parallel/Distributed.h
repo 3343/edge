@@ -225,14 +225,19 @@ class edge::parallel::Distributed {
      *
      * @return send pointers.
      **/
-    unsigned char ** getSendPtrs() { return m_sendPtrs; }
+    virtual unsigned char ** getSendPtrs() const = 0;
 
     /**
      * Gets the pointers to the receive buffer.
      *
      * @return receive pointers.
      **/
-    unsigned char ** getRecvPtrs() { return m_recvPtrs; }
+    virtual unsigned char ** getRecvPtrs() const = 0;
+
+    /**
+     * Resets intially / after synchronization.
+     **/
+    virtual void reset() = 0;
 
     /**
      * Determines, if the calling rank holds the minimum for the values

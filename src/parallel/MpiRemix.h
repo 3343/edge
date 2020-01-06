@@ -133,6 +133,24 @@ class edge::parallel::MpiRemix: public Distributed {
      **/
     bool finRecvs( bool           i_lt,
                    unsigned short i_tg ) const;
+    /**
+     * Gets the pointers to the send buffer.
+     *
+     * @return send pointers.
+     **/
+    unsigned char ** getSendPtrs() const { return m_sendPtrs; }
+
+    /**
+     * Gets the pointers to the receive buffer.
+     *
+     * @return receive pointers.
+     **/
+    unsigned char ** getRecvPtrs() const { return m_recvPtrs; }
+
+    /**
+     * Dummy reset, returns immediately.
+     **/
+    void reset(){};
 };
 
 #endif
