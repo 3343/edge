@@ -221,18 +221,27 @@ class edge::parallel::Distributed {
                            unsigned short i_tg ) const = 0;
 
     /**
-     * Gets the pointers to the send buffer.
+     * Number of communication buffers.
      *
-     * @return send pointers.
+     * @return number of communication buffers.
      **/
-    virtual unsigned char ** getSendPtrs() const = 0;
+    unsigned short nCommBuffers() { return m_nCommBuffers; }
 
     /**
-     * Gets the pointers to the receive buffer.
+     * Gets the pointers to the send buffers.
      *
+     * @param i_tg time group which uses the send pointers.
+     * @return send pointers.
+     **/
+    unsigned char ** getSendPtrs() const { return m_sendPtrs; }
+
+    /**
+     * Gets the pointers to the receive buffers.
+     *
+     * @param i_tg time group which uses the send pointers.
      * @return receive pointers.
      **/
-    virtual unsigned char ** getRecvPtrs() const = 0;
+    unsigned char ** getRecvPtrs() const { return m_recvPtrs; }
 
     /**
      * Resets intially / after synchronization.
