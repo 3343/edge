@@ -21,11 +21,12 @@
  * @section DESCRIPTION
  * This is the main file of EDGE.
  **/
-
-#include "parallel/DistributedDummy.hpp"
-#ifdef PP_USE_MPI
+if defined(PP_USE_MPI)
 #include "parallel/MpiRemix.h"
+#else
+#include "parallel/DistributedDummy.hpp"
 #endif
+
 #include "parallel/Shared.h"
 
 #include "io/logging.h"
@@ -289,6 +290,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
     l_tgs.push_back( edge::time::TimeGroupStatic( l_edgeV.nTgs(),
                                                   l_tg,
                                                   l_internal,
+                                                  l_distributed.nCommBuffers(),
                                                   l_distributed.getSendPtrs(),
                                                   l_distributed.getRecvPtrs() ) );
   }
