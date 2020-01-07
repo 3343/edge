@@ -51,7 +51,8 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
 
     // issue receives
     m_distributed.beginRecvs( m_timeGroups[l_tg]->nRecvSync()%2 == 0,
-                              l_tg );
+                              l_tg,
+                              m_timeGroups[l_tg]->nRecvSync()%m_distributed.nCommBuffers() );
     m_cflow[l_tg][7] = 1;
   }
 
@@ -84,12 +85,16 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
     m_timeGroups[l_tg]->updateDofUpSend();
   }
   // MPI-send
-  if( m_cflow[l_tg][6] == 1 && m_distributed.finSends( m_timeGroups[l_tg]->nSendSync()%2 == 1, l_tg ) ) {
+  if( m_cflow[l_tg][6] == 1 && m_distributed.finSends( m_timeGroups[l_tg]->nSendSync()%2 == 1,
+                                                       l_tg,
+                                                       m_timeGroups[l_tg]->nSendSync()%m_distributed.nCommBuffers() ) ) {
     m_cflow[l_tg][6] = 2;
     m_timeGroups[l_tg]->updateSend();
   }
   // MPI-recv
-  if( m_cflow[l_tg][7] == 1 && m_distributed.finRecvs( m_timeGroups[l_tg]->nRecvSync()%2 == 0, l_tg ) ) {
+  if( m_cflow[l_tg][7] == 1 && m_distributed.finRecvs( m_timeGroups[l_tg]->nRecvSync()%2 == 0,
+                                                       l_tg,
+                                                       m_timeGroups[l_tg]->nRecvSync()%m_distributed.nCommBuffers() ) ) {
     m_cflow[l_tg][7] = 2;
     m_timeGroups[l_tg]->updateRecv();
   }
@@ -120,7 +125,8 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
   // schedule sends
   if( m_cflow[l_tg][1] == 2 && m_cflow[l_tg][6] == 0 ) {
     m_distributed.beginSends( m_timeGroups[l_tg]->nSendSync()%2 == 1,
-                              l_tg );
+                              l_tg,
+                              m_timeGroups[l_tg]->nSendSync()%m_distributed.nCommBuffers() );
 
     m_cflow[l_tg][1] = 3;
     m_cflow[l_tg][6] = 1;
@@ -172,7 +178,8 @@ for( unsigned short l_tg = 0; l_tg < m_timeGroups.size(); l_tg++ ) {
     // post next receive if not last time step
     if( !m_timeGroups[l_tg]->lastTimeStep() ) {
       m_distributed.beginRecvs( m_timeGroups[l_tg]->nRecvSync()%2 == 0,
-                                l_tg );
+                                l_tg,
+                                m_timeGroups[l_tg]->nRecvSync()%m_distributed.nCommBuffers() );
       m_cflow[l_tg][7] = 1;
     }
     else {

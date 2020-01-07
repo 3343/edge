@@ -54,7 +54,7 @@ else if( i_step == 1 ) {
 }
 else if( i_step == 2 ) {
   // ADER-DG: neigh contrib
-  real_base (** l_recvPtrs)[N_FACE_MODES][N_CRUNS] = (real_base (**) [N_FACE_MODES][N_CRUNS]) m_recvPtrs;
+  real_base (** l_recvPtrs)[N_FACE_MODES][N_CRUNS] = (real_base (**) [N_FACE_MODES][N_CRUNS]) m_recvPtrs[getUpdatesSync()%m_nCommBuffers];
   m_internal.m_globalShared4[0][0].neigh( i_first,
                                           i_size,
                                           getUpdatesSync()%2 == 0,

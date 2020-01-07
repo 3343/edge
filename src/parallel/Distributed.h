@@ -176,18 +176,22 @@ class edge::parallel::Distributed {
      *
      * @param i_lt if true sends are also issued for less-than LTS relations.
      * @param i_tg time group for which data is send.
+     * @param i_cb used communication buffer.
      **/
     virtual void beginSends( bool           i_lt,
-                             unsigned short i_tg ) = 0;
+                             unsigned short i_tg,
+                             unsigned short i_cb ) = 0;
 
     /**
      * Initiates the receives for the given time group.
      *
      * @param i_lt if true receives are also issued for less-than LTS relations.
      * @param i_tg time group for which data is received.
+     * @param i_cb used communication buffer.
      **/
     virtual void beginRecvs( bool           i_lt,
-                             unsigned short i_tg ) = 0;
+                             unsigned short i_tg,
+                             unsigned short i_cb ) = 0;
 
     /**
      * Progresses communication.
@@ -199,20 +203,24 @@ class edge::parallel::Distributed {
      *
      * @param i_lt if true if sends for regions in less-than LTS relations should also be checked.
      * @param i_tg time group for which the sends are checked.
+     * @param i_cb used communication buffer.
      * @return true if all sends are finished, false if sends are ongoing.
      **/
     virtual bool finSends( bool           i_lt,
-                           unsigned short i_tg ) const = 0;
+                           unsigned short i_tg,
+                           unsigned short i_cb ) const = 0;
 
     /**
      * Checks if all receives for the specified time group are finished.
      *
      * @param i_lt if true if receives for regions in less-than LTS relations should also be checked.
      * @param i_tg time group for which the receives are checked.
+     * @param i_cb used communication buffer.
      * @return true if all receives are finished, false if receives are ongoing.
      **/
     virtual bool finRecvs( bool           i_lt,
-                           unsigned short i_tg ) const = 0;
+                           unsigned short i_tg,
+                           unsigned short i_cb ) const = 0;
 
     /**
      * Number of communication buffers.
