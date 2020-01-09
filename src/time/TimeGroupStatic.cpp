@@ -33,12 +33,12 @@
 #include "impl/swe/ts_dep.inc"
 #endif
 
-edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short    i_nTgs,
-                                              unsigned short    i_tgId,
-                                              data::Internal  & i_internal,
-                                              unsigned short    i_nCommBuffers,
-                                              unsigned char *** i_sendPtrs,
-                                              unsigned char *** i_recvPtrs ): m_internal( i_internal ) {
+edge::time::TimeGroupStatic::TimeGroupStatic( unsigned short                   i_nTgs,
+                                              unsigned short                   i_tgId,
+                                              data::Internal                 & i_internal,
+                                              unsigned short                   i_nCommBuffers,
+                                              unsigned char  * const * const * i_sendPtrs,
+                                              unsigned char  * const * const * i_recvPtrs ): m_internal( i_internal ) {
   m_nCommBuffers = i_nCommBuffers;
   m_sendPtrs = i_sendPtrs;
   m_recvPtrs = i_recvPtrs;

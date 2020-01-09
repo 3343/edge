@@ -147,7 +147,7 @@ void edge::time::Manager::simulate( double i_time ) {
   // reset all statuses to wait
   m_shared.resetStatus( parallel::Shared::WAI );
 
-  // reset distributed memory parallelization
+  // reset the distributed memory interface
   m_distributed.reset();
 
   // reset control flow

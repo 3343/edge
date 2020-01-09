@@ -70,8 +70,7 @@ void edge::parallel::MpiRemix::init( unsigned short         i_nTgs,
 }
 
 void edge::parallel::MpiRemix::beginSends( bool           i_lt,
-                                           unsigned short i_tg,
-                                           unsigned short ) {
+                                           unsigned short i_tg ) {
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     // only send if the message's time group matches
     bool l_match = checkSendTgLt( l_ch,
@@ -94,8 +93,7 @@ void edge::parallel::MpiRemix::beginSends( bool           i_lt,
 }
 
 void edge::parallel::MpiRemix::beginRecvs( bool           i_lt,
-                                           unsigned short i_tg,
-                                           unsigned short ) {
+                                           unsigned short i_tg ) {
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     bool l_match = checkRecvTgLt( l_ch,
                                   i_lt,
@@ -155,8 +153,7 @@ void edge::parallel::MpiRemix::comm() {
 }
 
 bool edge::parallel::MpiRemix::finSends( bool           i_lt,
-                                         unsigned short i_tg,
-                                         unsigned short ) const {
+                                         unsigned short i_tg ) const {
   // iterate over send messages of the time group
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     bool l_match = checkSendTgLt( l_ch,
@@ -170,8 +167,7 @@ bool edge::parallel::MpiRemix::finSends( bool           i_lt,
 }
 
 bool edge::parallel::MpiRemix::finRecvs( bool           i_lt,
-                                         unsigned short i_tg,
-                                         unsigned short ) const {
+                                         unsigned short i_tg ) const {
   // iterate over recv messages of the time group
   for( std::size_t l_ch = 0; l_ch < m_nChs; l_ch++ ) {
     bool l_match = checkRecvTgLt( l_ch,

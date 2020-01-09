@@ -98,8 +98,7 @@ class edge::parallel::MpiRemix: public Distributed {
      * @param i_tg time group for which data is send.
      **/
     void beginSends( bool           i_lt,
-                     unsigned short i_tg,
-                     unsigned short );
+                     unsigned short i_tg );
 
     /**
      * Calls MPI to initiate the receives for the given time group.
@@ -108,8 +107,7 @@ class edge::parallel::MpiRemix: public Distributed {
      * @param i_tg time group for which data is received.
      **/
     void beginRecvs( bool           i_lt,
-                     unsigned short i_tg,
-                     unsigned short );
+                     unsigned short i_tg );
 
     /**
      * Progresses MPI communication.
@@ -124,8 +122,7 @@ class edge::parallel::MpiRemix: public Distributed {
      * @return true if all sends are finished, false if sends are ongoing.
      **/
     bool finSends( bool           i_lt,
-                   unsigned short i_tg,
-                   unsigned short ) const;
+                   unsigned short i_tg ) const;
 
     /**
      * Checks if all receives for the specified time group are finished.
@@ -135,13 +132,7 @@ class edge::parallel::MpiRemix: public Distributed {
      * @return true if all receives are finished, false if receives are ongoing.
      **/
     bool finRecvs( bool           i_lt,
-                   unsigned short i_tg,
-                   unsigned short ) const;
-
-    /**
-     * Dummy reset, returns immediately.
-     **/
-    void reset(){};
+                   unsigned short i_tg ) const;
 };
 
 #endif

@@ -85,14 +85,12 @@ class edge::parallel::DistributedDummy: public Distributed {
      * Dummy sends, returns immediately.
      **/
     void beginSends( bool,
-                     unsigned short,
                      unsigned short ){};
 
     /**
      * Dummy receives, returns immediately.
      **/
     void beginRecvs( bool,
-                     unsigned short,
                      unsigned short ){};
 
     /**
@@ -104,20 +102,13 @@ class edge::parallel::DistributedDummy: public Distributed {
      * Dummy check, always returns true.
      **/
     bool finSends( bool,
-                   unsigned short,
                    unsigned short ) const { return true; };
 
     /**
      * Dummy check, always returns true.
      **/
     bool finRecvs( bool,
-                   unsigned short,
                    unsigned short ) const { return true; };
-
-    /**
-     * Dummy reset, returns immediately.
-     **/
-    void reset(){};
 };
 
 #endif

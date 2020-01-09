@@ -26,6 +26,23 @@
 #include "mpi_wrapper.inc"
 #endif
 
+void edge::parallel::Distributed::sendCommBuffers2( unsigned short   i_tg,
+                                                    unsigned short & o_cbL,
+                                                    unsigned short & o_cbLtR,
+                                                    unsigned short & o_cbGeR ) const {
+  o_cbL = m_nSendsSync[i_tg]%2;
+  o_cbLtR = std::numeric_limits< unsigned short >::max();
+  if( m_nSendsSync[i_tg]%2 == 1 ) o_cbLtR = (m_nSendsSync[i_tg] / 2)%2;
+  o_cbGeR = m_nSendsSync[i_tg]%2;
+}
+
+void edge::parallel::Distributed::recvCommBuffers2( unsigned short   i_tg,
+                                                    unsigned short & o_cbLtL,
+                                                    unsigned short & o_cbGeL ) const {
+  o_cbLtL = (m_nRecvsSync[i_tg]/2)%2;
+  o_cbGeL = m_nRecvsSync[i_tg]%2;
+}
+
 edge::parallel::Distributed::Distributed( int    i_argc,
                                           char * i_argv[] ) {
   // set default values for non-mpi runs
@@ -78,9 +95,9 @@ bool edge::parallel::Distributed::checkSendTgLt( std::size_t    i_ch,
                                                  bool           i_lt,
                                                  unsigned short i_tg ) const {
   // message's time group has to match
-  bool l_match = (m_sendMsgs[i_ch].tg == i_tg);
+  bool l_match = (m_sendMsgs[i_ch].tgL == i_tg);
   // either message is greater-equal or less-than was requested
-  if( m_sendMsgs[i_ch].lt ) {
+  if( m_sendMsgs[i_ch].tgL < m_sendMsgs[i_ch].tgR ) {
     l_match = l_match && i_lt;
   }
   return l_match;
@@ -90,9 +107,9 @@ bool edge::parallel::Distributed::checkRecvTgLt( std::size_t    i_ch,
                                                  bool           i_lt,
                                                  unsigned short i_tg ) const {
   // message's time group has to match
-  bool l_match = (m_recvMsgs[i_ch].tg == i_tg);
+  bool l_match = (m_recvMsgs[i_ch].tgL == i_tg);
   // either message is greater-equal or less-than was requested
-  if( m_recvMsgs[i_ch].lt ) {
+  if( m_recvMsgs[i_ch].tgL < m_recvMsgs[i_ch].tgR ) {
     l_match = l_match && i_lt;
   }
   return l_match;
@@ -111,6 +128,10 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
                                         data::Dynamic        & io_dynMem ) {
   m_nTgs = i_nTgs;
   m_nCommBuffers = i_nCommBuffers;
+  EDGE_CHECK( m_nCommBuffers == 1 || m_nCommBuffers == 2 );
+
+  m_nSendsSync = (std::size_t *) io_dynMem.allocate( m_nTgs * sizeof(std::size_t) );
+  m_nRecvsSync = (std::size_t *) io_dynMem.allocate( m_nTgs * sizeof(std::size_t) );
 
   // derive the number of communication channels and communicating faces
   if( i_commStruct != nullptr ) {
@@ -138,16 +159,18 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
   m_recvBufferSize = l_sizeRecv;
   m_recvBuffers = (unsigned char*) io_dynMem.allocate( l_sizeRecv*m_nCommBuffers );
 
+  unsigned short l_nPtrsSend = m_nCommBuffers;
+  unsigned short l_nPtrsRecv = (m_nCommBuffers == 2) ? 4 : 1;
+
   // allocate pointer data structure
-  std::size_t l_sizePtrs = i_nEls * i_nElFas * sizeof(unsigned char*) * m_nCommBuffers;
-  unsigned char** l_sendPtrs = (unsigned char** ) io_dynMem.allocate( l_sizePtrs );
-  unsigned char** l_recvPtrs = (unsigned char** ) io_dynMem.allocate( l_sizePtrs );
-  m_sendPtrs = (unsigned char***) io_dynMem.allocate( sizeof(unsigned char**) * m_nCommBuffers );
-  m_recvPtrs = (unsigned char***) io_dynMem.allocate( sizeof(unsigned char**) * m_nCommBuffers );
-  for( unsigned short l_cb = 0; l_cb < i_nCommBuffers; l_cb++ ) {
-    m_sendPtrs[l_cb] = l_sendPtrs + l_cb * i_nEls * i_nElFas;
-    m_recvPtrs[l_cb] = l_recvPtrs + l_cb * i_nEls * i_nElFas;
-  }
+  std::size_t l_sizePtrs = i_nEls * i_nElFas * sizeof(unsigned char*);
+  unsigned char** l_sendPtrs = (unsigned char** ) io_dynMem.allocate( l_sizePtrs * l_nPtrsSend );
+  unsigned char** l_recvPtrs = (unsigned char** ) io_dynMem.allocate( l_sizePtrs * l_nPtrsRecv );
+
+  for( unsigned short l_po = 0; l_po < l_nPtrsSend; l_po++ )
+    m_sendPtrs[l_po] = l_sendPtrs + l_po * i_nEls * i_nElFas;
+  for( unsigned short l_po = 0; l_po < l_nPtrsRecv; l_po++ )
+    m_recvPtrs[l_po] = l_recvPtrs + l_po * i_nEls * i_nElFas;
 
   // init with null pointers (no communication)
 #ifdef PP_USE_OMP
@@ -155,10 +178,10 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
 #endif
   for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
     for( unsigned short l_fa = 0; l_fa < i_nElFas; l_fa++ ) {
-      for( unsigned short l_cb = 0; l_cb < m_nCommBuffers; l_cb++ ) {
-        m_sendPtrs[l_cb][ l_el*i_nElFas + l_fa ] = nullptr;
-        m_recvPtrs[l_cb][ l_el*i_nElFas + l_fa ] = nullptr;
-      }
+      for( unsigned short l_po = 0; l_po < l_nPtrsSend; l_po++ )
+        m_sendPtrs[l_po][l_el*i_nElFas + l_fa] = nullptr;
+      for( unsigned short l_po = 0; l_po < l_nPtrsRecv; l_po++ )
+        m_recvPtrs[l_po][l_el*i_nElFas + l_fa] = nullptr;
     }
   }
 
@@ -180,15 +203,15 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
     l_sizeRecv = (l_tg < l_tgAd) ? l_nSeRe * i_nByFa * 2 : l_nSeRe * i_nByFa;
 
     // assign
-    m_sendMsgs[l_ch].lt      = (l_tg < l_tgAd);
-    m_sendMsgs[l_ch].tg      = l_tg;
+    m_sendMsgs[l_ch].tgL     = l_tg;
+    m_sendMsgs[l_ch].tgR     = l_tgAd;
     m_sendMsgs[l_ch].rank    = l_raAd;
     m_sendMsgs[l_ch].tag     = l_tg*i_nTgs + l_tgAd;
     m_sendMsgs[l_ch].size    = l_sizeSend;
     m_sendMsgs[l_ch].offL    = l_offSend;
 
-    m_recvMsgs[l_ch].lt      = (l_tg < l_tgAd);
-    m_recvMsgs[l_ch].tg      = l_tg;
+    m_recvMsgs[l_ch].tgL     = l_tg;
+    m_recvMsgs[l_ch].tgR     = l_tgAd;
     m_recvMsgs[l_ch].rank    = l_raAd;
     m_recvMsgs[l_ch].tag     = l_tgAd*i_nTgs + l_tg;
     m_recvMsgs[l_ch].size    = l_sizeRecv;
@@ -200,15 +223,31 @@ void edge::parallel::Distributed::init( unsigned short         i_nTgs,
       std::size_t l_reFa = i_recvFa[l_first+l_co];
       std::size_t l_reEl = i_recvEl[l_first+l_co];
 
-      for( unsigned short l_cb = 0; l_cb < m_nCommBuffers; l_cb++ ) {
-        m_sendPtrs[l_cb][l_seEl*i_nElFas + l_seFa ] = m_sendBuffers + l_cb*m_sendBufferSize + l_offSend;
-        m_recvPtrs[l_cb][l_reEl*i_nElFas + l_reFa ] = m_recvBuffers + l_cb*m_recvBufferSize + l_offRecv;
+      for( unsigned short l_po = 0; l_po < l_nPtrsSend; l_po++ )
+        m_sendPtrs[l_po][l_seEl*i_nElFas + l_seFa] = m_sendBuffers + (l_po%2)*m_sendBufferSize + l_offSend;
+
+      for( unsigned short l_po = 0; l_po < l_nPtrsRecv; l_po++ ) {
+        if( l_tg >= l_tgAd ) {
+          m_recvPtrs[l_po][l_reEl*i_nElFas + l_reFa] = m_recvBuffers + (l_po%2)*m_recvBufferSize + l_offRecv;
+        }
+        else {
+          m_recvPtrs[l_po][l_reEl*i_nElFas + l_reFa] = m_recvBuffers + ( (l_po/2)%2 )*m_recvBufferSize + l_offRecv;
+        }
       }
 
       l_offSend += (l_tg > l_tgAd) ? i_nByFa * 2 : i_nByFa;
       l_offRecv += (l_tg < l_tgAd) ? i_nByFa * 2 : i_nByFa;
     }
     l_first += l_nSeRe;
+  }
+
+  reset();
+}
+
+void edge::parallel::Distributed::reset() {
+  for( unsigned short l_tg = 0; l_tg < m_nTgs; l_tg++ ) {
+    m_nRecvsSync[l_tg] = std::numeric_limits< std::size_t >::max();
+    m_nSendsSync[l_tg] = std::numeric_limits< std::size_t >::max();
   }
 }
 

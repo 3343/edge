@@ -47,8 +47,14 @@ class edge::parallel::Distributed {
     //! number of channels
     std::size_t m_nChs = 0;
 
+    //! number of performed sends
+    std::size_t * m_nSendsSync = nullptr;
+
+    //! number of performed receives
+    std::size_t * m_nRecvsSync = nullptr;
+
     //! number of send-receive faces
-    std::size_t *m_nSeRe = nullptr;
+    std::size_t * m_nSeRe = nullptr;
 
     //! number of communication buffers
     std::size_t m_nCommBuffers = 0;
@@ -66,18 +72,22 @@ class edge::parallel::Distributed {
     unsigned char * m_recvBuffers = nullptr;
 
     //! pointers into the send buffers
-    unsigned char *** m_sendPtrs = nullptr;
+    unsigned char ** m_sendPtrs[2] = { nullptr,
+                                       nullptr };
 
     //! pointers into the receive buffers
-    unsigned char *** m_recvPtrs = nullptr;
+    unsigned char ** m_recvPtrs[4] = { nullptr,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr };
 
     //! message structure
     typedef struct {
-      //! true if message is part of a less-than LTS relation
-      bool lt;
+      //! local time group
+      unsigned short tgL;
 
-      //! local time group of this message
-      unsigned short tg;
+      //! remote time group
+      unsigned short tgR;
 
       //! neighboring rank
       int rank;
@@ -99,6 +109,30 @@ class edge::parallel::Distributed {
     t_msg * m_recvMsgs = nullptr;
 
     /**
+     * Derives the local send buffer and remote receive buffers for double-buffered schemes based on the number of sends since the last sync.
+     *
+     * @param i_tg time group.
+     * @param o_cbL will be set to the local send buffer.
+     * @param o_cbLtR will be set to the remote recv buffer for remote time groups with a time step less than the local one.
+     * @param o_cbGeR will be set to the remote recv buffer for remote time groups with a time step greater or equal than the local one.
+     **/
+    void sendCommBuffers2( unsigned short   i_tg,
+                           unsigned short & o_cbL,
+                           unsigned short & o_cbLtR,
+                           unsigned short & o_cbGeR ) const;
+
+    /**
+     * Derives the local receive buffers for double-buffered schemes based on the number of receives since the last sync.
+     *
+     * @param i_tg time group.
+     * @param o_cbLtL will be set to the local recv buffer for remote time groups with a time step less than the local one.
+     * @param o_cbGeL will be set to the local recv buffer for remote time groups with a time step greater or equal than the local one.
+     **/
+    void recvCommBuffers2( unsigned short   i_tg,
+                           unsigned short & o_cbLtL,
+                           unsigned short & o_cbGeL ) const;
+
+    /**
      * Initializes the communication structure.
      *
      * @param i_nTgs number of time groups.
@@ -110,7 +144,7 @@ class edge::parallel::Distributed {
      * @param i_sendEl send elements.
      * @param i_recvFa receive faces.
      * @param i_recvEl receive elements.
-     * @param i_nCommBuffers number of allocated communication buffers.
+     * @param i_nCommBuffers number of allocated communication buffers (either 1 or 2).
      * @param io_dynMem dynamic memory allocations.
      **/
     void init( unsigned short         i_nTgs,
@@ -176,22 +210,18 @@ class edge::parallel::Distributed {
      *
      * @param i_lt if true sends are also issued for less-than LTS relations.
      * @param i_tg time group for which data is send.
-     * @param i_cb used communication buffer.
      **/
     virtual void beginSends( bool           i_lt,
-                             unsigned short i_tg,
-                             unsigned short i_cb ) = 0;
+                             unsigned short i_tg ) = 0;
 
     /**
      * Initiates the receives for the given time group.
      *
      * @param i_lt if true receives are also issued for less-than LTS relations.
      * @param i_tg time group for which data is received.
-     * @param i_cb used communication buffer.
      **/
     virtual void beginRecvs( bool           i_lt,
-                             unsigned short i_tg,
-                             unsigned short i_cb ) = 0;
+                             unsigned short i_tg ) = 0;
 
     /**
      * Progresses communication.
@@ -203,24 +233,20 @@ class edge::parallel::Distributed {
      *
      * @param i_lt if true if sends for regions in less-than LTS relations should also be checked.
      * @param i_tg time group for which the sends are checked.
-     * @param i_cb used communication buffer.
      * @return true if all sends are finished, false if sends are ongoing.
      **/
     virtual bool finSends( bool           i_lt,
-                           unsigned short i_tg,
-                           unsigned short i_cb ) const = 0;
+                           unsigned short i_tg ) const = 0;
 
     /**
      * Checks if all receives for the specified time group are finished.
      *
      * @param i_lt if true if receives for regions in less-than LTS relations should also be checked.
      * @param i_tg time group for which the receives are checked.
-     * @param i_cb used communication buffer.
      * @return true if all receives are finished, false if receives are ongoing.
      **/
     virtual bool finRecvs( bool           i_lt,
-                           unsigned short i_tg,
-                           unsigned short i_cb ) const = 0;
+                           unsigned short i_tg ) const = 0;
 
     /**
      * Number of communication buffers.
@@ -232,23 +258,21 @@ class edge::parallel::Distributed {
     /**
      * Gets the pointers to the send buffers.
      *
-     * @param i_tg time group which uses the send pointers.
      * @return send pointers.
      **/
-    unsigned char *** getSendPtrs() const { return m_sendPtrs; }
+    unsigned char * const * const * getSendPtrs() const { return m_sendPtrs; }
 
     /**
      * Gets the pointers to the receive buffers.
      *
-     * @param i_tg time group which uses the send pointers.
      * @return receive pointers.
      **/
-    unsigned char *** getRecvPtrs() const { return m_recvPtrs; }
+    unsigned char * const * const * getRecvPtrs() const { return m_recvPtrs; }
 
     /**
-     * Resets intially / after synchronization.
+     * Resets the interface initially / after synchronization.
      **/
-    virtual void reset() = 0;
+    void reset();
 
     /**
      * Determines, if the calling rank holds the minimum for the values

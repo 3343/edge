@@ -80,10 +80,10 @@ class edge::time::TimeGroupStatic {
     data::Internal & m_internal;
 
     //! send pointers
-    unsigned char *** m_sendPtrs = nullptr;
+    unsigned char * const * const * m_sendPtrs = nullptr;
 
     //! receive pointers
-    unsigned char *** m_recvPtrs = nullptr;
+    unsigned char * const * const * m_recvPtrs = nullptr;
 
     //! number of communication buffers
     unsigned short m_nCommBuffers = 0;
@@ -104,12 +104,12 @@ class edge::time::TimeGroupStatic {
      * @param i_sendPtrs send pointers.
      * @param i_recvPtrs receive pointers.
      **/
-    TimeGroupStatic( unsigned short    i_nTgs,
-                     unsigned short    i_tgId,
-                     data::Internal  & i_internal,
-                     unsigned short    i_nCommBuffers,
-                     unsigned char *** i_sendPtrs,
-                     unsigned char *** i_recvPtrs );
+    TimeGroupStatic( unsigned short                   i_nTgs,
+                     unsigned short                   i_tgId,
+                     data::Internal                 & i_internal,
+                     unsigned short                   i_nCommBuffers,
+                     unsigned char  * const * const * i_sendPtrs,
+                     unsigned char  * const * const * i_recvPtrs );
 
     /**
      * Sets up the cluster for iterations until the given synchronization point.

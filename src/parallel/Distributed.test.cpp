@@ -25,29 +25,29 @@
 #include "DistributedDummy.hpp"
 #undef protected
 
+std::size_t l_commStruct[9] = {2, 0, 2, 4, 15, 3, 1, 1, 5};
+
+unsigned short l_sendFa[20] = { 0, 3, 2, 0, 1,
+                                2, 3, 3, 3, 1,
+                                0, 2, 1, 2, 2,
+                                3, 2, 0, 1, 1 };
+
+std::size_t l_sendEl[20] =    { 4, 3, 5, 9, 1,
+                                2, 4, 9, 2, 5,
+                                0, 7, 2, 8, 3,
+                                7, 4, 5, 9, 3 };
+
+unsigned short l_recvFa[20] = { 3, 3, 2, 0, 1,
+                                2, 3, 1, 2, 2,
+                                0, 2, 3, 2, 3,
+                                2, 2, 0, 1, 1 };
+
+std::size_t l_recvEl[20] =    { 4, 3, 5, 9, 3,
+                                6, 0, 6, 5, 2,
+                                0, 9, 7, 8, 3,
+                                7, 4, 2, 9, 4 };
+
 TEST_CASE( "Tests the setup of distributed memory-related data structures.", "[Distributed][data]" ) {
-  std::size_t l_commStruct[9] = {2, 0, 2, 4, 15, 3, 1, 1, 5};
-
-  unsigned short l_sendFa[20] = { 0, 3, 2, 0, 1,
-                                  2, 3, 3, 3, 1,
-                                  0, 2, 1, 2, 2,
-                                  3, 2, 0, 1, 1 };
-
-  std::size_t l_sendEl[20] =    { 4, 3, 5, 9, 1,
-                                  2, 4, 9, 2, 5,
-                                  0, 7, 2, 8, 3,
-                                  7, 4, 5, 9, 3 };
-
-  unsigned short l_recvFa[20] = { 3, 3, 2, 0, 1,
-                                  2, 3, 1, 2, 2,
-                                  0, 2, 3, 2, 3,
-                                  2, 2, 0, 1, 1 };
-
-  std::size_t l_recvEl[20] =    { 4, 3, 5, 9, 3,
-                                  6, 0, 6, 5, 2,
-                                  0, 9, 7, 8, 3,
-                                  7, 4, 2, 9, 4 };
-
   edge::data::Dynamic l_dynMem;
 
   edge::parallel::DistributedDummy l_dist( 0, nullptr );
@@ -107,47 +107,181 @@ TEST_CASE( "Tests the setup of distributed memory-related data structures.", "[D
   // [...]
 
   // check some recv pointers
-  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 0] == l_dist.m_recvBuffers+10*17*2 );
-  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 1] == nullptr                      );
-  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 2] == nullptr                      );
-  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 3] == l_dist.m_recvBuffers+ 6*17*2 );
+  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 0] == l_dist.m_recvBuffers+10*17*2                             );
+  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 1] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 2] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[0][0*4 + 3] == l_dist.m_recvBuffers+ 6*17*2                             );
 
-  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 0] == nullptr                      );
-  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 1] == nullptr                      );
-  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 2] == nullptr                      );
-  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 3] == nullptr                      );
+  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 0] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 1] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 2] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[0][1*4 + 3] == nullptr                                                  );
   // [...]
-  REQUIRE( l_dist.m_recvPtrs[1][0*4 + 0] == l_dist.m_recvBuffers + l_dist.m_recvBufferSize + 10*17*2 );
+  REQUIRE( l_dist.m_recvPtrs[1][0*4 + 0] == l_dist.m_recvBuffers + 10*17*2                           );
   REQUIRE( l_dist.m_recvPtrs[1][0*4 + 1] == nullptr                                                  );
   REQUIRE( l_dist.m_recvPtrs[1][0*4 + 2] == nullptr                                                  );
-  REQUIRE( l_dist.m_recvPtrs[1][0*4 + 3] == l_dist.m_recvBuffers + l_dist.m_recvBufferSize +  6*17*2 );
+  REQUIRE( l_dist.m_recvPtrs[1][0*4 + 3] == l_dist.m_recvBuffers +  6*17*2 );
 
   REQUIRE( l_dist.m_recvPtrs[1][1*4 + 0] == nullptr                                                  );
   REQUIRE( l_dist.m_recvPtrs[1][1*4 + 1] == nullptr                                                  );
   REQUIRE( l_dist.m_recvPtrs[1][1*4 + 2] == nullptr                                                  );
   REQUIRE( l_dist.m_recvPtrs[1][1*4 + 3] == nullptr                                                  );
+  // [...]
+  REQUIRE( l_dist.m_recvPtrs[2][0*4 + 0] == l_dist.m_recvBuffers + l_dist.m_recvBufferSize + 10*17*2 );
+  REQUIRE( l_dist.m_recvPtrs[2][0*4 + 1] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[2][0*4 + 2] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[2][0*4 + 3] == l_dist.m_recvBuffers + l_dist.m_recvBufferSize +  6*17*2 );
 
-  REQUIRE( l_dist.m_sendMsgs[0].lt   == true    );
-  REQUIRE( l_dist.m_sendMsgs[0].tg   == 0       );
+  REQUIRE( l_dist.m_recvPtrs[2][1*4 + 0] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[2][1*4 + 1] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[2][1*4 + 2] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[2][1*4 + 3] == nullptr                                                  );
+  // [...]
+  REQUIRE( l_dist.m_recvPtrs[3][0*4 + 0] == l_dist.m_recvBuffers + l_dist.m_recvBufferSize + 10*17*2 );
+  REQUIRE( l_dist.m_recvPtrs[3][0*4 + 1] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[3][0*4 + 2] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[3][0*4 + 3] == l_dist.m_recvBuffers + l_dist.m_recvBufferSize +  6*17*2 );
+
+  REQUIRE( l_dist.m_recvPtrs[3][1*4 + 0] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[3][1*4 + 1] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[3][1*4 + 2] == nullptr                                                  );
+  REQUIRE( l_dist.m_recvPtrs[3][1*4 + 3] == nullptr                                                  );
+
+  REQUIRE( l_dist.m_sendMsgs[0].tgL  == 0       );
+  REQUIRE( l_dist.m_sendMsgs[0].tgR  == 4       );
   REQUIRE( l_dist.m_sendMsgs[0].rank == 2       );
   REQUIRE( l_dist.m_sendMsgs[0].size == 15*17   );
   REQUIRE( l_dist.m_sendMsgs[0].offL == 0       );
 
-  REQUIRE( l_dist.m_sendMsgs[1].lt   == false   );
-  REQUIRE( l_dist.m_sendMsgs[1].tg   == 3       );
+  REQUIRE( l_dist.m_sendMsgs[1].tgL  == 3       );
+  REQUIRE( l_dist.m_sendMsgs[1].tgR  == 1       );
   REQUIRE( l_dist.m_sendMsgs[1].rank == 1       );
   REQUIRE( l_dist.m_sendMsgs[1].size == 5*17*2  );
   REQUIRE( l_dist.m_sendMsgs[1].offL == 15*17   );
 
-  REQUIRE( l_dist.m_recvMsgs[0].lt   == true    );
-  REQUIRE( l_dist.m_recvMsgs[0].tg   == 0       );
+  REQUIRE( l_dist.m_recvMsgs[0].tgL  == 0       );
+  REQUIRE( l_dist.m_recvMsgs[0].tgR  == 4       );
   REQUIRE( l_dist.m_recvMsgs[0].rank == 2       );
   REQUIRE( l_dist.m_recvMsgs[0].size == 15*17*2 );
   REQUIRE( l_dist.m_recvMsgs[0].offL == 0       );
 
-  REQUIRE( l_dist.m_recvMsgs[1].lt   == false   );
-  REQUIRE( l_dist.m_recvMsgs[1].tg   == 3       );
+  REQUIRE( l_dist.m_recvMsgs[1].tgL  == 3       );
+  REQUIRE( l_dist.m_recvMsgs[1].tgR  == 1       );
   REQUIRE( l_dist.m_recvMsgs[1].rank == 1       );
   REQUIRE( l_dist.m_recvMsgs[1].size == 5*17    );
   REQUIRE( l_dist.m_recvMsgs[1].offL == 15*17*2 );
+}
+
+TEST_CASE( "Tests the derivation of send comm buffer ids for double-buffered schemes.", "[Distributed][sendCommBuffers2]" ) {
+  edge::data::Dynamic l_dynMem;
+  edge::parallel::DistributedDummy l_dist( 0, nullptr );
+  l_dist.init( 7,
+               4,
+               200,
+               17,
+               l_commStruct,
+               l_sendFa,
+               l_sendEl,
+               l_recvFa,
+               l_recvEl,
+               l_dynMem );
+
+  unsigned short l_cbL, l_cbLtR, l_cbGeR;
+
+  l_dist.m_nSendsSync[0] = 0;
+  l_dist.sendCommBuffers2( 0,
+                           l_cbL,
+                           l_cbLtR,
+                           l_cbGeR );
+  REQUIRE( l_cbL == 0 );
+  REQUIRE( l_cbLtR == std::numeric_limits< unsigned short >::max() );
+  REQUIRE( l_cbGeR == 0 );
+
+  l_dist.m_nSendsSync[0] = 1;
+  l_dist.sendCommBuffers2( 0,
+                           l_cbL,
+                           l_cbLtR,
+                           l_cbGeR );
+  REQUIRE( l_cbL == 1 );
+  REQUIRE( l_cbLtR == 0 );
+  REQUIRE( l_cbGeR == 1 );
+
+  l_dist.m_nSendsSync[0] = 2;
+  l_dist.sendCommBuffers2( 0,
+                           l_cbL,
+                           l_cbLtR,
+                           l_cbGeR );
+  REQUIRE( l_cbL == 0 );
+  REQUIRE( l_cbLtR == std::numeric_limits< unsigned short >::max() );
+  REQUIRE( l_cbGeR == 0 );
+
+  l_dist.m_nSendsSync[0] = 3;
+  l_dist.sendCommBuffers2( 0,
+                           l_cbL,
+                           l_cbLtR,
+                           l_cbGeR );
+  REQUIRE( l_cbL == 1 );
+  REQUIRE( l_cbLtR == 1 );
+  REQUIRE( l_cbGeR == 1 );
+
+  l_dist.m_nSendsSync[0] = 4;
+  l_dist.sendCommBuffers2( 0,
+                           l_cbL,
+                           l_cbLtR,
+                           l_cbGeR );
+  REQUIRE( l_cbL == 0 );
+  REQUIRE( l_cbLtR == std::numeric_limits< unsigned short >::max() );
+  REQUIRE( l_cbGeR == 0 );
+}
+
+TEST_CASE( "Tests the derivation of recv comm buffer ids for double-buffered schemes.", "[Distributed][recvCommBuffers2]" ) {
+  edge::data::Dynamic l_dynMem;
+  edge::parallel::DistributedDummy l_dist( 0, nullptr );
+  l_dist.init( 7,
+               4,
+               200,
+               17,
+               l_commStruct,
+               l_sendFa,
+               l_sendEl,
+               l_recvFa,
+               l_recvEl,
+               l_dynMem );
+
+  unsigned short l_cbLtL, l_cbGeL;
+
+  l_dist.m_nRecvsSync[0] = 0;
+  l_dist.recvCommBuffers2( 0,
+                           l_cbLtL,
+                           l_cbGeL );
+  REQUIRE( l_cbLtL == 0 );
+  REQUIRE( l_cbGeL == 0 );
+
+  l_dist.m_nRecvsSync[0] = 1;
+  l_dist.recvCommBuffers2( 0,
+                           l_cbLtL,
+                           l_cbGeL );
+  REQUIRE( l_cbLtL == 0 );
+  REQUIRE( l_cbGeL == 1 );
+
+  l_dist.m_nRecvsSync[0] = 2;
+  l_dist.recvCommBuffers2( 0,
+                           l_cbLtL,
+                           l_cbGeL );
+  REQUIRE( l_cbLtL == 1 );
+  REQUIRE( l_cbGeL == 0 );
+
+  l_dist.m_nRecvsSync[0] = 3;
+  l_dist.recvCommBuffers2( 0,
+                           l_cbLtL,
+                           l_cbGeL );
+  REQUIRE( l_cbLtL == 1 );
+  REQUIRE( l_cbGeL == 1 );
+
+  l_dist.m_nRecvsSync[0] = 4;
+  l_dist.recvCommBuffers2( 0,
+                           l_cbLtL,
+                           l_cbGeL );
+  REQUIRE( l_cbLtL == 0 );
+  REQUIRE( l_cbGeL == 0 );
 }
