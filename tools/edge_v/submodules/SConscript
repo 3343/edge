@@ -104,7 +104,7 @@ if env['moab'] != False:
 # UCVM
 if env['ucvm'] != False:
   # enable UCVM in build
-  env.AppendUnique( CPPDEFINES =['PP_USE_UCVM'] )
+  env.AppendUnique( CPPDEFINES =['PP_HAS_UCVM'] )
   env.AppendUnique( CPPDEFINES =['PP_UCVM_CONF=\\"' + env['ucvm'] + '/conf/ucvm.conf\\"' ] )
 
   if env['ucvm'] != True:
