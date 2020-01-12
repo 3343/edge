@@ -115,6 +115,8 @@ if env['gpi2'] != False:
     env.AppendUnique( LIBPATH=[ env['gpi2']+'/lib64']   )
   if conf.CheckLibWithHeaderFlags( 'GPI2' ):
     env.AppendUnique( CPPDEFINES = ['PP_USE_GASPI'] )
+  # enable ibverbs if available
+  conf.CheckLibWithHeaderFlags( 'ibverbs', '', 'CXX', [], [], True)
 
 # forward EDGE-V
 if env['edge_v'] != False:
