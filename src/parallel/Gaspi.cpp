@@ -101,7 +101,7 @@ void edge::parallel::Gaspi::init( unsigned short         i_nTgs,
   for( unsigned short l_tg = 0; l_tg < m_nTgs; l_tg++ ) m_nRecvsOn[l_tg] = 0;
 
   // get remote offsets
-  std::size_t l_offSize = m_nTgs * sizeof(std::size_t);
+  std::size_t l_offSize = m_nChs * sizeof(std::size_t);
   m_sendOffR = (std::size_t *) io_dynMem.allocate( l_offSize );
   std::size_t *l_recvOffL = new std::size_t[ m_nChs ];
 
