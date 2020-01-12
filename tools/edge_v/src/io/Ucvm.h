@@ -78,10 +78,10 @@ class edge_v::io::Ucvm {
                   std::string const  & i_projSrc,
                   std::string const  & i_projDes,
                   std::string const  & i_ucvmType,
-                  double            (* i_pts)[3],
+                  double      const (* i_pts)[3],
                   float              * o_vps,
                   float              * o_vss,
-                  float              * o_rhos );
+                  float              * o_rhos ) const;
 };
 
 #endif

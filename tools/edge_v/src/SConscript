@@ -82,7 +82,8 @@ if env['tests']:
               'time/Groups.test.cpp' ]
 
   if 'ucvm' in env and env['ucvm']:
-    l_tests += ['io/Ucvm.test.cpp']
+    l_tests += [ 'io/Ucvm.test.cpp',
+                 'models/seismic/Ucvm.test.cpp' ]
 
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )

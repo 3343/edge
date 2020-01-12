@@ -65,10 +65,10 @@ void edge_v::io::Ucvm::getVels( std::size_t          i_nPts,
                                 std::string const  & i_projSrc,
                                 std::string const  & i_projDes,
                                 std::string const  & i_ucvmType,
-                                double            (* i_pts)[3],
+                                double      const (* i_pts)[3],
                                 float              * o_vps,
                                 float              * o_vss,
-                                float              * o_rhos ) {
+                                float              * o_rhos ) const {
   // allocate memory for UCVM points and data
   ucvm_point_t *l_ucvmPts  = new ucvm_point_t[ i_nPts ];
   ucvm_data_t  *l_ucvmData = new ucvm_data_t[  i_nPts ];
