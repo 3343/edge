@@ -4,7 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2019, Alexander Breuer
+# Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2015-2018, Regents of the University of California
 # All rights reserved.
 #
@@ -53,6 +53,9 @@ l_sources = [ 'data/Expression.cpp',
 
 if 'mpi' in env['parallel']:
   l_sources += [ 'parallel/MpiRemix.cpp' ]
+
+if env['gpi2'] != False:
+  l_sources += [ 'parallel/Gaspi.cpp' ]
 
 if 'elastic' in env['equations']:
   l_sources = l_sources + [ 'impl/seismic/io/Config.cpp',

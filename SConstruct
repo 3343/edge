@@ -214,9 +214,11 @@ vars.AddVariables(
   PackageVariable( 'edge_v',
                    'Location of EDGE-V installation.',
                    'yes' ),
-
   PackageVariable( 'hugetlbfs',
                    'Enables the use of libhugetlbfs.',
+                   'no' ),
+  PackageVariable( 'gpi2',
+                   'Enables the use of GPI-2.',
                    'no' ),
   BoolVariable( 'easylogging',
                 'Enables the use of Easylogging.',

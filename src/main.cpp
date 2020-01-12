@@ -21,7 +21,9 @@
  * @section DESCRIPTION
  * This is the main file of EDGE.
  **/
-#if defined(PP_USE_MPI)
+#if defined(PP_USE_GASPI)
+#include "parallel/Gaspi.h"
+#elif defined(PP_USE_MPI)
 #include "parallel/MpiRemix.h"
 #else
 #include "parallel/DistributedDummy.hpp"
@@ -89,7 +91,10 @@ int main( int i_argc, char *i_argv[] ) {
   l_shared.init();
 
   // init distributed memory parallelization
-#if defined(PP_USE_MPI)
+#if defined(PP_USE_GASPI)
+  edge::parallel::Gaspi l_distributed( i_argc,
+                                       i_argv );
+#elif defined(PP_USE_MPI)
   edge::parallel::MpiRemix l_distributed( i_argc,
                                           i_argv );
 #else

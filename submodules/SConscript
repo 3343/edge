@@ -107,6 +107,15 @@ if env['moab'] != False:
   if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
     warnings.warn( '  Warning: Could not enable MOAB.' )
 
+# enable GPI2 if available
+if env['gpi2'] != False:
+  if env['gpi2'] != True:
+    env.AppendUnique( CPPPATH=[ env['gpi2']+'/include'] )
+    env.AppendUnique( LIBPATH=[ env['gpi2']+'/lib']     )
+    env.AppendUnique( LIBPATH=[ env['gpi2']+'/lib64']   )
+  if conf.CheckLibWithHeaderFlags( 'GPI2' ):
+    env.AppendUnique( CPPDEFINES = ['PP_USE_GASPI'] )
+
 # forward EDGE-V
 if env['edge_v'] != False:
   if env['edge_v'] != True:
