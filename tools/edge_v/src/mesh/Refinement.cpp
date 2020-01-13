@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (breuer AT mytum.de)
  *
  * @section LICENSE
- * Copyright (c) 2019-2020, Alexander Breuer
+ * Copyright (c) 2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,66 +18,53 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Expression-based velocity model.
+ * Velocity-based mesh refinement.
  **/
-#include "Expression.h"
+#include "Refinement.h"
 #include "io/logging.h"
 #include "io/ExprTk.h"
 
-edge_v::models::seismic::Expression::Expression( std::string const & i_expr ) {
-  m_expr = i_expr;
+void edge_v::mesh::Refinement::free() {
+  if( m_ref != nullptr ) delete[] m_ref;
 }
 
-edge_v::models::seismic::Expression::~Expression() {
+edge_v::mesh::Refinement::~Refinement() {
   free();
 }
 
-void edge_v::models::seismic::Expression::init( std::size_t          i_nPts,
-                                                double      const (* i_pts)[3] ) {
-  // variables in the velocity model
+void edge_v::mesh::Refinement::init( std::size_t            i_nPts,
+                                     double        const (* i_pts)[3],
+                                     std::string   const  & i_refExpr,
+                                     models::Model const  & i_velMod ) {
+  // allocate output memory
+  free();
+  m_ref = new float[i_nPts];
+
+  // variables
   double l_crds[3] = { std::numeric_limits< double >::max(),
                        std::numeric_limits< double >::max(),
                        std::numeric_limits< double >::max() };
-  double l_vp = std::numeric_limits< double >::max();
-  double l_vs = std::numeric_limits< double >::max();
-  double l_qp = std::numeric_limits< double >::max();
-  double l_qs = std::numeric_limits< double >::max();
+  double l_elspwl = std::numeric_limits< double >::max();
+  double l_freq = std::numeric_limits< double >::max();
 
   // names of the variables
   std::string l_crdsName[3] = {"x", "y", "z"};
-  std::string l_vpName = "vp";
-  std::string l_vsName = "vs";
-  std::string l_qpName = "qp";
-  std::string l_qsName = "qs";
+  std::string l_freqName = "frequency";
+  std::string l_elspwlName = "elements_per_wave_length";
 
   // set up expression-tk interface
-  io::ExprTk l_expr;
-
+  io::ExprTk m_exprTk;
   for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-    l_expr.addVar( l_crdsName[l_di],
-                   l_crds[l_di] );
+    m_exprTk.addVar( l_crdsName[l_di],
+                     l_crds[l_di] );
   }
-  l_expr.addVar( l_vpName,
-                 l_vp );
-  l_expr.addVar( l_vsName,
-                 l_vs );
-  l_expr.addVar( l_qpName,
-                 l_qp );
-  l_expr.addVar( l_qsName,
-                 l_qs );
+  m_exprTk.addVar( l_elspwlName,
+                   l_elspwl );
+  m_exprTk.addVar( l_freqName,
+                   l_freq );
+  m_exprTk.compile( i_refExpr );
 
-  l_expr.compile( m_expr );
-
-  // allocate memory
-  EDGE_V_CHECK_EQ( m_vp, nullptr );
-  m_vp = new double[ i_nPts ];
-  EDGE_V_CHECK_EQ( m_vs, nullptr );
-  m_vs = new double[ i_nPts ];
-  EDGE_V_CHECK_EQ( m_qp, nullptr );
-  m_qp = new double[ i_nPts ];
-  EDGE_V_CHECK_EQ( m_qs, nullptr );
-  m_qs = new double[ i_nPts ];
-
+  // derive refinemnt
   for( std::size_t l_pt = 0; l_pt < i_nPts; l_pt++ ) {
     // copy coords over
     for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
@@ -85,23 +72,15 @@ void edge_v::models::seismic::Expression::init( std::size_t          i_nPts,
     }
 
     // eval expression at the point
-    l_expr.eval();
+    m_exprTk.eval();
+    EDGE_V_CHECK_GT( l_freq, 0 );
+    EDGE_V_CHECK_GT( l_elspwl, 0 );
 
-    // store results
-    m_vp[l_pt] = l_vp;
-    m_vs[l_pt] = l_vs;
-    m_qp[l_pt] = l_qp;
-    m_qs[l_pt] = l_qs;
+    // query velocity model
+    double l_maxWs = i_velMod.getMaxSpeed( l_pt );
+
+    // set target refinement value
+    m_ref[l_pt] = l_maxWs / l_freq;
+    m_ref[l_pt] *= l_elspwl;
   }
-}
-
-void edge_v::models::seismic::Expression::free() {
-  if( m_vp != nullptr ) delete[] m_vp;
-  if( m_vs != nullptr ) delete[] m_vs;
-  if( m_qp != nullptr ) delete[] m_qp;
-  if( m_qs != nullptr ) delete[] m_qs;
-}
-
-double edge_v::models::seismic::Expression::getMaxSpeed( std::size_t i_pt ) const {
-  return m_vp[i_pt];
 }
