@@ -81,6 +81,6 @@ void edge_v::mesh::Refinement::init( std::size_t            i_nPts,
 
     // set target refinement value
     m_ref[l_pt] = l_maxWs / l_freq;
-    m_ref[l_pt] *= l_elspwl;
+    m_ref[l_pt] /= l_elspwl;
   }
 }

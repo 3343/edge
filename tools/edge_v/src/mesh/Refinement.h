@@ -63,6 +63,13 @@ class edge_v::mesh::Refinement {
                double        const (* i_pts)[3],
                std::string   const  & i_refExpr,
                models::Model const  & i_velMod );
+
+    /**
+     * Gets the target lengths at the points.
+     *
+     * @return target lengths.
+     **/
+    float const * getTargetLengths(){ return m_ref; }
 };
 
 #endif
