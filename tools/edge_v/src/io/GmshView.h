@@ -26,6 +26,7 @@
 #define EDGE_V_IO_GMSH_VIEW_HPP
 
 #include <string>
+#include "constants.h"
 
 namespace edge_v {
   namespace io {
@@ -49,7 +50,7 @@ class edge_v::io::GmshView {
      * @param i_values values, which are assigned to the nodes.
      **/
     static void write( std::string const  & i_path,
-                       std::string const  & i_elType,
+                       t_entityType         i_elType,
                        std::size_t          i_nEls,
                        std::size_t const (* i_elVe),
                        double      const (* i_veCrds)[3],

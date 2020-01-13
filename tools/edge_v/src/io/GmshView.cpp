@@ -30,7 +30,7 @@
 #include "logging.h"
 
 void edge_v::io::GmshView::write ( std::string const  & i_path,
-                                   std::string const  & i_elType,
+                                   t_entityType         i_elType,
                                    std::size_t          i_nEls,
                                    std::size_t const (* i_elVe),
                                    double      const (* i_veCrds)[3],
@@ -49,10 +49,10 @@ void edge_v::io::GmshView::write ( std::string const  & i_path,
 
   // derive number of vertices
   unsigned short l_nVes = 0;
-  if( i_elType == "tria3" ) {
+  if( i_elType == TRIA3 ) {
     l_nVes = 3;
   }
-  else if( i_elType == "tet4" ) {
+  else if( i_elType == TET4 ) {
     l_nVes = 4;
   }
   else EDGE_V_LOG_FATAL;
@@ -77,10 +77,14 @@ void edge_v::io::GmshView::write ( std::string const  & i_path,
     std::size_t const *l_ves = i_elVe + l_el * l_nVes;
 
     // open a element type point
-    if( i_elType == "tria3" )
+    if( i_elType == TRIA3 ) {
       l_ss << "ST(";
-    else if( i_elType == "tet4" )
-      l_ss << "SS("; 
+    }
+    else if( i_elType == TET4 ) {
+      l_ss << "SS(";
+    }
+    else EDGE_V_LOG_FATAL;
+
 
     // write the vertices' coordinates
     for( unsigned short l_ve = 0; l_ve < l_nVes; l_ve++ ) {
