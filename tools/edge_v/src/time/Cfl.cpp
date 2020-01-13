@@ -103,6 +103,7 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
       l_cMean += io_velMod.getMaxSpeed( l_veId );
     }
     l_cMean /= l_nElVes;
+    EDGE_V_CHECK_GT( l_cMean, 0 );
 
     // compute time step
     o_ts[l_el] = i_inDia[l_el] / l_cMean;
