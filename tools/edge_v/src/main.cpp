@@ -25,8 +25,13 @@
 #include "io/Config.h"
 #include "io/Csv.h"
 #include "io/Hdf5.h"
+#include "io/GmshView.h"
 #include "models/Constant.h"
 #include "models/seismic/Expression.h"
+#ifdef PP_HAS_UCVM
+#include "models/seismic/Ucvm.h"
+#endif
+#include "mesh/Refinement.h"
 #include "mesh/Mesh.h"
 #include "time/Cfl.h"
 #include "time/Groups.h"
@@ -92,12 +97,41 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "      base:                    " << l_config.getMeshOutBase();
   EDGE_V_LOG_INFO << "      extension:               " << l_config.getMeshOutExt();
   EDGE_V_LOG_INFO << "  velocity model:";
-  if( l_config.getVelModSeismicExpr() != "" ) {
+#ifdef PP_HAS_UCVM
+  if( l_config.getVelModUcvmProjSrc() != "" ) {
+    EDGE_V_LOG_INFO << "    ucvm:";
+    EDGE_V_LOG_INFO << "      source_transformation:";
+    EDGE_V_LOG_INFO << "        " << l_config.getVelModUcvmTrafoSrc()[0][0]
+                    << " "        << l_config.getVelModUcvmTrafoSrc()[0][1]
+                    << " "        << l_config.getVelModUcvmTrafoSrc()[0][2];
+    EDGE_V_LOG_INFO << "        " << l_config.getVelModUcvmTrafoSrc()[1][0]
+                    << " "        << l_config.getVelModUcvmTrafoSrc()[1][1]
+                    << " "        << l_config.getVelModUcvmTrafoSrc()[1][2];
+    EDGE_V_LOG_INFO << "        " << l_config.getVelModUcvmTrafoSrc()[2][0]
+                    << " "        << l_config.getVelModUcvmTrafoSrc()[2][1]
+                    << " "        << l_config.getVelModUcvmTrafoSrc()[2][2];
+    EDGE_V_LOG_INFO << "      projections:";
+    EDGE_V_LOG_INFO << "        source: " << l_config.getVelModUcvmProjSrc();
+    EDGE_V_LOG_INFO << "        destination: " << l_config.getVelModUcvmProjDes();
+    EDGE_V_LOG_INFO << "      models: " << l_config.getVelModUcvmModels();
+    EDGE_V_LOG_INFO << "      model_type: " << l_config.getVelModUcvmModelType();
+    EDGE_V_LOG_INFO << "      coordinate_mode: " << l_config.getVelModUcvmCrdMode();
+    EDGE_V_LOG_INFO << "      normalization_rule: " << l_config.getVelModUcvmRule();
+  }
+#else
+  if( false ){}
+#endif
+  else if( l_config.getVelModSeismicExpr() != "" ) {
     EDGE_V_LOG_INFO << "    seismic expression: ";
     EDGE_V_LOG_INFO << "      " << l_config.getVelModSeismicExpr();
   }
   else {
     EDGE_V_LOG_INFO << "  constant";
+  }
+  if( l_config.getRefExpr() != "" ) {
+    EDGE_V_LOG_INFO << "  refinement:";
+    EDGE_V_LOG_INFO << "    expression: " << l_config.getRefExpr();
+    EDGE_V_LOG_INFO << "    out: " << l_config.getRefOut();
   }
   EDGE_V_LOG_INFO << "  time:";
   EDGE_V_LOG_INFO << "    #time groups: " << l_config.nTsGroups();
@@ -118,12 +152,50 @@ int main( int i_argc, char *i_argv[] ) {
 
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
-  if( l_config.getVelModSeismicExpr() != ""  ) {
+#ifdef PP_HAS_UCVM
+  edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
+                                 l_config.getVelModUcvmModels(),
+                                 l_config.getVelModUcvmCrdMode(),
+                                 l_config.getVelModUcvmRule() );
+  if( l_config.getVelModUcvmProjSrc() != "" ) {
+    l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
+                                                  l_config.getVelModUcvmTrafoSrc(),
+                                                  l_config.getVelModUcvmProjSrc(),
+                                                  l_config.getVelModUcvmProjDes(),
+                                                  l_config.getVelModUcvmModelType() );
+  }
+#else
+  if( false ){}
+#endif
+  else if( l_config.getVelModSeismicExpr() != ""  ) {
     l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
   }
   else {
     l_velMod = new edge_v::models::Constant( 1 );
   }
+
+  if( l_config.getRefExpr() != "" ) {
+    EDGE_V_LOG_INFO << "computing mesh refinement";
+    l_velMod->init( l_mesh->nVes(),
+                    l_mesh->getVeCrds() );
+
+    edge_v::mesh::Refinement l_ref;
+    l_ref.init(  l_mesh->nVes(),
+                 l_mesh->getVeCrds(),
+                 l_config.getRefExpr(),
+                *l_velMod );
+
+    EDGE_V_LOG_INFO << "writing mesh refinement: " << l_config.getRefOut();
+    edge_v::io::GmshView::write( l_config.getRefOut(),
+                                 l_mesh->getTypeEl(),
+                                 l_mesh->nEls(),
+                                 l_mesh->getElVe(),
+                                 l_mesh->getVeCrds(),
+                                 l_ref.getTargetLengths() );
+  }
+
+  // abort if mesh doesn't have output
+  if( l_config.getMeshOutBase() == "" ) return 0;
 
   EDGE_V_LOG_INFO << "computing CFL time steps";
   edge_v::time::Cfl *l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
@@ -281,7 +353,22 @@ int main( int i_argc, char *i_argv[] ) {
     delete l_velMod;
 
     EDGE_V_LOG_INFO << "re-initializing velocity model";
-    if( l_config.getVelModSeismicExpr() != ""  ) {
+#ifdef PP_HAS_UCVM
+    edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
+                                    l_config.getVelModUcvmModels(),
+                                    l_config.getVelModUcvmCrdMode(),
+                                    l_config.getVelModUcvmRule() );
+    if( l_config.getVelModUcvmProjSrc() != "" ) {
+      l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
+                                                    l_config.getVelModUcvmTrafoSrc(),
+                                                    l_config.getVelModUcvmProjSrc(),
+                                                    l_config.getVelModUcvmProjDes(),
+                                                    l_config.getVelModUcvmModelType() );
+    }
+#else
+    if( false ){}
+#endif
+    else if( l_config.getVelModSeismicExpr() != ""  ) {
       l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
     }
     else {

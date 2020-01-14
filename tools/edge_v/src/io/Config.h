@@ -44,7 +44,28 @@ class edge_v::io::Config {
     //! base name, mesh extension, meta data extension
     std::string m_meshOut[2] = {"", ""};
 
+    //! seismic expression
     std::string m_seismicExpr = "";
+
+    //! ucvm parameters
+    struct {
+      double trafoSrc[3][3] = { {1, 0, 0},
+                                {0, 1, 0},
+                                {0, 0, 1} };
+      std::string projSrc = "";
+      std::string projDes = "";
+
+      std::string models = "";
+      std::string modelType = "";
+      std::string crdMode = "";
+      std::string rule="";
+    } m_ucvm;
+
+    //! mesh refinement parameters
+    struct {
+      std::string expr = "";
+      std::string out = "";
+    } m_ref;
 
     //! writes element annotations if true
     bool m_writeElAn = false;
@@ -99,6 +120,69 @@ class edge_v::io::Config {
      * @return expression string.
      **/
     std::string const & getVelModSeismicExpr() const { return m_seismicExpr; }
+
+    /**
+     * Gets the initial transformation matrix, applied before the projections and UCVM-queries.
+     *
+     * @return transformation matrix.
+     **/
+    double const (* getVelModUcvmTrafoSrc() const) [3] { return m_ucvm.trafoSrc; }
+
+    /**
+     * Gets the proj source projection applied (in conjunction with the destination projection) before the UCVM-queries.
+     *
+     * @return source projection.
+     **/
+    std::string const & getVelModUcvmProjSrc() const { return m_ucvm.projSrc; }
+
+    /**
+     * Gets the proj destination projection applied (in conjunction with the source projection) before the UCVM-queries.
+     *
+     * @return destination projection.
+     **/
+    std::string const & getVelModUcvmProjDes() const { return m_ucvm.projDes; }
+
+    /**
+     * Gets the UCVM models.
+     *
+     * @return UCVM models.
+     **/
+    std::string const & getVelModUcvmModels() const { return m_ucvm.models; }
+
+    /**
+     * Gets the UCVM model type.
+     *
+     * @return UCVM model type.
+     **/
+    std::string const & getVelModUcvmModelType() const { return m_ucvm.modelType; }
+
+    /**
+     * Gets the UCVM coordinate mode.
+     *
+     * @return UCVM coordinate mode.
+     **/
+    std::string const & getVelModUcvmCrdMode() const { return m_ucvm.crdMode; }
+
+    /**
+     * Gets the normalization rule, applied to the UCVM output.
+     *
+     * @return normalization rule.
+     **/
+    std::string const & getVelModUcvmRule() const { return m_ucvm.rule; }
+
+    /**
+     * Gets the expression of the mesh refinement.
+     *
+     * @return expression for mesh refinement.
+     **/
+    std::string const & getRefExpr() const { return m_ref.expr; }
+
+    /**
+     * Gets the output path for the mesh refinement.
+     *
+     * @return path to mesh refinement output.
+     **/
+    std::string const & getRefOut() const { return m_ref.out; }
 
     /**
      * Gets the configuration of periodic boundary conditions.

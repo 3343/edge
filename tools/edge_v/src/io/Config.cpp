@@ -46,6 +46,33 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   pugi::xml_node l_velMod = l_doc.child("edge_v").child("velocity_model");
   m_seismicExpr = l_velMod.child("seismic_expression").text().as_string();
 
+  // ucvm
+  pugi::xml_node l_ucvm = l_velMod.child("ucvm");
+  if( l_ucvm.child("source_transformation") ) {
+    m_ucvm.trafoSrc[0][0] = l_ucvm.child("source_transformation").child("x_0").text().as_double();
+    m_ucvm.trafoSrc[0][1] = l_ucvm.child("source_transformation").child("x_1").text().as_double();
+    m_ucvm.trafoSrc[0][2] = l_ucvm.child("source_transformation").child("x_2").text().as_double();
+
+    m_ucvm.trafoSrc[1][0] = l_ucvm.child("source_transformation").child("y_0").text().as_double();
+    m_ucvm.trafoSrc[1][1] = l_ucvm.child("source_transformation").child("y_1").text().as_double();
+    m_ucvm.trafoSrc[1][2] = l_ucvm.child("source_transformation").child("y_2").text().as_double();
+
+    m_ucvm.trafoSrc[2][0] = l_ucvm.child("source_transformation").child("z_0").text().as_double();
+    m_ucvm.trafoSrc[2][1] = l_ucvm.child("source_transformation").child("z_1").text().as_double();
+    m_ucvm.trafoSrc[2][2] = l_ucvm.child("source_transformation").child("z_2").text().as_double();
+  }
+  m_ucvm.projSrc = l_ucvm.child("projections").child("source").text().as_string();
+  m_ucvm.projDes = l_ucvm.child("projections").child("destination").text().as_string();
+
+  m_ucvm.models = l_ucvm.child("models").text().as_string();
+  m_ucvm.modelType = l_ucvm.child("model_type").text().as_string();
+  m_ucvm.crdMode = l_ucvm.child("coordinate_mode").text().as_string();
+  m_ucvm.rule = l_ucvm.child("normalization_rule").text().as_string();
+
+  pugi::xml_node l_ref = l_doc.child("edge_v").child("refinement");
+  m_ref.expr = l_ref.child("expression").text().as_string();
+  m_ref.out = l_ref.child("out").text().as_string();
+
   // time info
   pugi::xml_node l_time = l_doc.child("edge_v").child("time");
   m_nTsGroups = l_time.child("n_groups").text().as_uint();

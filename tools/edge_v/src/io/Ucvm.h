@@ -36,6 +36,10 @@ namespace edge_v {
  * Interface to UCVM.
  */
 class edge_v::io::Ucvm {
+  private:
+    //! rule used for normalization
+    std::string m_rule = "";
+
   public:
     /**
      * Constructor which initializes the UCVM interface.
@@ -46,10 +50,12 @@ class edge_v::io::Ucvm {
      * @param i_config path to the UCVM config.
      * @param i_models UCVM models.
      * @param i_crdMode UCVM coordinate mode.
+     * @param i_rule rule used for normalization of the velocities.
      **/
     Ucvm( std::string const & i_config,
           std::string const & i_models,
-          std::string const & i_crdMode );
+          std::string const & i_crdMode,
+          std::string const & i_rule="" );
 
     /**
      * Destructor.
