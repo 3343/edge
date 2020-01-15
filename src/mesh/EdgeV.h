@@ -43,6 +43,9 @@ class edge::mesh::EdgeV {
     //! EDGE-V mesh interface
     edge_v::mesh::Mesh m_mesh;
 
+    //! HDF5 interface
+    edge_v::io::Hdf5 m_hdf;
+
     //! relative time steps, first is fundamental
     double *m_relDt = nullptr;
 
@@ -367,6 +370,24 @@ class edge::mesh::EdgeV {
      * @return element ids.
      **/
     std::size_t const * getRecvEl() { return m_recvEl; }
+
+    /**
+     * Gets the number of values for the given data set.
+     * If it does not exists, std::numeric_limits< std::size_t >::max() is returned.
+     *
+     * @param i_name name of the data set.
+     * @return number of values.
+     **/
+    std::size_t nVas( std::string const & i_name ) const;
+
+    /**
+     * Gets the data from the given data set.
+     *
+     * @param i_name name of the data set.
+     * @param o_data will be set to respective data.
+     **/
+    void getData( std::string const & i_name,
+                  float             * o_data ) const;
 };
 
 #endif

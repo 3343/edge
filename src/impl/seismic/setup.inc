@@ -108,12 +108,49 @@ PP_INSTR_REG_DEF(dofsMat)
 PP_INSTR_REG_BEG(dofsMat,"dofs_mat")
 
 // query velocity model from mesh
-unsigned short l_vmMesh = std::numeric_limits< unsigned short >::max();
+bool l_vmMesh = false;
 EDGE_LOG_INFO << "    querying mesh for velocity model";
+std::size_t l_nVelP = l_edgeV.nVas( "edge_v_vp" );
+std::size_t l_nVelS = l_edgeV.nVas( "edge_v_vs" );
+std::size_t l_nRho  = l_edgeV.nVas( "edge_v_rho" );
+if(    l_nVelP == l_edgeV.nEls()
+    && l_nVelS == l_edgeV.nEls()
+    && l_nRho  == l_edgeV.nEls() ) {
+  l_vmMesh = true;
+
+  float * l_velP = new float[l_nVelP];
+  float * l_velS = new float[l_nVelS];
+  float * l_rho = new float[l_nRho];
+  l_edgeV.getData( "edge_v_vp",
+                   l_velP );
+  l_edgeV.getData( "edge_v_vs",
+                   l_velS );
+  l_edgeV.getData( "edge_v_rho",
+                   l_rho );
+
+  // store lame parameters
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
+    EDGE_CHECK_GT( l_rho[l_el], 0 );
+    l_internal.m_elementShared1[l_el][0].rho = l_rho[l_el];
+    float l_mu = l_velS[l_el] * l_velS[l_el] * l_rho[l_el];
+    EDGE_CHECK_GT( l_mu, 0 );
+    l_internal.m_elementShared1[l_el][0].mu = l_mu;
+    float l_lam = l_velP[l_el] * l_velP[l_el] * l_rho[l_el] - 2 * l_mu;
+    EDGE_CHECK_GT( l_lam, 0 );
+    l_internal.m_elementShared1[l_el][0].lam = l_lam;
+  }
+
+  delete[] l_velP;
+  delete[] l_velS;
+  delete[] l_rho;
+}
 
 // TODO: add velocity model queries to EDGE-V interface
 
-if( l_vmMesh == 0 ) {
+if( l_vmMesh ) {
   EDGE_LOG_INFO << "    successfully obtained velocity model from mesh";
 }
 else {
@@ -203,7 +240,7 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
     }
 
     // check if velocity model is provided in user-config
-    EDGE_CHECK( (l_vmMesh == 0) || (l_seismicConf.m_velDoms.size() > 0) )
+    EDGE_CHECK( l_vmMesh || (l_seismicConf.m_velDoms.size() > 0) )
       << "couldn't find a velocity model in the mesh or user config, aborting";
 
     // find the matching domain in the velocity model
@@ -224,8 +261,8 @@ EDGE_LOG_INFO << "    setting initial DOFs and velocity model based on user-prov
       }
 
       // abort if no matching velocity domain is present
-      EDGE_CHECK( (l_vmMesh == 0) ||
-                  (l_do != l_seismicConf.m_velDoms.size()-1 ) )
+      EDGE_CHECK( l_vmMesh ||
+                  l_do != l_seismicConf.m_velDoms.size()-1 )
         << "here is the troublesome point: "
         << l_ave[0] << " " << l_ave[1] << " " << ( (N_DIM > 2) ? std::to_string(l_ave[2]) : "" );
     }

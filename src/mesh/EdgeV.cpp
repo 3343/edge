@@ -178,29 +178,29 @@ void edge::mesh::EdgeV::setLtsTypes( std::size_t            i_nEls,
 }
 
 edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
-                          int                 i_periodic ): m_moab( i_pathToMesh ),
+                          int                 i_periodic ):
+                                                            m_moab( i_pathToMesh ),
                                                             m_mesh( m_moab,
-                                                                    i_periodic ) {
-  edge_v::io::Hdf5 l_hdf( i_pathToMesh );
-
+                                                                    i_periodic ),
+                                                            m_hdf(  i_pathToMesh ) {
   // check if the the mesh is EDGE-V annotated for LTS
   unsigned short l_nLtsTags = 0;
-  if( l_hdf.exists( "edge_v_n_time_group_elements_inner" ) ) l_nLtsTags++;
-  if( l_hdf.exists( "edge_v_n_time_group_elements_send"  ) ) l_nLtsTags++;
-  if( l_hdf.exists( "edge_v_relative_time_steps"         ) ) l_nLtsTags++;
+  if( m_hdf.exists( "edge_v_n_time_group_elements_inner" ) ) l_nLtsTags++;
+  if( m_hdf.exists( "edge_v_n_time_group_elements_send"  ) ) l_nLtsTags++;
+  if( m_hdf.exists( "edge_v_relative_time_steps"         ) ) l_nLtsTags++;
   EDGE_CHECK( l_nLtsTags == 0 || l_nLtsTags == 3 );
 
   // get the LTS info
   m_nTgs = 1;
   if( l_nLtsTags > 0 ) {
-    m_nTgs = l_hdf.nVas( "edge_v_n_time_group_elements_inner" );
+    m_nTgs = m_hdf.nVas( "edge_v_n_time_group_elements_inner" );
   }
   m_nTgElsIn = new std::size_t[ m_nTgs ];
   m_nTgElsSe = new std::size_t[ m_nTgs ];
   if( l_nLtsTags > 0 ) {
-    l_hdf.get( "edge_v_n_time_group_elements_inner",
+    m_hdf.get( "edge_v_n_time_group_elements_inner",
                m_nTgElsIn );
-    l_hdf.get( "edge_v_n_time_group_elements_send",
+    m_hdf.get( "edge_v_n_time_group_elements_send",
                m_nTgElsSe );
   }
   else {
@@ -222,7 +222,7 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   if( m_nTgs > 1 ) {
     // get relative time steps and check for rate-2
-    l_hdf.get( "edge_v_relative_time_steps",
+    m_hdf.get( "edge_v_relative_time_steps",
                m_relDt );
 
     for( unsigned short l_tg = 0; l_tg < m_nTgs-1; l_tg++ ) {
@@ -238,13 +238,13 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   // check if the mesh is annotated for MPI
   unsigned short l_nMpiTags = 0;
-  if( l_hdf.exists( "edge_v_communication_structure" ) ) l_nMpiTags++;
-  if( l_hdf.exists( "edge_v_send_el"                 ) ) l_nMpiTags++;
-  if( l_hdf.exists( "edge_v_send_fa"                 ) ) l_nMpiTags++;
-  if( l_hdf.exists( "edge_v_recv_el"                 ) ) l_nMpiTags++;
-  if( l_hdf.exists( "edge_v_recv_fa"                 ) ) l_nMpiTags++;
-  if( l_hdf.exists( "edge_v_send_vertex_ids"         ) ) l_nMpiTags++;
-  if( l_hdf.exists( "edge_v_send_face_ids"           ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_communication_structure" ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_send_el"                 ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_send_fa"                 ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_recv_el"                 ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_recv_fa"                 ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_send_vertex_ids"         ) ) l_nMpiTags++;
+  if( m_hdf.exists( "edge_v_send_face_ids"           ) ) l_nMpiTags++;
 
   // check number of mpi tags
   if( parallel::g_nRanks > 1 ) {
@@ -256,11 +256,11 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 
   if( l_nMpiTags == 7 ) {
     // get communication structure
-    std::size_t l_commSize = l_hdf.nVas( "edge_v_communication_structure" );
+    std::size_t l_commSize = m_hdf.nVas( "edge_v_communication_structure" );
     EDGE_CHECK_EQ( l_commSize%4, 1 );
     m_commStruct = new std::size_t[ l_commSize ];
 
-    l_hdf.get( "edge_v_communication_structure",
+    m_hdf.get( "edge_v_communication_structure",
                m_commStruct );
 
     // check ranks in comm structure
@@ -273,12 +273,12 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     }
 
     // get communicating faces
-    m_nCommElFa = l_hdf.nVas( "edge_v_send_fa" );
-    std::size_t l_nSendEls   = l_hdf.nVas( "edge_v_send_el" );
-    std::size_t l_nRecvFas   = l_hdf.nVas( "edge_v_recv_fa" );
-    std::size_t l_nRecvEls   = l_hdf.nVas( "edge_v_recv_el" );
-    std::size_t l_nSeVeIdsAd = l_hdf.nVas( "edge_v_send_vertex_ids" );
-    std::size_t l_nSeFaIdsAd = l_hdf.nVas( "edge_v_send_face_ids" );
+    m_nCommElFa = m_hdf.nVas( "edge_v_send_fa" );
+    std::size_t l_nSendEls   = m_hdf.nVas( "edge_v_send_el" );
+    std::size_t l_nRecvFas   = m_hdf.nVas( "edge_v_recv_fa" );
+    std::size_t l_nRecvEls   = m_hdf.nVas( "edge_v_recv_el" );
+    std::size_t l_nSeVeIdsAd = m_hdf.nVas( "edge_v_send_vertex_ids" );
+    std::size_t l_nSeFaIdsAd = m_hdf.nVas( "edge_v_send_face_ids" );
 
     EDGE_CHECK_EQ( m_nCommElFa, l_nSendEls );
     EDGE_CHECK_EQ( m_nCommElFa, l_nRecvFas );
@@ -293,17 +293,17 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
     m_sendVeIdsAd = new unsigned short[ m_nCommElFa ];
     m_sendFaIdsAd = new unsigned short[ m_nCommElFa ];
 
-    l_hdf.get( "edge_v_send_fa",
+    m_hdf.get( "edge_v_send_fa",
                m_sendFa );
-    l_hdf.get( "edge_v_send_el",
+    m_hdf.get( "edge_v_send_el",
                m_sendEl );
-    l_hdf.get( "edge_v_recv_fa",
+    m_hdf.get( "edge_v_recv_fa",
                m_recvFa );
-    l_hdf.get( "edge_v_recv_el",
+    m_hdf.get( "edge_v_recv_el",
                m_recvEl );
-    l_hdf.get( "edge_v_send_vertex_ids",
+    m_hdf.get( "edge_v_send_vertex_ids",
                m_sendVeIdsAd );
-    l_hdf.get( "edge_v_send_face_ids",
+    m_hdf.get( "edge_v_send_face_ids",
                m_sendFaIdsAd );
   }
 }
@@ -435,4 +435,17 @@ void edge::mesh::EdgeV::setSeVeFaIdsAd( unsigned short * io_veIdsAd,
       io_faIdsAd[l_el*l_nElFas + l_fa] = m_sendFaIdsAd[l_co];
     }
   }
+}
+
+std::size_t edge::mesh::EdgeV::nVas( std::string const & i_name ) const {
+  // abort if the data set does not exists
+  if( m_hdf.exists(i_name) == false ) return std::numeric_limits< std::size_t >::max();
+
+  return m_hdf.nVas(i_name);
+}
+
+void edge::mesh::EdgeV::getData( std::string const & i_name,
+                                 float             * o_data ) const {
+  m_hdf.get( i_name,
+             o_data );
 }
