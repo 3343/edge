@@ -27,7 +27,7 @@
 #include "io/Hdf5.h"
 #include "mesh/Mesh.h"
 #include "models/Constant.h"
-#include "models/Model.hpp"
+#include "models/Model.h"
 #include "time/Cfl.h"
 #include "time/Groups.h"
 #endif

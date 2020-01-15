@@ -221,6 +221,13 @@ class edge_v::mesh::Mesh {
     t_entityType getTypeEl() const { return m_elTy; }
 
     /**
+     * Gets the number of vertices for an element.
+     *
+     * @return number of vertices for an element.
+     **/
+    unsigned short nElVes() const { return CE_N_VES( m_elTy ); }
+
+    /**
      * Gets the number of vertices.
      *
      * @return number of vertices.

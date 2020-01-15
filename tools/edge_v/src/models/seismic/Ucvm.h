@@ -25,7 +25,7 @@
 #define EDGE_V_MODELS_UCVM_H
 
 #include "io/Ucvm.h"
-#include "../Model.hpp"
+#include "../Model.h"
 
 namespace edge_v {
   namespace models {
@@ -108,6 +108,27 @@ class edge_v::models::seismic::Ucvm: public Model {
      * @param i_pt point at which the maximum wave speed is derived.
      **/
     double getMaxSpeed( std::size_t i_pt ) const;
+
+    /**
+     * Gets the p-wave velocities.
+     *
+     * @return p-wave velocities.
+     **/
+    float const * getVelP() { return m_velP; }
+
+    /**
+     * Gets the s-wave velocities.
+     *
+     * @return s-wave velocities.
+     **/
+    float const * getVelS() { return m_velS; }
+
+    /**
+     * Gets the material densities.
+     *
+     * @return densities.
+     **/
+    float const * getRho() { return m_rho; }
 };
 
 #endif

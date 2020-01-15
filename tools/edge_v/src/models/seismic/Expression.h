@@ -23,7 +23,7 @@
 #ifndef EDGE_V_MODELS_SEISMIC_EXPRESSION_H
 #define EDGE_V_MODELS_SEISMIC_EXPRESSION_H
 
-#include "../Model.hpp"
+#include "../Model.h"
 #include <string>
 
 namespace edge_v {

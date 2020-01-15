@@ -23,7 +23,7 @@
 #ifndef EDGE_V_TIME_CFL_H
 #define EDGE_V_TIME_CFL_H
 
-#include "../models/Model.hpp"
+#include "../models/Model.h"
 #include "../constants.h"
 
 namespace edge_v {

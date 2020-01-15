@@ -1,7 +1,7 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (breuer AT mytum.de)
+ * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
  * Copyright (c) 2020, Alexander Breuer
@@ -18,58 +18,25 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Velocity-based mesh refinement.
+ * Base class of a velocity model.
  **/
-#ifndef EDGE_V_MESH_REFINEMENT_H
-#define EDGE_V_MESH_REFINEMENT_H
+#include "Model.h"
 
-#include <string>
-#include "models/Model.h"
+void edge_v::models::Model::getElAve( unsigned short         i_nElVes,
+                                      std::size_t            i_nEls,
+                                      std::size_t    const * i_elVe,
+                                      float          const * i_velVe,
+                                      float                * o_velEl ) {
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    o_velEl[l_el] = 0;
 
-namespace edge_v {
-  namespace mesh {
-    class Refinement;
+    for( unsigned short l_ve = 0; l_ve < i_nElVes; l_ve++ ) {
+      std::size_t l_veId = i_elVe[l_el*i_nElVes + l_ve];
+      o_velEl[l_el] += i_velVe[l_veId];
+    }
+    o_velEl[l_el] /= i_nElVes;
   }
 }
-
-/**
- * Mesh refinement.
- **/
-class edge_v::mesh::Refinement {
-  private:
-    //! evaluated mesh refinement
-    float * m_ref = nullptr;
-
-    /**
-     * Frees the memory.
-     **/
-    void free();
-
-  public:
-    /**
-     * Destructor.
-     **/
-    ~Refinement();
-
-    /**
-     * Inits the mesh refinement by computing the target refinement at all given points.
-     *
-     * @param i_nPts number of points.
-     * @param i_pts coordinates of the points.
-     * @param i_refExpr expression used for the refinement, which defines 'frequency' and 'elements_per_wave_length'.
-     * @param i_velMod velocity model.
-     **/
-    void init( std::size_t            i_nPts,
-               double        const (* i_pts)[3],
-               std::string   const  & i_refExpr,
-               models::Model const  & i_velMod );
-
-    /**
-     * Gets the target lengths at the points.
-     *
-     * @return target lengths.
-     **/
-    float const * getTargetLengths(){ return m_ref; }
-};
-
-#endif

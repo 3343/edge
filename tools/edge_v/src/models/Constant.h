@@ -23,7 +23,7 @@
 #ifndef EDGE_V_MODELS_CONSTANT_H
 #define EDGE_V_MODELS_CONSTANT_H
 
-#include "Model.hpp"
+#include "Model.h"
 
 namespace edge_v {
   namespace models {

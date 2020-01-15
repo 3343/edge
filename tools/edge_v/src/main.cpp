@@ -153,6 +153,10 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
 #ifdef PP_HAS_UCVM
+  std::string l_tagVp = "edge_v_vp";
+  std::string l_tagVs = "edge_v_vs";
+  std::string l_tagRho = "edge_v_rho";
+
   edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
                                  l_config.getVelModUcvmModels(),
                                  l_config.getVelModUcvmCrdMode(),
@@ -315,6 +319,75 @@ int main( int i_argc, char *i_argv[] ) {
     delete[] l_elIds;
   }
 
+  EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
+  delete l_tsGroups;
+  delete l_cfl;
+  delete l_mesh;
+  delete l_velMod;
+
+  EDGE_V_LOG_INFO << "re-initializing mesh interface with reordered data";
+  l_mesh = new edge_v::mesh::Mesh( l_moab,
+                                   l_config.getPeriodic() );
+
+  EDGE_V_LOG_INFO << "re-initializing velocity model";
+#ifdef PP_HAS_UCVM
+  float * l_velP = new float[l_mesh->nEls()];
+  float * l_velS = new float[l_mesh->nEls()];
+  float * l_rho  = new float[l_mesh->nEls()];
+  if( l_config.getVelModUcvmProjSrc() != "" ) {
+    l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
+                                                  l_config.getVelModUcvmTrafoSrc(),
+                                                  l_config.getVelModUcvmProjSrc(),
+                                                  l_config.getVelModUcvmProjDes(),
+                                                  l_config.getVelModUcvmModelType() );
+    l_velMod->init( l_mesh->nVes(),
+                    l_mesh->getVeCrds() );
+
+    // compute elemnent averages of seismic velocities
+    l_velMod->getElAve( l_mesh->nElVes(),
+                        l_mesh->nEls(),
+                        l_mesh->getElVe(),
+                        ( (edge_v::models::seismic::Ucvm*) l_velMod)->getVelP(),
+                        l_velP );
+    l_velMod->getElAve( l_mesh->nElVes(),
+                        l_mesh->nEls(),
+                        l_mesh->getElVe(),
+                        ( (edge_v::models::seismic::Ucvm*) l_velMod)->getVelS(),
+                        l_velS );
+    l_velMod->getElAve( l_mesh->nElVes(),
+                        l_mesh->nEls(),
+                        l_mesh->getElVe(),
+                        ( (edge_v::models::seismic::Ucvm*) l_velMod)->getRho(),
+                        l_rho );
+  }
+#else
+  if( false ){}
+#endif
+  else if( l_config.getVelModSeismicExpr() != ""  ) {
+    l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
+  }
+  else {
+    l_velMod = new edge_v::models::Constant( 1 );
+  }
+
+  EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
+  l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
+                                  l_mesh->nVes(),
+                                  l_mesh->nEls(),
+                                  l_mesh->getElVe(),
+                                  l_mesh->getVeCrds(),
+                                  l_mesh->getInDiasEl(),
+                                  *l_velMod );
+
+  EDGE_V_LOG_INFO << "re-initializing time step groups with reordered data";
+  l_tsGroups = new edge_v::time::Groups( l_mesh->getTypeEl(),
+                                          l_mesh->nEls(),
+                                          l_mesh->getElFaEl(),
+                                          l_nRates,
+                                          l_rates,
+                                          l_funDt,
+                                          l_cfl->getTimeSteps() );
+
   std::string l_tagNtgElsIn = "edge_v_n_time_group_elements_inner";
   std::string l_tagNtgElsSe = "edge_v_n_time_group_elements_send";
   std::string l_tagRelTs = "edge_v_relative_time_steps";
@@ -346,57 +419,6 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   if( l_config.nPartitions() > 1 ) {
-    EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
-    delete l_tsGroups;
-    delete l_cfl;
-    delete l_mesh;
-    delete l_velMod;
-
-    EDGE_V_LOG_INFO << "re-initializing velocity model";
-#ifdef PP_HAS_UCVM
-    edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
-                                    l_config.getVelModUcvmModels(),
-                                    l_config.getVelModUcvmCrdMode(),
-                                    l_config.getVelModUcvmRule() );
-    if( l_config.getVelModUcvmProjSrc() != "" ) {
-      l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
-                                                    l_config.getVelModUcvmTrafoSrc(),
-                                                    l_config.getVelModUcvmProjSrc(),
-                                                    l_config.getVelModUcvmProjDes(),
-                                                    l_config.getVelModUcvmModelType() );
-    }
-#else
-    if( false ){}
-#endif
-    else if( l_config.getVelModSeismicExpr() != ""  ) {
-      l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
-    }
-    else {
-      l_velMod = new edge_v::models::Constant( 1 );
-    }
-
-    EDGE_V_LOG_INFO << "re-initializing mesh interface with reordered data";
-    l_mesh = new edge_v::mesh::Mesh( l_moab,
-                                     l_config.getPeriodic() );
-
-    EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
-    l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
-                                    l_mesh->nVes(),
-                                    l_mesh->nEls(),
-                                    l_mesh->getElVe(),
-                                    l_mesh->getVeCrds(),
-                                    l_mesh->getInDiasEl(),
-                                   *l_velMod );
-
-    EDGE_V_LOG_INFO << "re-initializing time step groups with reordered data";
-    l_tsGroups = new edge_v::time::Groups( l_mesh->getTypeEl(),
-                                           l_mesh->nEls(),
-                                           l_mesh->getElFaEl(),
-                                           l_nRates,
-                                           l_rates,
-                                           l_funDt,
-                                           l_cfl->getTimeSteps() );
-
     EDGE_V_LOG_INFO << "deriving communication structure";
     edge_v::mesh::Communication l_comm( l_tsGroups->nGroups(),
                                         l_mesh->getTypeEl(),
@@ -421,6 +443,20 @@ int main( int i_argc, char *i_argv[] ) {
       EDGE_V_LOG_INFO << "  adding meta data: " << l_pathMesh;
       edge_v::io::Hdf5 l_hdf( l_pathMesh,
                               false );
+
+#ifdef PP_HAS_UCVM
+      if( l_config.getVelModUcvmProjSrc() != "" ) {
+        l_hdf.set( l_tagVp,
+                   l_nPaEls,
+                   l_velP + l_first );
+        l_hdf.set( l_tagVs,
+                   l_nPaEls,
+                   l_velS + l_first );
+        l_hdf.set( l_tagRho,
+                   l_nPaEls,
+                   l_rho + l_first );
+      }
+#endif
 
       // store relative time steps of the groups
       l_hdf.set( l_tagRelTs,
@@ -489,11 +525,18 @@ int main( int i_argc, char *i_argv[] ) {
     }
   }
 
+#ifdef PP_HAS_UCVM
+  delete[] l_velP;
+  delete[] l_velS;
+  delete[] l_rho;
+#endif
   delete l_tsGroups;
   delete l_cfl;
   delete l_mesh;
   delete l_velMod;
   delete[] l_rates;
+
+  EDGE_V_LOG_INFO << "thank you for using EDGE-V; exiting..";
 
   return EXIT_SUCCESS;
 }
