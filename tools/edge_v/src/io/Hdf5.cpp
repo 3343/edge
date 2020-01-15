@@ -215,6 +215,16 @@ void edge_v::io::Hdf5::set( std::string const & i_name,
 
 void edge_v::io::Hdf5::set( std::string    const & i_name,
                             std::size_t            i_nValues,
+                            float          const * i_data ) const {
+  set( i_name,
+       i_nValues,
+       i_data,
+       H5T_NATIVE_FLOAT,
+       H5T_IEEE_F32LE );
+}
+
+void edge_v::io::Hdf5::set( std::string    const & i_name,
+                            std::size_t            i_nValues,
                             double         const * i_data ) const {
   set( i_name,
        i_nValues,
@@ -247,6 +257,13 @@ void edge_v::io::Hdf5::get( std::string const & i_name,
 
   // free memory
   delete[] l_data;
+}
+
+void edge_v::io::Hdf5::get( std::string const & i_name,
+                            float             * o_data ) const {
+  get( i_name,
+       H5T_NATIVE_FLOAT,
+       o_data );
 }
 
 void edge_v::io::Hdf5::get( std::string const & i_name,

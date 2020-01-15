@@ -173,6 +173,17 @@ class edge_v::io::Hdf5 {
      **/
     void set( std::string const & i_name,
               std::size_t         i_nValues,
+              float       const * i_data ) const;
+
+    /**
+     * Sets the data to a dataset.
+     *
+     * @param i_name name of the dataset.
+     * @param i_nValues number of values which are set.
+     * @param i_data data which is is set.
+     **/
+    void set( std::string const & i_name,
+              std::size_t         i_nValues,
               double      const * i_data ) const;
 
     /**
@@ -192,6 +203,15 @@ class edge_v::io::Hdf5 {
      **/
     void get( std::string const & i_name,
               std::size_t       * o_data ) const;
+
+    /**
+     * Gets the data from a dataset.
+     *
+     * @param i_name name of the dataset.
+     * @param o_data array to which the data is written.
+     **/
+    void get( std::string const & i_name,
+              float             * o_data ) const;
 
     /**
      * Gets the data from a dataset.
