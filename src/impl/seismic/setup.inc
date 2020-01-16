@@ -141,6 +141,10 @@ if(    l_nVelP == l_edgeV.nEls()
     float l_lam = l_velP[l_el] * l_velP[l_el] * l_rho[l_el] - 2 * l_mu;
     EDGE_CHECK_GT( l_lam, 0 );
     l_internal.m_elementShared1[l_el][0].lam = l_lam;
+
+    // high-f qs and qp definition
+    l_internal.m_elementShared1[l_el][0].qs = 0.1*l_velS[l_el];
+    l_internal.m_elementShared1[l_el][0].qp = 0.2*l_velS[l_el];
   }
 
   delete[] l_velP;
