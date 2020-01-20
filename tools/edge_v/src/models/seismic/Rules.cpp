@@ -35,6 +35,12 @@ void edge_v::models::seismic::Rules::tpv34( float & io_vp,
 void edge_v::models::seismic::Rules::highf2018( float & io_vp,
                                                 float & io_vs,
                                                 float & io_rho ) {
+  // Decription, following https://scec.usc.edu/scecpedia/HighF_2018:
+  //
+  //  1. Set Min Vs=500 m/s
+  //  2. If Vs was lower than 500 m/s and adjusted, then adjust Vp with original Vp/Vs ratio (so that we don’t have the automatic Vs/Vp of 3). We may want to set a minimum value of Vp (Rob to check)
+  //  3. Then set Max Vp/Vs= 3, if lower Vp to maintain the max of 3 ratio
+
   // limit vs to 500 m/s
   if( io_vs < 500 ) {
     //  derive vp/vs ratio
@@ -44,20 +50,11 @@ void edge_v::models::seismic::Rules::highf2018( float & io_vp,
     io_vp = 500*l_sca;
   }
 
-  // limit vp to 1500 m/s
-  if( io_vp < 1500 )
-    io_vp = 1500;
-
   // limit vp/vs ratio to 3
   float l_sca = io_vp / io_vs;
   if( l_sca > 3 ) {
     io_vp = 3*io_vs;
   }
-
-  // adjust lambda
-  l_sca = io_vp / io_vs;
-  if( l_sca < float(1.45) )
-    io_vp = float(1.45) * io_vs;
 }
 
 void edge_v::models::seismic::Rules::apply( std::string const & i_rule,
