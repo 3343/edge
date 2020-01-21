@@ -54,17 +54,22 @@ edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
 
   m_root = m_moab->get_root_set();
 
-  // get vertices
-  moab::Range l_ves;
+  // get number of dimensions
+  int l_nDis = std::numeric_limits< int >::max();
+  l_err = m_moab->get_dimension( l_nDis );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get elements
+  moab::Range l_els;
   l_err = m_moab->get_entities_by_dimension( m_root,
-                                             0,
-                                             l_ves );
+                                             l_nDis,
+                                             l_els );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // create all other entities
   for( unsigned short l_di = 1; l_di < 3; l_di++ ) {
     moab::Range l_ens;
-    l_err = m_moab->get_adjacencies( l_ves,
+    l_err = m_moab->get_adjacencies( l_els,
                                      l_di,
                                      true,
                                      l_ens,
