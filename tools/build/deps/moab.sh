@@ -118,7 +118,7 @@ cd $(basename ${MOAB_DIR})
 
 autoreconf -fi
 CXXFLAGS="-fPIC" LIBS="${ZLIB_INSTALL_DIR}/lib/libz.a" ./configure --disable-debug                 \
-                                                                   --disable-optimize              \
+                                                                   --enable-optimize               \
                                                                    --enable-shared=no              \
                                                                    --enable-static=yes             \
                                                                    --with-pic=yes                  \
