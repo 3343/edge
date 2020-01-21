@@ -26,6 +26,31 @@
 #include "../geom/Geom.h"
 #include "io/logging.h"
 
+void edge_v::mesh::Mesh::getElFaEl( t_entityType        i_elTy,
+                                    std::size_t         i_nEls,
+                                    std::size_t const * i_faEl,
+                                    std::size_t const * i_elFa,
+                                    std::size_t       * o_elFaEl ) {
+  unsigned short l_nElFas = CE_N_FAS( i_elTy );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      std::size_t l_faId = i_elFa[l_el*l_nElFas + l_fa];
+
+      if( i_faEl[l_faId*2 + 0] == l_el ) {
+        o_elFaEl[ l_el*l_nElFas + l_fa ] =  i_faEl[l_faId*2 + 1];
+      }
+      else {
+        EDGE_V_CHECK_EQ( i_faEl[l_faId*2 + 1], l_el );
+        o_elFaEl[ l_el*l_nElFas + l_fa ] =  i_faEl[l_faId*2 + 0];
+      }
+    }
+  }
+}
+
 std::size_t edge_v::mesh::Mesh::getAddEntry( std::size_t   i_sizeFirst,
                                              std::size_t   i_sizeSecond,
                                              std::size_t * i_first,
@@ -354,7 +379,12 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
   i_moab.getFaEl( m_elTy, m_faEl );
   i_moab.getEnVe( m_elTy, m_elVe );
   i_moab.getElFa( m_elTy, m_elFa );
-  i_moab.getElFaEl( m_elTy, m_elFaEl );
+
+  getElFaEl( m_elTy,
+             m_nEls,
+             m_faEl,
+             m_elFa,
+             m_elFaEl );
 
   // adjust periodic boundaries
   std::vector< std::size_t > l_pFasGt;

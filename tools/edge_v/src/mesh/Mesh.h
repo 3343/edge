@@ -84,6 +84,21 @@ class edge_v::mesh::Mesh {
     double (* m_tangents)[2][3] = nullptr;
 
     /**
+     * Gets the element-to-element adjacency (faces as bridge).
+     *
+     * @param i_elTy element type.
+     * @param i_nEls number of elements.
+     * @param i_faEl elements adjacent to the faces.
+     * @param i_elFa faces adjacent to the elements.
+     * @param o_elFaEl will be set to element-to-element adjacency.
+     **/
+    static void getElFaEl( t_entityType        i_elTy,
+                           std::size_t         i_nEls,
+                           std::size_t const * i_faEl,
+                           std::size_t const * i_elFa,
+                           std::size_t       * o_elFaEl );
+
+    /**
      * Returns an entry in the second array, which is not in the first one.
      *
      * @param i_sizeFirst size of the first array.
