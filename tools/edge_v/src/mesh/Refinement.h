@@ -52,17 +52,31 @@ class edge_v::mesh::Refinement {
     ~Refinement();
 
     /**
-     * Inits the mesh refinement by computing the target refinement at all given points.
+     * Inits the mesh refinement by computing the target refinement for all given elements.
+     * The mesh refinement at the vertices is then set to the minimum of all adjacent elements.
      *
-     * @param i_nPts number of points.
-     * @param i_pts coordinates of the points.
+     * Inputs for the expression are:
+     *   x: x-coordinate (averaged over vertices).
+     *   y: y-coordinate (averaged over vertices).
+     *   z: z-coordinate (averaged over vertices).
+     *   maximum_wave_speed_ratio: Given the per-vertex maximum wave speeds,
+     *                             this is the max of these divided by the respective min.
+     *
+     * @param i_nVes number of vertices.
+     * @param i_nEls number of elements.
+     * @param i_nElVes number of vertices per element.
+     * @param i_elVe vertices adjacent to the elements.
+     * @param i_veCrds coordinates of the vertices.
      * @param i_refExpr expression used for the refinement, which defines 'frequency' and 'elements_per_wave_length'.
      * @param i_velMod velocity model.
      **/
-    void init( std::size_t            i_nPts,
-               double        const (* i_pts)[3],
-               std::string   const  & i_refExpr,
-               models::Model const  & i_velMod );
+    void init( std::size_t             i_nVes,
+               std::size_t             i_nEls,
+               unsigned short          i_nElVes,
+               std::size_t    const  * i_elVe,
+               double         const (* i_veCrds)[3],
+               std::string    const  & i_refExpr,
+               models::Model  const  & i_velMod );
 
     /**
      * Gets the target lengths at the points.

@@ -185,6 +185,9 @@ int main( int i_argc, char *i_argv[] ) {
 
     edge_v::mesh::Refinement l_ref;
     l_ref.init(  l_mesh->nVes(),
+                 l_mesh->nEls(),
+                 l_mesh->nElVes(),
+                 l_mesh->getElVe(),
                  l_mesh->getVeCrds(),
                  l_config.getRefExpr(),
                 *l_velMod );
