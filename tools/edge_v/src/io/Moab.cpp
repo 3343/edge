@@ -548,6 +548,29 @@ void edge_v::io::Moab::setEnData( t_entityType        i_enTy,
 
 void edge_v::io::Moab::setEnData( t_entityType        i_enTy,
                                   std::string const & i_tagName,
+                                  float       const * i_data ) {
+  // convert to double
+  int l_nEns;
+  moab::ErrorCode l_err = m_moab->get_number_entities_by_type( m_root,
+                                                               getMoabType( i_enTy ),
+                                                               l_nEns );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  double *l_data = new double[l_nEns];
+  convert( l_nEns,
+           i_data,
+           l_data );
+
+  setEnData( i_enTy,
+             moab::MB_TYPE_DOUBLE,
+             i_tagName,
+             l_data );
+
+  delete[] l_data;
+}
+
+void edge_v::io::Moab::setEnData( t_entityType        i_enTy,
+                                  std::string const & i_tagName,
                                   double      const * i_data ) {
   setEnData( i_enTy,
              moab::MB_TYPE_DOUBLE,

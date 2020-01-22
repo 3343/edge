@@ -37,8 +37,11 @@ namespace edge_v {
  **/
 class edge_v::mesh::Refinement {
   private:
-    //! evaluated mesh refinement
-    float * m_ref = nullptr;
+    //! evaluated mesh refinement at vertices
+    float * m_refVe = nullptr;
+
+    //! evaluated mesh refinement at elements
+    float * m_refEl = nullptr;
 
     /**
      * Frees the memory.
@@ -79,11 +82,18 @@ class edge_v::mesh::Refinement {
                models::Model  const  & i_velMod );
 
     /**
-     * Gets the target lengths at the points.
+     * Gets the target lengths at the vertices.
      *
      * @return target lengths.
      **/
-    float const * getTargetLengths(){ return m_ref; }
+    float const * getTargetLengthsVe(){ return m_refVe; }
+
+    /**
+     * Gets the target lengths of the elements.
+     *
+     * @return target lengths.
+     **/
+    float const * getTargetLengthsEl(){ return m_refEl; }
 };
 
 #endif

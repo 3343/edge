@@ -198,7 +198,14 @@ int main( int i_argc, char *i_argv[] ) {
                                  l_mesh->nEls(),
                                  l_mesh->getElVe(),
                                  l_mesh->getVeCrds(),
-                                 l_ref.getTargetLengths() );
+                                 l_ref.getTargetLengthsVe() );
+
+    if( l_config.getWriteElAn() ) {
+      EDGE_V_LOG_INFO << "storing elements' target lengths";
+      l_moab.setEnData( l_mesh->getTypeEl(),
+                        "edge_v_target_lengths",
+                        l_ref.getTargetLengthsEl() );
+    }
   }
 
   // abort if mesh doesn't have output
@@ -372,6 +379,21 @@ int main( int i_argc, char *i_argv[] ) {
   else {
     l_velMod = new edge_v::models::Constant( 1 );
   }
+
+#ifdef PP_HAS_UCVM
+  if( l_config.getWriteElAn() ) {
+    EDGE_V_LOG_INFO << "storing vp, vs and rho";
+    l_moab.setEnData( l_mesh->getTypeEl(),
+                      l_tagVp,
+                      l_velP );
+    l_moab.setEnData( l_mesh->getTypeEl(),
+                      l_tagVs,
+                      l_velS );
+    l_moab.setEnData( l_mesh->getTypeEl(),
+                      l_tagRho,
+                      l_rho );
+  }
+#endif
 
   EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
   l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),

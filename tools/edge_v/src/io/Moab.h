@@ -236,6 +236,18 @@ class edge_v::io::Moab {
      **/
     void setEnData( t_entityType        i_enTy,
                     std::string const & i_tagName,
+                    float       const * i_data );
+
+    /**
+     * Sets the given data in MOAB (stored as native double).
+     * The data is stored in MOAB's native double type for portability.
+     *
+     * @param i_enTy entity type to which this data belongs.
+     * @param i_tagName tag name.
+     * @param i_data data, which will be stored.
+     **/
+    void setEnData( t_entityType        i_enTy,
+                    std::string const & i_tagName,
                     double      const * i_data );
 
     /**

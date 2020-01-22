@@ -25,7 +25,8 @@
 #include "io/ExprTk.h"
 
 void edge_v::mesh::Refinement::free() {
-  if( m_ref != nullptr ) delete[] m_ref;
+  if( m_refVe != nullptr ) delete[] m_refVe;
+  if( m_refEl != nullptr ) delete[] m_refEl;
 }
 
 edge_v::mesh::Refinement::~Refinement() {
@@ -39,7 +40,10 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
                                      double         const (* i_veCrds)[3],
                                      std::string    const  & i_refExpr,
                                      models::Model  const  & i_velMod ) {
-  double *l_scale = new double[i_nEls];
+  // allocate output memory
+  free();
+  m_refVe = new float[i_nVes];
+  m_refEl = new float[i_nEls];
 
 #ifdef PP_USE_OMP
 #pragma omp parallel
@@ -102,31 +106,29 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
     EDGE_V_CHECK_GT( l_elspwl, 0 );
 
     // store result
-    l_scale[l_el] = 1.0;
-    l_scale[l_el] /= l_freq * l_elspwl;
+    m_refEl[l_el] = 1.0;
+    m_refEl[l_el] /= l_freq * l_elspwl;
   }
 
 #ifdef PP_USE_OMP
 }
 #endif
-
-  // allocate output memory
-  free();
-  m_ref = new float[i_nVes];
-
-  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) m_ref[l_ve] = std::numeric_limits< double >::max();
+  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) m_refVe[l_ve] = std::numeric_limits< double >::max();
 
   // propagate refinement to vertices
   for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    float l_wsAve = 0;
     for( unsigned short l_ve = 0; l_ve < i_nElVes; l_ve++ ) {
       std::size_t l_veId = i_elVe[l_el * i_nElVes + l_ve];
 
-      double l_ref = i_velMod.getMaxSpeed( l_veId );
-             l_ref *= l_scale[l_el];
-      m_ref[l_veId] = std::min( m_ref[l_veId], float(l_ref) );
-    }
-  }
+      float l_ws = i_velMod.getMaxSpeed( l_veId );
+      l_wsAve += l_ws;
 
-  // free temporary memory
-  delete[] l_scale;
+      float l_refVe = l_ws * m_refEl[l_el];
+      m_refVe[l_veId] = std::min( m_refVe[l_veId], l_refVe );
+    }
+
+    l_wsAve /= i_nElVes;
+    m_refEl[l_el] *= l_wsAve;
+  }
 }
