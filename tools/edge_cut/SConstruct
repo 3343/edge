@@ -169,7 +169,7 @@ if 'cgal_dir' in vars.args.keys():
   env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib'] )
   env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib64'] )
 
-#forward boost
+# forward boost
 if 'boost_dir' in vars.args.keys():
   env.AppendUnique( CXXFLAGS=['-isystem'+env['boost_dir']+'/include'] )
   env.AppendUnique( LIBPATH=[env['boost_dir']+'/lib'    ] )
@@ -178,7 +178,7 @@ if 'boost_dir' in vars.args.keys():
   env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['boost_dir']+'/lib64'] )
 
 # add CGAL
-if( not conf.CheckLib( 'libCGAL', language='CXX' ) ):
+if( not conf.CheckHeader( 'CGAL/Surface_mesh.h', language='CXX' ) ):
   warnings.warn('Error: Could not find CGAL. Try using cgal_dir option')
 
 # add mpfr and gmp
@@ -194,7 +194,7 @@ if not conf.CheckLib( 'boost_thread', language='CXX' ):
 
 
 # add default flags
-env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror", "-pedantic", "-Wshadow"] )
+env.Append( CXXFLAGS = ["-std=c++14", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror", "-pedantic", "-Wshadow"] )
 
 # set optimization mode
 if 'debug' in env['mode']:
