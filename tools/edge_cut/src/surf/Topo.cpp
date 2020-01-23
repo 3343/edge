@@ -31,6 +31,15 @@
 edge_cut::surf::Topo::Topo( std::string const & i_topoFile )
 {
   std::ifstream l_ptFile( i_topoFile, std::ios::in );
+
+  // check for NaNs in the input
+  std::string l_val;
+  while( l_ptFile >> l_val ) {
+    EDGE_CHECK_NE( l_val, "NaN" );
+  }
+  l_ptFile.clear();
+  l_ptFile.seekg(0, std::ios::beg);
+
   std::istream_iterator< TopoPoint > l_fileBegin( l_ptFile );
   std::istream_iterator< TopoPoint > l_fileEnd;
 
