@@ -32,6 +32,11 @@ TEST_CASE( "Tests the mesh refinement.", "[meshRefinement][init]" ) {
                           {-4, -2,  1},
                           { 5, 10, 20} };
 
+  std::size_t l_elVe[4][4] = { {0, 0, 0, 0},
+                               {1, 1, 1, 1},
+                               {2, 2, 2, 2},
+                               {3, 3, 3, 3} };
+
   std::string l_exp0 = "elements_per_wave_length := 4.3;\
                         frequency := 2.7;";
 
@@ -39,14 +44,17 @@ TEST_CASE( "Tests the mesh refinement.", "[meshRefinement][init]" ) {
 
   edge_v::mesh::Refinement l_ref;
   l_ref.init( 4,
+              4,
+              4,
+              l_elVe[0],
               l_crds,
               l_exp0,
               l_mod );
 
-  REQUIRE( l_ref.m_ref[0] == Approx( (3.0 / 2.7)*4.3 ) );
-  REQUIRE( l_ref.m_ref[1] == Approx( (3.0 / 2.7)*4.3 ) );
-  REQUIRE( l_ref.m_ref[2] == Approx( (3.0 / 2.7)*4.3 ) );
-  REQUIRE( l_ref.m_ref[3] == Approx( (3.0 / 2.7)*4.3 ) );
+  REQUIRE( l_ref.m_refVe[0] == Approx( 3.0 / (2.7*4.3) ) );
+  REQUIRE( l_ref.m_refVe[1] == Approx( 3.0 / (2.7*4.3) ) );
+  REQUIRE( l_ref.m_refVe[2] == Approx( 3.0 / (2.7*4.3) ) );
+  REQUIRE( l_ref.m_refVe[3] == Approx( 3.0 / (2.7*4.3) ) );
 
   std::string l_exp1 = "if( x > 0 ) {\
                           elements_per_wave_length := 4.3;\
@@ -62,12 +70,15 @@ TEST_CASE( "Tests the mesh refinement.", "[meshRefinement][init]" ) {
                         }";
 
   l_ref.init( 4,
+              4,
+              4,
+              l_elVe[0],
               l_crds,
               l_exp1,
               l_mod );
 
-  REQUIRE( l_ref.m_ref[0] == Approx( (3.0 / 2.7)*4.3 ) );
-  REQUIRE( l_ref.m_ref[1] == Approx( (3.0 / 9.3)*1.3 ) );
-  REQUIRE( l_ref.m_ref[2] == Approx( (3.0 / 2.7)*1.3 ) );
-  REQUIRE( l_ref.m_ref[3] == Approx( (3.0 / 9.3)*4.3 ) );
+  REQUIRE( l_ref.m_refVe[0] == Approx( 3.0 / (2.7*4.3) ) );
+  REQUIRE( l_ref.m_refVe[1] == Approx( 3.0 / (9.3*1.3) ) );
+  REQUIRE( l_ref.m_refVe[2] == Approx( 3.0 / (2.7*1.3) ) );
+  REQUIRE( l_ref.m_refVe[3] == Approx( 3.0 / (9.3*4.3) ) );
 }
