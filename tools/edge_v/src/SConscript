@@ -25,7 +25,7 @@
 Import('env')
 l_sources = [ 'io/Config.cpp',
               'io/Csv.cpp',
-              'io/GmshView.cpp',
+              'io/BgMeshMsh4.cpp',
               'io/Hdf5.cpp',
               'io/Moab.cpp',
               'io/ExprTk.cpp',
@@ -74,6 +74,7 @@ if env['tests']:
   l_tests = [ 'tests.cpp',
               'io/Hdf5.test.cpp',
               'io/Moab.test.cpp',
+              'io/BgMeshMsh4.test.cpp',
               'geom/Line.test.cpp',
               'geom/Quad4r.test.cpp',
               'geom/Tria3.test.cpp',

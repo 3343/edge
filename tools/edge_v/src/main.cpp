@@ -25,7 +25,7 @@
 #include "io/Config.h"
 #include "io/Csv.h"
 #include "io/Hdf5.h"
-#include "io/GmshView.h"
+#include "io/BgMeshMsh4.h"
 #include "models/Constant.h"
 #include "models/seismic/Expression.h"
 #ifdef PP_HAS_UCVM
@@ -193,12 +193,16 @@ int main( int i_argc, char *i_argv[] ) {
                 *l_velMod );
 
     EDGE_V_LOG_INFO << "writing mesh refinement: " << l_config.getRefOut();
-    edge_v::io::GmshView::write( l_config.getRefOut(),
-                                 l_mesh->getTypeEl(),
-                                 l_mesh->nEls(),
-                                 l_mesh->getElVe(),
-                                 l_mesh->getVeCrds(),
-                                 l_ref.getTargetLengthsVe() );
+    std::ofstream l_stream( l_config.getRefOut(),
+                            std::ios::out );
+    edge_v::io::BgMeshMsh4::write( l_mesh->getTypeEl(),
+                                   l_mesh->nVes(),
+                                   l_mesh->nEls(),
+                                   l_mesh->getElVe(),
+                                   l_mesh->getVeCrds(),
+                                   l_ref.getTargetLengthsVe(),
+                                   l_stream );
+    l_stream.close();
 
     if( l_config.getWriteElAn() ) {
       EDGE_V_LOG_INFO << "storing elements' target lengths";

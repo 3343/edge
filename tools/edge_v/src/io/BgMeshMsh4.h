@@ -1,12 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (breuer AT mytum.de)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
- * Copyright (c) 2018, Regents of the University of California
+ * Copyright (c) 2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,41 +18,40 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Writes a GMSH view, based on the given coordinates and values.
+ * Writes background meshes in msh4 format.
  **/
-#ifndef EDGE_V_IO_GMSH_VIEW_HPP
-#define EDGE_V_IO_GMSH_VIEW_HPP
+#ifndef EDGE_V_IO_BGMESHMSH4_H
+#define EDGE_V_IO_BGMESHMSH4_H
 
-#include <string>
+#include <iostream>
 #include "constants.h"
 
 namespace edge_v {
   namespace io {
-    class GmshView;
+    class BgMeshMsh4;
   }
 }
 
-/**
- * Inteface to Gmsh's view.
- **/
-class edge_v::io::GmshView {
+class edge_v::io::BgMeshMsh4 {
   public:
     /**
-     * Writes the Gmsh-view.
-     * 
-     * @param i_path path of the output file.
-     * @param i_elType element type: 'tria3' or 'tet4'
+     * Writes the string representation of the msh4 background mesh.
+     *
+     * @param i_elTy element type.
+     * @param i_nVes number of vertices.
      * @param i_nEls number of elements.
      * @param i_elVe vertices adjacent to the elements.
-     * @param i_veCrds coordinates of the vertices.
-     * @param i_values values, which are assigned to the nodes.
+     * @param i_veCrds vertex coordinates.
+     * @param i_targetLengths target lengths at the vertices.
+     * @param io_stream stream which will be written.
      **/
-    static void write( std::string const  & i_path,
-                       t_entityType         i_elType,
-                       std::size_t          i_nEls,
-                       std::size_t const (* i_elVe),
-                       double      const (* i_veCrds)[3],
-                       float       const  * i_values );
+    static void write( t_entityType                i_elTy,
+                       std::size_t                 i_nVes,
+                       std::size_t                 i_nEls,
+                       std::size_t        const  * i_elVe,
+                       double             const (* i_veCrds)[3],
+                       float              const  * i_targetLengths,
+                       std::ostream              & io_stream );
 };
 
 #endif
