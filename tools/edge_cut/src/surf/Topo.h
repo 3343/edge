@@ -75,46 +75,6 @@ public:
     Topo& operator=( const Topo& ) = delete;
 
     /**
-     * Computes the signed z-distance between a point and the triangulation
-     *
-     * @param i_x x-coord of point
-     * @param i_y y-coord of point
-     * @param i_z z-coord of point
-     * @return signed z-distance between a point and the triangulation
-     **/
-    double topoDisp( TopoPoint const & i_pt ) const;
-
-    /**
-     * Interpolates the triangulation at a give (x,y) coordinate
-     *
-     * @param i_x x-coord for interpolation
-     * @param i_y y-coord for interpolation
-     * @return The point on the triangulation with x,y coordinates (i_x, i_y)
-     **/
-    TopoPoint interpolatePt( double i_x, double i_y ) const;
-
-    /**
-     * Check if the given vertical ray intersects with the topo mesh.
-     *
-     * @param i_pt point where the ray starts.
-     * @return true if an intersection was found, false otherwise.
-     **/
-    bool interRay( TopoPoint const & i_pt,
-                   bool  i_positive=true ) const;
-
-    /**
-     * Intersects the given segment with the topo mesh.
-     *
-     * @param i_segPt1 first point of the segment.
-     * @param i_segPt2 second point of the segment.
-     * @param o_inters will be set to intersections of the segment and the topomesh. If more than one intersection occurs, multiple point will be returned.
-     **/
-    unsigned short interSeg( TopoPoint const & i_segPt1,
-                             TopoPoint const & i_segPt2,
-                             TopoPoint         o_inters[C_MAX_SURF_INTER] ) const;
-
-
-    /**
      * Writes the topo mesh to the provided stream in .OFF format
      *
      * @param i_os ostream to be written to
