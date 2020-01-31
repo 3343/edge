@@ -1,9 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
+ * @author Alexander Breuer (breuer AT mytum.de)
  * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -21,27 +23,18 @@
  * A simple command line parser for EDGEcut.
  **/
 #include "OptionParser.h"
+#include "logging.hpp"
 
-edge_cut::io::OptionParser::OptionParser( int i_argc, char** i_argv )
-{
-  m_usage = \
-"EDGEcut is a utility for generating surface meshes with a topographical\n" \
-"boundary. You can find detailed help in the main EDGE user guide.      \n" \
-"                                                                       \n" \
-"USAGE: ./edge_cut xml_path                                             \n" \
-"                                                                       \n" \
-"Options:                                                               \n" \
-"  xml_path        path to runtime configuration file                   \n";
-
-  if ( i_argc > 2 ) {
-    std::cerr << m_usage << std::endl;
-    exit( EXIT_FAILURE );
-  }
-  else if ( i_argc == 1 ) {
-    std::cerr << m_usage << std::endl;
+edge_cut::io::OptionParser::OptionParser( int i_argc, char** i_argv ) {
+  if ( i_argc != 3 ) {
+    EDGE_CUT_LOG_INFO << "EDGEcut is a utility for generating surface meshes.";
+    EDGE_CUT_LOG_INFO;
+    EDGE_CUT_LOG_INFO << "Usage: ./edge_cut -x xml_path";
+    EDGE_CUT_LOG_INFO << "Options:";
+    EDGE_CUT_LOG_INFO << "  xml_path path to runtime configuration file";
     exit( EXIT_FAILURE );
   }
   else {
-    m_xmlPath = i_argv[1];
+    m_xmlPath = i_argv[2];
   }
 }

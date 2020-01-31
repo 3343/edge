@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Alexander Breuer
 # Copyright (c) 2017, Regents of the University of California
 # All rights reserved.
 #
@@ -23,10 +24,26 @@
 
 Import('env')
 
-env.sources.append( env.Object( 'easylogging/src/easylogging++.cc',
-                                CXXFLAGS   = env['CXXFLAGS']+
-                                             ['-Wno-shadow'] ) )
+# enable easylogging
+l_el = {}
+env.AppendUnique( CPPDEFINES=['PP_USE_EASYLOGGING'] )
+l_el['def'] = ['ELPP_NO_DEFAULT_LOG_FILE']
+l_el['obj'] = env.Object( 'easylogging/src/easylogging++.cc',
+                          CXXFLAGS   = env['CXXFLAGS']+
+                                      ['-Wno-shadow'],
+                          CPPDEFINES = l_el['def'] )
+l_easyLogging = env.StaticLibrary( 'easylogging/easylogging',
+                                   l_el['obj'] )
+env.Append( LIBS = l_easyLogging )
+env.Append( CXXFLAGS = [ ('-isystem', 'submodules/easylogging/src') ] )
 
-env.Append( CPPPATH=['#submodules/easylogging/src/'] )
+env.AppendUnique( CPPPATH=['#submodules/easylogging/src/'] )
+
+# add pugixml
+env.submods.append( '#submodules/pugixml/src/pugixml.cpp' )
+
+# add Catch
+if env['tests']:
+  env.Append( CPPPATH = ['#submodules/Catch/include'] )
 
 Export('env')

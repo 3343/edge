@@ -1,9 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
+ * @author Alexander Breuer (breuer AT mytum.de)
  * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -24,87 +26,108 @@
 #define EDGE_CUT_CONFIG_H
 
 #include <string>
-#include <CGAL/make_mesh_3.h>
 #include "logging.hpp"
-#include "../../../submodules/pugixml/src/pugixml.hpp"
 
 namespace edge_cut {
   namespace io {
-    template< class K > class Config;
+    class Config;
   }
 }
 
-template< class K >
 class edge_cut::io::Config {
-public:
-  Config( std::string i_xmlPath );
+  private:
+    //! input grid
+    std::string m_gridIn;
 
-  void printConfig();
+    //! left output mesh
+    std::string m_meshOutLeft;
 
-  // Path to XML file containing the runtime config
-  std::string m_xmlPath;
+    //! right output mesh
+    std::string m_meshOutRight;
 
-  // XML document containing configuration
-  pugi::xml_document m_doc;
+    //! front output mesh
+    std::string m_meshOutFront;
 
-  // Coordinates of bounding box
-  double m_bBox[6];
+    //! back output mesh
+    std::string m_meshOutBack;
 
-  // Input file with topography data
-  std::string m_topoIn;
+    //! bottom output mesh
+    std::string m_meshOutBottom;
 
-  // Output file for topography surface mesh
-  std::string m_topoOut;
+    //! top output mesh
+    std::string m_meshOutTop;
 
-  // Input file with triangular mesh model of boundary
-  std::string m_bdryIn;
+    //! target z of the extrude
+    double m_extrudeZ = 0;
 
-  // Output file for domain boundary surface mesh
-  std::string m_bdryOut;
+  public:
+    /**
+     * Constructor.
+     *
+     * @param i_xmlPath path to the XML config.
+     **/
+    Config( std::string i_xmlPath );
 
-  // Depth layers and scaling factors for depth-based refinement
-  std::map< typename K::FT, typename K::FT, std::greater<typename K::FT> > m_layers;
+    /**
+     * Prints the config.
+     **/
+    void print();
 
-  // Radius for region of maximum refinement
-  typename K::FT m_innerRad;
+    /**
+     * Gets the input grid.
+     *
+     * @return path to the input grid.
+     **/
+    std::string getGridIn() { return m_gridIn; }
 
-  // Radius outside of which there is minimum refinement
-  typename K::FT m_outerRad;
+    /**
+     * Gets the left output mesh.
+     *
+     * @return path to the left output mesh.
+     **/ 
+    std::string getMeshOutLeft() { return m_meshOutLeft; }
 
-  // Scale factor of refinement level from innerRad -> outerRad
-  typename K::FT m_scale;
+    /**
+     * Gets the right output mesh.
+     *
+     * @return path to the right output mesh.
+     **/ 
+    std::string getMeshOutRight() { return m_meshOutRight; }
 
-  // Center of refinement regions
-  typename K::Point_3 m_center;
+    /**
+     * Gets the front output mesh.
+     *
+     * @return path to the front output mesh.
+     **/ 
+    std::string getMeshOutFront() { return m_meshOutFront; }
 
-  // Target edge length (for 1D features ONLY) for mesher
-  typename K::FT m_edgeBase;
+    /**
+     * Gets the back output mesh.
+     *
+     * @return path to the back output mesh.
+     **/ 
+    std::string getMeshOutBack() { return m_meshOutBack; }
 
-  // Target facet size for mesher
-  typename K::FT m_facetSizeBase;
+    /**
+     * Gets the bottom output mesh.
+     *
+     * @return path to the bottom output mesh.
+     **/ 
+    std::string getMeshOutBottom() { return m_meshOutBottom; }
 
-  // Target surface approximation for mesher
-  typename K::FT m_facetApproxBase;
+    /**
+     * Gets the top output mesh.
+     *
+     * @return path to the top output mesh.
+     **/ 
+    std::string getMeshOutTop() { return m_meshOutTop; }
 
-  // Minimum allowable facet angle for mesher
-  typename K::FT m_angleBound;
-
-  // Time limit for each mesh optimization step (0 == no time limit)
-  double m_optimizeTime;
-
-  // CGAL object containing options for lloyd smoothing in mesher
-  CGAL::parameters::internal::Lloyd_options   m_lloydOpts;
-
-  // CGAL object containing options for ODT smoothing in mesher
-  CGAL::parameters::internal::Odt_options     m_odtOpts;
-
-  // CGAL object containing options for sliver perturbation in mesher
-  CGAL::parameters::internal::Perturb_options m_perturbOpts;
-
-  // CGAL object containing options for sliver exudation in mesher
-  CGAL::parameters::internal::Exude_options   m_exudeOpts;
+    /**
+     * Gets the target z of the extrude operation.
+     *
+     * @return target z.
+     **/
+    double getExtZ() { return m_extrudeZ; }
 };
-
-#include "Config.inc"
 
 #endif

@@ -1,9 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
+ * @author Alexander Breuer (breuer AT mytum.de)
  * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -20,12 +22,10 @@
  * @section DESCRIPTION
  * A simple command line parser for EDGEcut.
  **/
-
-#ifndef EDGE_CUT_OPT_PARSER_H
-#define EDGE_CUT_OPT_PARSER_H
+#ifndef EDGE_CUT_IO_OPT_PARSER_H
+#define EDGE_CUT_IO_OPT_PARSER_H
 
 #include <string>
-#include "logging.hpp"
 
 namespace edge_cut {
   namespace io {
@@ -34,16 +34,22 @@ namespace edge_cut {
 }
 
 class edge_cut::io::OptionParser {
-public:
-  /**
-   * Constructor
-   **/
-  OptionParser( int i_argc, char** i_argv );
+  private:
+    //! path to xml-config
+    std::string m_xmlPath;
 
-  std::string m_xmlPath;
+  public:
+    /**
+     * Constructor
+     **/
+    OptionParser( int i_argc, char** i_argv );
 
-  std::string m_usage;
-
+    /**
+     * Gets the path of the xml config.
+     *
+     * @param path of the XML config.
+     **/
+    std::string getXml(){ return m_xmlPath; }
 };
 
 #endif

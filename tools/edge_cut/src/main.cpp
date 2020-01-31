@@ -1,9 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
+ * @author Alexander Breuer (breuer AT mytum.de)
  * @author David Lenz (dlenz AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -22,124 +24,75 @@
  **/
 #include "io/logging.hpp"
 INITIALIZE_EASYLOGGINGPP
-#include "../../../submodules/pugixml/src/pugixml.hpp"
-#include "io/Config.h"
 #include "io/OptionParser.h"
-#include "surf/meshUtils.h"
-#include "surf/BdryTrimmer.h"
-#include "surf/SizingField.h"
-
-using namespace edge_cut::surf;
+#include "io/Config.h"
+#include "mesh/Extrude.h"
 
 int main( int i_argc, char *i_argv[] ) {
+  EDGE_CUT_LOG_INFO << "##########################################################################";
+  EDGE_CUT_LOG_INFO << "##############   ##############            ###############  ##############";
+  EDGE_CUT_LOG_INFO << "##############   ###############         ################   ##############";
+  EDGE_CUT_LOG_INFO << "#####            #####       #####      ######                       #####";
+  EDGE_CUT_LOG_INFO << "#####            #####        #####    #####                         #####";
+  EDGE_CUT_LOG_INFO << "#############    #####         #####  #####                  #############";
+  EDGE_CUT_LOG_INFO << "#############    #####         #####  #####      #########   #############";
+  EDGE_CUT_LOG_INFO << "#####            #####         #####  #####      #########           #####";
+  EDGE_CUT_LOG_INFO << "#####            #####        #####    #####        ######           #####";
+  EDGE_CUT_LOG_INFO << "#####            #####       #####      #####       #####            #####";
+  EDGE_CUT_LOG_INFO << "###############  ###############         ###############   ###############";
+  EDGE_CUT_LOG_INFO << "###############  ##############           #############    ###############";
+  EDGE_CUT_LOG_INFO << "#######################################################################cut";
+  EDGE_CUT_LOG_INFO << "";
+  EDGE_CUT_LOG_INFO << "              EDGEcut is available from: https://dial3343.org";
+  EDGE_CUT_LOG_INFO << "";
+
   edge_cut::io::OptionParser l_options( i_argc, i_argv );
 
-  EDGE_LOG_INFO << "##########################################################################";
-  EDGE_LOG_INFO << "##############   ##############            ###############  ##############";
-  EDGE_LOG_INFO << "##############   ###############         ################   ##############";
-  EDGE_LOG_INFO << "#####            #####       #####      ######                       #####";
-  EDGE_LOG_INFO << "#####            #####        #####    #####                         #####";
-  EDGE_LOG_INFO << "#############    #####         #####  #####                  #############";
-  EDGE_LOG_INFO << "#############    #####         #####  #####      #########   #############";
-  EDGE_LOG_INFO << "#####            #####         #####  #####      #########           #####";
-  EDGE_LOG_INFO << "#####            #####        #####    #####        ######           #####";
-  EDGE_LOG_INFO << "#####            #####       #####      #####       #####            #####";
-  EDGE_LOG_INFO << "###############  ###############         ###############   ###############";
-  EDGE_LOG_INFO << "###############  ##############           #############    ###############";
-  EDGE_LOG_INFO << "#######################################################################cut";
-  EDGE_LOG_INFO << "";
+  EDGE_CUT_LOG_INFO << "parsing runtime config";
+  edge_cut::io::Config l_config( l_options.getXml() );
+  l_config.print();
 
-  EDGE_LOG_INFO << "Generating runtime configuration...";
-  edge_cut::io::Config< K > l_config( l_options.m_xmlPath );
-  l_config.printConfig();
+  // read the input
+  EDGE_CUT_LOG_INFO << "reading the input grid";
+  std::ifstream l_read( l_config.getGridIn(),
+                        std::ios::in );
 
-  EDGE_LOG_INFO << "Lets get started:";
+  std::vector< double > l_veCrds;
+  double l_crd;
+  while( l_read >> l_crd ) {
+    l_veCrds.push_back( l_crd );
+  }
+  EDGE_CUT_CHECK_EQ( l_veCrds.size()%3, 0 );
 
-  // Create polyhedral meshes of topography (with whatever sampling we were provided),
-  // and of domain boundary
-  EDGE_LOG_INFO << "Building initial polyhedral surfaces...";
-  Polyhedron l_topoPoly, l_bdryPoly;
+  EDGE_CUT_LOG_INFO << "generating extruded surfaces";
+  edge_cut::mesh::Extrude l_ext( l_veCrds.size()/3,
+                                 (double (*)[3]) l_veCrds.data(),
+                                 l_config.getExtZ() );
 
-  edge_cut::surf::topoPolyMeshFromXYZ( l_topoPoly, l_config.m_topoIn );
-  EDGE_LOG_INFO << "  Initial topography mesh:";
-  EDGE_LOG_INFO << "    #vertices: " << l_topoPoly.size_of_vertices();
-  EDGE_LOG_INFO << "    #faces:    " << l_topoPoly.size_of_facets();
+  // open file streams
+  std::ofstream l_left(   l_config.getMeshOutLeft(),
+                          std::ios::out );
+  std::ofstream l_right(  l_config.getMeshOutRight(),
+                          std::ios::out );
+  std::ofstream l_front(  l_config.getMeshOutFront(),
+                          std::ios::out );
+  std::ofstream l_back(   l_config.getMeshOutBack(),
+                          std::ios::out );
+  std::ofstream l_bottom( l_config.getMeshOutBottom(),
+                          std::ios::out );
+  std::ofstream l_top(    l_config.getMeshOutTop(),
+                          std::ios::out );
 
-  edge_cut::surf::makeBdry( l_bdryPoly, l_config.m_bBox );
-  EDGE_LOG_INFO << "  Initial boundary mesh:";
-  EDGE_LOG_INFO << "    #vertices: " << l_bdryPoly.size_of_vertices();
-  EDGE_LOG_INFO << "    #faces:    " << l_bdryPoly.size_of_facets();
+  // write
+  EDGE_CUT_LOG_INFO << "writing output meshes";
+  l_ext.writeOff( l_left,
+                  l_right,
+                  l_front,
+                  l_back,
+                  l_bottom,
+                  l_top );
 
+  EDGE_CUT_LOG_INFO << "thank you for using EDGEcut!";
 
-  // Create polyhedral domains for re-meshing
-  std::vector< Polyhedron* > l_topoVector( 1, &l_topoPoly );
-  std::vector< Polyhedron* > l_bdryVector( 1, &l_bdryPoly );
-  Mesh_domain l_topoDomain( l_topoVector.begin(), l_topoVector.end() );
-  Mesh_domain l_bdryDomain( l_bdryVector.begin(), l_bdryVector.end() );
-
-  // Preserve the intersection between topography and boundary meshes.
-  // This ensures that the two meshes coincide on their boundaries.
-  EDGE_LOG_INFO << "Computing topography-boundary intersection...";
-  std::list< Polyline_type > l_intersectFeatures = edge_cut::surf::getIntersectionFeatures( l_topoPoly, l_config.m_bBox );
-  l_bdryDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
-  l_topoDomain.add_features( l_intersectFeatures.begin(), l_intersectFeatures.end() );
-
-  // Free memory, a copy is stored in the Mesh_domain object (no move semantics in CGAL yet)
-  l_topoPoly.clear();
-  l_bdryPoly.clear();
-
-
-  // NOTE meshes must share common edge refinement criteria in order for borders
-  //      to coincide. (recall edge criteria only affects specified 1D features)
-  SizingField<edge_cut::surf::Mesh_domain>
-    l_edgeCrit( l_config.m_edgeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad, l_config.m_layers ),
-    l_topoFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad, l_config.m_layers ),
-    l_bdryFacetCrit(  l_config.m_facetSizeBase, l_config.m_scale, l_config.m_center, 0, 0, l_config.m_layers ),
-    l_topoApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, l_config.m_innerRad, l_config.m_outerRad, l_config.m_layers ),
-    l_bdryApproxCrit( l_config.m_facetApproxBase, l_config.m_scale, l_config.m_center, 0, 0, l_config.m_layers );
-
-  Mesh_criteria   l_topoCriteria( CGAL::parameters::edge_size = l_edgeCrit,
-                                  CGAL::parameters::facet_size = l_topoFacetCrit,
-                                  CGAL::parameters::facet_distance = l_topoApproxCrit,
-                                  CGAL::parameters::facet_angle = l_config.m_angleBound );
-  Mesh_criteria   l_bdryCriteria( CGAL::parameters::edge_size = l_edgeCrit,
-                                  CGAL::parameters::facet_size = l_bdryFacetCrit,
-                                  CGAL::parameters::facet_distance = l_bdryApproxCrit,
-                                  CGAL::parameters::facet_angle = l_config.m_angleBound );
-
-
-  // Mesh generation
-  EDGE_LOG_INFO << "Re-meshing polyhedral surfaces according to provided criteria...";
-  C3t3 l_topoComplex = CGAL::make_mesh_3<C3t3>( l_topoDomain,
-                                                l_topoCriteria,
-                                                l_config.m_lloydOpts,
-                                                l_config.m_odtOpts,
-                                                l_config.m_perturbOpts,
-                                                l_config.m_exudeOpts    );
-  C3t3 l_bdryComplex = CGAL::make_mesh_3<C3t3>( l_bdryDomain,
-                                                l_bdryCriteria,
-                                                l_config.m_lloydOpts,
-                                                l_config.m_odtOpts,
-                                                l_config.m_perturbOpts,
-                                                l_config.m_exudeOpts    );
-
-
-  // Trim bits of boundary mesh which extend above topography
-  EDGE_LOG_INFO << "Trimming boundary mesh...";
-  Polyhedron l_topoPolyMeshed, l_bdryPolyMeshed;
-  edge_cut::surf::c3t3ToPolyhedron( l_topoComplex, l_topoPolyMeshed );
-  edge_cut::surf::c3t3ToPolyhedron( l_bdryComplex, l_bdryPolyMeshed );
-  edge_cut::surf::BdryTrimmer< Polyhedron > l_trimmer( l_bdryPolyMeshed, l_topoPolyMeshed );
-
-  l_trimmer.trim();
-
-  // Output
-  EDGE_LOG_INFO << "Writing meshes...";
-  std::ofstream l_topoFile( l_config.m_topoOut );
-  std::ofstream l_bdryFile( l_config.m_bdryOut );
-
-  l_bdryFile << l_bdryPolyMeshed;
-  l_topoFile << l_topoPolyMeshed;
-  EDGE_LOG_INFO << "Done.";
-  EDGE_LOG_INFO << "Thank you for using EDGEcut!";
+  return EXIT_SUCCESS;
 }

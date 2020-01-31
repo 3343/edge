@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Alexander Breuer
 # Copyright (c) 2017, Regents of the University of California
 # All rights reserved.
 #
@@ -22,10 +23,26 @@
 ##
 import os
 import warnings
+import subprocess
 
-def simpleWarning(message, category, filename, lineno, file=None, line=None):
+def simpleWarning( message, category, filename, lineno, file=None, line=None ):
     return '%s\n' % (message)
 warnings.formatwarning = simpleWarning
+
+##
+# Gets the EDGE version
+##
+def getEdgeVersion():
+  # check if dirty
+  l_dirty = subprocess.check_output(['git', 'diff', '--ignore-submodules=dirty'])
+
+  # assemble version
+  l_version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+  l_version = str( l_version )
+  if( l_dirty != '' ):
+    l_version = l_version + '_dirty'
+
+  return l_version
 
 ##
 # Adjust the given variable by turning relative paths to absolute paths
@@ -74,6 +91,9 @@ vars.AddVariables(
                 'release',
                  allowed_values=('release', 'debug', 'release+san', 'debug+san' )
               ),
+  BoolVariable( 'tests',
+                'enable unit tests.',
+                 False ),
   BoolVariable( 'cov',
                 'enable code coverage',
                  False ),
@@ -81,12 +101,6 @@ vars.AddVariables(
                 'location where the code is build',
                 'build',
                 PathVariable.PathIsDirCreate ),
-  PathVariable( 'cgal_dir',
-                'directory of the cgal installation',
-                None ),
-  PathVariable( 'boost_dir',
-                'directory of the boost installation',
-                None )
 )
 
 # command args have priority
@@ -137,6 +151,10 @@ if 'CC' in env['ENV'].keys():
 if 'CXX' in env['ENV'].keys():
   env['CXX'] = env['ENV']['CXX']
 
+# use static linking for direct dependencies (if possible) and dynamic for the rest
+env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
+env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
+
 # forward flags
 if 'CFLAGS' in env['ENV'].keys():
   env['CFLAGS'] = env['ENV']['CFLAGS']
@@ -160,80 +178,51 @@ if 'LIBRARY_PATH' in env['ENV'].keys():
 # add current path to seach path
 env.Append( CPPPATH = ['#', '#/src'] )
 
-# forward CGAL
-if 'cgal_dir' in vars.args.keys():
-  env.AppendUnique( CXXFLAGS=['-isystem'+env['cgal_dir']+'/include'] )
-  env.AppendUnique( LIBPATH=[env['cgal_dir']+'/lib'    ] )
-  env.AppendUnique( LIBPATH=[env['cgal_dir']+'/lib64'  ] )
-  # set rpath, we dislike the annoying LD_LIBRARY_PATH
-  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib'] )
-  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['cgal_dir']+'/lib64'] )
-
-# forward boost
-if 'boost_dir' in vars.args.keys():
-  env.AppendUnique( CXXFLAGS=['-isystem'+env['boost_dir']+'/include'] )
-  env.AppendUnique( LIBPATH=[env['boost_dir']+'/lib'    ] )
-  env.AppendUnique( LIBPATH=[env['boost_dir']+'/lib64'  ] )
-  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['boost_dir']+'/lib'] )
-  env.AppendUnique( LINKFLAGS=['-Wl,-rpath='+env['boost_dir']+'/lib64'] )
-
-# add CGAL
-if( not conf.CheckHeader( 'CGAL/Surface_mesh.h', language='CXX' ) ):
-  warnings.warn('Error: Could not find CGAL. Try using cgal_dir option')
-
-# add mpfr and gmp
-if not conf.CheckLib( 'mpfr', language='CXX' ):
-  warnings.warn('Warning: Could not find mpfr')
-
-if not conf.CheckLib( 'gmp', language='CXX' ):
-  warnings.warn('Warning: Could not find gmp')
-
-# needed for compilation on Ubuntu systems (since when using Ubuntu's CGAL, one needs to link against boost_thread)
-if not conf.CheckLib( 'boost_thread', language='CXX' ):
-  warnings.warn('Warning: Could not find boost_thread')
-
-
 # add default flags
-env.Append( CXXFLAGS = ["-std=c++14", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror", "-pedantic", "-Wshadow"] )
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror", "-pedantic", "-Wshadow"] )
 
 # set optimization mode
 if 'debug' in env['mode']:
   env.Append( CXXFLAGS = ['-g','-O0'] )
-  env.Append( CPPDEFINES = ['CGAL_MESH_3_PROFILING', 'CGAL_MESH_3_VERBOSE'] )
 else:
   env.Append( CXXFLAGS = ['-O2'] )
 
 # add sanitizers
 if 'san' in  env['mode']:
-  if env['CXX'] == 'clang++':
-      env.Append( CXXFLAGS =  ['-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
-      env.Append( LINKFLAGS = ['-fsanitize=address', '-fsanitize=undefined'] )
-  else:
-    print( '' )
-    print( 'WARNING: Continuing without sanitizers - clang compilers required for sanitizer mode, but not found.' )
-    print( '   export CXX=clang++ to change compilers' )
+  env.Append( CXXFLAGS =  ['-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
+  env.Append( LINKFLAGS = ['-fsanitize=address', '-fsanitize=undefined'] )
 
 # enable code coverage, if requested
 if env['cov'] == True:
   env.Append( CXXFLAGS = ['-coverage', '-fno-inline', '-fno-inline-small-functions', '-fno-default-inline'] )
   env.Append( LINKFLAGS = ['-coverage'] )
 
+# add version
+env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
 
 # get source files
 VariantDir( env['build_dir']+'/src', 'src')
 VariantDir( env['build_dir']+'/submodules', 'submodules')
 
 env.sources = []
-
-
-Export('env')
-SConscript( env['build_dir']+'/submodules/SConscript' )
-Import('env')
+env.submods = []
+env.tests = []
 
 Export('env')
 SConscript( env['build_dir']+'/src/SConscript' )
 Import('env')
 
+Export('env')
+SConscript( env['build_dir']+'/submodules/SConscript' )
+Import('env')
+
+env.sources += env.submods
+env.tests += env.submods
+
 # add a new line
 print( '' )
 env.Program( env['build_dir']+'/edge_cut', source = env.sources )
+
+# build unit tests
+if env['tests']:
+  l_tests = env.Program( env['build_dir']+'/tests', source = env.tests )

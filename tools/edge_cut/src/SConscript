@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Alexander Breuer
 # Copyright (c) 2017, Regents of the University of California
 # All rights reserved.
 #
@@ -23,10 +24,19 @@
 
 Import('env')
 
-l_sources = [ 'surf/Topo.cpp',
-              'io/OptionParser.cpp',
-              '../submodules/pugixml/src/pugixml.cpp',
-              'surf/meshUtils.cpp'      ]
+l_sources = [ 'io/OptionParser.cpp',
+              'io/Config.cpp',
+              'mesh/Extrude.cpp' ]
+
+if env['tests']:
+  l_tests = [ 'tests.cpp',
+              'mesh/Extrude.test.cpp' ]
+
+  # add objects and make sure we are allowed to overwrite private keywords
+  env.tests.append( env.sources )
+
+  for l_test in l_tests:
+    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+'-Wno-keyword-macro' ) )
 
 for l_source in l_sources:
   env.sources.append( env.Object( l_source ) )
