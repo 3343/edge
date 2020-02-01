@@ -103,6 +103,13 @@ class edge_v::models::seismic::Ucvm: public Model {
                double      const (* i_pts)[3] );
 
     /**
+     * Gets the minimum wave speed at a point.
+     *
+     * @param i_pt point at which the minimum wave speed is derived.
+     **/
+    double getMinSpeed( std::size_t i_pt ) const;
+
+    /**
      * Gets the maximum wave speed at a point.
      *
      * @param i_pt point at which the maximum wave speed is derived.

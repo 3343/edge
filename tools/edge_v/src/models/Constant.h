@@ -66,6 +66,13 @@ class edge_v::models::Constant: public Model {
      *
      * @param i_pt ignored.
      **/
+    double getMinSpeed( std::size_t i_pt ) const;
+
+    /**
+     * Gets the constant wave speed.
+     *
+     * @param i_pt ignored.
+     **/
     double getMaxSpeed( std::size_t i_pt ) const;
 };
 

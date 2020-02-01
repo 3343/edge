@@ -25,6 +25,10 @@
 edge_v::models::Constant::Constant( double i_vel ): m_vel( i_vel ) {
 }
 
+double edge_v::models::Constant::getMinSpeed( std::size_t i_pt ) const {
+  return m_vel;
+}
+
 double edge_v::models::Constant::getMaxSpeed( std::size_t i_pt ) const {
   return m_vel;
 }

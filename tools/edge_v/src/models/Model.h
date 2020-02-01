@@ -56,6 +56,13 @@ class edge_v::models::Model {
     virtual void free() = 0;
 
     /**
+     * Gets the minimum wave speed at a point.
+     *
+     * @param i_pt point at which the minimum wave speed is derived.
+     **/
+    virtual double getMinSpeed( std::size_t i_pt ) const = 0;
+
+    /**
      * Gets the maximum wave speed at a point.
      *
      * @param i_pt point at which the maximum wave speed is derived.

@@ -70,6 +70,10 @@ void edge_v::models::seismic::Ucvm::init( std::size_t          i_nPts,
                         m_rho );
 }
 
+double edge_v::models::seismic::Ucvm::getMinSpeed( std::size_t i_pt ) const {
+  return std::abs( m_velS[i_pt] );
+}
+
 double edge_v::models::seismic::Ucvm::getMaxSpeed( std::size_t i_pt ) const {
   return std::abs( m_velP[i_pt] );
 }

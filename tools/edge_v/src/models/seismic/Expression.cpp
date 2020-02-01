@@ -102,6 +102,10 @@ void edge_v::models::seismic::Expression::free() {
   if( m_qs != nullptr ) delete[] m_qs;
 }
 
+double edge_v::models::seismic::Expression::getMinSpeed( std::size_t i_pt ) const {
+  return m_vs[i_pt];
+}
+
 double edge_v::models::seismic::Expression::getMaxSpeed( std::size_t i_pt ) const {
   return m_vp[i_pt];
 }
