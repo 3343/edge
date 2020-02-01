@@ -60,23 +60,22 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
   // names of the variables
   std::string l_crdsName[3] = {"x", "y", "z"};
   std::string l_freqName = "frequency";
-  std::string l_elspwlName = "elements_per_wave_length";
+  std::string l_edspwlName = "edges_per_wave_length";
   std::string l_maxWsRatioName = "maximum_wave_speed_ratio";
 
   // set up expression-tk interface
-  io::ExprTk m_exprTk;
+  io::ExprTk l_exprTk;
   for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
-    m_exprTk.addVar( l_crdsName[l_di],
+    l_exprTk.addVar( l_crdsName[l_di],
                      l_crds[l_di] );
   }
-  m_exprTk.addVar( l_maxWsRatioName,
+  l_exprTk.addVar( l_maxWsRatioName,
                    l_maxWsRatio );
-
-  m_exprTk.addVar( l_elspwlName,
+  l_exprTk.addVar( l_edspwlName,
                    l_elspwl );
-  m_exprTk.addVar( l_freqName,
+  l_exprTk.addVar( l_freqName,
                    l_freq );
-  m_exprTk.compile( i_refExpr );
+  l_exprTk.compile( i_refExpr );
 
   // derive refinement
 #ifdef PP_USE_OMP
@@ -101,7 +100,7 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
     l_maxWsRatio = l_wsMax / l_wsMin;
 
     // eval expression
-    m_exprTk.eval();
+    l_exprTk.eval();
     EDGE_V_CHECK_GT( l_freq, 0 );
     EDGE_V_CHECK_GT( l_elspwl, 0 );
 
