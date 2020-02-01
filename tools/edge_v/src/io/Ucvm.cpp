@@ -27,15 +27,12 @@ extern "C" {
 extern int ucvm_init_flag; // used as workaround for multiple objects of this class
 }
 #include <proj_api.h>
-#include "models/seismic/Rules.h"
 #include "io/logging.h"
 
 edge_v::io::Ucvm::Ucvm( std::string const & i_config,
                         std::string const & i_models,
                         std::string const & i_crdMode,
-                        std::string const & i_rule ) {
-  m_rule = i_rule;
-
+                        std::string const & i_rule ): m_rule(i_rule) {
   // set coordinate mode
   ucvm_ctype_t l_crdMode = UCVM_COORD_GEO_ELEV;
   if( i_crdMode == "UCVM_COORD_GEO_DEPTH" ) {
@@ -72,7 +69,7 @@ void edge_v::io::Ucvm::getVels( std::size_t          i_nPts,
                                 double      const (* i_pts)[3],
                                 float              * o_vps,
                                 float              * o_vss,
-                                float              * o_rhos ) const {
+                                float              * o_rhos ) {
   // allocate memory for UCVM points and data
   ucvm_point_t *l_ucvmPts  = new ucvm_point_t[ i_nPts ];
   ucvm_data_t  *l_ucvmData = new ucvm_data_t[  i_nPts ];
@@ -135,10 +132,9 @@ void edge_v::io::Ucvm::getVels( std::size_t          i_nPts,
     o_rhos[l_pt] = l_propPtr->rho;
 
     // normalize
-    models::seismic::Rules::apply( m_rule,
-                                   o_vps[l_pt],
-                                   o_vss[l_pt],
-                                   o_rhos[l_pt] );
+    m_rule.apply( o_vps[l_pt],
+                  o_vss[l_pt],
+                  o_rhos[l_pt] );
   }
 
   // free memory

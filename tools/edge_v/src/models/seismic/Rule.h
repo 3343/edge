@@ -4,7 +4,8 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2018-2020, Regents of the University of California
+ * Copyright (c) 2020, Alexander Breuer
+ * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,16 +21,17 @@
  * @section DESCRIPTION
  * Velocity rules, typically applied in the upper layers.
  **/
-#ifndef EDGE_V_VEL_RULES_H
-#define EDGE_V_VEL_RULES_H
+#ifndef EDGE_V_VEL_RULE_H
+#define EDGE_V_VEL_RULE_H
 
+#include "io/ExprTk.h"
 #include <cassert>
 #include <string>
 
 namespace edge_v {
   namespace models {
     namespace seismic {
-      class Rules;
+      class Rule;
     }
   }
 }
@@ -37,42 +39,38 @@ namespace edge_v {
 /**
  * Rules for seismic velocity models.
  **/
-class edge_v::models::seismic::Rules {
+class edge_v::models::seismic::Rule {
   private:
-    /**
-     * TPV34 benchmark.
-     * 
-     * @param io_vp p-wave velocity.
-     * @param io_vs s-wave velocity.
-     * @param io_rho density.
-     **/
-    static void tpv34( float & io_vp,
-                       float & io_vs,
-                       float & io_rho );
-    /**
-     * Rules for the 2018 High-F activities as done by RWG.
-     *
-     * @param io_vp p-wave velocity.
-     * @param io_vs s-wave velocity.
-     * @param io_rho density.
-     **/
-    static void highf2018( float & io_vp,
-                           float & io_vs,
-                           float & io_rho );
+    //! p-wave velocity in the expression
+    double m_vp = 0;
+
+    //! s-wave velocity in the expression
+    double m_vs = 0;
+
+    //! density rho in the expression
+    double m_rho = 0;
+
+    //! expression which is evaluated
+    io::ExprTk m_exprTk;
 
   public:
     /**
-     * @brief Applies the velocity rule.
+     * Constructor which initializes the expression interface.
+     *
+     * @param i_rule velocity rule.
+     **/
+    Rule( std::string const & i_rule );
+
+    /**
+     * Applies the velocity rule.
      * 
-     * @param i_rule string representation of the rule, which gets applied.
      * @param io_vp p-wave velocity.
      * @param io_vs s-wave velocity.
      * @param io_rho density.
      **/
-    static void apply( std::string const & i_rule,
-                       float             & io_vp,
-                       float             & io_vs,
-                       float             & io_rho );
+    void apply( float & io_vp,
+                float & io_vs,
+                float & io_rho );
 };
 
 #endif

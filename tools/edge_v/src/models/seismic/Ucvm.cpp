@@ -23,7 +23,7 @@
  **/
 #include "Ucvm.h"
 
-edge_v::models::seismic::Ucvm::Ucvm( io::Ucvm    const & i_ucvmReader,
+edge_v::models::seismic::Ucvm::Ucvm( io::Ucvm          & i_ucvmReader,
                                      double      const   i_trafoSrc[3][3],
                                      std::string const & i_projSrc,
                                      std::string const & i_projDes,

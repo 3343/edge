@@ -53,7 +53,7 @@ class edge_v::models::seismic::Ucvm: public Model {
     float *m_rho = nullptr;
 
     //! ucvm reader
-    io::Ucvm const & m_ucvmReader;
+    io::Ucvm & m_ucvmReader;
 
     //! trafo applied before calling proj
     double m_trafoSrc[3][3] = {0};
@@ -82,7 +82,7 @@ class edge_v::models::seismic::Ucvm: public Model {
      * @param i_projDes proh.4 string of the destination projection (used to query UCVM).
      * @param i_ucvmType ucvm type: gtl, crust or cmb.
      */
-    Ucvm( io::Ucvm    const & i_ucvmReader,
+    Ucvm( io::Ucvm          & i_ucvmReader,
           double      const   i_trafoSrc[3][3],
           std::string const & i_projSrc,
           std::string const & i_projDes,

@@ -24,7 +24,7 @@
 #ifndef EDGE_V_IO_UCVM_H
 #define EDGE_V_IO_UCVM_H
 
-#include <string>
+#include "models/seismic/Rule.h"
 
 namespace edge_v {
   namespace io {
@@ -38,7 +38,7 @@ namespace edge_v {
 class edge_v::io::Ucvm {
   private:
     //! rule used for normalization
-    std::string m_rule = "";
+    models::seismic::Rule m_rule;
 
   public:
     /**
@@ -87,7 +87,7 @@ class edge_v::io::Ucvm {
                   double      const (* i_pts)[3],
                   float              * o_vps,
                   float              * o_vss,
-                  float              * o_rhos ) const;
+                  float              * o_rhos );
 };
 
 #endif
