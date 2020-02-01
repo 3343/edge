@@ -93,8 +93,8 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
         l_crds[l_di] += i_veCrds[l_veId][l_di] / i_nElVes;
       }
 
-      l_wsMin = std::min( l_wsMin, i_velMod.getMaxSpeed( l_veId ) );
-      l_wsMax = std::max( l_wsMax, i_velMod.getMaxSpeed( l_veId ) );
+      l_wsMin = std::min( l_wsMin, i_velMod.getMinSpeed( l_veId ) );
+      l_wsMax = std::max( l_wsMax, i_velMod.getMinSpeed( l_veId ) );
     }
 
     l_maxWsRatio = l_wsMax / l_wsMin;
@@ -120,7 +120,7 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
     for( unsigned short l_ve = 0; l_ve < i_nElVes; l_ve++ ) {
       std::size_t l_veId = i_elVe[l_el * i_nElVes + l_ve];
 
-      float l_ws = i_velMod.getMaxSpeed( l_veId );
+      float l_ws = i_velMod.getMinSpeed( l_veId );
       l_wsAve += l_ws;
 
       float l_refVe = l_ws * m_refEl[l_el];
