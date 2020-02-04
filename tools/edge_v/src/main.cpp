@@ -213,7 +213,11 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   // abort if mesh doesn't have output
-  if( l_config.getMeshOutBase() == "" ) return 0;
+  if( l_config.getMeshOutBase() == "" ) {
+    delete l_mesh;
+    delete l_velMod;
+    return EXIT_SUCCESS;
+  }
 
   EDGE_V_LOG_INFO << "computing CFL time steps";
   edge_v::time::Cfl *l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
