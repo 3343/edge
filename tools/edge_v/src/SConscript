@@ -40,6 +40,7 @@ l_sources = [ 'io/Config.cpp',
               'mesh/Communication.cpp',
               'mesh/Refinement.cpp',
               'models/Model.cpp',
+              'models/seismic/Rule.cpp',
               'models/Constant.cpp',
               'models/seismic/Expression.cpp',
               'time/Cfl.cpp',
@@ -62,7 +63,6 @@ for l_he in l_headers:
 
 if 'ucvm' in env and env['ucvm']:
   l_sources = l_sources + [ 'io/Ucvm.cpp',
-                            'models/seismic/Rule.cpp',
                             'models/seismic/Ucvm.cpp' ]
 
 for l_src in l_sources:
