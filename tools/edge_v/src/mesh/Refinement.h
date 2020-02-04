@@ -70,7 +70,7 @@ class edge_v::mesh::Refinement {
      * @param i_nElVes number of vertices per element.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_veCrds coordinates of the vertices.
-     * @param i_refExpr expression used for the refinement, which defines 'frequency' and 'elements_per_wave_length'.
+     * @param i_refExpr expression used for the refinement, which defines 'frequency' and 'edges_per_wave_length'.
      * @param i_velMod velocity model.
      **/
     void init( std::size_t             i_nVes,
