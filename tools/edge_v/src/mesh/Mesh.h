@@ -51,25 +51,25 @@ class edge_v::mesh::Mesh {
     std::size_t m_nEls;
 
     //! vertex coordinates
-    double (*m_veCrds)[3];
+    double (*m_veCrds)[3] = nullptr;
 
     //! vertices adjacent to the faces
-    std::size_t *m_faVe;
+    std::size_t * m_faVe = nullptr;
 
     //! elements adjacent to the faces
-    std::size_t *m_faEl;
+    std::size_t * m_faEl = nullptr;
 
     //! faces adjacent to the elements
-    std::size_t *m_elFa;
+    std::size_t * m_elFa = nullptr;
 
     //! vertices adjacent to the elements
-    std::size_t *m_elVe;
+    std::size_t * m_elVe = nullptr;
 
     //! elements adjacent to elements, faces as bridge
-    std::size_t *m_elFaEl;
+    std::size_t * m_elFaEl = nullptr;
 
     //! indiameter of the elements
-    double *m_inDiasEl;
+    double * m_inDiasEl = nullptr;
 
     //! area/length of the faces
     double * m_volFa = nullptr;
