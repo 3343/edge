@@ -107,10 +107,10 @@ class edge_v::mesh::Mesh {
      * @param i_second second array.
      * @return first found entry present in the second but not in the first one. numeric_limits< std::size_t >::max() if none.
      **/
-    static std::size_t getAddEntry( std::size_t   i_sizeFirst,
-                                    std::size_t   i_sizeSecond,
-                                    std::size_t * i_first,
-                                    std::size_t * i_second );
+    static std::size_t getAddEntry( std::size_t         i_sizeFirst,
+                                    std::size_t         i_sizeSecond,
+                                    std::size_t const * i_first,
+                                    std::size_t const * i_second );
 
     /**
      * Gathers the vertex coordinates of the given entity.
