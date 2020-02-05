@@ -112,7 +112,7 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
 #ifdef PP_USE_OMP
 }
 #endif
-  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) m_refVe[l_ve] = std::numeric_limits< double >::max();
+  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) m_refVe[l_ve] = std::numeric_limits< float >::max();
 
   // propagate refinement to vertices
   for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {

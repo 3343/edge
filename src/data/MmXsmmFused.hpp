@@ -59,6 +59,9 @@ class edge::data::MmXsmmFused< float > {
     //! generated kernels of libxsmm
     std::vector< std::vector< libxsmm_smmfunction > > m_kernels;
 
+    //! number of flops performed by each libxsmm kernel
+    std::vector< std::vector< size_t > > m_kernel_flops;
+
     /**
      * @brief Constructor, which limits the LIBXSMM target architecture, if required.
      */
@@ -143,6 +146,11 @@ class edge::data::MmXsmmFused< float > {
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
+
+      // read flops and store them
+      libxsmm_kernel_info l_kinfo;
+      libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
+      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
     }
 
     /**
@@ -211,11 +219,16 @@ class edge::data::MmXsmmFused< float > {
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_rm_ac_soa( m_descs[i_group].back() ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).smm );
       }
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
+
+      // read flops and store them
+      libxsmm_kernel_info l_kinfo;
+      libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
+      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
     }
 };
 
@@ -232,6 +245,9 @@ class edge::data::MmXsmmFused< double > {
     //! generated kernels of libxsmm
     std::vector< std::vector< libxsmm_dmmfunction > > m_kernels;
  
+    //! number of flops performed by each libxsmm kernel
+    std::vector< std::vector< size_t > > m_kernel_flops;
+
     /**
      * @brief Constructor, which limits the LIBXSMM target architecture, if required.
      */
@@ -317,6 +333,11 @@ class edge::data::MmXsmmFused< double > {
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
+
+      // read flops and store them
+      libxsmm_kernel_info l_kinfo;
+      libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
+      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
     }
 
     /**
@@ -385,12 +406,17 @@ class edge::data::MmXsmmFused< double > {
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_rm_ac_soa( m_descs[i_group].back() ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).dmm );
       }
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
-    }
+
+      // read flops and store them
+      libxsmm_kernel_info l_kinfo;
+      libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
+      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
+     }
 };
 #endif
  
