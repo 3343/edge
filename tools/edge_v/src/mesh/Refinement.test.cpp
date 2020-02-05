@@ -37,7 +37,7 @@ TEST_CASE( "Tests the mesh refinement.", "[meshRefinement][init]" ) {
                                {2, 2, 2, 2},
                                {3, 3, 3, 3} };
 
-  std::string l_exp0 = "elements_per_wave_length := 4.3;\
+  std::string l_exp0 = "edges_per_wave_length := 4.3;\
                         frequency := 2.7;";
 
   edge_v::models::Constant l_mod(3);
@@ -57,10 +57,10 @@ TEST_CASE( "Tests the mesh refinement.", "[meshRefinement][init]" ) {
   REQUIRE( l_ref.m_refVe[3] == Approx( 3.0 / (2.7*4.3) ) );
 
   std::string l_exp1 = "if( x > 0 ) {\
-                          elements_per_wave_length := 4.3;\
+                          edges_per_wave_length := 4.3;\
                         }\
                         else {\
-                          elements_per_wave_length := 1.3;\
+                          edges_per_wave_length := 1.3;\
                         }\
                         if( y < 3 ) {\
                           frequency := 2.7;\

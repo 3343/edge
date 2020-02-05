@@ -51,25 +51,25 @@ class edge_v::mesh::Mesh {
     std::size_t m_nEls;
 
     //! vertex coordinates
-    double (*m_veCrds)[3];
+    double (*m_veCrds)[3] = nullptr;
 
     //! vertices adjacent to the faces
-    std::size_t *m_faVe;
+    std::size_t * m_faVe = nullptr;
 
     //! elements adjacent to the faces
-    std::size_t *m_faEl;
+    std::size_t * m_faEl = nullptr;
 
     //! faces adjacent to the elements
-    std::size_t *m_elFa;
+    std::size_t * m_elFa = nullptr;
 
     //! vertices adjacent to the elements
-    std::size_t *m_elVe;
+    std::size_t * m_elVe = nullptr;
 
     //! elements adjacent to elements, faces as bridge
-    std::size_t *m_elFaEl;
+    std::size_t * m_elFaEl = nullptr;
 
     //! indiameter of the elements
-    double *m_inDiasEl;
+    double * m_inDiasEl = nullptr;
 
     //! area/length of the faces
     double * m_volFa = nullptr;
@@ -107,10 +107,10 @@ class edge_v::mesh::Mesh {
      * @param i_second second array.
      * @return first found entry present in the second but not in the first one. numeric_limits< std::size_t >::max() if none.
      **/
-    static std::size_t getAddEntry( std::size_t   i_sizeFirst,
-                                    std::size_t   i_sizeSecond,
-                                    std::size_t * i_first,
-                                    std::size_t * i_second );
+    static std::size_t getAddEntry( std::size_t         i_sizeFirst,
+                                    std::size_t         i_sizeSecond,
+                                    std::size_t const * i_first,
+                                    std::size_t const * i_second );
 
     /**
      * Gathers the vertex coordinates of the given entity.

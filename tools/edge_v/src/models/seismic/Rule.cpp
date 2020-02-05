@@ -36,7 +36,10 @@ edge_v::models::seismic::Rule::Rule( std::string const & i_rule ) {
   m_exprTk.addVar( l_rhoName,
                    m_rho );
 
-  m_exprTk.compile( i_rule );
+  std::string l_rule = i_rule;
+  if( l_rule == "" ) l_rule = "0==0;";
+
+  m_exprTk.compile( l_rule );
 }
 
 void edge_v::models::seismic::Rule::apply( float & io_vp,

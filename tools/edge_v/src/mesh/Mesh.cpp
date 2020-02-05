@@ -51,10 +51,10 @@ void edge_v::mesh::Mesh::getElFaEl( t_entityType        i_elTy,
   }
 }
 
-std::size_t edge_v::mesh::Mesh::getAddEntry( std::size_t   i_sizeFirst,
-                                             std::size_t   i_sizeSecond,
-                                             std::size_t * i_first,
-                                             std::size_t * i_second ) {
+std::size_t edge_v::mesh::Mesh::getAddEntry( std::size_t         i_sizeFirst,
+                                             std::size_t         i_sizeSecond,
+                                             std::size_t const * i_first,
+                                             std::size_t const * i_second ) {
   for( std::size_t l_se = 0; l_se < i_sizeSecond; l_se++ ) {
     bool l_present = false;
 

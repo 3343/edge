@@ -1,0 +1,50 @@
+##
+# @file This file is part of EDGE.
+#
+# @author Alexander Breuer (breuer AT mytum.de)
+#
+# @section LICENSE
+# Copyright (c) 2020, Alexander Breuer
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# @section DESCRIPTION
+# Pipline which tests different builds of EDGE-V.
+##
+steps:
+  - label: 'Build and Unit Tests'
+    command:
+      - export CXX=${EDGE_CXX_SEQ}
+      - echo "--- zlib"
+      - ./tools/build/deps/zlib.sh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - echo "--- HDF5"
+      - ./tools/build/deps/hdf5.sh -z $(pwd)/tools/edge_v/deps -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - echo "--- MOAB"
+      - ./tools/build/deps/moab.sh -z $(pwd)/tools/edge_v/deps -5 $(pwd)/tools/edge_v/deps -e $(pwd)/submodules/eigen -i $(pwd)/submodules/moab -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - echo "--- METIS"
+      - ./tools/build/deps/metis.sh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+
+      - echo "--- EDGE-V"
+      - cd tools/edge_v
+      - GIT_LFS_SKIP_SMUDGE=1 git clone https://opt.dial3343.org/3343/edge_opt.git
+
+      - scons mode=debug+san parallel=none zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
+ 
+      - scons mode=debug+san parallel=omp zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
+
+      - scons mode=debug parallel=none zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - valgrind ./build/tests
+ 
+      - scons mode=debug parallel=omp zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - valgrind ./build/tests
