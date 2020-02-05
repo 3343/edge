@@ -117,21 +117,21 @@ cp -r ${MOAB_DIR} .
 cd $(basename ${MOAB_DIR})
 
 autoreconf -fi
-CXXFLAGS="-fPIC" LIBS="${ZLIB_INSTALL_DIR}/lib/libz.a" ./configure --disable-debug                 \
-                                                                   --enable-optimize               \
-                                                                   --enable-shared=no              \
-                                                                   --enable-static=yes             \
-                                                                   --with-pic=yes                  \
-                                                                   --disable-fortran               \
-                                                                   --enable-tools                  \
-                                                                   --with-zlib=${ZLIB_INSTALL_DIR} \
-                                                                   --with-hdf5=${HDF5_INSTALL_DIR} \
-                                                                   --with-netcdf=no                \
-                                                                   --disable-blaslapack            \
-                                                                   --with-eigen3=${EIGEN_DIR}      \
-                                                                   --with-pnetcdf=no               \
-                                                                   --with-metis=no                 \
-                                                                   --prefix=${INSTALL_DIR}
+CXXFLAGS="-fPIC -march=core-avx2" LIBS="${ZLIB_INSTALL_DIR}/lib/libz.a" ./configure --disable-debug                 \
+                                                                                    --enable-optimize               \
+                                                                                    --enable-shared=no              \
+                                                                                    --enable-static=yes             \
+                                                                                    --with-pic=yes                  \
+                                                                                    --disable-fortran               \
+                                                                                    --enable-tools                  \
+                                                                                    --with-zlib=${ZLIB_INSTALL_DIR} \
+                                                                                    --with-hdf5=${HDF5_INSTALL_DIR} \
+                                                                                    --with-netcdf=no                \
+                                                                                    --disable-blaslapack            \
+                                                                                    --with-eigen3=${EIGEN_DIR}      \
+                                                                                    --with-pnetcdf=no               \
+                                                                                    --with-metis=no                 \
+                                                                                    --prefix=${INSTALL_DIR}
 make -j ${N_BUILD_PROCS}
 make install
 rm ${INSTALL_DIR}/lib/*MOAB*.la
