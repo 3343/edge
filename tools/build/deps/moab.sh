@@ -23,9 +23,10 @@
 ##
 help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-z ZLIB_INSTALL_DIR -5 HDF5_INSTALL_DIR -e EIGEN_DIR -i MOAB_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h -d] [-z ZLIB_INSTALL_DIR -5 HDF5_INSTALL_DIR -e EIGEN_DIR -i MOAB_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs MOAB.
      -h This help message.
+     -d Enables debug build if set.
      -z ZLIB_INSTALL_DIR Absolute path of the zlib installation directory.
      -5 HDF5_INSTALL_DIR Absolute path of the hdf5 installation directory.
      -e EIGEN_DIR Absolute path of the Eigen directory.
@@ -35,7 +36,8 @@ Installs MOAB.
 EOF
 }
 
-while getopts "hz:5:e:i:o:j:" opt; do
+DEBUG_BUILD=0
+while getopts "hz:5:e:i:o:j:d" opt; do
   case "$opt" in
     h)
       help
@@ -55,6 +57,9 @@ while getopts "hz:5:e:i:o:j:" opt; do
       ;;
     o)
       INSTALL_DIR=$OPTARG
+      ;;
+    d)
+      DEBUG_BUILD=1
       ;;
     j)
       N_BUILD_PROCS=$OPTARG
@@ -117,21 +122,33 @@ cp -r ${MOAB_DIR} .
 cd $(basename ${MOAB_DIR})
 
 autoreconf -fi
-CXXFLAGS="-fPIC -march=core-avx2" LIBS="${ZLIB_INSTALL_DIR}/lib/libz.a" ./configure --disable-debug                 \
-                                                                                    --enable-optimize               \
-                                                                                    --enable-shared=no              \
-                                                                                    --enable-static=yes             \
-                                                                                    --with-pic=yes                  \
-                                                                                    --disable-fortran               \
-                                                                                    --enable-tools                  \
-                                                                                    --with-zlib=${ZLIB_INSTALL_DIR} \
-                                                                                    --with-hdf5=${HDF5_INSTALL_DIR} \
-                                                                                    --with-netcdf=no                \
-                                                                                    --disable-blaslapack            \
-                                                                                    --with-eigen3=${EIGEN_DIR}      \
-                                                                                    --with-pnetcdf=no               \
-                                                                                    --with-metis=no                 \
-                                                                                    --prefix=${INSTALL_DIR}
+
+BUILD_FLAGS="--enable-shared=no              \
+             --enable-static=yes             \
+             --with-pic=yes                  \
+             --disable-fortran               \
+             --enable-tools                  \
+             --with-zlib=${ZLIB_INSTALL_DIR} \
+             --with-hdf5=${HDF5_INSTALL_DIR} \
+             --with-netcdf=no                \
+             --disable-blaslapack            \
+             --with-eigen3=${EIGEN_DIR}      \
+             --with-pnetcdf=no               \
+             --with-metis=no                 \
+            --prefix=${INSTALL_DIR}"
+
+if [[ ${DEBUG_BUILD} == 0 ]]
+then
+  BUILD_FLAGS="--disable-debug   \
+               --enable-optimize \
+               ${BUILD_FLAGS}"
+else
+  BUILD_FLAGS="--enable-debug   \
+               --disable-optimize \
+               ${BUILD_FLAGS}"
+fi
+
+CXXFLAGS="-fPIC" LIBS="${ZLIB_INSTALL_DIR}/lib/libz.a" ./configure ${BUILD_FLAGS}
 make -j ${N_BUILD_PROCS}
 make install
 rm ${INSTALL_DIR}/lib/*MOAB*.la
