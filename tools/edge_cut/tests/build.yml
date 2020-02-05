@@ -25,7 +25,7 @@ steps:
     command:
       - export CXX=${EDGE_CXX_SEQ}
       - echo "--- EDGEcut"
-      - cd tools/edge_v
+      - cd tools/edge_cut
 
       - scons mode=debug+san tests=1 -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
