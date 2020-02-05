@@ -29,7 +29,7 @@ steps:
       - echo "--- HDF5"
       - ./tools/build/deps/hdf5.sh -z $(pwd)/tools/edge_v/deps -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- MOAB"
-      - ./tools/build/deps/moab.sh -z $(pwd)/tools/edge_v/deps -5 $(pwd)/tools/edge_v/deps -e $(pwd)/submodules/eigen -i $(pwd)/submodules/moab -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - ./tools/build/deps/moab.sh -d -z $(pwd)/tools/edge_v/deps -5 $(pwd)/tools/edge_v/deps -e $(pwd)/submodules/eigen -i $(pwd)/submodules/moab -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- METIS"
       - ./tools/build/deps/metis.sh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
 
