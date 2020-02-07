@@ -60,6 +60,9 @@ class edge_cut::io::Config {
     //! target z of the extrude
     double m_extrudeZ = 0;
 
+    //! number of coarsening levels
+    unsigned short m_extrudeLevels = 0;
+
   public:
     /**
      * Constructor.
@@ -128,6 +131,13 @@ class edge_cut::io::Config {
      * @return target z.
      **/
     double getExtZ() { return m_extrudeZ; }
+
+    /**
+     * Gets the number of levels coarsening levels.
+     *
+     * @return number of levels.
+     **/
+    unsigned short getExtLvls() { return m_extrudeLevels; }
 };
 
 #endif

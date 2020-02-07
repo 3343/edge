@@ -42,6 +42,9 @@ class edge_cut::mesh::Extrude {
     //! target depth
     double m_zTarget = 0;
 
+    //! number of coarsening levels
+    std::size_t m_nLevels = 0;
+
     //! number of steps in depth
     std::size_t m_nSteps = 0;
 
@@ -55,11 +58,16 @@ class edge_cut::mesh::Extrude {
     double m_dMin[2] = { std::numeric_limits< double >::max(),
                         std::numeric_limits< double >::max() };
 
-    //! number of points in x-direction
-    std::size_t m_nx = std::numeric_limits< std::size_t >::max();
+    //! refinement ratio
+    unsigned short m_refRatio = 1;
 
-    //! number of points in y-direction
-    std::size_t m_ny = std::numeric_limits< std::size_t >::max();
+    //! number of points in x-direction; 0: fine, 1: coarse
+    std::size_t m_nx[2] = { std::numeric_limits< std::size_t >::max(),
+                            std::numeric_limits< std::size_t >::max() };
+
+    //! number of points in y-direction; 0: fine, 1: coarse
+    std::size_t m_ny[2] = { std::numeric_limits< std::size_t >::max(),
+                            std::numeric_limits< std::size_t >::max() };
 
     //! vertex coordinates for the surface mesh
     std::vector< point > m_veCrdsSurf;
@@ -90,15 +98,110 @@ class edge_cut::mesh::Extrude {
                          std::vector< point >       & o_veCrds );
 
     /**
+     * Writes the given triangles with a bottom left to top right diagonal.
+     *
+     * @param i_off offset of the vertices.
+     * @param i_strideX stride in x-direction.
+     * @param i_strideY stride in y-direction.
+     * @param o_tria stream to which the triangles are written.
+     *
+     * @return number of written triangles.
+     **/
+    static unsigned short writeTriasBlTr( std::size_t    i_off,
+                                          std::size_t    i_strideX,
+                                          std::size_t    i_strideY,
+                                          std::ostream & o_tria );
+
+    /**
+     * Writes the given triangles with a bottom right to top left diagonal.
+     *
+     * @param i_off offset of the vertices.
+     * @param i_strideX stride in x-direction.
+     * @param i_strideY stride in y-direction.
+     * @param o_tria stream to which the triangles are written.
+     *
+     * @return number of written triangles.
+     **/
+    static unsigned short writeTriasBrTl( std::size_t    i_off,
+                                          std::size_t    i_strideX,
+                                          std::size_t    i_strideY,
+                                          std::ostream & o_tria );
+
+    /**
+     * Writes the given triangles which splits the four quads at the center right.
+     *
+     * @param i_off offset of the vertices.
+     * @param i_strideX stride in x-direction.
+     * @param i_strideY stride in y-direction.
+     * @param o_tria stream to which the triangles are written.
+     *
+     * @return number of written triangles.
+     **/
+    static unsigned short writeTriasCr( std::size_t    i_off,
+                                        std::size_t    i_strideX,
+                                        std::size_t    i_strideY,
+                                        std::ostream & o_tria );
+
+    /**
+     * Writes the given triangles which splits the four quads at the center left.
+     *
+     * @param i_off offset of the vertices.
+     * @param i_strideX stride in x-direction.
+     * @param i_strideY stride in y-direction.
+     * @param o_tria stream to which the triangles are written.
+     *
+     * @return number of written triangles.
+     **/
+    static unsigned short writeTriasCl( std::size_t    i_off,
+                                        std::size_t    i_strideX,
+                                        std::size_t    i_strideY,
+                                        std::ostream & o_tria );
+
+    /**
+     * Writes the given triangles which splits the four quads at the center top.
+     *
+     * @param i_off offset of the vertices.
+     * @param i_strideX stride in x-direction.
+     * @param i_strideY stride in y-direction.
+     * @param o_tria stream to which the triangles are written.
+     *
+     * @return number of written triangles.
+     **/
+    static unsigned short writeTriasCt( std::size_t    i_off,
+                                        std::size_t    i_strideX,
+                                        std::size_t    i_strideY,
+                                        std::ostream & o_tria );
+
+    /**
+     * Writes the given triangles which splits the four quads at the center bottom.
+     *
+     * @param i_off offset of the vertices.
+     * @param i_strideX stride in x-direction.
+     * @param i_strideY stride in y-direction.
+     * @param o_tria stream to which the triangles are written.
+     *
+     * @return number of written triangles.
+     **/
+    static unsigned short writeTriasCb( std::size_t    i_off,
+                                        std::size_t    i_strideX,
+                                        std::size_t    i_strideY,
+                                        std::ostream & o_tria );
+
+    /**
      * Writes the triangulation for the given number of points in OFF-format.
+     * Assumes y as fast dimension.
      *
      * @param i_nx number of points in x-direction.
      * @param i_ny number of points in y-direction.
      * @param o_tria stream to which the triangulation is written.
+     * @param i_nLevels number of coarsening levels.
+     *
+     * @return number of written triangles.
      **/
-    static void writeTriaOff( std::size_t     i_nx,
-                              std::size_t     i_ny,
-                              std::ostream & o_tria );
+    static std::size_t writeTriaOff( std::size_t     i_nx,
+                                     std::size_t     i_ny,
+                                     std::ostream & o_tria,
+                                     unsigned short  i_nLevels = 0 );
 
     /**
      * Writes the given points in OFF-format.
@@ -108,7 +211,6 @@ class edge_cut::mesh::Extrude {
      **/
     static void writePtsOff( std::vector< point > const & i_pts,
                              std::ostream               & o_pts );
-  
 
   public:
     /**
@@ -117,11 +219,13 @@ class edge_cut::mesh::Extrude {
      * @param i_nVes number of vertices.
      * @param i_veCrds vertex coordinates.
      * @param i_zTarget target z of the extrusion; has to be larger than differences in heigh-variation within the surface mesh.
+     * @param i_nLevels number of levels used for mesh coarsening.
      * @param i_epsilon epsilon used for zero-comparisons.
      **/
     Extrude( std::size_t          i_nVes,
              double      const (* i_veCrds)[3],
              double               i_zTarget,
+             unsigned short       i_nLevels=0,
              double               l_epsilon=1E-3 );
 
     /**
