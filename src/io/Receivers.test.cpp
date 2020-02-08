@@ -49,7 +49,7 @@ TEST_CASE( "Receivers: Initialization", "[receivers][init]" ) {
   int_el l_enVe[10][4] = { {4,5,6,7}, // tg 1
                            {4,5,6,7},
                            {4,5,6,7}, // tg 2
-                           {0,1,2,3},
+                           {4,5,6,7},
                            {0,1,2,3},
                            {0,1,2,3}, // ghost
                            {0,0,0,0},
