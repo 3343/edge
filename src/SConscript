@@ -83,7 +83,6 @@ if env['tests']:
              'sc/Detections.test.cpp',
              'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
-             'mesh/EdgeV.test.cpp',
              'monitor/Timer.test.cpp',
              'parallel/Shared.test.cpp',
              'parallel/LoadBalancing.test.cpp',
