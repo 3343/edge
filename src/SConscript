@@ -72,7 +72,6 @@ for l_kernel in l_kernels:
 # gather unit tests
 if env['tests']:
   l_tests = ['tests.cpp',
-             'data/EntityLayout.test.cpp',
              'data/DataLayout.test.cpp',
              'data/SparseEntities.test.cpp',
              'data/Dynamic.test.cpp',
