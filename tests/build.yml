@@ -43,7 +43,11 @@ steps:
       - cd ../..
 
       - echo "--- EDGE"
-      - scons parallel=none zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
-      - scons parallel=omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - scons tests=1 parallel=none zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
+      - scons tests=1 parallel=omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
       - CXX=${EDGE_CXX_MPI} scons parallel=mpi zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
       - CXX=${EDGE_CXX_MPI} scons parallel=mpi+omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
