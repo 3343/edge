@@ -22,6 +22,7 @@
 ##
 steps:
   - label: 'Dependencies'
+    key: 'deps'
     command:
       - echo "--- LIBXSMM"
       - ./tools/build/deps/libxsmm.sh -i $(pwd)/submodules/libxsmm -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
@@ -42,10 +43,10 @@ steps:
       - echo "--- Build Artifact Upload"
       - tar -cf deps.tar.xz deps
       - buildkite-agent artifact upload deps.tar.xz
-  - wait
 {%- for l_build in i_builds %}
 {%- macro toScons(i_build) %}cfr={{i_build.cfr}} equations={{i_build.equations}} element_type={{i_build.element_type}} order={{i_build.order}} precision={{i_build.precision}}{% endmacro %}
   - label: 'EDGE ({{toScons(l_build)}})'
+    depends_on: 'deps'
     command:
       - export CXX=${EDGE_CXX_SEQ}
       - bash tests/deps.sh
