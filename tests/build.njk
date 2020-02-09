@@ -50,7 +50,7 @@ steps:
     command:
       - export CXX=${EDGE_CXX_SEQ}
       - echo "--- Build Artifact Download"
-      - buildkite-agent artifact download deps.tar.xz
+      - buildkite-agent artifact download deps.tar.xz .
       - tar -xf deps.tar.xz
 
       - echo "--- EDGE"
