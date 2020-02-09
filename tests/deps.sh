@@ -1,3 +1,4 @@
+#!/bin/bash
 ##
 # @file This file is part of EDGE.
 #
@@ -18,23 +19,22 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Pipline template which tests different builds of EDGE.
+# Conditionally builds EDGE's dependencies.
 ##
-steps:
-{%- for l_build in i_builds %}
-{%- macro toScons(i_build) %}cfr={{i_build.cfr}} equations={{i_build.equations}} element_type={{i_build.element_type}} order={{i_build.order}} precision={{i_build.precision}}{% endmacro %}
-  - label: 'Build and Unit Tests ({{toScons(l_build)}})'
-    command:
-      - export CXX=${EDGE_CXX_SEQ}
-      - bash tests/deps.sh
+[ -d "$(pwd)/deps" ] && echo "deps-dir exists, exiting.." && exit
+echo "--- LIBXSMM"
+./tools/build/deps/libxsmm.sh -i $(pwd)/submodules/libxsmm -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
+echo "--- zlib"
+./tools/build/deps/zlib.sh -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
+echo "--- HDF5"
+./tools/build/deps/hdf5.sh -z $(pwd)/deps -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
+echo "--- MOAB"
+./tools/build/deps/moab.sh -d -z $(pwd)/deps -5 $(pwd)/deps -e $(pwd)/submodules/eigen -i $(pwd)/submodules/moab -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
+echo "--- METIS"
+./tools/build/deps/metis.sh -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
 
-      - echo "--- EDGE"
-      - scons {{toScons(l_build)}} tests=1 parallel=none zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
-      - ./build/tests
-      - scons {{toScons(l_build)}} tests=1 parallel=omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
-      - ./build/tests
-      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} parallel=mpi zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
-      - ./build/tests
-      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} parallel=mpi+omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
-      - ./build/tests
-{% endfor %}
+echo "--- EDGE-V"
+cd tools/edge_v
+scons parallel=none zlib=../../deps hdf5=../../deps moab=../../deps metis=../../deps install_dir=../../deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
+scons parallel=omp zlib=../../deps hdf5=../../deps moab=../../deps metis=../../deps install_dir=../../deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+cd ../..
