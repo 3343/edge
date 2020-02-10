@@ -136,7 +136,11 @@ void edge::io::Receivers::init( t_entityType             i_enType,
 
         // evaluate the basis at the given locations
         for( int_md l_md = 0; l_md < N_ELEMENT_MODES; l_md++ ) {
-          dg::Basis::evalBasis( l_md, T_SDISC.ELEMENT, m_recvs.back().evaBasis[l_md], l_ref[0], l_ref[1], l_ref[2] );
+          m_recvs.back().evaBasis[l_md] = dg::Basis::evalBasis( l_md,
+                                                                T_SDISC.ELEMENT,
+                                                                l_ref[0],
+                                                                l_ref[1],
+                                                                l_ref[2] );
         }
       }
     }
