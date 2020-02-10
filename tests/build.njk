@@ -24,6 +24,8 @@ steps:
   - label: 'Dependencies'
     key: 'deps'
     command:
+      - export CC=${EDGE_CC_SEQ}
+      - export CXX=${EDGE_CXX_SEQ}
       - echo "--- LIBXSMM"
       - ./tools/build/deps/libxsmm.sh -i $(pwd)/submodules/libxsmm -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- zlib"
