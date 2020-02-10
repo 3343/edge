@@ -469,10 +469,12 @@ class edge::seismic::setups::PointSources {
 
         // setup the evaluated basis
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+          double l_bEval = std::numeric_limits< TL_T_REAL >::max();
           dg::Basis::evalBasis( l_md,
                                 TL_T_EL,
-                                o_ps.bEvals[l_pt][l_md],
+                                l_bEval,
                                 l_refCrds[0], l_refCrds[1], l_refCrds[2] );
+          o_ps.bEvals[l_pt][l_md] = l_bEval;
         }
 
         // multiply with inverse mass matrix
