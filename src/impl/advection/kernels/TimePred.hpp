@@ -122,8 +122,8 @@ class edge::advection::kernels::TimePred {
                                          TL_N_MDS,                    // ldA
                                          TL_N_MDS,                    // ldB
                                          TL_N_MDS,                    // ldC
-                                         static_cast<real_base>(1.0), //alpha
-                                         static_cast<real_base>(0.0), // beta
+                                         static_cast<TL_T_REAL>(1.0), //alpha
+                                         static_cast<TL_T_REAL>(0.0), // beta
                                          o_der[l_de-1][0],
                                          m_stiffT[0][l_di],
                                          l_scratch[0] );
@@ -136,8 +136,8 @@ class edge::advection::kernels::TimePred {
                                          1,                           // ldA
                                          TL_N_MDS,                    // ldB
                                          TL_N_MDS,                    // ldC
-                                         static_cast<real_base>(1.0), //alpha
-                                         static_cast<real_base>(1.0), // beta
+                                         static_cast<TL_T_REAL>(1.0), //alpha
+                                         static_cast<TL_T_REAL>(1.0), // beta
                                          i_star+l_di,
                                          l_scratch[0],
                                          o_der[l_de][0] );
