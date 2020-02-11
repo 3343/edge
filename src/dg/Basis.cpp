@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2016-2017, Regents of the University of California
  * All rights reserved.
  *
@@ -109,16 +110,22 @@ void edge::dg::Basis::initEvalQpRefEl( unsigned short i_order ) {
         }
 
         for( int_md l_md = 0; l_md < l_nModes; l_md++ ) {
-          evalBasis( l_md, m_entType,
-                     m_qpEval[l_pq].basis[l_lo][l_pb].val[l_md],
-                     m_qpEval[l_pq].xi1[l_lo], m_qpEval[l_pq].xi2[l_lo], m_qpEval[l_pq].xi3[l_lo],
-                     -1, l_pb+1 );
+          m_qpEval[l_pq].basis[l_lo][l_pb].val[l_md] = evalBasis( l_md,
+                                                                  m_entType,
+                                                                  m_qpEval[l_pq].xi1[l_lo],
+                                                                  m_qpEval[l_pq].xi2[l_lo],
+                                                                  m_qpEval[l_pq].xi3[l_lo],
+                                                                  -1,
+                                                                  l_pb+1 );
 
           for( unsigned short l_di = 0; l_di < C_ENT[m_entType].N_DIM; l_di++ ) {
-            evalBasis( l_md, m_entType,
-                       m_qpEval[l_pq].basis[l_lo][l_pb].valD[l_di][l_md],
-                       m_qpEval[l_pq].xi1[l_lo], m_qpEval[l_pq].xi2[l_lo], m_qpEval[l_pq].xi3[l_lo],
-                       l_di, l_pb+1 );
+            m_qpEval[l_pq].basis[l_lo][l_pb].valD[l_di][l_md] = evalBasis( l_md,
+                                                                           m_entType,
+                                                                           m_qpEval[l_pq].xi1[l_lo],
+                                                                           m_qpEval[l_pq].xi2[l_lo],
+                                                                           m_qpEval[l_pq].xi3[l_lo],
+                                                                           l_di,
+                                                                           l_pb+1 );
           }
         }
       }
@@ -161,13 +168,13 @@ real_base edge::dg::Basis::modal2ptval( const real_mesh  i_pt[3],
     real_base l_bVal;
 
     // evaluate basis function
-    evalBasis( l_md,
-               m_entType,
-               l_bVal,
-               i_pt[0],
-               i_pt[1],
-               i_pt[2],
-               -1, m_order );
+    l_bVal = evalBasis( l_md,
+                        m_entType,
+                        i_pt[0],
+                        i_pt[1],
+                        i_pt[2],
+                        -1,
+                        m_order );
 
     // add contribution
     l_val += l_bVal * i_modes[l_md];
@@ -357,38 +364,43 @@ void edge::dg::Basis::evalBasisHex( unsigned int  i_b,
   o_val = l_baseEval1D[0] * l_baseEval1D[1] *  l_baseEval1D[2];
 }
 
-void edge::dg::Basis::evalBasis( unsigned int  i_b,
-                                 t_entityType  i_entType,
-                                 real_base    &o_val,
-                                 real_mesh     i_xi,
-                                 real_mesh     i_eta,
-                                 real_mesh     i_zeta,
-                                 int           i_der,
-                                 unsigned int  i_order ) {
+real_base edge::dg::Basis::evalBasis( unsigned int  i_b,
+                                      t_entityType  i_entType,
+                                      real_mesh     i_xi,
+                                      real_mesh     i_eta,
+                                      real_mesh     i_zeta,
+                                      int           i_der,
+                                      unsigned int  i_order ) {
   PP_INSTR_FUN("eval_basis")
 
+  real_base l_val = std::numeric_limits< real_base >::max();
+
   if( i_entType == LINE )
-    if( i_der != 1 ) evalBasisLine( i_b, i_xi, o_val );
-    else             evalBasisDerLine( i_b, i_xi, o_val );
+    if( i_der != 1 ) evalBasisLine( i_b,
+                                    i_xi,
+                                    l_val );
+    else             evalBasisDerLine( i_b,
+                                       i_xi,
+                                       l_val );
   else if( i_entType == QUAD4R )
     evalBasisQuad( i_b,
                    i_xi,
                    i_eta,
-                   o_val,
+                   l_val,
                    i_der,
                    i_order );
   else if( i_entType == TRIA3 )
     evalBasisTria( i_b,
                    i_xi,
                    i_eta,
-                   o_val,
+                   l_val,
                    i_der );
   else if( i_entType == HEX8R ) {
     evalBasisHex( i_b,
                   i_xi,
                   i_eta,
                   i_zeta,
-                  o_val,
+                  l_val,
                   i_der,
                   i_order );
   }
@@ -397,43 +409,50 @@ void edge::dg::Basis::evalBasis( unsigned int  i_b,
                   i_xi,
                   i_eta,
                   i_zeta,
-                  o_val,
+                  l_val,
                   i_der );
   }
   else
     EDGE_LOG_FATAL << "element type not supported";
+
+  return l_val;
 }
 
-void edge::dg::Basis::evalBasis( unsigned int        i_b,
-                                 t_entityType        i_enType,
-                                 real_base          &o_val,
-                                 real_mesh*   const  i_pt,
-                                 int                 i_der,
-                                 unsigned int        i_order ) {
+real_base edge::dg::Basis::evalBasis( unsigned int        i_b,
+                                      t_entityType        i_enType,
+                                      real_mesh*   const  i_pt,
+                                      int                 i_der,
+                                      unsigned int        i_order ) {
   PP_INSTR_FUN("eval_basis")
 
+  real_base l_val;
+
   if( i_enType == LINE )
-    if( i_der != 1 ) evalBasisLine( i_b, i_pt[0], o_val );
-    else             evalBasisDerLine( i_b, i_pt[0], o_val );
+    if( i_der != 1 ) evalBasisLine( i_b,
+                                    i_pt[0],
+                                    l_val );
+    else             evalBasisDerLine( i_b,
+                                       i_pt[0],
+                                       l_val );
   else if( i_enType == QUAD4R )
     evalBasisQuad( i_b,
                    i_pt[0],
                    i_pt[1],
-                   o_val,
+                   l_val,
                    i_der,
                    i_order );
   else if( i_enType == TRIA3 )
     evalBasisTria( i_b,
                    i_pt[0],
                    i_pt[1],
-                   o_val,
+                   l_val,
                    i_der );
   else if( i_enType == HEX8R ) {
     evalBasisHex( i_b,
                   i_pt[0],
                   i_pt[1],
                   i_pt[2],
-                  o_val,
+                  l_val,
                   i_der,
                   i_order );
   }
@@ -442,9 +461,11 @@ void edge::dg::Basis::evalBasis( unsigned int        i_b,
                   i_pt[0],
                   i_pt[1],
                   i_pt[2],
-                  o_val,
+                  l_val,
                   i_der );
   }
   else
     EDGE_LOG_FATAL << "element type not supported";
+
+  return l_val;
 }

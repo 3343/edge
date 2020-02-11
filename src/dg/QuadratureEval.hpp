@@ -189,11 +189,11 @@ class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP, TL_O_QU > {
       for( unsigned short l_op = 0; l_op < (TL_N_VE_OPTS+1) * C_ENT[TL_T_EL].N_FACES; l_op++ ) {
         for( unsigned short l_qp = 0; l_qp < TL_N_QPS_FA; l_qp++ ) {
           for( unsigned int   l_md = 0;  l_md < TL_N_MDS_EL; l_md++ ) {
-            dg::Basis::evalBasis( l_md,
-                                  TL_T_EL,
-                                  o_basisEval[l_op][l_qp][l_md],
-                                  o_pts[l_op][l_qp],
-                                  -1, TL_O_SP );
+            o_basisEval[l_op][l_qp][l_md] = dg::Basis::evalBasis( l_md,
+                                                                  TL_T_EL,
+                                                                  o_pts[l_op][l_qp],
+                                                                  -1,
+                                                                  TL_O_SP );
           }
         }
       }
@@ -236,12 +236,11 @@ class edge::dg::QuadratureEval: public QuadratureEvalBase< TL_O_SP, TL_O_QU > {
       // evaluate the faces at the quad points
       for( unsigned short l_qp = 0; l_qp < TL_N_QPS_EL; l_qp++ ) {
         for( unsigned short l_md = 0;  l_md < TL_N_MDS_EL; l_md++ ) {
-          dg::Basis::evalBasis( l_md,
-                                TL_T_EL,
-                                o_eva[l_qp][l_md],
-                                o_pts[l_qp],
-                                -1,
-                                TL_O_SP );
+          o_eva[l_qp][l_md] = dg::Basis::evalBasis( l_md,
+                                                    TL_T_EL,
+                                                    o_pts[l_qp],
+                                                    -1,
+                                                    TL_O_SP );
         }
       }
     }
@@ -301,10 +300,9 @@ class edge::dg::QuadratureEval< LINE, TL_O_SP, TL_O_QU, TL_N_CRS >: public Quadr
       // evaluate basis
       for( unsigned short l_op = 0; l_op < 4; l_op++ ) {
           for( unsigned short l_md = 0; l_md < TL_O_SP; l_md++ ) {
-            dg::Basis::evalBasis( l_md,
-                                  LINE,
-                                  o_basisEval[l_op][0][l_md],
-                                  o_pts[l_op][0] );
+            o_basisEval[l_op][0][l_md] = dg::Basis::evalBasis( l_md,
+                                                               LINE,
+                                                               o_pts[l_op][0] );
           }
       }
     }

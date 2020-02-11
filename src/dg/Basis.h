@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2016, Regents of the University of California
  * All rights reserved.
  *
@@ -238,7 +239,6 @@ class edge::dg::Basis {
      *
      * @param i_b id of the basis function which gets evaluated. First basis is 0.
      * @param i_entType type of the reference element which basis is evaluated.
-     * @param o_val will be set to the value of the basis function at the given point.
      * @param i_xi xi-coord in the reference element.
      * @param i_eta eta-coord in the reference element.
      * @param i_zeta zeta-coord in the reference element.
@@ -248,22 +248,21 @@ class edge::dg::Basis {
      *              2               : evaluate der of basis w.r.t. to zeta,
      *              everything else : no derivative at all.
      * @param i_order order of the basis (to be removed when hierachical).
+     * @return  value of the basis function at the given point.
      **/
-    static void evalBasis( unsigned int  i_b,
-                           t_entityType  i_entType,
-                           real_base    &o_val,
-                           real_mesh     i_xi,
-                           real_mesh     i_eta  = 0,
-                           real_mesh     i_zeta = 0,
-                           int           i_der  = -1,
-                           unsigned int i_order = PP_ORDER );
+    static real_base evalBasis( unsigned int  i_b,
+                                t_entityType  i_entType,
+                                real_mesh     i_xi,
+                                real_mesh     i_eta  = 0,
+                                real_mesh     i_zeta = 0,
+                                int           i_der  = -1,
+                                unsigned int i_order = PP_ORDER );
 
     /**
      * Evaluates a basis function for different reference elements.
      *
      * @param i_b id of the basis function which gets evaluated. First basis is 0.
      * @param i_entType type of the reference element for which basis is evaluated.
-     * @param o_val will be set to the value of the basis function at the given point.
      * @param i_pt pt where the basis is evaluated.
      * @param i_der index for derivative evaluation:
      *              0               : evaluate der of basis w.r.t. to xi,
@@ -271,13 +270,13 @@ class edge::dg::Basis {
      *              2               : evaluate der of basis w.r.t. to zeta,
      *              everything else : no derivative at all.
      * @param i_order order of the basis (to be removed when hierachical).
+     * @return value of the basis function at the given point.
      **/
-    static void evalBasis( unsigned int        i_b,
-                           t_entityType        i_enType,
-                           real_base          &o_val,
-                           real_mesh*   const  i_pt,
-                           int                 i_der  = -1,
-                           unsigned int        i_order = PP_ORDER );
+    static real_base evalBasis( unsigned int        i_b,
+                                t_entityType        i_enType,
+                                real_mesh*   const  i_pt,
+                                int                 i_der  = -1,
+                                unsigned int        i_order = PP_ORDER );
 
     /**
      * Prints the mass matrix, stiffness matrix/matrices and flux matrices.

@@ -72,7 +72,6 @@ for l_kernel in l_kernels:
 # gather unit tests
 if env['tests']:
   l_tests = ['tests.cpp',
-             'data/EntityLayout.test.cpp',
              'data/DataLayout.test.cpp',
              'data/SparseEntities.test.cpp',
              'data/Dynamic.test.cpp',
@@ -84,7 +83,6 @@ if env['tests']:
              'sc/Detections.test.cpp',
              'sc/ibnd/SuperCell.test.cpp',
              'sc/ibnd/Init.test.cpp',
-             'mesh/EdgeV.test.cpp',
              'monitor/Timer.test.cpp',
              'parallel/Shared.test.cpp',
              'parallel/LoadBalancing.test.cpp',

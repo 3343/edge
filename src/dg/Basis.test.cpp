@@ -33,7 +33,7 @@ TEST_CASE( "Tests the precomputation of the basis values and quad points.", "[ba
 
   edge::dg::Basis l_basis( TET4, PP_ORDER );
 
-  for( unsigned short l_pq = 0; l_pq < 2+1; l_pq++ ) {
+  for( unsigned short l_pq = 0; l_pq < std::min(PP_ORDER, 2+1); l_pq++ ) {
     REQUIRE( l_basis.m_qpEval[l_pq].xi1.size()     == (l_pq+1) * (l_pq+1) * (l_pq+1) );
     REQUIRE( l_basis.m_qpEval[l_pq].xi2.size()     == (l_pq+1) * (l_pq+1) * (l_pq+1) );
     REQUIRE( l_basis.m_qpEval[l_pq].xi3.size()     == (l_pq+1) * (l_pq+1) * (l_pq+1) );
@@ -42,7 +42,7 @@ TEST_CASE( "Tests the precomputation of the basis values and quad points.", "[ba
     REQUIRE( l_basis.m_qpEval[l_pq].basis.size()   == (l_pq+1) * (l_pq+1) * (l_pq+1) );
 
     for( int l_lo = 0; l_lo < (l_pq+1) * (l_pq+1) * (l_pq+1); l_lo++ ) {
-      for( unsigned short l_pb = 0; l_pb < 2+1; l_pb++ ) {
+      for( unsigned short l_pb = 0; l_pb < std::min(PP_ORDER, 2+1); l_pb++ ) {
         unsigned short l_nModes = std::numeric_limits< unsigned short >::max();
         if(      l_pb == 0 ) l_nModes = 1;
         else if( l_pb == 1 ) l_nModes = 4;

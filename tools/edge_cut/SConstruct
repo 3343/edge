@@ -145,6 +145,10 @@ conf = Configure(env )
 # include environment
 env['ENV'] = os.environ
 
+# enable default tool (otherwise SCons breaks on some systems); for some reason a repeat is required on some systems
+env.Tool('default')
+env.Tool('default')
+
 # forward compiler
 if 'CC' in env['ENV'].keys():
   env['CC'] = env['ENV']['CC']

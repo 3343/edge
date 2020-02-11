@@ -56,6 +56,7 @@ edge_cut::io::Config::Config( std::string i_xmlPath ) {
   m_meshOutTop    = l_files.child("out").child("top").text().as_string();
 
   m_extrudeZ = l_root.child("extrude").child("target_z").text().as_double();
+  m_extrudeLevels = l_root.child("extrude").child("n_levels").text().as_uint();
 }
 
 
@@ -69,4 +70,8 @@ void edge_cut::io::Config::print() {
   EDGE_CUT_LOG_INFO << "    back:   " << m_meshOutBack;
   EDGE_CUT_LOG_INFO << "    bottom: " << m_meshOutBottom;
   EDGE_CUT_LOG_INFO << "    top:    " << m_meshOutTop;
+  EDGE_CUT_LOG_INFO << "  extrude:";
+  EDGE_CUT_LOG_INFO << "    in:       " << m_gridIn;
+  EDGE_CUT_LOG_INFO << "    target_z: " << m_extrudeZ;
+  EDGE_CUT_LOG_INFO << "    n_levels: " << m_extrudeLevels;
 }

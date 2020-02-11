@@ -36,7 +36,7 @@ if env['tests']:
   env.tests.append( env.sources )
 
   for l_test in l_tests:
-    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+'-Wno-keyword-macro' ) )
+    env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+['-Wno-keyword-macro'] ) )
 
 for l_source in l_sources:
   env.sources.append( env.Object( l_source ) )

@@ -67,7 +67,8 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_CUT_LOG_INFO << "generating extruded surfaces";
   edge_cut::mesh::Extrude l_ext( l_veCrds.size()/3,
                                  (double (*)[3]) l_veCrds.data(),
-                                 l_config.getExtZ() );
+                                 l_config.getExtZ(),
+                                 l_config.getExtLvls() );
 
   // open file streams
   std::ofstream l_left(   l_config.getMeshOutLeft(),
