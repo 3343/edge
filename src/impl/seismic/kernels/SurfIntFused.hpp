@@ -32,9 +32,7 @@
 #include "FakeMats.hpp"
 
 #ifdef PP_MMKERNEL_PERF
-#ifdef PP_USE_OMP
-#include <omp.h>
-#endif
+#include "parallel/global.h"
 #endif 
 
 namespace edge {
@@ -394,18 +392,13 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                               const TL_T_REAL *i_b,
                                     TL_T_REAL *io_c ) {
 #ifdef PP_MMKERNEL_PERF
-#ifdef PP_USE_OMP
-      unsigned int tid = omp_get_thread_num();
-#else
-      unsigned int tid = 0;
-#endif
       size_t start = _rdtsc();
 #endif
       m_mm.m_kernels[i_group][i_kernel]( i_a, i_b, io_c );
 #ifdef PP_MMKERNEL_PERF
       size_t duration = _rdtsc() - start;
-      m_mm.m_kernelStats[tid][i_group][i_kernel].invocations++;
-      m_mm.m_kernelStats[tid][i_group][i_kernel].cycles += duration; 
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].invocations++;
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].cycles += duration; 
 #endif
     }
 
@@ -418,18 +411,13 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                                 const TL_T_REAL      *i_b_pf,
                                 const TL_T_REAL      *i_c_pf  ) {
 #ifdef PP_MMKERNEL_PERF
-#ifdef PP_USE_OMP
-      unsigned int tid = omp_get_thread_num();
-#else
-      unsigned int tid = 0;
-#endif
       size_t start = _rdtsc();
 #endif
       m_mm.m_kernels[i_group][i_kernel]( i_a, i_b, io_c, i_a_pf, i_b_pf, i_c_pf );
 #ifdef PP_MMKERNEL_PERF
       size_t duration = _rdtsc() - start;
-      m_mm.m_kernelStats[tid][i_group][i_kernel].invocations++;
-      m_mm.m_kernelStats[tid][i_group][i_kernel].cycles += duration; 
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].invocations++;
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].cycles += duration; 
 #endif
     }
 

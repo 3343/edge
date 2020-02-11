@@ -30,13 +30,10 @@
 #include "constants.hpp"
 #include "io/logging.h"
 #include "linalg/Matrix.h"
+#include "parallel/global.h"
  
 #include <libxsmm.h>
 
-#ifdef PP_USE_OMP
-#include <omp.h>
-#endif
- 
 namespace edge {
   namespace data {
     template< typename TL_T_REAL >
@@ -97,11 +94,7 @@ class edge::data::MmXsmmFused< float > {
       else {
         EDGE_LOG_FATAL;
       }
-#ifdef _OPENMP
-      m_kernelStats.resize(omp_get_max_threads());
-#else
-      m_kernelStats.resize(1);
-#endif
+      m_kernelStats.resize(edge::parallel::g_nThreads);
     }
 
     /**
@@ -145,13 +138,9 @@ class edge::data::MmXsmmFused< float > {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
         m_kernelFlops.resize( i_group+1 );
-#ifdef PP_USE_OMP
-        for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+        for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
           m_kernelStats[i].resize( i_group+1 );
         }
-#else
-        m_kernelStats[0].resize( i_group+1 );
-#endif
       }
 
       // add description
@@ -179,13 +168,9 @@ class edge::data::MmXsmmFused< float > {
 
       // Initalize stats telemetry
       MmXsmmStats l_mystats = { 0 , 0 };
-#ifdef PP_USE_OMP
-      for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+      for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
         m_kernelStats[i][i_group].push_back( l_mystats );
       }
-#else
-      m_kernelStats[0][i_group].push_back( l_mystats );
-#endif        
     }
 
     /**
@@ -224,13 +209,9 @@ class edge::data::MmXsmmFused< float > {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
         m_kernelFlops.resize( i_group+1 );
-#ifdef PP_USE_OMP
-        for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+        for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
           m_kernelStats[i].resize( i_group+1 );
         }
-#else
-        m_kernelStats[0].resize( i_group+1 );
-#endif
       }
 
       // add description
@@ -275,13 +256,9 @@ class edge::data::MmXsmmFused< float > {
 
       // Initalize stats telemetry
       MmXsmmStats l_mystats = { 0 , 0 };
-#ifdef PP_USE_OMP
-      for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+      for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
         m_kernelStats[i][i_group].push_back( l_mystats );
       }
-#else
-      m_kernelStats[0][i_group].push_back( l_mystats );
-#endif        
     }
 };
 
@@ -327,11 +304,7 @@ class edge::data::MmXsmmFused< double > {
       else {
         EDGE_LOG_FATAL;
       }
-#ifdef _OPENMP
-      m_kernelStats.resize(omp_get_max_threads());
-#else
-      m_kernelStats.resize(1);
-#endif
+      m_kernelStats.resize(edge::parallel::g_nThreads);
     }
 
     /**
@@ -376,13 +349,9 @@ class edge::data::MmXsmmFused< double > {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
         m_kernelFlops.resize( i_group+1 );
-#ifdef PP_USE_OMP
-        for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+        for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
           m_kernelStats[i].resize( i_group+1 );
         }
-#else
-        m_kernelStats[0].resize( i_group+1 );
-#endif
       }
 
       // add description
@@ -410,13 +379,9 @@ class edge::data::MmXsmmFused< double > {
 
       // Initalize stats telemetry
       MmXsmmStats l_mystats = { 0 , 0 };
-#ifdef PP_USE_OMP
-      for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+      for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
         m_kernelStats[i][i_group].push_back( l_mystats );
       }
-#else
-      m_kernelStats[0][i_group].push_back( l_mystats );
-#endif        
     }
 
     /**
@@ -455,13 +420,9 @@ class edge::data::MmXsmmFused< double > {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
         m_kernelFlops.resize( i_group+1 );
-#ifdef PP_USE_OMP
-        for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+        for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
           m_kernelStats[i].resize( i_group+1 );
         }
-#else
-        m_kernelStats[0].resize( i_group+1 );
-#endif
       }
 
       // add description
@@ -506,13 +467,9 @@ class edge::data::MmXsmmFused< double > {
       
       // Initalize stats telemetry
       MmXsmmStats l_mystats = { 0 , 0 };
-#ifdef PP_USE_OMP
-      for ( int i = 0; i < omp_get_max_threads(); ++i ) {
+      for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
         m_kernelStats[i][i_group].push_back( l_mystats );
       }
-#else
-      m_kernelStats[0][i_group].push_back( l_mystats );
-#endif        
     }
 };
 #endif
