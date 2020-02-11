@@ -33,7 +33,7 @@
  
 #include <libxsmm.h>
 
-#ifdef _OPENMP
+#ifdef PP_USE_OMP
 #include <omp.h>
 #endif
  
@@ -49,8 +49,8 @@ namespace edge {
     class MmXsmmFused< double >;
 
     typedef struct MmXsmmStats {
-      unsigned int invocations;
-      size_t       cycles;
+      size_t invocations;
+      size_t cycles;
     } MmXsmmStats;
   }
 }
@@ -69,10 +69,10 @@ class edge::data::MmXsmmFused< float > {
     std::vector< std::vector< libxsmm_smmfunction > > m_kernels;
 
     //! number of flops performed by each libxsmm kernel
-    std::vector< std::vector< size_t > > m_kernel_flops;
+    std::vector< std::vector< size_t > > m_kernelFlops;
 
     //! stats for kernels 
-    std::vector< std::vector< std::vector< MmXsmmStats > > > m_kernel_stats;
+    std::vector< std::vector< std::vector< MmXsmmStats > > > m_kernelStats;
 
     /**
      * @brief Constructor, which limits the LIBXSMM target architecture, if required.
@@ -98,9 +98,9 @@ class edge::data::MmXsmmFused< float > {
         EDGE_LOG_FATAL;
       }
 #ifdef _OPENMP
-      m_kernel_stats.resize(omp_get_max_threads());
+      m_kernelStats.resize(omp_get_max_threads());
 #else
-      m_kernel_stats.resize(1);
+      m_kernelStats.resize(1);
 #endif
     }
 
@@ -144,13 +144,13 @@ class edge::data::MmXsmmFused< float > {
       if( i_group >= m_kernels.size() ) {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
-        m_kernel_flops.resize( i_group+1 );
-#ifdef _OPENMP
+        m_kernelFlops.resize( i_group+1 );
+#ifdef PP_USE_OMP
         for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-          m_kernel_stats[i].resize( i_group+1 );
+          m_kernelStats[i].resize( i_group+1 );
         }
 #else
-        m_kernel_stats[0].resize( i_group+1 );
+        m_kernelStats[0].resize( i_group+1 );
 #endif
       }
 
@@ -175,16 +175,16 @@ class edge::data::MmXsmmFused< float > {
       // read flops and store them
       libxsmm_kernel_info l_kinfo;
       libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
-      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
+      m_kernelFlops[i_group].push_back( l_kinfo.nflops );
 
       // Initalize stats telemetry
-      MmXsmmStats mystats = { 0 , 0 };
-#ifdef _OPENMP
+      MmXsmmStats l_mystats = { 0 , 0 };
+#ifdef PP_USE_OMP
       for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-        m_kernel_stats[i][i_group].push_back( mystats );
+        m_kernelStats[i][i_group].push_back( l_mystats );
       }
 #else
-      m_kernel_stats[0][i_group].push_back( mystats );
+      m_kernelStats[0][i_group].push_back( l_mystats );
 #endif        
     }
 
@@ -223,13 +223,13 @@ class edge::data::MmXsmmFused< float > {
       if( i_group >= m_kernels.size() ) {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
-        m_kernel_flops.resize( i_group+1 );
-#ifdef _OPENMP
+        m_kernelFlops.resize( i_group+1 );
+#ifdef PP_USE_OMP
         for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-          m_kernel_stats[i].resize( i_group+1 );
+          m_kernelStats[i].resize( i_group+1 );
         }
 #else
-        m_kernel_stats[0].resize( i_group+1 );
+        m_kernelStats[0].resize( i_group+1 );
 #endif
       }
 
@@ -262,7 +262,7 @@ class edge::data::MmXsmmFused< float > {
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), PP_N_CRUNS ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).smm );
       }
 
       // check that we generated a kernel
@@ -271,16 +271,16 @@ class edge::data::MmXsmmFused< float > {
       // read flops and store them
       libxsmm_kernel_info l_kinfo;
       libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
-      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
+      m_kernelFlops[i_group].push_back( l_kinfo.nflops );
 
       // Initalize stats telemetry
-      MmXsmmStats mystats = { 0 , 0 };
-#ifdef _OPENMP
+      MmXsmmStats l_mystats = { 0 , 0 };
+#ifdef PP_USE_OMP
       for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-        m_kernel_stats[i][i_group].push_back( mystats );
+        m_kernelStats[i][i_group].push_back( l_mystats );
       }
 #else
-      m_kernel_stats[0][i_group].push_back( mystats );
+      m_kernelStats[0][i_group].push_back( l_mystats );
 #endif        
     }
 };
@@ -299,10 +299,10 @@ class edge::data::MmXsmmFused< double > {
     std::vector< std::vector< libxsmm_dmmfunction > > m_kernels;
  
     //! number of flops performed by each libxsmm kernel
-    std::vector< std::vector< size_t > > m_kernel_flops;
+    std::vector< std::vector< size_t > > m_kernelFlops;
 
     //! stats for kernels 
-    std::vector< std::vector< std::vector< MmXsmmStats > > > m_kernel_stats;
+    std::vector< std::vector< std::vector< MmXsmmStats > > > m_kernelStats;
 
     /**
      * @brief Constructor, which limits the LIBXSMM target architecture, if required.
@@ -328,9 +328,9 @@ class edge::data::MmXsmmFused< double > {
         EDGE_LOG_FATAL;
       }
 #ifdef _OPENMP
-      m_kernel_stats.resize(omp_get_max_threads());
+      m_kernelStats.resize(omp_get_max_threads());
 #else
-      m_kernel_stats.resize(1);
+      m_kernelStats.resize(1);
 #endif
     }
 
@@ -375,13 +375,13 @@ class edge::data::MmXsmmFused< double > {
       if( i_group >= m_kernels.size() ) {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
-        m_kernel_flops.resize( i_group+1 );
-#ifdef _OPENMP
+        m_kernelFlops.resize( i_group+1 );
+#ifdef PP_USE_OMP
         for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-          m_kernel_stats[i].resize( i_group+1 );
+          m_kernelStats[i].resize( i_group+1 );
         }
 #else
-        m_kernel_stats[0].resize( i_group+1 );
+        m_kernelStats[0].resize( i_group+1 );
 #endif
       }
 
@@ -406,16 +406,16 @@ class edge::data::MmXsmmFused< double > {
       // read flops and store them
       libxsmm_kernel_info l_kinfo;
       libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
-      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
+      m_kernelFlops[i_group].push_back( l_kinfo.nflops );
 
       // Initalize stats telemetry
-      MmXsmmStats mystats = { 0 , 0 };
-#ifdef _OPENMP
+      MmXsmmStats l_mystats = { 0 , 0 };
+#ifdef PP_USE_OMP
       for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-        m_kernel_stats[i][i_group].push_back( mystats );
+        m_kernelStats[i][i_group].push_back( l_mystats );
       }
 #else
-      m_kernel_stats[0][i_group].push_back( mystats );
+      m_kernelStats[0][i_group].push_back( l_mystats );
 #endif        
     }
 
@@ -454,13 +454,13 @@ class edge::data::MmXsmmFused< double > {
       if( i_group >= m_kernels.size() ) {
         m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
-        m_kernel_flops.resize( i_group+1 );
-#ifdef _OPENMP
+        m_kernelFlops.resize( i_group+1 );
+#ifdef PP_USE_OMP
         for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-          m_kernel_stats[i].resize( i_group+1 );
+          m_kernelStats[i].resize( i_group+1 );
         }
 #else
-        m_kernel_stats[0].resize( i_group+1 );
+        m_kernelStats[0].resize( i_group+1 );
 #endif
       }
 
@@ -493,7 +493,7 @@ class edge::data::MmXsmmFused< double > {
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), PP_N_CRUNS ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).dmm );
       }
 
       // check that we generated a kernel
@@ -502,16 +502,16 @@ class edge::data::MmXsmmFused< double > {
       // read flops and store them
       libxsmm_kernel_info l_kinfo;
       libxsmm_get_kernel_info( (const void*)m_kernels[i_group].back(), &l_kinfo );
-      m_kernel_flops[i_group].push_back( l_kinfo.nflops );
+      m_kernelFlops[i_group].push_back( l_kinfo.nflops );
       
       // Initalize stats telemetry
-      MmXsmmStats mystats = { 0 , 0 };
-#ifdef _OPENMP
+      MmXsmmStats l_mystats = { 0 , 0 };
+#ifdef PP_USE_OMP
       for ( int i = 0; i < omp_get_max_threads(); ++i ) {
-        m_kernel_stats[i][i_group].push_back( mystats );
+        m_kernelStats[i][i_group].push_back( l_mystats );
       }
 #else
-      m_kernel_stats[0][i_group].push_back( mystats );
+      m_kernelStats[0][i_group].push_back( l_mystats );
 #endif        
     }
 };
