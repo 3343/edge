@@ -56,12 +56,12 @@ steps:
       - tar -xf deps.tar.xz
 
       - echo "--- EDGE"
-      - scons {{toScons(l_build)}} tests=1 parallel=none zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
+      - scons {{toScons(l_build)}} mode=debug+san tests=1 parallel=none zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
-      - scons {{toScons(l_build)}} tests=1 parallel=omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - scons {{toScons(l_build)}} mode=debug+san tests=1 parallel=omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
-      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} parallel=mpi zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
+      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} mode=debug+san parallel=mpi zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
-      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} parallel=mpi+omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} mode=debug+san parallel=mpi+omp zlib=deps hdf5=deps moab=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
 {% endfor %}
