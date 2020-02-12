@@ -40,9 +40,6 @@ namespace edge_v {
  **/
 class edge_v::models::seismic::Ucvm: public Model {
   private:
-    //! number of points
-    std::size_t m_nPts = 0;
-
     //! p-wave velocities
     float *m_velP = nullptr;
 
@@ -56,7 +53,7 @@ class edge_v::models::seismic::Ucvm: public Model {
     io::Ucvm & m_ucvmReader;
 
     //! trafo applied before calling proj
-    double m_trafoSrc[3][3] = {0};
+    double m_trafoSrc[3][3] = {{0}};
 
     //! proj source trafo
     std::string m_projSrc = "";
