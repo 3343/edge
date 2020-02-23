@@ -22,6 +22,7 @@
  **/
 #include "Moab.h"
 #include <moab/ReorderTool.hpp>
+#include <iomanip>
 
 moab::EntityType edge_v::io::Moab::getMoabType( t_entityType i_enTy ) {
   moab::EntityType l_ty = moab::MBVERTEX;
@@ -46,6 +47,28 @@ moab::EntityType edge_v::io::Moab::getMoabType( t_entityType i_enTy ) {
   return l_ty;
 }
 
+void edge_v::io::Moab::getMemStats( unsigned long long & o_totalStorage,
+                                    unsigned long long & o_totalAmortized,
+                                    unsigned long long & o_entityStorage,
+                                    unsigned long long & o_entityAmortized,
+                                    unsigned long long & o_adjacencyStorage,
+                                    unsigned long long & o_adjacencyAmortized,
+                                    unsigned long long & o_tagStorage,
+                                    unsigned long long & o_tagAmortized ) const {
+  m_moab->estimated_memory_use( 0,
+                                0,
+                                &o_totalStorage,
+                                &o_totalAmortized,
+                                &o_entityStorage,
+                                &o_entityAmortized,
+                                &o_adjacencyStorage,
+                                &o_adjacencyAmortized,
+                                0,
+                                0,
+                                &o_tagStorage,
+                                &o_tagAmortized );
+}
+
 edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
   // init moab
   m_moab = new moab::Core;
@@ -54,10 +77,26 @@ edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
 
   m_root = m_moab->get_root_set();
 
-  // get number of dimensions
+  // get number of dimensions (or what MOAB claims)
   int l_nDis = std::numeric_limits< int >::max();
   l_err = m_moab->get_dimension( l_nDis );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get elements and number of dimensions
+  std::vector< moab::EntityHandle > l_els;
+  for( unsigned short l_di = l_nDis; l_di > 0; l_di-- ) {
+    l_els.resize(0);
+    l_err = m_moab->get_entities_by_dimension( m_root,
+                                               l_di,
+                                               l_els );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // abort if we found the element
+    if( l_els.size() > 0 ) {
+      l_nDis = l_di;
+      break;
+    }
+  }
 
   // get vertices
   moab::Range l_ves;
@@ -66,16 +105,14 @@ edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
                                              l_ves );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
-  // create all other entities
-  for( unsigned short l_di = 1; l_di < 3; l_di++ ) {
-    moab::Range l_ens;
-    l_err = m_moab->get_adjacencies( l_ves,
-                                     l_di,
-                                     true,
-                                     l_ens,
-                                     moab::Interface::UNION );
-    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-  }
+  // get faces
+  moab::Range l_fas;
+  l_err = m_moab->get_adjacencies( l_ves,
+                                   l_nDis-1,
+                                   true,
+                                   l_fas,
+                                   moab::Interface::UNION );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // get the number of entities
   int l_nEns; // moab forces int-queries
@@ -130,6 +167,34 @@ void edge_v::io::Moab::printStats() const {
       EDGE_V_LOG_INFO << "    #" << l_ta << ": " << l_tagNames[l_ta];
     }
   }
+
+  // get memory statistics
+  unsigned long long l_totalStorage,     l_totalAmortized,
+                     l_entityStorage,    l_entityAmortized,
+                     l_adjacencyStorage, l_adjacencyAmortized,
+                     l_tagStorage,       l_tagAmortized;
+
+  getMemStats( l_totalStorage,
+               l_totalAmortized,
+               l_entityStorage,
+               l_entityAmortized,
+               l_adjacencyStorage,
+               l_adjacencyAmortized,
+               l_tagStorage,
+               l_tagAmortized );
+  EDGE_V_LOG_INFO << "  memory (used / allocated in GiB):";
+  EDGE_V_LOG_INFO << "    total: "     << std::setprecision(3)
+                                       << byteToGib(l_totalStorage) << " / "
+                                       << byteToGib(l_totalAmortized);
+  EDGE_V_LOG_INFO << "    entity: "    << std::setprecision(3)
+                                       << byteToGib(l_entityStorage) << " / "
+                                       << byteToGib(l_entityAmortized);
+  EDGE_V_LOG_INFO << "    adjacency: " << std::setprecision(3)
+                                       << byteToGib(l_adjacencyStorage) << " / "
+                                       << byteToGib(l_adjacencyAmortized);
+  EDGE_V_LOG_INFO << "    tag: "       << std::setprecision(3)
+                                       << byteToGib(l_tagStorage) << " / "
+                                       << byteToGib(l_tagAmortized);
 }
 
 edge_v::t_entityType edge_v::io::Moab::getElType() const {

@@ -66,6 +66,35 @@ class edge_v::io::Moab {
     std::size_t m_nTet4;
 
     /**
+     * Converts the given size in bytes to GiB (1024^3 bytes).
+     *
+     * @param i_size size in bytes.
+     * @return size in GiB.
+     **/
+    double byteToGib( unsigned long long i_size ) const { return i_size / (1024.0*1024.0*1024.0); }
+
+    /**
+     * Gets statistics on MOAB's memory usage.
+     *
+     * @param o_totalStorage will be set to total used storage.
+     * @param o_totalAmortized will be set to total allocated storage.
+     * @param o_entityStorage will be set to used storage for the entities.
+     * @param o_entityAmortized will be set to allocated memory for the entities.
+     * @param o_adjacencyStorage will be set to used storage for the adjacency information.
+     * @param o_adjacencyAmortized will be set to allocate memory for the adjacency information.
+     * @param o_tagStorage will be set to used storage for the tags.
+     * @param o_tagAmortized will be set to allocate storage for the tags.
+     **/
+    void getMemStats( unsigned long long & o_totalStorage,
+                      unsigned long long & o_totalAmortized,
+                      unsigned long long & o_entityStorage,
+                      unsigned long long & o_entityAmortized,
+                      unsigned long long & o_adjacencyStorage,
+                      unsigned long long & o_adjacencyAmortized,
+                      unsigned long long & o_tagStorage,
+                      unsigned long long & o_tagAmortized ) const;
+
+    /**
      * Converts the given type to a native MOAB type.
      *
      * @param i_enTy EDGE-V entity type.
