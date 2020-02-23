@@ -198,8 +198,6 @@ void edge_v::io::Moab::printStats() const {
 }
 
 edge_v::t_entityType edge_v::io::Moab::getElType() const {
-  EDGE_V_CHECK_GT( m_nLine, 0 );
-
   // check entity counts for mesh type
   if( m_nTet4 > 0 ) {
     EDGE_V_CHECK_EQ( m_nHex8r,  0 );
