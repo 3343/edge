@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -53,9 +53,9 @@ TEST_CASE( "Tests the normalization of the elements' vertex-orders.", "[normVe][
    */
 
   double l_ves[4][3] = { {1, 10, 0}, {5, 0, 0}, {5, 10, 0}, {1, 0, 0} };
-  std::size_t l_elVe[4]   = { 0,  1,  2,  3 };
-  std::size_t l_elFa[4]   = { 4,  5,  6,  7 };
-  std::size_t l_elFaEl[4] = { 8,  9, 10, 11 };
+  edge_v::t_idx l_elVe[4]   = { 0,  1,  2,  3 };
+  edge_v::t_idx l_elFa[4]   = { 4,  5,  6,  7 };
+  edge_v::t_idx l_elFaEl[4] = { 8,  9, 10, 11 };
 
   edge_v::geom::Quad4r::normVesFas( l_ves,
                                     l_elVe,

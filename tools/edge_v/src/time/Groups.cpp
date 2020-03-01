@@ -24,7 +24,7 @@
 
 #include "io/logging.h"
 
-void edge_v::time::Groups::getLoads( std::size_t            i_nEls,
+void edge_v::time::Groups::getLoads( t_idx                  i_nEls,
                                      double         const * i_tsCfl,
                                      double         const * i_tsGroups,
                                      unsigned short const * i_elTg,
@@ -37,32 +37,32 @@ void edge_v::time::Groups::getLoads( std::size_t            i_nEls,
   o_ltsGrouped = 0;
   o_ltsPerElement = 0;
 
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     unsigned short l_tg = i_elTg[l_el];
     o_ltsGrouped += 1.0 / i_tsGroups[l_tg];
     o_ltsPerElement += 1.0 / i_tsCfl[l_el];
   }
 }
 
-std::size_t edge_v::time::Groups::normalizeElTgs( t_entityType           i_elTy,
-                                                  std::size_t            i_nEls,
-                                                  std::size_t    const * i_elFaEl,
-                                                  unsigned short       * io_elTg ) {
-  std::size_t l_normAll = 0;
+edge_v::t_idx edge_v::time::Groups::normalizeElTgs( t_entityType     i_elTy,
+                                                    t_idx            i_nEls,
+                                                    t_idx    const * i_elFaEl,
+                                                    unsigned short * io_elTg ) {
+  t_idx l_normAll = 0;
 
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
 
   while( true ) {
-    std::size_t l_normIt = 0;
+    t_idx l_normIt = 0;
 
-    for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
       unsigned short l_tgEl = io_elTg[l_el];
 
       for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ )  {
-        std::size_t l_ad = i_elFaEl[l_el * l_nElFas + l_fa];
+        t_idx l_ad = i_elFaEl[l_el * l_nElFas + l_fa];
 
         // ignore faces at the boundary
-        if( l_ad < std::numeric_limits< std::size_t >::max() ) {
+        if( l_ad < std::numeric_limits< t_idx >::max() ) {
           unsigned short l_tgAd = io_elTg[l_ad];
           // lower time group if required
           if( l_tgEl > l_tgAd+1 ) {
@@ -81,7 +81,7 @@ std::size_t edge_v::time::Groups::normalizeElTgs( t_entityType           i_elTy,
 }
 
 
-void edge_v::time::Groups::setElTg( std::size_t            i_nEls,
+void edge_v::time::Groups::setElTg( t_idx                  i_nEls,
                                     unsigned short         i_nGroups,
                                     double         const * i_tsGroups,
                                     double         const * i_tsCfl,
@@ -89,7 +89,7 @@ void edge_v::time::Groups::setElTg( std::size_t            i_nEls,
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     for( unsigned short l_tg = 0; l_tg < i_nGroups; l_tg++ ) {
       if( i_tsCfl[l_el] < i_tsGroups[l_tg+1] ) {
         o_elTg[l_el] = l_tg;
@@ -99,15 +99,15 @@ void edge_v::time::Groups::setElTg( std::size_t            i_nEls,
   }
 }
 
-void edge_v::time::Groups::nGroupEls( std::size_t            i_first,
-                                      std::size_t            i_nEls,
+void edge_v::time::Groups::nGroupEls( t_idx                  i_first,
+                                      t_idx                  i_nEls,
                                       unsigned short         i_nGroups,
                                       unsigned short const * i_elTg,
-                                      std::size_t          * o_nGroupEls ) {
+                                      t_idx                * o_nGroupEls ) {
   for( unsigned short l_tg = 0; l_tg < i_nGroups; l_tg++ )
     o_nGroupEls[l_tg] = 0;
 
-  for( std::size_t l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
+  for( t_idx l_el = i_first; l_el < i_first+i_nEls; l_el++ ) {
     unsigned short l_tg = i_elTg[l_el];
     o_nGroupEls[l_tg]++;
   }
@@ -115,8 +115,8 @@ void edge_v::time::Groups::nGroupEls( std::size_t            i_first,
 
 
 edge_v::time::Groups::Groups( t_entityType           i_elTy,
-                              std::size_t            i_nEls,
-                              std::size_t    const * i_elFaEl,
+                              t_idx                  i_nEls,
+                              t_idx    const       * i_elFaEl,
                               unsigned short         i_nRates,
                               double         const * i_rates,
                               double                 i_funDt,
@@ -164,7 +164,7 @@ edge_v::time::Groups::Groups( t_entityType           i_elTy,
                   m_elTg );
 
   // derive number of elements per time group
-  m_nGroupEls = new std::size_t[m_nGroups];
+  m_nGroupEls = new t_idx[m_nGroups];
   nGroupEls( 0,
              i_nEls,
              m_nGroups,
@@ -204,9 +204,9 @@ void edge_v::time::Groups::printStats() const {
   EDGE_V_LOG_INFO << "  per-element          over grouped (normalized): " << m_loads[2] / m_loads[3];
 }
 
-void edge_v::time::Groups::nGroupEls( std::size_t   i_first,
-                                      std::size_t   i_nEls,
-                                      std::size_t * o_nGroupEls ) const {
+void edge_v::time::Groups::nGroupEls( t_idx   i_first,
+                                      t_idx   i_nEls,
+                                      t_idx * o_nGroupEls ) const {
   nGroupEls( i_first,
              i_nEls,
              m_nGroups,

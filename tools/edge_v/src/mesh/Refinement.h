@@ -25,6 +25,7 @@
 
 #include <string>
 #include "models/Model.h"
+#include "../constants.h"
 
 namespace edge_v {
   namespace mesh {
@@ -73,10 +74,10 @@ class edge_v::mesh::Refinement {
      * @param i_refExpr expression used for the refinement, which defines 'frequency' and 'edges_per_wave_length'.
      * @param i_velMod velocity model.
      **/
-    void init( std::size_t             i_nVes,
-               std::size_t             i_nEls,
+    void init( t_idx                   i_nVes,
+               t_idx                   i_nEls,
                unsigned short          i_nElVes,
-               std::size_t    const  * i_elVe,
+               t_idx          const  * i_elVe,
                double         const (* i_veCrds)[3],
                std::string    const  & i_refExpr,
                models::Model  const  & i_velMod );

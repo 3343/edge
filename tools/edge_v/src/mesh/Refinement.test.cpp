@@ -32,10 +32,10 @@ TEST_CASE( "Tests the mesh refinement.", "[meshRefinement][init]" ) {
                           {-4, -2,  1},
                           { 5, 10, 20} };
 
-  std::size_t l_elVe[4][4] = { {0, 0, 0, 0},
-                               {1, 1, 1, 1},
-                               {2, 2, 2, 2},
-                               {3, 3, 3, 3} };
+  edge_v::t_idx l_elVe[4][4] = { {0, 0, 0, 0},
+                                 {1, 1, 1, 1},
+                                 {2, 2, 2, 2},
+                                 {3, 3, 3, 3} };
 
   std::string l_exp0 = "edges_per_wave_length := 4.3;\
                         frequency := 2.7;";

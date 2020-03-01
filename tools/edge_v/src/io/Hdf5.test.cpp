@@ -30,8 +30,8 @@
 TEST_CASE( "Tests set/get data HDF5 interface.", "[hdf5][setGetData]" ) {
   // dummy data
   std::string l_name0 = "data_0";
-  std::size_t l_dataIn0[10] = { 0,  1,  2,  3,  4,
-                                10, 11, 12, 13, 14 };
+  edge_v::t_idx l_dataIn0[10] = { 0,  1,  2,  3,  4,
+                                  10, 11, 12, 13, 14 };
 
   std::string l_name1 = "data_1";
   unsigned short l_dataIn1[7] = { 7, 7, 5, 5, 3,
@@ -80,7 +80,7 @@ TEST_CASE( "Tests set/get data HDF5 interface.", "[hdf5][setGetData]" ) {
   REQUIRE( l_hdf.nVas( l_name1 ) ==  7 );
   REQUIRE( l_hdf.nVas( l_name2 ) ==  3 );
 
-  std::size_t l_dataOut0[10] = {0};
+  edge_v::t_idx l_dataOut0[10] = {0};
   unsigned short l_dataOut1[7] = {0};
   double l_dataOut2[3] = {0};
 

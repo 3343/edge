@@ -46,9 +46,9 @@ class edge_v::io::BgMeshMsh4 {
      * @param io_stream stream which will be written.
      **/
     static void write( t_entityType                i_elTy,
-                       std::size_t                 i_nVes,
-                       std::size_t                 i_nEls,
-                       std::size_t        const  * i_elVe,
+                       t_idx                       i_nVes,
+                       t_idx                       i_nEls,
+                       t_idx              const  * i_elVe,
                        double             const (* i_veCrds)[3],
                        float              const  * i_targetLengths,
                        std::ostream              & io_stream );

@@ -133,7 +133,7 @@ env = Environment( variables = vars )
 # add command line arguments
 vars.AddVariables(
   EnumVariable( 'mode',
-                'Compile modes, option \'san\' enables address and undefind sanitizers',
+                'compile modes, option \'san\' enables address and undefind sanitizers',
                 'release',
                  allowed_values=('release', 'debug', 'release+san', 'debug+san' )
               ),
@@ -147,6 +147,10 @@ vars.AddVariables(
                 'none',
                  allowed_values=('none', 'omp')
               ),
+  EnumVariable( 'entity_size',
+                'size of the entity ids in bits',
+                '64',
+                allowed_values=( '64', '32' ) ),
   BoolVariable( 'tests',
                 'enable unit tests.',
                  False ),
@@ -271,6 +275,9 @@ if 'san' in  env['mode']:
 
 # forward EDGE version
 env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
+
+# forward entity size
+env.Append( CPPDEFINES='PP_EDGE_V_ENTITY_SIZE=' + env['entity_size'] )
 
 # detect compilers
 try:

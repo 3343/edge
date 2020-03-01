@@ -124,9 +124,9 @@ TEST_CASE( "Tests the vertex and face reordering for triangles.", "[normVesFas][
                           {1.0, 0.0, 0.0},
                           {0.5, 1.0, 0.0} };
 
-  std::size_t l_elVe0[3]   = { 1, 2, 3 };
-  std::size_t l_elFa0[3]   = { 4, 5, 6 };
-  std::size_t l_elFaEl0[3] = { 7, 8, 9 };
+  edge_v::t_idx l_elVe0[3]   = { 1, 2, 3 };
+  edge_v::t_idx l_elFa0[3]   = { 4, 5, 6 };
+  edge_v::t_idx l_elFaEl0[3] = { 7, 8, 9 };
 
   edge_v::geom::Tria3::normVesFas( l_ves0,
                                    l_elVe0,
@@ -166,9 +166,9 @@ TEST_CASE( "Tests the vertex and face reordering for triangles.", "[normVesFas][
                           {0.5, 1.0, 0.0} };
 
 
-  std::size_t l_elVe1[3]   = { 1, 2, 3 };
-  std::size_t l_elFa1[3]   = { 4, 5, 6 };
-  std::size_t l_elFaEl1[3] = { 7, 8, 9 };
+  edge_v::t_idx l_elVe1[3]   = { 1, 2, 3 };
+  edge_v::t_idx l_elFa1[3]   = { 4, 5, 6 };
+  edge_v::t_idx l_elFaEl1[3] = { 7, 8, 9 };
 
   edge_v::geom::Tria3::normVesFas( l_ves1,
                                    l_elVe1,

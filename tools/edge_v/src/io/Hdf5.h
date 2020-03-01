@@ -26,6 +26,7 @@
 #include <hdf5.h>
 #include <string>
 #include "io/logging.h"
+#include "constants.h"
 
 namespace edge_v {
   namespace io {
@@ -93,7 +94,7 @@ class edge_v::io::Hdf5 {
      * @param i_fileType type in the HDF5 file.
      **/
     void set( std::string const & i_name,
-              std::size_t         i_nValues,
+              t_idx               i_nValues,
               void        const * i_data,
               hid_t               i_memType,
               hid_t               i_fileType ) const;
@@ -140,7 +141,7 @@ class edge_v::io::Hdf5 {
      * @param i_name name of the dataset.
      * @return number of values.
      **/
-    std::size_t nVas( std::string const & i_name ) const;
+    t_idx nVas( std::string const & i_name ) const;
 
     /**
      * Sets the data to a dataset.
@@ -150,7 +151,7 @@ class edge_v::io::Hdf5 {
      * @param i_data data which is is set.
      **/
     void set( std::string    const & i_name,
-              std::size_t            i_nValues,
+              t_idx                  i_nValues,
               unsigned short const * i_data ) const;
 
     /**
@@ -161,8 +162,8 @@ class edge_v::io::Hdf5 {
      * @param i_data data which is is set.
      **/
     void set( std::string const & i_name,
-              std::size_t         i_nValues,
-              std::size_t const * i_data ) const;
+              t_idx               i_nValues,
+              t_idx       const * i_data ) const;
 
     /**
      * Sets the data to a dataset.
@@ -172,7 +173,7 @@ class edge_v::io::Hdf5 {
      * @param i_data data which is is set.
      **/
     void set( std::string const & i_name,
-              std::size_t         i_nValues,
+              t_idx               i_nValues,
               float       const * i_data ) const;
 
     /**
@@ -183,7 +184,7 @@ class edge_v::io::Hdf5 {
      * @param i_data data which is is set.
      **/
     void set( std::string const & i_name,
-              std::size_t         i_nValues,
+              t_idx               i_nValues,
               double      const * i_data ) const;
 
     /**
@@ -202,7 +203,7 @@ class edge_v::io::Hdf5 {
      * @param o_data array to which the data is written.
      **/
     void get( std::string const & i_name,
-              std::size_t       * o_data ) const;
+              t_idx             * o_data ) const;
 
     /**
      * Gets the data from a dataset.

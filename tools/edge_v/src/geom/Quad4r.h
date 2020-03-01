@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,6 +24,7 @@
 #define EDGE_V_GEOM_QUAD4R_H
 
 #include <cstddef>
+#include "constants.h"
 
 namespace edge_v {
   namespace geom {
@@ -67,10 +68,10 @@ class edge_v::geom::Quad4r {
      * @param io_elFa faces adjacent to the elements (ordered ascending by vertex ids).
      * @param io_elFaEl elements adjacent to elements, faces as bridge (ordered ascending by vertex ids of faces).
      **/
-    static void normVesFas( double      const (* i_veCrds)[3],
-                            std::size_t        * io_elVe,
-                            std::size_t        * io_elFa,
-                            std::size_t        * io_elFaEl );
+    static void normVesFas( double const (* i_veCrds)[3],
+                            t_idx         * io_elVe,
+                            t_idx         * io_elFa,
+                            t_idx         * io_elFaEl );
 };
 
 #endif

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,7 +40,7 @@ namespace edge_v {
 class edge_v::time::Cfl {
   private:
     //! number of elements
-    std::size_t m_nEls = 0;
+    t_idx m_nEls = 0;
 
     //! minimum absolute time step
     double m_tsAbsMin = 0;
@@ -64,9 +64,9 @@ class edge_v::time::Cfl {
      * @param o_ts will be set to the normalized time steps (divided by absolute minimum) of the elements.
      **/
     static void setTimeSteps( t_entityType  const    i_elTy,
-                              std::size_t            i_nVes,
-                              std::size_t            i_nEls,
-                              std::size_t   const  * i_elVe,
+                              t_idx                  i_nVes,
+                              t_idx                  i_nEls,
+                              t_idx         const  * i_elVe,
                               double        const (* i_veCrds)[3],
                               double        const  * i_inDia,
                               models::Model        & io_velMod,
@@ -86,9 +86,9 @@ class edge_v::time::Cfl {
      * @param io_velMod velocity model.
      **/
     Cfl( t_entityType  const    i_elTy,
-         std::size_t            i_nVes,
-         std::size_t            i_nEls,
-         std::size_t   const  * i_elVe,
+         t_idx                  i_nVes,
+         t_idx                  i_nEls,
+         t_idx         const  * i_elVe,
          double        const (* i_veCrds)[3],
          double        const  * i_inDia,
          models::Model        & io_velMod );

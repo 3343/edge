@@ -76,10 +76,10 @@ double edge_v::geom::Tet4::inDiameter( double const (*i_veCrds)[3] ) {
   return l_dia;
 }
 
-void edge_v::geom::Tet4::normVesFas( double      const (* i_veCrds)[3],
-                                     std::size_t        * io_elVe,
-                                     std::size_t        * io_elFa,
-                                     std::size_t        * io_elFaEl ) {
+void edge_v::geom::Tet4::normVesFas( double const (* i_veCrds)[3],
+                                     t_idx         * io_elVe,
+                                     t_idx         * io_elFa,
+                                     t_idx         * io_elFaEl ) {
   // get vectors point from 0->1, 0->2 and 0->3
   Eigen::Matrix3d l_m;
   for( unsigned short l_d0 = 0; l_d0 < 3; l_d0++ )
@@ -95,41 +95,41 @@ void edge_v::geom::Tet4::normVesFas( double      const (* i_veCrds)[3],
   // negative determinant -> clockwise -> exchange vertices 2,3 and faces 0,1
   if( l_det < 0 ) {
     // exchange vertices
-    std::size_t l_tmpVe = io_elVe[2];
+    t_idx l_tmpVe = io_elVe[2];
     io_elVe[2] = io_elVe[3];
     io_elVe[3] = l_tmpVe;
 
     // exchange faces
-    std::size_t l_tmpFa = io_elFa[0];
+    t_idx l_tmpFa = io_elFa[0];
     io_elFa[0] = io_elFa[1];
     io_elFa[1] = l_tmpFa;
 
-    std::size_t l_tmpEl = io_elFaEl[0];
+    t_idx l_tmpEl = io_elFaEl[0];
     io_elFaEl[0] = io_elFaEl[1];
     io_elFaEl[1] = l_tmpEl;
   }
 }
 
-void edge_v::geom::Tet4::getVeIdsAd( std::size_t            i_nFas,
-                                     std::size_t            i_elOff,
-                                     std::size_t    const * i_el,
+void edge_v::geom::Tet4::getVeIdsAd( t_idx                  i_nFas,
+                                     t_idx                  i_elOff,
+                                     t_idx          const * i_el,
                                      unsigned short const * i_fa,
-                                     std::size_t    const * i_elVe,
-                                     std::size_t    const * i_elFaEl,
+                                     t_idx          const * i_elVe,
+                                     t_idx          const * i_elFaEl,
                                      unsigned short       * o_veIdsAd ) {
-  for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
+  for( t_idx l_id = 0; l_id < i_nFas; l_id++ ) {
     // get element and face id
-    std::size_t l_el = i_el[l_id] + i_elOff;
+    t_idx l_el = i_el[l_id] + i_elOff;
     unsigned short l_fa = i_fa[l_id];
 
     // adjacent element
-    std::size_t l_elAd = i_elFaEl[l_el*4 + l_fa];
+    t_idx l_elAd = i_elFaEl[l_el*4 + l_fa];
 
     // vertex at position zero of the face
-    std::size_t l_ve0 = (l_fa <= 2) ? i_elVe[l_el*4+0] : i_elVe[l_el*4+1];
+    t_idx l_ve0 = (l_fa <= 2) ? i_elVe[l_el*4+0] : i_elVe[l_el*4+1];
 
     // get the respective position in the adjacent element
-    std::size_t l_veAd = std::numeric_limits< std::size_t >::max();
+    t_idx l_veAd = std::numeric_limits< t_idx >::max();
     for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
       if( i_elVe[l_elAd*4+l_ve] == l_ve0 ) l_veAd = l_ve;
     }

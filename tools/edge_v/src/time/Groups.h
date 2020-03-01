@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -39,7 +39,7 @@ namespace edge_v {
 class edge_v::time::Groups {
   private:
     //! number of of elements
-    std::size_t m_nEls = 0;
+    t_idx m_nEls = 0;
 
     //! number of time groups
     unsigned short m_nGroups = 0;
@@ -51,7 +51,7 @@ class edge_v::time::Groups {
     unsigned short * m_elTg;
 
     //! number of elements in each time group
-    std::size_t * m_nGroupEls;
+    t_idx * m_nGroupEls;
 
     //! theoretical loads of the different time stepping schemes: GTS, grouped LTS before normalization, grouped LTS after normalization, per-element LTS
     double m_loads[4] = {};
@@ -67,7 +67,7 @@ class edge_v::time::Groups {
      * @param o_ltsGrouped will be set to the summed load per element update, when considering the time groups.
      * @param o_ltsPerElement will be set to the summed load per element update, when assuming that every element operates its CFL-time step.
      **/
-    static void getLoads( std::size_t            i_nEls,
+    static void getLoads( t_idx                  i_nEls,
                           double         const * i_tsCfl,
                           double         const * i_tsGroups,
                           unsigned short const * i_elTg,
@@ -85,10 +85,10 @@ class edge_v::time::Groups {
      *
      * @return number of normalized elements.
      **/
-    static std::size_t normalizeElTgs( t_entityType           i_elTy,
-                                       std::size_t            i_nEls,
-                                       std::size_t    const * i_elFaEl,
-                                       unsigned short       * io_elTg );
+    static t_idx normalizeElTgs( t_entityType           i_elTy,
+                                 t_idx                  i_nEls,
+                                 t_idx          const * i_elFaEl,
+                                 unsigned short       * io_elTg );
 
     /**
      * Sets the elements' time groups.
@@ -99,7 +99,7 @@ class edge_v::time::Groups {
      * @param i_tsCfl CFL-conditioned time steps of the elements.
      * @param o_elTg will be set to the time groups of the elements.
      **/
-    static void setElTg( std::size_t            i_nEls,
+    static void setElTg( t_idx                  i_nEls,
                          unsigned short         i_nGroups,
                          double         const * i_tsGroups,
                          double         const * i_tsCfl,
@@ -114,11 +114,11 @@ class edge_v::time::Groups {
      * @param i_elTg time groups of the elements.
      * @param o_nGroupEls will be set to the number of elements for every time group.
      **/
-    static void nGroupEls( std::size_t            i_first,
-                           std::size_t            i_nEls,
+    static void nGroupEls( t_idx                  i_first,
+                           t_idx                  i_nEls,
                            unsigned short         i_nGroups,
                            unsigned short const * i_elTg,
-                           std::size_t          * o_nGroupEls );
+                           t_idx                * o_nGroupEls );
 
   public:
     /**
@@ -153,8 +153,8 @@ class edge_v::time::Groups {
      * @param i_ts CFL-conditioned and normalized (minimum is 1) time steps of the elements.
      **/
     Groups( t_entityType           i_elTy,
-            std::size_t            i_nEls,
-            std::size_t    const * i_elFaEl,
+            t_idx                  i_nEls,
+            t_idx          const * i_elFaEl,
             unsigned short         i_nRates,
             double         const * i_rates,
             double                 i_funDt,
@@ -182,7 +182,7 @@ class edge_v::time::Groups {
      *
      * @return number of elements per group.
      **/
-    std::size_t const * nGroupEls() const { return m_nGroupEls; }
+    t_idx const * nGroupEls() const { return m_nGroupEls; }
 
     /**
      * Gets the number of elements per group for a given region.
@@ -191,9 +191,9 @@ class edge_v::time::Groups {
      * @param i_nEls number of elements in the region.
      * @param o_nGroupEls will be set to number of elements per group.
      **/
-    void nGroupEls( std::size_t   i_first,
-                    std::size_t   i_nEls,
-                    std::size_t * o_nGroupEls ) const;
+    void nGroupEls( t_idx   i_first,
+                    t_idx   i_nEls,
+                    t_idx * o_nGroupEls ) const;
 
     /**
      * Gets the time step intervals of the groups.

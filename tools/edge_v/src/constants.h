@@ -27,6 +27,12 @@
 #define EDGE_V_CONSTANTS_H
 
 namespace edge_v {
+#if PP_EDGE_V_ENTITY_SIZE==32
+  typedef unsigned int t_idx;
+#else
+  typedef unsigned long long t_idx;
+#endif
+
   // entity types
   typedef enum {
     POINT    = 0,

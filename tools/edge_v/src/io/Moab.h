@@ -48,22 +48,22 @@ class edge_v::io::Moab {
     moab::EntityHandle m_root;
 
     //! number points
-    std::size_t m_nPoint;
+    t_idx m_nPoint;
 
     //! number of line elements
-    std::size_t m_nLine;
+    t_idx m_nLine;
 
     //! number quad4r elements
-    std::size_t m_nQuad4r;
+    t_idx m_nQuad4r;
 
     //! number of tria3 elements
-    std::size_t m_nTria3;
+    t_idx m_nTria3;
 
     //! number of hex8r elements
-    std::size_t m_nHex8r;
+    t_idx m_nHex8r;
 
     //! number of tet4 elements
-    std::size_t m_nTet4;
+    t_idx m_nTet4;
 
     /**
      * Converts the given size in bytes to GiB (1024^3 bytes).
@@ -200,7 +200,7 @@ class edge_v::io::Moab {
      * @param i_nDis number of dimensions.
      * @return number of entities.
      **/
-    std::size_t nEnsByDis( unsigned short i_nDis ) const;
+    t_idx nEnsByDis( unsigned short i_nDis ) const;
 
     /**
      * Gets the number of entities by entity type.
@@ -208,7 +208,7 @@ class edge_v::io::Moab {
      * @param i_enTy entity type.
      * @return number of entities.
      **/
-    std::size_t nEnsByType( t_entityType i_enTy ) const;
+    t_idx nEnsByType( t_entityType i_enTy ) const;
 
     /**
      * Gets the coordinates of the (ordered) vertices.
@@ -226,7 +226,7 @@ class edge_v::io::Moab {
      * @param o_enVe will be set vertex ids (starting at 0) adjacent to the entities.
      **/
     void getEnVe( t_entityType   i_enTy,
-                  std::size_t  * o_enVe ) const;
+                  t_idx        * o_enVe ) const;
 
     /**
      * Gets the elements adjacent to the faces.
@@ -235,7 +235,7 @@ class edge_v::io::Moab {
      * @param o_faEl will be set to the elements, adjacent to the faces.
      **/
     void getFaEl( t_entityType   i_elTy,
-                  std::size_t  * o_faEl ) const;
+                  t_idx        * o_faEl ) const;
 
     /**
      * Gets the faces adjacent to the elements.
@@ -244,7 +244,7 @@ class edge_v::io::Moab {
      * @param o_elFa will be set to adjacency information.
      **/
     void getElFa( t_entityType   i_elTy,
-                  std::size_t  * o_elFa ) const;
+                  t_idx        * o_elFa ) const;
 
     /**
      * Gets the element-to-element adjacency (faces as bridge).
@@ -253,7 +253,7 @@ class edge_v::io::Moab {
      * @param o_elFaEl will be set to adjacency information.
      **/
     void getElFaEl( t_entityType   i_elTy,
-                    std::size_t  * o_elFaEl ) const;
+                    t_idx        * o_elFaEl ) const;
 
     /**
      * Sets the given data in MOAB (stored as native double).
@@ -301,7 +301,7 @@ class edge_v::io::Moab {
      **/
     void setEnData( t_entityType         i_enTy,
                     std::string  const & i_tagName,
-                    std::size_t  const * i_data );
+                    t_idx        const * i_data );
 
     /**
      * Gets the data for the given entity type (stored as native int).
@@ -366,8 +366,8 @@ class edge_v::io::Moab {
      * @param i_nEls number of elements which are written.
      * @param i_pathToMesh path to the mesh.
      **/
-    void writeMesh( std::size_t         i_first,
-                    std::size_t         i_nEls,
+    void writeMesh( t_idx               i_first,
+                    t_idx               i_nEls,
                     std::string const & i_pathToMesh );
 };
 

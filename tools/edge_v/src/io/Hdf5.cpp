@@ -67,7 +67,7 @@ bool edge_v::io::Hdf5::exists( std::string const & i_path ) const {
   return l_ex > 0;
 }
 
-std::size_t edge_v::io::Hdf5::nVas( std::string const & i_name ) const {
+edge_v::t_idx edge_v::io::Hdf5::nVas( std::string const & i_name ) const {
   // open group
   hid_t l_group = openCreateGroup();
 
@@ -145,7 +145,7 @@ void edge_v::io::Hdf5::get( std::string const & i_name,
 }
 
 void edge_v::io::Hdf5::set( std::string const & i_name,
-                            std::size_t         i_nValues,
+                            t_idx               i_nValues,
                             void        const * i_data,
                             hid_t               i_memType,
                             hid_t               i_fileType ) const {
@@ -184,7 +184,7 @@ void edge_v::io::Hdf5::set( std::string const & i_name,
 }
 
 void edge_v::io::Hdf5::set( std::string    const & i_name,
-                            std::size_t            i_nValues,
+                            t_idx                  i_nValues,
                             unsigned short const * i_data ) const {
   set( i_name,
        i_nValues,
@@ -194,8 +194,8 @@ void edge_v::io::Hdf5::set( std::string    const & i_name,
 }
 
 void edge_v::io::Hdf5::set( std::string const & i_name,
-                            std::size_t         i_nValues,
-                            std::size_t const * i_data ) const {
+                            t_idx               i_nValues,
+                            t_idx       const * i_data ) const {
   // convert to unsigned long
   unsigned long *l_data = new unsigned long[i_nValues];
   convert( i_nValues,
@@ -214,7 +214,7 @@ void edge_v::io::Hdf5::set( std::string const & i_name,
 }
 
 void edge_v::io::Hdf5::set( std::string    const & i_name,
-                            std::size_t            i_nValues,
+                            t_idx                  i_nValues,
                             float          const * i_data ) const {
   set( i_name,
        i_nValues,
@@ -224,7 +224,7 @@ void edge_v::io::Hdf5::set( std::string    const & i_name,
 }
 
 void edge_v::io::Hdf5::set( std::string    const & i_name,
-                            std::size_t            i_nValues,
+                            t_idx                  i_nValues,
                             double         const * i_data ) const {
   set( i_name,
        i_nValues,
@@ -241,9 +241,9 @@ void edge_v::io::Hdf5::get( std::string const & i_name,
 }
 
 void edge_v::io::Hdf5::get( std::string const & i_name,
-                            std::size_t       * o_data ) const {
+                            t_idx             * o_data ) const {
   // alloc memory
-  std::size_t l_nVas = nVas( i_name );
+  t_idx l_nVas = nVas( i_name );
   unsigned long *l_data = new unsigned long[l_nVas];
 
   get( i_name,

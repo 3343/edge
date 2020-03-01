@@ -32,7 +32,7 @@ edge_v::models::seismic::Expression::~Expression() {
   free();
 }
 
-void edge_v::models::seismic::Expression::init( std::size_t          i_nPts,
+void edge_v::models::seismic::Expression::init( t_idx                i_nPts,
                                                 double      const (* i_pts)[3] ) {
   // variables in the velocity model
   double l_crds[3] = { std::numeric_limits< double >::max(),
@@ -78,7 +78,7 @@ void edge_v::models::seismic::Expression::init( std::size_t          i_nPts,
   EDGE_V_CHECK_EQ( m_qs, nullptr );
   m_qs = new double[ i_nPts ];
 
-  for( std::size_t l_pt = 0; l_pt < i_nPts; l_pt++ ) {
+  for( t_idx l_pt = 0; l_pt < i_nPts; l_pt++ ) {
     // copy coords over
     for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
       l_crds[l_di] = i_pts[l_pt][l_di];
@@ -102,10 +102,10 @@ void edge_v::models::seismic::Expression::free() {
   if( m_qs != nullptr ) delete[] m_qs;
 }
 
-double edge_v::models::seismic::Expression::getMinSpeed( std::size_t i_pt ) const {
+double edge_v::models::seismic::Expression::getMinSpeed( t_idx i_pt ) const {
   return m_vs[i_pt];
 }
 
-double edge_v::models::seismic::Expression::getMaxSpeed( std::size_t i_pt ) const {
+double edge_v::models::seismic::Expression::getMaxSpeed( t_idx i_pt ) const {
   return m_vp[i_pt];
 }

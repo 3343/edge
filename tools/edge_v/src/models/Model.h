@@ -24,6 +24,7 @@
 #define EDGE_V_MODELS_MODEL_H
 
 #include <cstddef>
+#include "constants.h"
 
 namespace edge_v {
   namespace models {
@@ -47,7 +48,7 @@ class edge_v::models::Model {
      * @param i_nPts number of points.
      * @param i_pts coordinates of the points.
      **/
-    virtual void init( std::size_t          i_nPts,
+    virtual void init( t_idx                i_nPts,
                        double      const (* i_pts)[3] ) = 0;
 
     /**
@@ -60,14 +61,14 @@ class edge_v::models::Model {
      *
      * @param i_pt point at which the minimum wave speed is derived.
      **/
-    virtual double getMinSpeed( std::size_t i_pt ) const = 0;
+    virtual double getMinSpeed( t_idx i_pt ) const = 0;
 
     /**
      * Gets the maximum wave speed at a point.
      *
      * @param i_pt point at which the maximum wave speed is derived.
      **/
-    virtual double getMaxSpeed( std::size_t i_pt ) const = 0;
+    virtual double getMaxSpeed( t_idx i_pt ) const = 0;
 
     /**
      * Averages the given velocities at the vertices for the elements.
@@ -79,8 +80,8 @@ class edge_v::models::Model {
      * @param o_velEl will we set to the averaged velocities of the elements.
      **/
     void getElAve( unsigned short         i_nElVes,
-                   std::size_t            i_nEls,
-                   std::size_t    const * i_elVe,
+                   t_idx                  i_nEls,
+                   t_idx          const * i_elVe,
                    float          const * i_velVe,
                    float                * o_velEl );
 };
