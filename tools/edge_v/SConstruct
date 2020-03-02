@@ -180,7 +180,8 @@ vars.AddVariables(
 )
 
 # include environment
-env = Environment( variables = vars )
+env = Environment( variables = vars,
+                   tools     = ['default', 'textfile'] )
 
 # exit in the case of unknown variables
 if vars.UnknownVariables():
