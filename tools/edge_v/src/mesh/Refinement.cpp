@@ -33,10 +33,10 @@ edge_v::mesh::Refinement::~Refinement() {
   free();
 }
 
-void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
-                                     std::size_t             i_nEls,
+void edge_v::mesh::Refinement::init( t_idx                   i_nVes,
+                                     t_idx                   i_nEls,
                                      unsigned short          i_nElVes,
-                                     std::size_t    const  * i_elVe,
+                                     t_idx          const  * i_elVe,
                                      double         const (* i_veCrds)[3],
                                      std::string    const  & i_refExpr,
                                      models::Model  const  & i_velMod ) {
@@ -81,14 +81,14 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
 #ifdef PP_USE_OMP
 #pragma omp for
 #endif
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     // derive averaged coordinates and wave speed ratio
     for( unsigned short l_di = 0; l_di < 3; l_di++ ) l_crds[l_di] = 0;
     double l_wsMin = std::numeric_limits< double >::max();
     double l_wsMax = std::numeric_limits< double >::lowest();
 
     for( unsigned short l_ve = 0; l_ve < i_nElVes; l_ve++ ) {
-      std::size_t l_veId = i_elVe[l_el * i_nElVes + l_ve];
+      t_idx l_veId = i_elVe[l_el * i_nElVes + l_ve];
       for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
         l_crds[l_di] += i_veCrds[l_veId][l_di] / i_nElVes;
       }
@@ -112,13 +112,13 @@ void edge_v::mesh::Refinement::init( std::size_t             i_nVes,
 #ifdef PP_USE_OMP
 }
 #endif
-  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) m_refVe[l_ve] = std::numeric_limits< float >::max();
+  for( t_idx l_ve = 0; l_ve < i_nVes; l_ve++ ) m_refVe[l_ve] = std::numeric_limits< float >::max();
 
   // propagate refinement to vertices
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     float l_wsAve = 0;
     for( unsigned short l_ve = 0; l_ve < i_nElVes; l_ve++ ) {
-      std::size_t l_veId = i_elVe[l_el * i_nElVes + l_ve];
+      t_idx l_veId = i_elVe[l_el * i_nElVes + l_ve];
 
       float l_ws = i_velMod.getMinSpeed( l_veId );
       l_wsAve += l_ws;

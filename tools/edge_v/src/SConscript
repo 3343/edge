@@ -59,7 +59,8 @@ l_headers = [ 'edge_v.h',
               'time/Groups.h' ]
 
 for l_he in l_headers:
-  env.headers.append( env.File(l_he) )
+  env.headers.append( env.Substfile( l_he,
+                                     SUBST_DICT = {'PP_EDGE_V_ENTITY_SIZE': env['entity_size']} )[0] )
 
 if 'ucvm' in env and env['ucvm']:
   l_sources = l_sources + [ 'io/Ucvm.cpp',

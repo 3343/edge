@@ -50,10 +50,10 @@ TEST_CASE( "Tests the derivation of the partition-time group pairs.", "[communic
    */
 
   // assemble test structures
-  std::size_t l_elFaEl[13][3];
+  edge_v::t_idx l_elFaEl[13][3];
   for( unsigned short l_el = 0; l_el < 13; l_el++ )
     for( unsigned short l_fa = 0; l_fa < 3; l_fa++ )
-      l_elFaEl[l_el][l_fa] = std::numeric_limits< std::size_t >::max();
+      l_elFaEl[l_el][l_fa] = std::numeric_limits< edge_v::t_idx >::max();
 
   l_elFaEl[3][0] =  6; l_elFaEl[3][1] =  4; l_elFaEl[3][2] =  2;
   l_elFaEl[4][0] =  1; l_elFaEl[4][1] =  5; l_elFaEl[4][2] =  9;
@@ -62,11 +62,11 @@ TEST_CASE( "Tests the derivation of the partition-time group pairs.", "[communic
   l_elFaEl[7][0] =  3; l_elFaEl[7][1] = 11; l_elFaEl[7][2] =  0;
 
   //                            0  1  2  3  4  5  6  7  8  9 10 11 12
-  std::size_t l_elPa[13]    = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
+  edge_v::t_idx l_elPa[13]  = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
   unsigned short l_elTg[13] = { 2, 2, 0, 1, 1, 1, 1, 1, 1, 2, 1, 2, 0 };
 
   // get the unique and sort pairs
-  std::set< std::pair< std::size_t, unsigned short > > l_pairs;
+  std::set< std::pair< edge_v::t_idx, unsigned short > > l_pairs;
   edge_v::mesh::Communication::getPaTgPairs( edge_v::TRIA3,
                                              3,
                                              5,
@@ -125,12 +125,12 @@ TEST_CASE( "Tests the derivation of communicating elements.", "[communication][g
    * 14 | 3         | 1     | 6, 8, 2
    * 15 | 3         | 1     | 14, 8, 9
    */
-  //                         0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-  std::size_t l_elPa[16] = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3 };
-  std::size_t l_elFaEl[16][3] = { {0, 2, std::numeric_limits< std::size_t >::max() },
-                                  {std::numeric_limits< std::size_t >::max(), 2, 0},
+  //                           0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+  edge_v::t_idx l_elPa[16] = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3 };
+  edge_v::t_idx l_elFaEl[16][3] = { {0, 2, std::numeric_limits< edge_v::t_idx >::max() },
+                                  {std::numeric_limits< edge_v::t_idx >::max(), 2, 0},
                                   {14, 7, 1},
-                                  {4, 5, std::numeric_limits< std::size_t >::max()},
+                                  {4, 5, std::numeric_limits< edge_v::t_idx >::max()},
                                   {3, 3, 3},
                                   {6, 7, 8},
                                   {7, 3, 0},
@@ -143,8 +143,8 @@ TEST_CASE( "Tests the derivation of communicating elements.", "[communication][g
                                   {12, 7, 6},
                                   {6, 8, 2},
                                   {14, 8, 9} };
-  std::size_t l_first[4] = {0};
-  std::size_t l_size[4] = {0};
+  edge_v::t_idx l_first[4] = {0};
+  edge_v::t_idx l_size[4] = {0};
   edge_v::mesh::Communication::getPaElComm( edge_v::TRIA3,
                                             16,
                                             l_elFaEl[0],
@@ -190,10 +190,10 @@ TEST_CASE( "Tests the derivation of send messages for a single communication reg
    * Sorted, unique pairs: (0, 2), (1, 0), (4, 1), (4, 2), (5, 0), (5, 2)
    */
   // assemble test structures
-  std::size_t l_elFaEl[13][3];
+  edge_v::t_idx l_elFaEl[13][3];
   for( unsigned short l_el = 0; l_el < 13; l_el++ )
     for( unsigned short l_fa = 0; l_fa < 3; l_fa++ )
-      l_elFaEl[l_el][l_fa] = std::numeric_limits< std::size_t >::max();
+      l_elFaEl[l_el][l_fa] = std::numeric_limits< edge_v::t_idx >::max();
 
   l_elFaEl[3][0] =  6; l_elFaEl[3][1] =  4; l_elFaEl[3][2] =  2;
   l_elFaEl[4][0] =  1; l_elFaEl[4][1] =  5; l_elFaEl[4][2] =  9;
@@ -211,7 +211,7 @@ TEST_CASE( "Tests the derivation of send messages for a single communication reg
   l_elFaEl[12][1] = 5;
 
   //                            0  1  2  3  4  5  6  7  8  9 10 11 12
-  std::size_t l_elPa[13]    = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
+  edge_v::t_idx l_elPa[13]  = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
   unsigned short l_elTg[13] = { 2, 2, 0, 1, 1, 1, 1, 1, 1, 2, 1, 2, 0 };
 
   // get the send messages
@@ -295,12 +295,12 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
    *
    */
   // assemble test structures
-  std::size_t l_elFaEl[13][3] = { {7,  2,  1}, {  0,  2,  3}, { 0,  1,  6}, {8, 1, 4}, {11, 5, 7},
-                                  {4, 11,  6}, { 12,  2,  7}, { 3, 11,  0}, {3, 8, 8}, {10, 9, 9},
-                                  {9, 10, 12}, {  5,  4,  7}, { 6, 11, 10} };
+  edge_v::t_idx l_elFaEl[13][3] = { {7,  2,  1}, {  0,  2,  3}, { 0,  1,  6}, {8, 1, 4}, {11, 5, 7},
+                                    {4, 11,  6}, { 12,  2,  7}, { 3, 11,  0}, {3, 8, 8}, {10, 9, 9},
+                                    {9, 10, 12}, {  5,  4,  7}, { 6, 11, 10} };
 
   //                            0  1  2  3  4  5  6  7  8  9 10 11 12
-  std::size_t l_elPa[13]    = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
+  edge_v::t_idx l_elPa[13]  = { 0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 5, 5 };
   unsigned short l_elTg[13] = { 2, 2, 0, 1, 2, 2, 2, 3, 1, 0, 1, 2, 4 };
 
 
@@ -505,7 +505,7 @@ TEST_CASE( "Tests the derivation of the global communication structure.", "[comm
   REQUIRE( l_struct[5].tr[1].recv[1].faAd[0] ==  2 );
 
   // go through the constructor
-  std::size_t l_nPaEls[6] = {2, 1, 5, 1, 2, 2};
+  edge_v::t_idx l_nPaEls[6] = {2, 1, 5, 1, 2, 2};
 
   edge_v::mesh::Communication l_comm( 5,
                                       edge_v::TRIA3,

@@ -84,6 +84,7 @@ int main( int i_argc, char *i_argv[] ) {
   }
 
   EDGE_V_LOG_INFO << "EDGE version: " << PP_EDGE_VERSION;
+  EDGE_V_LOG_INFO << "entity size in bytes: " << sizeof(edge_v::t_idx);
   EDGE_V_LOG_INFO << "parsing xml config";
   std::string l_xml = l_args[2];
   edge_v::io::Config l_config( l_xml );
@@ -326,8 +327,8 @@ int main( int i_argc, char *i_argv[] ) {
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing element ids";
-    std::size_t * l_elIds = new std::size_t[ l_mesh->nEls() ];
-    for( std::size_t l_el = 0; l_el < l_mesh->nEls(); l_el++ ) {
+    edge_v::t_idx * l_elIds = new edge_v::t_idx[ l_mesh->nEls() ];
+    for( edge_v::t_idx l_el = 0; l_el < l_mesh->nEls(); l_el++ ) {
       l_elIds[l_el] = l_el;
     }
     std::string l_tagElIds = "edge_v_element_ids";
@@ -439,7 +440,7 @@ int main( int i_argc, char *i_argv[] ) {
                l_tsGroups->nGroupEls() );
 
     // dummy number of send elements
-    std::size_t * l_nTgElsSe = new std::size_t[ l_tsGroups->nGroups() ];
+    edge_v::t_idx * l_nTgElsSe = new edge_v::t_idx[ l_tsGroups->nGroups() ];
     for( unsigned short l_tg = 0; l_tg < l_tsGroups->nGroups(); l_tg++ ) l_nTgElsSe[l_tg] = 0;
     l_hdf.set( l_tagNtgElsSe,
                l_tsGroups->nGroups(),
@@ -462,10 +463,10 @@ int main( int i_argc, char *i_argv[] ) {
                                         l_tsGroups->getElTg() );
 
     EDGE_V_LOG_INFO << "writing mesh by partition";
-    std::size_t l_first = 0;
-    for( std::size_t l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
+    edge_v::t_idx l_first = 0;
+    for( edge_v::t_idx l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
       // get number of elements in the partition
-      std::size_t l_nPaEls = l_part.nPaEls()[l_pa];
+      edge_v::t_idx l_nPaEls = l_part.nPaEls()[l_pa];
 
       std::string l_pathMesh = l_config.getMeshOutBase() + "_" + std::to_string(l_pa) + l_config.getMeshOutExt();
       EDGE_V_LOG_INFO << "  writing mesh: " << l_pathMesh;
@@ -506,7 +507,7 @@ int main( int i_argc, char *i_argv[] ) {
 
       // annotate with comm data
       std::string l_tagCoSt = "edge_v_communication_structure";
-      std::size_t l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
+      edge_v::t_idx l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
       l_hdf.set( l_tagCoSt,
                  l_coSize,
                  l_comm.getStruct( l_pa ) );

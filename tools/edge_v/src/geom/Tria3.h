@@ -24,6 +24,7 @@
 #define EDGE_V_GEOM_TRIA3_H
 
 #include <cstdlib>
+#include "constants.h"
 
 namespace edge_v {
   namespace geom {
@@ -111,10 +112,10 @@ class edge_v::geom::Tria3 {
      * @param io_elFa faces adjacent to the element (ordered ascending by the vertex ids of the faces).
      * @param io_elFaEl elements adjacent to the elements (ordered ascending by the vertex ids of the faces).
      **/
-    static void normVesFas( double      const (* i_veCrds)[3],
-                            std::size_t        * io_elVe,
-                            std::size_t        * io_elFa,
-                            std::size_t        * io_elFaEl );
+    static void normVesFas( double const (* i_veCrds)[3],
+                            t_idx         * io_elVe,
+                            t_idx         * io_elFa,
+                            t_idx         * io_elFaEl );
 };
 
 #endif

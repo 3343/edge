@@ -70,6 +70,8 @@ then
   sudo pip install meshio > /dev/null
   # GoCD dependencies
   sudo yum install -y -q -e 0 java-latest-openjdk
+  # Pipeline dependencies
+  sudo yum install -y -q -e 0 npm
 fi
 
 ########

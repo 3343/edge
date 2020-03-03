@@ -58,10 +58,10 @@ double edge_v::geom::Quad4r::inDiameter( double const (*i_veCrds)[3] ) {
   return l_dia;
 }
 
-void edge_v::geom::Quad4r::normVesFas( double     const (* i_veCrds)[3],
-                                      std::size_t        * io_elVe,
-                                      std::size_t        * io_elFa,
-                                      std::size_t        * io_elFaEl ) {
+void edge_v::geom::Quad4r::normVesFas( double const (* i_veCrds)[3],
+                                       t_idx         * io_elVe,
+                                       t_idx         * io_elFa,
+                                       t_idx         * io_elFaEl ) {
   // store coordinates of element's vertices for reordering
   double l_veCrds[4][2];
   for( unsigned short l_ve = 0; l_ve < 4; l_ve++ )
@@ -75,7 +75,7 @@ void edge_v::geom::Quad4r::normVesFas( double     const (* i_veCrds)[3],
   for( unsigned short l_v0 = 0; l_v0 < 4; l_v0++ ) {
     for( unsigned short l_v1 = l_v0; l_v1 < 4; l_v1++ ) {
       if( l_veCrds[l_v1][1] < l_veCrds[l_v0][1] ) {
-        std::size_t l_veTmp = l_elVe[l_v1];
+        t_idx l_veTmp = l_elVe[l_v1];
         l_elVe[l_v1] = l_elVe[l_v0];
         l_elVe[l_v0] = l_veTmp;
 
@@ -90,13 +90,13 @@ void edge_v::geom::Quad4r::normVesFas( double     const (* i_veCrds)[3],
 
   // sort by x
   if( l_veCrds[0][0] > l_veCrds[1][0] ) {
-    std::size_t l_veTmp = l_elVe[0];
+    t_idx l_veTmp = l_elVe[0];
     l_elVe[0] = l_elVe[1];
     l_elVe[1] = l_veTmp;
   }
 
   if( l_veCrds[3][0] > l_veCrds[2][0] ) {
-    std::size_t l_veTmp = l_elVe[3];
+    t_idx l_veTmp = l_elVe[3];
     l_elVe[3] = l_elVe[2];
     l_elVe[2] = l_veTmp;
   }
@@ -129,9 +129,9 @@ void edge_v::geom::Quad4r::normVesFas( double     const (* i_veCrds)[3],
   }
 
   // perform the reordering
-  std::size_t l_elVeRe[4];
-  std::size_t l_elFaRe[4];
-  std::size_t l_elFaElRe[4];
+  t_idx l_elVeRe[4];
+  t_idx l_elFaRe[4];
+  t_idx l_elFaElRe[4];
   for( unsigned short l_en = 0; l_en < 4; l_en++ ) {
     l_elVeRe[l_en]   = io_elVe[ l_elVe[l_en] ];
     l_elFaRe[l_en]   = io_elFa[ l_faOr[l_en] ];

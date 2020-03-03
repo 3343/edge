@@ -49,7 +49,7 @@ edge_v::models::seismic::Ucvm::~Ucvm() {
   free();
 }
 
-void edge_v::models::seismic::Ucvm::init( std::size_t          i_nPts,
+void edge_v::models::seismic::Ucvm::init( t_idx                i_nPts,
                                           double      const (* i_pts)[3] ) {
   // free memory if allocated
   free();
@@ -70,10 +70,10 @@ void edge_v::models::seismic::Ucvm::init( std::size_t          i_nPts,
                         m_rho );
 }
 
-double edge_v::models::seismic::Ucvm::getMinSpeed( std::size_t i_pt ) const {
+double edge_v::models::seismic::Ucvm::getMinSpeed( t_idx i_pt ) const {
   return std::abs( m_velS[i_pt] );
 }
 
-double edge_v::models::seismic::Ucvm::getMaxSpeed( std::size_t i_pt ) const {
+double edge_v::models::seismic::Ucvm::getMaxSpeed( t_idx i_pt ) const {
   return std::abs( m_velP[i_pt] );
 }

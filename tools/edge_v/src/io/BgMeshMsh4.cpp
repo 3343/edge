@@ -24,9 +24,9 @@
 #include "io/logging.h"
 
 void edge_v::io::BgMeshMsh4::write( t_entityType               i_elTy,
-                                    std::size_t                i_nVes,
-                                    std::size_t                i_nEls,
-                                    std::size_t       const  * i_elVe,
+                                    t_idx                      i_nVes,
+                                    t_idx                      i_nEls,
+                                    t_idx             const  * i_elVe,
                                     double            const (* i_veCrds)[3],
                                     float             const  * i_targetLengths,
                                     std::ostream             & io_stream ) {
@@ -40,10 +40,10 @@ void edge_v::io::BgMeshMsh4::write( t_entityType               i_elTy,
   io_stream << "$Nodes\n";
   io_stream << "1 " << i_nVes << " 0 " << i_nVes-1 << "\n";
   io_stream << l_nDis << " 1 " << 0 << " " << i_nVes << "\n";
-  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) {
+  for( t_idx l_ve = 0; l_ve < i_nVes; l_ve++ ) {
     io_stream << l_ve << "\n";
   }
-  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) {
+  for( t_idx l_ve = 0; l_ve < i_nVes; l_ve++ ) {
     io_stream << i_veCrds[l_ve][0] << " "
               << i_veCrds[l_ve][1] << " "
               << i_veCrds[l_ve][2] << "\n";
@@ -60,7 +60,7 @@ void edge_v::io::BgMeshMsh4::write( t_entityType               i_elTy,
   io_stream << "$Elements\n";
   io_stream << "1 " << i_nEls << " 0 " << i_nEls-1 << "\n";
   io_stream << l_nDis << " 1 " << l_elTyGmsh << " " << i_nEls << "\n";
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     io_stream << l_el;
     for( unsigned short l_ve = 0; l_ve < l_nElVes; l_ve++ ) {
       io_stream << " " << i_elVe[l_el*l_nElVes + l_ve];
@@ -79,7 +79,7 @@ void edge_v::io::BgMeshMsh4::write( t_entityType               i_elTy,
   io_stream << "0\n";
   io_stream << "1\n";
   io_stream << i_nVes << "\n";
-  for( std::size_t l_ve = 0; l_ve < i_nVes; l_ve++ ) {
+  for( t_idx l_ve = 0; l_ve < i_nVes; l_ve++ ) {
     io_stream << l_ve << " " << i_targetLengths[l_ve] << "\n";
   }
   io_stream << "$EndNodeData\n";

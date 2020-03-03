@@ -133,7 +133,7 @@ env = Environment( variables = vars )
 # add command line arguments
 vars.AddVariables(
   EnumVariable( 'mode',
-                'Compile modes, option \'san\' enables address and undefind sanitizers',
+                'compile modes, option \'san\' enables address and undefind sanitizers',
                 'release',
                  allowed_values=('release', 'debug', 'release+san', 'debug+san' )
               ),
@@ -147,6 +147,10 @@ vars.AddVariables(
                 'none',
                  allowed_values=('none', 'omp')
               ),
+  EnumVariable( 'entity_size',
+                'size of the entity ids in bits',
+                '64',
+                allowed_values=( '64', '32' ) ),
   BoolVariable( 'tests',
                 'enable unit tests.',
                  False ),
@@ -176,7 +180,8 @@ vars.AddVariables(
 )
 
 # include environment
-env = Environment( variables = vars )
+env = Environment( variables = vars,
+                   tools     = ['default', 'textfile'] )
 
 # exit in the case of unknown variables
 if vars.UnknownVariables():
@@ -271,6 +276,9 @@ if 'san' in  env['mode']:
 
 # forward EDGE version
 env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
+
+# forward entity size
+env.Append( CPPDEFINES='PP_EDGE_V_ENTITY_SIZE=' + env['entity_size'] )
 
 # detect compilers
 try:
@@ -368,6 +376,7 @@ if 'install_dir' in env:
   Default( env.Install( env['install_dir']+'/bin', [l_main]  ) )
 
   for l_he in env.headers:
-    l_dir = os.path.dirname( l_he.srcnode().path )
-    l_dir = l_dir.split('src')[1]
-    Default( env.Install( env['install_dir']+'/include/edge_v' + l_dir, l_he ) )
+    l_target = l_he.srcnode().path
+    l_target = l_target.split('src')[1:]
+    l_target = '/'.join( l_target ) + '.h'
+    Default( env.InstallAs( env['install_dir']+'/include/edge_v' + l_target, l_he ) )

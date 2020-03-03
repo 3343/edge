@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -24,19 +24,19 @@
 #include "io/logging.h"
 
 void edge_v::geom::Generic::getFaIdsAd( t_entityType           i_elTy,
-                                        std::size_t            i_nFas,
-                                        std::size_t            i_elOff,
-                                        std::size_t    const * i_el,
+                                        t_idx                  i_nFas,
+                                        t_idx                  i_elOff,
+                                        t_idx    const       * i_el,
                                         unsigned short const * i_fa,
-                                        std::size_t    const * i_elFaEl,
+                                        t_idx    const       * i_elFaEl,
                                         unsigned short       * o_faIdsAd ) {
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
 
-  for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
-    std::size_t l_el = i_el[l_id] + i_elOff;
-    std::size_t l_fa = i_fa[l_id];
+  for( t_idx l_id = 0; l_id < i_nFas; l_id++ ) {
+    t_idx l_el = i_el[l_id] + i_elOff;
+    t_idx l_fa = i_fa[l_id];
 
-    std::size_t l_elAd = i_elFaEl[l_el*l_nElFas + l_fa];
+    t_idx l_elAd = i_elFaEl[l_el*l_nElFas + l_fa];
     for( unsigned short l_ad = 0; l_ad < l_nElFas; l_ad++ ) {
       if( i_elFaEl[l_elAd*l_nElFas + l_ad] == l_el ) {
         o_faIdsAd[l_id] = l_ad;

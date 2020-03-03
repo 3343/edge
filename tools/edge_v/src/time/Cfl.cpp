@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -25,16 +25,16 @@
 #include "io/logging.h"
 
 edge_v::time::Cfl::Cfl( t_entityType  const    i_elTy,
-                        std::size_t            i_nVes,
-                        std::size_t            i_nEls,
-                        std::size_t   const  * i_elVe,
+                        t_idx                  i_nVes,
+                        t_idx                  i_nEls,
+                        t_idx         const  * i_elVe,
                         double        const (* i_veCrds)[3],
                         double        const  * i_inDia,
                         models::Model        & io_velMod ) {
   m_nEls = i_nEls;
 
   // allocate memory
-  std::size_t l_size = m_nEls;
+  t_idx l_size = m_nEls;
   m_ts = new double[l_size];
 
   // set the time steps
@@ -60,7 +60,7 @@ void edge_v::time::Cfl::printStats() const {
   double l_mean = 0;
   double l_max = std::numeric_limits< double >::lowest();
 
-  for( std::size_t l_el = 0; l_el < m_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < m_nEls; l_el++ ) {
     l_mean += m_ts[l_el];
     l_max = std::max( m_ts[l_el], l_max );
   }
@@ -72,9 +72,9 @@ void edge_v::time::Cfl::printStats() const {
 }
 
 void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
-                                      std::size_t            i_nVes,
-                                      std::size_t            i_nEls,
-                                      std::size_t   const  * i_elVe,
+                                      t_idx                  i_nVes,
+                                      t_idx                  i_nEls,
+                                      t_idx         const  * i_elVe,
                                       double        const (* i_veCrds)[3],
                                       double        const  * i_inDia,
                                       models::Model        & io_velMod,
@@ -92,12 +92,12 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
 #pragma omp parallel for reduction(min:o_tsAbsMin)
 #endif
   // compute absolute time steps
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     // iterate over vertices and determine mean wave speed
     double l_cMean = 0;
     for( unsigned short l_ve = 0; l_ve < l_nElVes; l_ve++ ) {
       // get the id of the vertex
-      std::size_t l_veId = i_elVe[ l_el*l_nElVes + l_ve ];
+      t_idx l_veId = i_elVe[ l_el*l_nElVes + l_ve ];
 
       // add to velocity
       l_cMean += io_velMod.getMaxSpeed( l_veId );
@@ -119,7 +119,7 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     o_ts[l_el] *= l_minInv;
   }
 }

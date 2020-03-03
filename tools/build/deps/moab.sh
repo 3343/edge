@@ -23,13 +23,14 @@
 ##
 help() {
 cat << EOF
-Usage: ${0##*/} [-h -d] [-z ZLIB_INSTALL_DIR -5 HDF5_INSTALL_DIR -e EIGEN_DIR -i MOAB_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h -d] [-z ZLIB_INSTALL_DIR -5 HDF5_INSTALL_DIR -e EIGEN_DIR -m METIS_INSTALL_DIR -i MOAB_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs MOAB.
      -h This help message.
      -d Enables debug build if set.
      -z ZLIB_INSTALL_DIR Absolute path of the zlib installation directory.
      -5 HDF5_INSTALL_DIR Absolute path of the hdf5 installation directory.
      -e EIGEN_DIR Absolute path of the Eigen directory.
+     -m METIS_INSTALL_DIR Absolute path of the METIS directory (optional).
      -i MOAB_DIR Absolute path of the MOAB source directory.
      -o INSTALL_DIR Absolute path of the installation directory, will be created if missing.
      -j N_BUILD_PROCS (optional) number of build processes, defaults to one.
@@ -37,7 +38,7 @@ EOF
 }
 
 DEBUG_BUILD=0
-while getopts "hz:5:e:i:o:j:d" opt; do
+while getopts "hz:5:e:m:i:o:j:d" opt; do
   case "$opt" in
     h)
       help
@@ -51,6 +52,9 @@ while getopts "hz:5:e:i:o:j:d" opt; do
       ;;
     e)
       EIGEN_DIR=$OPTARG
+      ;;
+    m)
+      METIS_INSTALL_DIR=$OPTARG
       ;;
     i)
       MOAB_DIR=$OPTARG
@@ -84,6 +88,16 @@ then
   echo "Error: ${HDF5_INSTALL_DIR} is not absolute"
   help >&2
   exit 1
+fi
+
+if [[ ${METIS_INSTALL_DIR} != "" ]]
+then
+  if [[ ${METIS_INSTALL_DIR:0:1} != "/" ]]
+  then
+    echo "Error: ${METIS_INSTALL_DIR} is not absolute"
+    help >&2
+    exit 1
+  fi
 fi
 
 if [[ ${MOAB_DIR:0:1} != "/" ]]
@@ -134,8 +148,16 @@ BUILD_FLAGS="--enable-shared=no              \
              --disable-blaslapack            \
              --with-eigen3=${EIGEN_DIR}      \
              --with-pnetcdf=no               \
-             --with-metis=no                 \
             --prefix=${INSTALL_DIR}"
+
+if [[ ${METIS_INSTALL_DIR} != "" ]]
+then
+  BUILD_FLAGS="--with-metis=${METIS_INSTALL_DIR} \
+               ${BUILD_FLAGS}"
+else
+  BUILD_FLAGS="--with-metis=no \
+               ${BUILD_FLAGS}"
+fi
 
 if [[ ${DEBUG_BUILD} == 0 ]]
 then

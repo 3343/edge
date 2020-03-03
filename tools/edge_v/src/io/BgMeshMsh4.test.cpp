@@ -34,10 +34,10 @@ TEST_CASE( "Tests the bg mesh writer in msh4 format.", "[bgMeshMsh4][write]" ) {
                             {2, 0, 0},
                             {2, 1, 0} };
 
-  std::size_t l_elVe[4][3] = { {0, 1, 2},
-                               {0, 2, 3},
-                               {1, 5, 2},
-                               {1, 4, 5} };
+  edge_v::t_idx l_elVe[4][3] = { {0, 1, 2},
+                                 {0, 2, 3},
+                                 {1, 5, 2},
+                                 {1, 4, 5} };
 
   float l_targetLengths[6] = { 0.1, 0.15, 0.2, 0.4, 0.8, 1 };
 

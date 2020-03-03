@@ -22,6 +22,7 @@
  **/
 #include "Moab.h"
 #include <moab/ReorderTool.hpp>
+#include <iomanip>
 
 moab::EntityType edge_v::io::Moab::getMoabType( t_entityType i_enTy ) {
   moab::EntityType l_ty = moab::MBVERTEX;
@@ -46,6 +47,28 @@ moab::EntityType edge_v::io::Moab::getMoabType( t_entityType i_enTy ) {
   return l_ty;
 }
 
+void edge_v::io::Moab::getMemStats( unsigned long long & o_totalStorage,
+                                    unsigned long long & o_totalAmortized,
+                                    unsigned long long & o_entityStorage,
+                                    unsigned long long & o_entityAmortized,
+                                    unsigned long long & o_adjacencyStorage,
+                                    unsigned long long & o_adjacencyAmortized,
+                                    unsigned long long & o_tagStorage,
+                                    unsigned long long & o_tagAmortized ) const {
+  m_moab->estimated_memory_use( 0,
+                                0,
+                                &o_totalStorage,
+                                &o_totalAmortized,
+                                &o_entityStorage,
+                                &o_entityAmortized,
+                                &o_adjacencyStorage,
+                                &o_adjacencyAmortized,
+                                0,
+                                0,
+                                &o_tagStorage,
+                                &o_tagAmortized );
+}
+
 edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
   // init moab
   m_moab = new moab::Core;
@@ -54,10 +77,26 @@ edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
 
   m_root = m_moab->get_root_set();
 
-  // get number of dimensions
+  // get number of dimensions (or what MOAB claims)
   int l_nDis = std::numeric_limits< int >::max();
   l_err = m_moab->get_dimension( l_nDis );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+  // get elements and number of dimensions
+  std::vector< moab::EntityHandle > l_els;
+  for( unsigned short l_di = l_nDis; l_di > 0; l_di-- ) {
+    l_els.resize(0);
+    l_err = m_moab->get_entities_by_dimension( m_root,
+                                               l_di,
+                                               l_els );
+    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
+
+    // abort if we found the element
+    if( l_els.size() > 0 ) {
+      l_nDis = l_di;
+      break;
+    }
+  }
 
   // get vertices
   moab::Range l_ves;
@@ -66,16 +105,14 @@ edge_v::io::Moab::Moab( std::string const & i_pathToMesh ) {
                                              l_ves );
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
-  // create all other entities
-  for( unsigned short l_di = 1; l_di < 3; l_di++ ) {
-    moab::Range l_ens;
-    l_err = m_moab->get_adjacencies( l_ves,
-                                     l_di,
-                                     true,
-                                     l_ens,
-                                     moab::Interface::UNION );
-    EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
-  }
+  // get faces
+  moab::Range l_fas;
+  l_err = m_moab->get_adjacencies( l_ves,
+                                   l_nDis-1,
+                                   true,
+                                   l_fas,
+                                   moab::Interface::UNION );
+  EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // get the number of entities
   int l_nEns; // moab forces int-queries
@@ -130,11 +167,37 @@ void edge_v::io::Moab::printStats() const {
       EDGE_V_LOG_INFO << "    #" << l_ta << ": " << l_tagNames[l_ta];
     }
   }
+
+  // get memory statistics
+  unsigned long long l_totalStorage,     l_totalAmortized,
+                     l_entityStorage,    l_entityAmortized,
+                     l_adjacencyStorage, l_adjacencyAmortized,
+                     l_tagStorage,       l_tagAmortized;
+
+  getMemStats( l_totalStorage,
+               l_totalAmortized,
+               l_entityStorage,
+               l_entityAmortized,
+               l_adjacencyStorage,
+               l_adjacencyAmortized,
+               l_tagStorage,
+               l_tagAmortized );
+  EDGE_V_LOG_INFO << "  memory (used / allocated in GiB):";
+  EDGE_V_LOG_INFO << "    total: "     << std::setprecision(3)
+                                       << byteToGib(l_totalStorage) << " / "
+                                       << byteToGib(l_totalAmortized);
+  EDGE_V_LOG_INFO << "    entity: "    << std::setprecision(3)
+                                       << byteToGib(l_entityStorage) << " / "
+                                       << byteToGib(l_entityAmortized);
+  EDGE_V_LOG_INFO << "    adjacency: " << std::setprecision(3)
+                                       << byteToGib(l_adjacencyStorage) << " / "
+                                       << byteToGib(l_adjacencyAmortized);
+  EDGE_V_LOG_INFO << "    tag: "       << std::setprecision(3)
+                                       << byteToGib(l_tagStorage) << " / "
+                                       << byteToGib(l_tagAmortized);
 }
 
 edge_v::t_entityType edge_v::io::Moab::getElType() const {
-  EDGE_V_CHECK_GT( m_nLine, 0 );
-
   // check entity counts for mesh type
   if( m_nTet4 > 0 ) {
     EDGE_V_CHECK_EQ( m_nHex8r,  0 );
@@ -164,7 +227,7 @@ edge_v::t_entityType edge_v::io::Moab::getElType() const {
   }
 }
 
-std::size_t edge_v::io::Moab::nEnsByDis( unsigned short i_nDis ) const {
+edge_v::t_idx edge_v::io::Moab::nEnsByDis( unsigned short i_nDis ) const {
   int l_nEns = std::numeric_limits< int >::max();
   moab::ErrorCode l_err = m_moab->get_number_entities_by_dimension( m_root,
                                                                     i_nDis,
@@ -174,8 +237,8 @@ std::size_t edge_v::io::Moab::nEnsByDis( unsigned short i_nDis ) const {
   return l_nEns;
 }
 
-std::size_t edge_v::io::Moab::nEnsByType( t_entityType i_enTy ) const {
-  std::size_t l_nEns = 0;
+edge_v::t_idx edge_v::io::Moab::nEnsByType( t_entityType i_enTy ) const {
+  t_idx l_nEns = 0;
 
   if(      i_enTy == POINT  ) l_nEns = m_nPoint;
   else if( i_enTy == LINE   ) l_nEns = m_nLine;
@@ -204,7 +267,7 @@ void edge_v::io::Moab::getVeCrds( double(*o_veCrds)[3] ) const {
 }
 
 void edge_v::io::Moab::getEnVe( t_entityType   i_enTy,
-                                std::size_t  * o_enVe ) const {
+                                t_idx        * o_enVe ) const {
   moab::EntityType l_ty = getMoabType( i_enTy );
 
   // get mapping from entities to vertices
@@ -220,15 +283,15 @@ void edge_v::io::Moab::getEnVe( t_entityType   i_enTy,
 }
 
 void edge_v::io::Moab::getFaEl( t_entityType   i_elTy,
-                                std::size_t  * o_faEl ) const {
+                                t_idx        * o_faEl ) const {
   unsigned short l_nDis = CE_N_DIS( i_elTy );
-  std::size_t l_nFas = nEnsByType( CE_T_FA(i_elTy) );
+  t_idx l_nFas = nEnsByType( CE_T_FA(i_elTy) );
   moab::EntityType l_faTy = getMoabType( CE_T_FA(i_elTy) );
 
   // init
-  for( std::size_t l_fa = 0; l_fa < l_nFas; l_fa++ ) {
-    for( std::size_t l_sd = 0; l_sd < 2; l_sd++ ) {
-      o_faEl[l_fa*2 + l_sd] = std::numeric_limits< std::size_t >::max();
+  for( t_idx l_fa = 0; l_fa < l_nFas; l_fa++ ) {
+    for( t_idx l_sd = 0; l_sd < 2; l_sd++ ) {
+      o_faEl[l_fa*2 + l_sd] = std::numeric_limits< t_idx >::max();
     }
   }
 
@@ -240,7 +303,7 @@ void edge_v::io::Moab::getFaEl( t_entityType   i_elTy,
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
   EDGE_V_CHECK_EQ( l_fas.size(), l_nFas );
 
-  for( std::size_t l_fa = 0; l_fa < l_nFas; l_fa++ ) {
+  for( t_idx l_fa = 0; l_fa < l_nFas; l_fa++ ) {
     // get the face-adjacent elements
     std::vector< moab::EntityHandle > l_els;
 
@@ -263,10 +326,10 @@ void edge_v::io::Moab::getFaEl( t_entityType   i_elTy,
 }
 
 void edge_v::io::Moab::getElFa( t_entityType   i_elTy,
-                                std::size_t  * o_elFa ) const {
+                                t_idx        * o_elFa ) const {
   unsigned short l_nDis = CE_N_DIS( i_elTy );
   unsigned short l_nElFas = CE_N_FAS( i_elTy );
-  std::size_t l_nEls = nEnsByType( i_elTy );
+  t_idx l_nEls = nEnsByType( i_elTy );
 
   // get elements
   moab::EntityType l_elTy = getMoabType( i_elTy );
@@ -277,7 +340,7 @@ void edge_v::io::Moab::getElFa( t_entityType   i_elTy,
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
   EDGE_V_CHECK_EQ( l_els.size(), l_nEls );
 
-  for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
     // get the element's adjacent faces
     std::vector< moab::EntityHandle > l_fas;
 
@@ -298,7 +361,7 @@ void edge_v::io::Moab::getElFa( t_entityType   i_elTy,
 }
 
 void edge_v::io::Moab::getElFaEl( t_entityType   i_elTy,
-                                  std::size_t  * o_elFaEl ) const {
+                                  t_idx        * o_elFaEl ) const {
 #ifdef PP_USE_MPI
 EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-settings
 #endif
@@ -341,7 +404,7 @@ EDGE_V_LOG_FATAL; // TODO: MOAB had isssues with non-vertex bridges in MPI-setti
       EDGE_V_CHECK( l_elFaEl.size() == 1 || l_elFaEl.size() == 2 );
 
       // init adjacency info
-      o_elFaEl[l_el * l_nElFas + l_fa] = std::numeric_limits< std::size_t >::max();
+      o_elFaEl[l_el * l_nElFas + l_fa] = std::numeric_limits< t_idx >::max();
 
       // store info obtained from MOAB
       for( std::size_t l_ad = 0; l_ad < l_elFaEl.size(); l_ad++ ) {
@@ -424,8 +487,8 @@ void edge_v::io::Moab::writeMesh( std::string const & i_pathToMesh ) {
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 }
 
-void edge_v::io::Moab::writeMesh( std::size_t         i_first,
-                                  std::size_t         i_nEls,
+void edge_v::io::Moab::writeMesh( t_idx               i_first,
+                                  t_idx               i_nEls,
                                   std::string const & i_pathToMesh ) {
   // get the elements
   std::vector< moab::EntityHandle > l_els;
@@ -604,7 +667,7 @@ void edge_v::io::Moab::setEnData( t_entityType           i_enTy,
 
 void edge_v::io::Moab::setEnData( t_entityType         i_enTy,
                                   std::string  const & i_tagName,
-                                  std::size_t  const * i_data ) {
+                                  t_idx        const * i_data ) {
   // convert to int
   int l_nEns;
   moab::ErrorCode l_err = m_moab->get_number_entities_by_type( m_root,
@@ -685,8 +748,8 @@ void edge_v::io::Moab::getEnDataFromSet( t_entityType         i_enTy,
   EDGE_V_CHECK_EQ( l_err, moab::MB_SUCCESS );
 
   // lambda which finds the cotaining mesh set for an entity if any
-  auto l_findMs = [ this, l_sets, l_ens ]( std::size_t i_en ) {
-    std::size_t l_coSe = std::numeric_limits< std::size_t >::max();
+  auto l_findMs = [ this, l_sets, l_ens ]( t_idx i_en ) {
+    t_idx l_coSe = std::numeric_limits< t_idx >::max();
     for( std::size_t l_se = 0; l_se < l_sets.size(); l_se++ ) {
       if( m_moab->contains_entities( l_sets[l_se], l_ens.data()+i_en, 1 ) ) {
         l_coSe = l_se;
@@ -699,10 +762,10 @@ void edge_v::io::Moab::getEnDataFromSet( t_entityType         i_enTy,
   // iterate over the entities
   for( std::size_t l_en = 0; l_en < l_ens.size(); l_en++ ) {
     // determine containg mesh set for the entity
-    std::size_t l_coSe = l_findMs(l_en);
+    t_idx l_coSe = l_findMs(l_en);
 
     // get tag-data if part of a mesh set
-    if( l_coSe < std::numeric_limits< std::size_t >::max() ) {
+    if( l_coSe < std::numeric_limits< t_idx >::max() ) {
       EDGE_V_CHECK_LT( l_coSe, l_sets.size() );
 
       moab::EntityHandle l_setHa = l_sets[l_coSe];

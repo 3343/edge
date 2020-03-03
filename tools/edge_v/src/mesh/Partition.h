@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,19 +40,19 @@ class edge_v::mesh::Partition {
     Mesh const & m_mesh;
 
     //! number of partitions
-    std::size_t m_nPas;
+    t_idx m_nPas;
 
     //! number of elements per partition
-    std::size_t *m_nPaEls = nullptr;
+    t_idx *m_nPaEls = nullptr;
 
     //! partitions of the elements
-    std::size_t * m_elPa = nullptr;
+    t_idx * m_elPa = nullptr;
 
     //! time groups of the elements
     unsigned short const * m_elTg = nullptr;
 
     //! priorities of the elements
-    std::size_t * m_elPr = nullptr;
+    t_idx * m_elPr = nullptr;
 
     /**
      * Gets the number of elements per partition.
@@ -61,9 +61,9 @@ class edge_v::mesh::Partition {
      * @param i_elPa partitions of the elements.
      * @param o_nPaEls will be set to the number of elements for the partitions.
      **/
-    static void nPaEls( std::size_t         i_nEls,
-                        std::size_t const * i_elPa,
-                        std::size_t       * o_nPaEls );
+    static void nPaEls( t_idx         i_nEls,
+                        t_idx const * i_elPa,
+                        t_idx       * o_nPaEls );
 
     /**
      * Gets the elements' priorities.
@@ -83,11 +83,11 @@ class edge_v::mesh::Partition {
      * @param o_elPr will be set to elements' priorities.
      **/
     static void getElPr( edge_v::t_entityType         i_elTy,
-                         std::size_t                  i_nEls,
-                         std::size_t          const * i_elFaEl,
-                         std::size_t          const * i_elPa,
+                         t_idx                        i_nEls,
+                         t_idx                const * i_elFaEl,
+                         t_idx                const * i_elPa,
                          unsigned short       const * i_elTg,
-                         std::size_t                * o_elPr );
+                         t_idx                      * o_elPr );
 
   public:
     /**
@@ -110,7 +110,7 @@ class edge_v::mesh::Partition {
      * @param i_nPars number of partitions to generate.
      * @param i_nCuts number of partitionings computed; the one with lowest comm volume is stored.
      **/
-    void kWay( std::size_t    i_nParts,
+    void kWay( t_idx          i_nParts,
                unsigned short i_nCuts = 5 );
 
     /**
@@ -118,28 +118,28 @@ class edge_v::mesh::Partition {
      *
      * @return elPa info.
      **/
-    std::size_t const * getElPa() const { return m_elPa; }
+    t_idx const * getElPa() const { return m_elPa; }
 
     /**
      * Gets the elements' priorities (lower value = higher priority).
      *
      * @return elPr info.
      **/
-    std::size_t const * getElPr() const { return m_elPr; }
+    t_idx const * getElPr() const { return m_elPr; }
 
     /**
      * Gets the number of partitions.
      *
      * @return number of partitions.
      **/
-    std::size_t nPas() const { return m_nPas; }
+    t_idx nPas() const { return m_nPas; }
 
     /**
      * Gets the number of elements per partition.
      *
      * @return number of elements for every partition.
      **/
-    std::size_t const * nPaEls() const { return m_nPaEls; }
+    t_idx const * nPaEls() const { return m_nPaEls; }
 };
 
 #endif

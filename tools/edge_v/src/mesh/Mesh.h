@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,31 +42,31 @@ class edge_v::mesh::Mesh {
     t_entityType m_elTy;
 
     //! number of vertices in the mesh
-    std::size_t m_nVes;
+    t_idx m_nVes;
 
     //! number of faces in the mesh
-    std::size_t m_nFas;
+    t_idx m_nFas;
 
     //! number of elements in the mesh
-    std::size_t m_nEls;
+    t_idx m_nEls;
 
     //! vertex coordinates
     double (*m_veCrds)[3] = nullptr;
 
     //! vertices adjacent to the faces
-    std::size_t * m_faVe = nullptr;
+    t_idx * m_faVe = nullptr;
 
     //! elements adjacent to the faces
-    std::size_t * m_faEl = nullptr;
+    t_idx * m_faEl = nullptr;
 
     //! faces adjacent to the elements
-    std::size_t * m_elFa = nullptr;
+    t_idx * m_elFa = nullptr;
 
     //! vertices adjacent to the elements
-    std::size_t * m_elVe = nullptr;
+    t_idx * m_elVe = nullptr;
 
     //! elements adjacent to elements, faces as bridge
-    std::size_t * m_elFaEl = nullptr;
+    t_idx * m_elFaEl = nullptr;
 
     //! indiameter of the elements
     double * m_inDiasEl = nullptr;
@@ -92,11 +92,11 @@ class edge_v::mesh::Mesh {
      * @param i_elFa faces adjacent to the elements.
      * @param o_elFaEl will be set to element-to-element adjacency.
      **/
-    static void getElFaEl( t_entityType        i_elTy,
-                           std::size_t         i_nEls,
-                           std::size_t const * i_faEl,
-                           std::size_t const * i_elFa,
-                           std::size_t       * o_elFaEl );
+    static void getElFaEl( t_entityType         i_elTy,
+                           t_idx                i_nEls,
+                           t_idx        const * i_faEl,
+                           t_idx        const * i_elFa,
+                           t_idx              * o_elFaEl );
 
     /**
      * Returns an entry in the second array, which is not in the first one.
@@ -105,12 +105,12 @@ class edge_v::mesh::Mesh {
      * @param i_sizeSecond size of the second array.
      * @param i_first first array.
      * @param i_second second array.
-     * @return first found entry present in the second but not in the first one. numeric_limits< std::size_t >::max() if none.
+     * @return first found entry present in the second but not in the first one. numeric_limits< t_idx >::max() if none.
      **/
-    static std::size_t getAddEntry( std::size_t         i_sizeFirst,
-                                    std::size_t         i_sizeSecond,
-                                    std::size_t const * i_first,
-                                    std::size_t const * i_second );
+    static t_idx getAddEntry( t_idx         i_sizeFirst,
+                              t_idx         i_sizeSecond,
+                              t_idx const * i_first,
+                              t_idx const * i_second );
 
     /**
      * Gathers the vertex coordinates of the given entity.
@@ -121,7 +121,7 @@ class edge_v::mesh::Mesh {
      * @param o_enVeCrds will be set to the coordinates of the entity's vertices.
      **/
     static void getEnVeCrds( t_entityType          i_enTy,
-                             std::size_t  const  * i_enVe,
+                             t_idx        const  * i_enVe,
                              double       const (* i_veCrds)[3],
                              double             (* o_enVeCrds)[3] );
 
@@ -135,8 +135,8 @@ class edge_v::mesh::Mesh {
      * @param o_inDia will be set to the entities' diameters.
      **/
     static void setInDiameter( t_entityType         i_enTy,
-                               std::size_t          i_nEns,
-                               std::size_t const  * i_enVe,
+                               t_idx                i_nEns,
+                               t_idx       const  * i_enVe,
                                double      const (* i_veCrds)[3],
                                double             * o_inDia );
 
@@ -155,16 +155,16 @@ class edge_v::mesh::Mesh {
      * @param io_elFaEl elements adjacent to elements (faces as bridge).
      * @param o_pFasGt will be set to periodic faces originally only adjacent to the element with the greater id.
      **/
-    static void setPeriodicBnds( t_entityType                        i_elTy,
-                                 std::size_t                         i_nFas,
-                                 int                                 i_peBndTy,
-                                 int                        const  * i_faBndTys,
-                                 std::size_t                const  * i_faVe,
-                                 double                     const (* i_veCrds)[3],
-                                 std::size_t                       * io_faEl,
-                                 std::size_t                const  * i_elFa,
-                                 std::size_t                       * io_elFaEl,
-                                 std::vector< std::size_t >        & o_pFasGt );
+    static void setPeriodicBnds( t_entityType                  i_elTy,
+                                 t_idx                         i_nFas,
+                                 int                           i_peBndTy,
+                                 int                  const  * i_faBndTys,
+                                 t_idx                const  * i_faVe,
+                                 double               const (* i_veCrds)[3],
+                                 t_idx                       * io_faEl,
+                                 t_idx                const  * i_elFa,
+                                 t_idx                       * io_elFaEl,
+                                 std::vector< t_idx >        & o_pFasGt );
 
     /**
      * Normalizes the order of the given adjacency information.
@@ -184,15 +184,15 @@ class edge_v::mesh::Mesh {
      * @param io_elFa faces adjacent to the element (ordered ascending by the vertex ids of the faces).
      * @param io_elFaEl elements adjacent to the elements (ordered ascending by the vertex ids of the faces).
      **/
-    static void normOrder( t_entityType         i_elTy,
-                           std::size_t          i_nFas,
-                           std::size_t          i_nEls,
-                           double      const (* i_veCrds)[3],
-                           std::size_t        * io_faVe,
-                           std::size_t        * io_faEl,
-                           std::size_t        * io_elVe,
-                           std::size_t        * io_elFa,
-                           std::size_t        * io_elFaEl );
+    static void normOrder( t_entityType          i_elTy,
+                           t_idx                 i_nFas,
+                           t_idx                 i_nEls,
+                           double       const (* i_veCrds)[3],
+                           t_idx               * io_faVe,
+                           t_idx               * io_faEl,
+                           t_idx               * io_elVe,
+                           t_idx               * io_elFa,
+                           t_idx               * io_elFaEl );
 
   public:
     /**
@@ -247,56 +247,56 @@ class edge_v::mesh::Mesh {
      *
      * @return number of vertices.
      **/
-    std::size_t nVes() const { return m_nVes; }
+    t_idx nVes() const { return m_nVes; }
 
     /**
      * Gets the number of faces.
      *
      * @return number of faces.
      **/
-    std::size_t nFas() const { return m_nFas; }
+    t_idx nFas() const { return m_nFas; }
 
     /**
      * Gets the number of elements.
      *
      * @return number of elements in the mesh.
      **/
-    std::size_t nEls() const { return m_nEls; }
+    t_idx nEls() const { return m_nEls; }
 
     /**
      * Gets the vertices adjacent to the elements.
      *
      * @return connectivity info.
      **/
-    std::size_t const * getElVe() const { return m_elVe; }
+    t_idx const * getElVe() const { return m_elVe; }
 
     /**
      * Gets the vertices adjacent to the faces.
      *
      * @return faVe info.
      **/
-    std::size_t const * getFaVe() const { return m_faVe; }
+    t_idx const * getFaVe() const { return m_faVe; }
 
     /**
      * Gets the elements adjacent to the faces.
      *
      * @return faEl info.
      **/
-    std::size_t const * getFaEl() const { return m_faEl; }
+    t_idx const * getFaEl() const { return m_faEl; }
 
     /**
      * Gets the faces adjacent to the elements.
      *
      * @return elFa info.
      **/
-    std::size_t const * getElFa() const { return m_elFa; }
+    t_idx const * getElFa() const { return m_elFa; }
 
     /**
      * Gets the elements adjacent to the elements (faces as bridge).
      *
      * @return elFaEl info.
      **/
-    std::size_t const * getElFaEl() const { return m_elFaEl; }
+    t_idx const * getElFaEl() const { return m_elFaEl; }
 
     /**
      * Gets the vertex coordinates.
@@ -349,9 +349,9 @@ class edge_v::mesh::Mesh {
      * @param i_fa local face ids w.r.t. the elements.
      * @param o_faIdsAd will be set to faces ids w.r.t. to the adjacent elements.
      **/
-    void getFaIdsAd( std::size_t            i_nFas,
-                     std::size_t            i_elOff,
-                     std::size_t    const * i_el,
+    void getFaIdsAd( t_idx                  i_nFas,
+                     t_idx                  i_elOff,
+                     t_idx          const * i_el,
                      unsigned short const * i_fa,
                      unsigned short       * o_faIdsAd ) const;
 
@@ -365,9 +365,9 @@ class edge_v::mesh::Mesh {
      * @param i_fa local face ids w.r.t. the elements.
      * @param o_veIdsAd will be set to vertex ids w.r.t. to the adjacent elements.
      **/
-    void getVeIdsAd( std::size_t            i_nFas,
-                     std::size_t            i_elOff,
-                     std::size_t    const * i_el,
+    void getVeIdsAd( t_idx                  i_nFas,
+                     t_idx                  i_elOff,
+                     t_idx          const * i_el,
                      unsigned short const * i_fa,
                      unsigned short       * o_veIdsAd ) const;
 };

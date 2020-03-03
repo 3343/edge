@@ -32,33 +32,33 @@ namespace edge_v {
 }
 
 TEST_CASE( "Tests the derivation of the extra entry in two arrays.", "[mesh][getAddEntry]" ) {
-  std::size_t l_first0[3]  = { 4, 9, 1    };
-  std::size_t l_second0[4] = { 1, 9, 5, 4 };
+  edge_v::t_idx l_first0[3]  = { 4, 9, 1    };
+  edge_v::t_idx l_second0[4] = { 1, 9, 5, 4 };
 
-  std::size_t l_add0 = edge_v::mesh::Mesh::getAddEntry( 3,
-                                                        4,
-                                                        l_first0,
-                                                        l_second0 );
+  edge_v::t_idx l_add0 = edge_v::mesh::Mesh::getAddEntry( 3,
+                                                          4,
+                                                          l_first0,
+                                                          l_second0 );
 
   REQUIRE( l_add0 == 5 );
 
-  std::size_t l_first1[3]  = { 4, 9, 1             };
-  std::size_t l_second1[7] = { 1, 9, 1, 4, 1, 9, 4 };
+  edge_v::t_idx l_first1[3]  = { 4, 9, 1             };
+  edge_v::t_idx l_second1[7] = { 1, 9, 1, 4, 1, 9, 4 };
 
-  std::size_t l_add1 = edge_v::mesh::Mesh::getAddEntry( 3,
-                                                        7,
-                                                        l_first1,
-                                                        l_second1 );
+  edge_v::t_idx l_add1 = edge_v::mesh::Mesh::getAddEntry( 3,
+                                                          7,
+                                                          l_first1,
+                                                          l_second1 );
 
-  REQUIRE( l_add1 == std::numeric_limits< std::size_t >::max() );
+  REQUIRE( l_add1 == std::numeric_limits< edge_v::t_idx >::max() );
 
-  std::size_t l_first2[4]  = { 3, 9, 1       };
-  std::size_t l_second2[5] = { 9, 9, 1, 3, 2 };
+  edge_v::t_idx l_first2[4]  = { 3, 9, 1       };
+  edge_v::t_idx l_second2[5] = { 9, 9, 1, 3, 2 };
 
-  std::size_t l_add2 = edge_v::mesh::Mesh::getAddEntry( 3,
-                                                        5,
-                                                        l_first2,
-                                                        l_second2 );
+  edge_v::t_idx l_add2 = edge_v::mesh::Mesh::getAddEntry( 3,
+                                                          5,
+                                                          l_first2,
+                                                          l_second2 );
 
   REQUIRE( l_add2 == 2 );
 }
@@ -89,16 +89,16 @@ TEST_CASE( "Tests the mesh interface in the case of periodic boundaries.", "[mes
 
     // check three faces
     REQUIRE( l_mesh0.getFaEl()[0*2 + 0] == 5 );
-    REQUIRE( l_mesh0.getFaEl()[0*2 + 1] == std::numeric_limits< std::size_t >::max() );
+    REQUIRE( l_mesh0.getFaEl()[0*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
 
     REQUIRE( l_mesh0.getFaEl()[1*2 + 0] == 18 );
-    REQUIRE( l_mesh0.getFaEl()[1*2 + 1] == std::numeric_limits< std::size_t >::max() );
+    REQUIRE( l_mesh0.getFaEl()[1*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
 
     REQUIRE( l_mesh0.getFaEl()[2*2 + 0] == 1 );
-    REQUIRE( l_mesh0.getFaEl()[2*2 + 1] == std::numeric_limits< std::size_t >::max() );
+    REQUIRE( l_mesh0.getFaEl()[2*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
 
     REQUIRE( l_mesh0.getFaEl()[3*2 + 0] == 3 );
-    REQUIRE( l_mesh0.getFaEl()[3*2 + 1] == std::numeric_limits< std::size_t >::max() );
+    REQUIRE( l_mesh0.getFaEl()[3*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
 
     // construct the mesh-interface with periodic boundaries
     edge_v::mesh::Mesh l_mesh1( l_path,

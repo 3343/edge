@@ -53,7 +53,7 @@ class edge_v::models::Constant: public Model {
      * @param i_nPts ignored.
      * @param i_pts ignored.
      **/
-    void init( std::size_t          i_nPts,
+    void init( t_idx                i_nPts,
                double      const (* i_pts)[3] );
 
     /**
@@ -66,14 +66,14 @@ class edge_v::models::Constant: public Model {
      *
      * @param i_pt ignored.
      **/
-    double getMinSpeed( std::size_t i_pt ) const;
+    double getMinSpeed( t_idx i_pt ) const;
 
     /**
      * Gets the constant wave speed.
      *
      * @param i_pt ignored.
      **/
-    double getMaxSpeed( std::size_t i_pt ) const;
+    double getMaxSpeed( t_idx i_pt ) const;
 };
 
 #endif

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -45,9 +45,9 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
  
     // test partitioner
     l_part0.kWay( 3 );
-    std::size_t const * l_elPa = l_part0.getElPa();
+    edge_v::t_idx const * l_elPa = l_part0.getElPa();
 
-    for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
+    for( edge_v::t_idx l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
       REQUIRE( l_elPa[l_el] < 3 );
     }
 
@@ -55,7 +55,7 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
     unsigned short * l_elTg;
     l_elTg = new unsigned short[ l_mesh.nEls() ];
 
-    for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
+    for( edge_v::t_idx l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
       l_elTg[l_el] = l_el%4;
     }
 
@@ -65,7 +65,7 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
     // test with assigned time groups
     l_part1.kWay( 4 );
     l_elPa = l_part1.getElPa();
-    for( std::size_t l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
+    for( edge_v::t_idx l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
       REQUIRE( l_elPa[l_el] < 4 );
     }
 
@@ -93,12 +93,12 @@ TEST_CASE( "Tests the computation of element priorities.", "[partition][elPr]" )
    *  9 |   3  |  2  |  1    | 23   | 0
    */
   //                            0  1  2  3  4  5  6  7  8  9
-  std::size_t    l_elPa[10] = { 3, 1, 0, 0, 1, 1, 0, 2, 1, 1 };
+  edge_v::t_idx  l_elPa[10] = { 3, 1, 0, 0, 1, 1, 0, 2, 1, 1 };
   unsigned short l_elTg[10] = { 2, 1, 0, 1, 2, 0, 0, 1, 1, 1 };
-  std::size_t l_elFaEl[10][3] = {
+  edge_v::t_idx l_elFaEl[10][3] = {
     // 0
     { 7,
-      std::numeric_limits< std::size_t >::max(),
+      std::numeric_limits< edge_v::t_idx >::max(),
       2 },
     // 1
     { 0,
@@ -109,7 +109,7 @@ TEST_CASE( "Tests the computation of element priorities.", "[partition][elPr]" )
       6,
       8 },
     // 3
-    { std::numeric_limits< std::size_t >::max(),
+    { std::numeric_limits< edge_v::t_idx >::max(),
       6,
       2 },
     // 4
@@ -121,9 +121,9 @@ TEST_CASE( "Tests the computation of element priorities.", "[partition][elPr]" )
       0,
       1 },
     // 6
-    { std::numeric_limits< std::size_t >::max(),
+    { std::numeric_limits< edge_v::t_idx >::max(),
       3,
-      std::numeric_limits< std::size_t >::max() },
+      std::numeric_limits< edge_v::t_idx >::max() },
     // 7
     { 0,
       1,
@@ -138,7 +138,7 @@ TEST_CASE( "Tests the computation of element priorities.", "[partition][elPr]" )
       4 }
   };
 
-  std::size_t l_elPr[10] = {0};
+  edge_v::t_idx l_elPr[10] = {0};
 
   edge_v::mesh::Partition::getElPr( edge_v::TRIA3,
                                     10,

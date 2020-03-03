@@ -40,9 +40,6 @@ namespace edge_v {
  **/
 class edge_v::models::seismic::Ucvm: public Model {
   private:
-    //! number of points
-    std::size_t m_nPts = 0;
-
     //! p-wave velocities
     float *m_velP = nullptr;
 
@@ -56,7 +53,7 @@ class edge_v::models::seismic::Ucvm: public Model {
     io::Ucvm & m_ucvmReader;
 
     //! trafo applied before calling proj
-    double m_trafoSrc[3][3] = {0};
+    double m_trafoSrc[3][3] = {{0}};
 
     //! proj source trafo
     std::string m_projSrc = "";
@@ -99,7 +96,7 @@ class edge_v::models::seismic::Ucvm: public Model {
      * @param i_nPts number of points.
      * @param i_pts coordinates of the points.
      **/
-    void init( std::size_t          i_nPts,
+    void init( t_idx                i_nPts,
                double      const (* i_pts)[3] );
 
     /**
@@ -107,14 +104,14 @@ class edge_v::models::seismic::Ucvm: public Model {
      *
      * @param i_pt point at which the minimum wave speed is derived.
      **/
-    double getMinSpeed( std::size_t i_pt ) const;
+    double getMinSpeed( t_idx i_pt ) const;
 
     /**
      * Gets the maximum wave speed at a point.
      *
      * @param i_pt point at which the maximum wave speed is derived.
      **/
-    double getMaxSpeed( std::size_t i_pt ) const;
+    double getMaxSpeed( t_idx i_pt ) const;
 
     /**
      * Gets the p-wave velocities.

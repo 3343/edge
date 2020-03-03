@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -27,14 +27,14 @@ edge_v::mesh::Partition::Partition( Mesh           const & i_mesh,
                                     unsigned short const * i_elTg ): m_mesh( i_mesh ),
                                                                      m_elTg( i_elTg ) {
   // allocate memory
-  m_elPa = new std::size_t[ i_mesh.nEls() ];
-  m_elPr = new std::size_t[ i_mesh.nEls() ];
+  m_elPa = new t_idx[ i_mesh.nEls() ];
+  m_elPr = new t_idx[ i_mesh.nEls() ];
 
   // init partitions and priorities
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-  for( std::size_t l_el = 0; l_el < m_mesh.nEls(); l_el++ ) {
+  for( t_idx l_el = 0; l_el < m_mesh.nEls(); l_el++ ) {
     m_elPa[l_el] = 0;
     m_elPr[l_el] = 0;
   }
@@ -54,54 +54,54 @@ edge_v::mesh::Partition::~Partition() {
   if( m_nPaEls != nullptr ) delete[] m_nPaEls;
 }
 
-void edge_v::mesh::Partition::nPaEls( std::size_t         i_nEls,
-                                      std::size_t const * i_elPa,
-                                      std::size_t       * o_nPaEls ) {
+void edge_v::mesh::Partition::nPaEls( t_idx         i_nEls,
+                                      t_idx const * i_elPa,
+                                      t_idx       * o_nPaEls ) {
   // init the output
-  std::size_t l_nPas = 0;
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
-    std::size_t l_pa = i_elPa[l_el];
+  t_idx l_nPas = 0;
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
+    t_idx l_pa = i_elPa[l_el];
     l_nPas = std::max( l_nPas, l_pa );
   }
   l_nPas++;
-  for( std::size_t l_pa = 0; l_pa < l_nPas; l_pa++ ) o_nPaEls[l_pa] = 0;
+  for( t_idx l_pa = 0; l_pa < l_nPas; l_pa++ ) o_nPaEls[l_pa] = 0;
 
   // derive the number of elements per partition
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
-    std::size_t l_pa = i_elPa[l_el];
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
+    t_idx l_pa = i_elPa[l_el];
     o_nPaEls[l_pa]++;
   }
 }
 
 
 void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
-                                       std::size_t                  i_nEls,
-                                       std::size_t          const * i_elFaEl,
-                                       std::size_t          const * i_elPa,
+                                       t_idx                        i_nEls,
+                                       t_idx                const * i_elFaEl,
+                                       t_idx                const * i_elPa,
                                        unsigned short       const * i_elTg,
-                                       std::size_t                * o_elPr ) {
+                                       t_idx                      * o_elPr ) {
   // determine number of time groups
   unsigned short l_nTgs = 0;
   if( i_elTg != nullptr ) {
-    for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+    for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
       l_nTgs = std::max( l_nTgs, i_elTg[l_el] );
     }
   }
   l_nTgs++;
 
   // lambda, which determines if an element is a send-element
-  auto l_send = [ i_elTy, i_elFaEl, i_elPa ]( std::size_t i_el ) {
+  auto l_send = [ i_elTy, i_elFaEl, i_elPa ]( t_idx i_el ) {
     unsigned short l_nElFas = CE_N_FAS( i_elTy );
     bool l_isSend = false;
 
     // element's partition
-    std::size_t l_elPa = i_elPa[i_el];
+    t_idx l_elPa = i_elPa[i_el];
 
     for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
-      std::size_t l_ad = i_elFaEl[ i_el*l_nElFas + l_fa ];
-      if( l_ad != std::numeric_limits< std::size_t >::max() ) {
+      t_idx l_ad = i_elFaEl[ i_el*l_nElFas + l_fa ];
+      if( l_ad != std::numeric_limits< t_idx >::max() ) {
         // neighboring element's partition
-        std::size_t l_adPa = i_elPa[l_ad];
+        t_idx l_adPa = i_elPa[l_ad];
         if( l_elPa != l_adPa ) l_isSend = true;
       }
     }
@@ -111,7 +111,7 @@ void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-  for( std::size_t l_el = 0; l_el < i_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     // init priority based on element's rank
     o_elPr[l_el] = i_elPa[l_el]*2*l_nTgs;
 
@@ -125,27 +125,27 @@ void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
   }
 }
 
-void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
+void edge_v::mesh::Partition::kWay( t_idx          i_nParts,
                                     unsigned short i_nCuts ) {
   // get info from mesh
   edge_v::t_entityType l_elTy = m_mesh.getTypeEl();
   unsigned short l_nElFas = CE_N_FAS( l_elTy );
-  std::size_t l_nEls = m_mesh.nEls();
-  std::size_t const * l_elFaEl = m_mesh.getElFaEl();
+  t_idx l_nEls = m_mesh.nEls();
+  t_idx const * l_elFaEl = m_mesh.getElFaEl();
 
   // assemble the adjacency info for the metis-call
   idx_t * l_xadj = new idx_t[ l_nEls+1 ];
   idx_t * l_adjncy = new idx_t[ l_nEls*l_nElFas ];
 
-  std::size_t l_adId = 0;
+  t_idx l_adId = 0;
   l_xadj[0] = 0;
-  for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
     l_xadj[l_el+1] = l_xadj[l_el];
 
-    for( std::size_t l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
-      std::size_t l_ad = l_elFaEl[l_el*l_nElFas + l_fa];
+    for( t_idx l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      t_idx l_ad = l_elFaEl[l_el*l_nElFas + l_fa];
 
-      if( l_ad != std::numeric_limits< std::size_t >::max() ) {
+      if( l_ad != std::numeric_limits< t_idx >::max() ) {
         l_adjncy[l_adId] = l_ad;
         l_adId++;
         l_xadj[l_el+1]++;
@@ -164,7 +164,7 @@ void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
     l_adjwgt = new idx_t[ l_xadj[l_nEls] ];
 
     unsigned short l_tgMax = 0;
-    for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
+    for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
       l_tgMax = std::max( l_tgMax, m_elTg[l_el] );
       l_vwgt[l_el] = 1;
     }
@@ -172,17 +172,17 @@ void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
     for( idx_t l_ad = 0; l_ad < l_xadj[l_nEls]; l_ad++ )
       l_adjwgt[l_ad] = 1;
 
-    std::size_t l_adId = 0;
-    for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
+    t_idx l_adId = 0;
+    for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
       // set vertex weight
       for( unsigned short l_tg = m_elTg[l_el]; l_tg < l_tgMax; l_tg++ ) {
         l_vwgt[l_el] *= 2;
       }
 
-      for( std::size_t l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
-        std::size_t l_ad = l_elFaEl[l_el*l_nElFas + l_fa];
+      for( t_idx l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+        t_idx l_ad = l_elFaEl[l_el*l_nElFas + l_fa];
 
-        if( l_ad != std::numeric_limits< std::size_t >::max() ) {
+        if( l_ad != std::numeric_limits< t_idx >::max() ) {
           // larger time group elements have to sent twice the amount
           // -> comm volume is given by frequency of min time group
           unsigned short l_minTg = std::min( m_elTg[l_el], m_elTg[l_ad] );
@@ -239,7 +239,7 @@ void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
 #ifdef PP_USE_OMP
 #pragma omp parallel for
 #endif
-  for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
+  for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
     m_elPa[l_el] = l_elPa[l_el];
   }
 
@@ -257,7 +257,7 @@ void edge_v::mesh::Partition::kWay( std::size_t    i_nParts,
   // store the number of partitions and elements per partition
   m_nPas = i_nParts;
   if( m_nPaEls != nullptr ) delete[] m_nPaEls;
-  m_nPaEls = new std::size_t[ i_nParts ];
+  m_nPaEls = new t_idx[ i_nParts ];
   nPaEls( m_mesh.nEls(),
           m_elPa,
           m_nPaEls );

@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -109,9 +109,9 @@ double edge_v::geom::Geom::inDiameter( t_entityType         i_enTy,
 
 void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
                                      double      const (* i_veCrds)[3],
-                                     std::size_t        * io_elVe,
-                                     std::size_t        * io_elFa,
-                                     std::size_t        * io_elFaEl ) {
+                                     t_idx              * io_elVe,
+                                     t_idx              * io_elFa,
+                                     t_idx              * io_elFaEl ) {
   if( i_elTy == QUAD4R ) {
     Quad4r::normVesFas( i_veCrds,
                         io_elVe,
@@ -134,12 +134,12 @@ void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
 }
 
 void edge_v::geom::Geom::getVeIdsAd( t_entityType           i_elTy,
-                                     std::size_t            i_nFas,
-                                     std::size_t            i_elOff,
-                                     std::size_t    const * i_el,
+                                     t_idx                  i_nFas,
+                                     t_idx                  i_elOff,
+                                     t_idx          const * i_el,
                                      unsigned short const * i_fa,
-                                     std::size_t    const * i_elVe,
-                                     std::size_t    const * i_elFaEl,
+                                     t_idx          const * i_elVe,
+                                     t_idx          const * i_elFaEl,
                                      unsigned short       * o_veIdsAd ) {
   if( i_elTy == TET4 ) {
     Tet4::getVeIdsAd( i_nFas,
@@ -151,7 +151,7 @@ void edge_v::geom::Geom::getVeIdsAd( t_entityType           i_elTy,
                       o_veIdsAd );
   }
   else {
-    for( std::size_t l_id = 0; l_id < i_nFas; l_id++ ) {
+    for( t_idx l_id = 0; l_id < i_nFas; l_id++ ) {
       o_veIdsAd[l_id] = 0;
     }
   }
@@ -159,11 +159,11 @@ void edge_v::geom::Geom::getVeIdsAd( t_entityType           i_elTy,
 
 
 void edge_v::geom::Geom::getFaIdsAd( t_entityType           i_elTy,
-                                     std::size_t            i_nFas,
-                                     std::size_t            i_elOff,
-                                     std::size_t    const * i_el,
+                                     t_idx                  i_nFas,
+                                     t_idx                  i_elOff,
+                                     t_idx          const * i_el,
                                      unsigned short const * i_fa,
-                                     std::size_t    const * i_elFaEl,
+                                     t_idx          const * i_elFaEl,
                                      unsigned short       * o_faIdsAd ) {
   Generic::getFaIdsAd( i_elTy,
                        i_nFas,

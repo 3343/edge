@@ -55,12 +55,12 @@ TEST_CASE( "Tests the derivation of elements adjacent to their faces.", "[moab][
     // construct the moab-reader
     edge_v::io::Moab l_moab( l_path );
 
-    std::size_t l_faEl[48 * 2];
+    edge_v::t_idx l_faEl[48 * 2];
     l_moab.getFaEl( edge_v::TRIA3,
                     l_faEl );
 
     REQUIRE( l_faEl[0*2+0] == 5 );
-    REQUIRE( l_faEl[0*2+1] == std::numeric_limits< std::size_t > ::max() );
+    REQUIRE( l_faEl[0*2+1] == std::numeric_limits< edge_v::t_idx > ::max() );
 
     REQUIRE( l_faEl[12*2+0] == 4 );
     REQUIRE( l_faEl[12*2+1] == 5 );
@@ -79,7 +79,7 @@ TEST_CASE( "Tests the derivation of faces adjacent to elements.", "[moab][getElF
     // construct the moab-reader
     edge_v::io::Moab l_moab( l_path );
 
-    std::size_t l_elFa[28 * 3];
+    edge_v::t_idx l_elFa[28 * 3];
     l_moab.getElFa( edge_v::TRIA3,
                     l_elFa );
 
@@ -103,9 +103,9 @@ TEST_CASE( "Set and get data for entities.", "[moab][setGetEnData]" ) {
     edge_v::io::Moab l_moab( l_path );
 
     // set data
-    std::size_t l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
+    edge_v::t_idx l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
     unsigned short * l_setData = new unsigned short[l_nTria3];
-    for( std::size_t l_en = 0; l_en < l_nTria3; l_en++ ) {
+    for( edge_v::t_idx l_en = 0; l_en < l_nTria3; l_en++ ) {
       l_setData[l_en] = l_en % 25 / 2;
     }
 
@@ -123,7 +123,7 @@ TEST_CASE( "Set and get data for entities.", "[moab][setGetEnData]" ) {
                       l_getData );
 
     // check the results
-    for( std::size_t l_en = 0; l_en < l_nTria3; l_en++ ) {
+    for( edge_v::t_idx l_en = 0; l_en < l_nTria3; l_en++ ) {
       REQUIRE( l_getData[l_en] == l_en % 25 / 2 );
     }
 
@@ -154,7 +154,7 @@ TEST_CASE( "Gets the material set data for faces.", "[moab][getMatSetFa]" ) {
     REQUIRE( l_foundMs );
 
     // get the material set values
-    std::size_t l_nLine = l_moab.nEnsByType( edge_v::LINE );
+    edge_v::t_idx l_nLine = l_moab.nEnsByType( edge_v::LINE );
     int * l_matSetData = new int[l_nLine];
 
     l_moab.getEnDataFromSet( edge_v::LINE,
@@ -186,7 +186,7 @@ TEST_CASE( "Gets the material set data for elements.", "[moab][getMatSetEl]" ) {
     edge_v::io::Moab l_moab( l_path );
 
     // get the material set values
-    std::size_t l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
+    edge_v::t_idx l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
     int * l_matSetData = new int[l_nTria3];
 
     l_moab.getEnDataFromSet( edge_v::TRIA3,
@@ -214,8 +214,8 @@ TEST_CASE( "Mesh reordering.", "[moab][reorder]" ) {
     REQUIRE( l_moab.getElType() == edge_v::t_entityType::TRIA3 );
 
     // get the vertices of the triangles before the reordering
-    std::size_t l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
-    std::size_t *l_elVe0 = new std::size_t[l_nTria3*3];
+    edge_v::t_idx l_nTria3 = l_moab.nEnsByType( edge_v::TRIA3 );
+    edge_v::t_idx *l_elVe0 = new edge_v::t_idx[l_nTria3*3];
     l_moab.getEnVe( edge_v::TRIA3,
                     l_elVe0 );
 
@@ -230,7 +230,7 @@ TEST_CASE( "Mesh reordering.", "[moab][reorder]" ) {
     l_prio[5] = 2;
     l_prio[6] = 3;
     l_prio[7] = 9;
-    for( std::size_t l_el = 8; l_el < l_nTria3; l_el++ ) {
+    for( edge_v::t_idx l_el = 8; l_el < l_nTria3; l_el++ ) {
       l_prio[l_el] = 4;
     }
 
@@ -245,7 +245,7 @@ TEST_CASE( "Mesh reordering.", "[moab][reorder]" ) {
                     l_tagName );
 
     // get the vertices of the triangles after the reordering
-    std::size_t *l_elVe1 = new std::size_t[l_nTria3*3];
+    edge_v::t_idx *l_elVe1 = new edge_v::t_idx[l_nTria3*3];
     l_moab.getEnVe( edge_v::TRIA3,
                     l_elVe1 );
 
@@ -257,7 +257,7 @@ TEST_CASE( "Mesh reordering.", "[moab][reorder]" ) {
       REQUIRE( l_elVe0[5*3 + l_ve] == l_elVe1[4*3 + l_ve] );
       REQUIRE( l_elVe0[3*3 + l_ve] == l_elVe1[5*3 + l_ve] );
       REQUIRE( l_elVe0[6*3 + l_ve] == l_elVe1[6*3 + l_ve] );
-      for( std::size_t l_el = 7; l_el < l_nTria3; l_el++ ) {
+      for( edge_v::t_idx l_el = 7; l_el < l_nTria3; l_el++ ) {
         REQUIRE( l_elVe0[(7+1)*3 + l_ve] == l_elVe1[7*3 + l_ve] );
       }
        REQUIRE( l_elVe0[7*3 + l_ve] == l_elVe1[(l_nTria3-1)*3 + l_ve] );

@@ -146,19 +146,19 @@ double edge_v::geom::Tria3::inDiameter( double const (*i_veCrds)[3] ) {
   return l_dia;
 }
 
-void edge_v::geom::Tria3::normVesFas( double      const (* i_veCrds)[3],
-                                      std::size_t        * io_elVe,
-                                      std::size_t        * io_elFa,
-                                      std::size_t        * io_elFaEl ) {
+void edge_v::geom::Tria3::normVesFas( double const (* i_veCrds)[3],
+                                      t_idx         * io_elVe,
+                                      t_idx         * io_elFa,
+                                      t_idx         * io_elFaEl ) {
   /*
    * reorder face-information in ascending order of vertex ids:
    * id0--fa0-->id1--fa1-->id2--fa2-->
    */
-  std::size_t l_faTmp = io_elFa[2];
+  t_idx l_faTmp = io_elFa[2];
   io_elFa[2] = io_elFa[1];
   io_elFa[1] = l_faTmp;
 
-  std::size_t l_elTmp = io_elFaEl[2];
+  t_idx l_elTmp = io_elFaEl[2];
   io_elFaEl[2] = io_elFaEl[1];
   io_elFaEl[1] = l_elTmp;
 
@@ -175,7 +175,7 @@ void edge_v::geom::Tria3::normVesFas( double      const (* i_veCrds)[3],
 
   // negative determinant -> clockwise -> change pos of 2nd and 3rd vertex
   if( l_det < 0 ) {
-    std::size_t l_veTmp = io_elVe[1];
+    t_idx l_veTmp = io_elVe[1];
     io_elVe[1] = io_elVe[2];
     io_elVe[2] = l_veTmp;
 
