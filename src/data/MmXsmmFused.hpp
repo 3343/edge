@@ -154,9 +154,9 @@ class edge::data::MmXsmmFused< float > {
  
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).smm );
       else
-        m_kernels[i_group].push_back( libxsmm_create_xcsc_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_xcsc_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).smm );
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
@@ -237,7 +237,7 @@ class edge::data::MmXsmmFused< float > {
                                  l_rows, l_cols, l_vals );
 
         // generate and store function for this kernels
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), l_rows, l_cols, l_vals ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), l_rows, l_cols, l_vals, N_CRUNS ).smm );
 
         // free memory of fake CSR-structure
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
@@ -365,9 +365,9 @@ class edge::data::MmXsmmFused< double > {
 
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).dmm );
       else
-        m_kernels[i_group].push_back( libxsmm_create_xcsc_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_xcsc_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).dmm );
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
@@ -448,7 +448,7 @@ class edge::data::MmXsmmFused< double > {
                                  l_rows, l_cols, l_vals );
   
         // generate and store function for this kernels
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), l_rows, l_cols, l_vals ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), l_rows, l_cols, l_vals, N_CRUNS ).dmm );
 
         // free memory of fake CSR-structure
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
