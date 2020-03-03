@@ -5,7 +5,7 @@
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -26,11 +26,13 @@
 #ifndef EDGE_V_CONSTANTS_H
 #define EDGE_V_CONSTANTS_H
 
+#include <cstddef>
+
 namespace edge_v {
 #if PP_EDGE_V_ENTITY_SIZE==32
   typedef unsigned int t_idx;
 #else
-  typedef unsigned long long t_idx;
+  typedef std::size_t t_idx;
 #endif
 
   // entity types
