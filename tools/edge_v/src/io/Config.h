@@ -58,7 +58,8 @@ class edge_v::io::Config {
       std::string models = "";
       std::string modelType = "";
       std::string crdMode = "";
-      std::string rule="";
+      std::string rule = "";
+      bool lowerToSurf = false;
     } m_ucvm;
 
     //! mesh refinement parameters
@@ -169,6 +170,13 @@ class edge_v::io::Config {
      * @return normalization rule.
      **/
     std::string const & getVelModUcvmRule() const { return m_ucvm.rule; }
+
+    /**
+     * Gets the lower-to-surface option for the UCVM queries.
+     *
+     * @return lower-to-surface option.
+     **/
+    bool const & getLowerToSurf() const { return m_ucvm.lowerToSurf; }
 
     /**
      * Gets the expression of the mesh refinement.

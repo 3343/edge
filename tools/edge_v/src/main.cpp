@@ -118,6 +118,7 @@ int main( int i_argc, char *i_argv[] ) {
     EDGE_V_LOG_INFO << "      model_type: " << l_config.getVelModUcvmModelType();
     EDGE_V_LOG_INFO << "      coordinate_mode: " << l_config.getVelModUcvmCrdMode();
     EDGE_V_LOG_INFO << "      normalization_rule: " << l_config.getVelModUcvmRule();
+    EDGE_V_LOG_INFO << "      lower_to_surface: " << l_config.getLowerToSurf();
   }
 #else
   if( false ){}
@@ -161,7 +162,8 @@ int main( int i_argc, char *i_argv[] ) {
   edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
                                  l_config.getVelModUcvmModels(),
                                  l_config.getVelModUcvmCrdMode(),
-                                 l_config.getVelModUcvmRule() );
+                                 l_config.getVelModUcvmRule(),
+                                 l_config.getLowerToSurf() );
   if( l_config.getVelModUcvmProjSrc() != "" ) {
     l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
                                                   l_config.getVelModUcvmTrafoSrc(),

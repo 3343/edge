@@ -40,6 +40,9 @@ class edge_v::io::Ucvm {
     //! rule used for normalization
     models::seismic::Rule m_rule;
 
+    //! lowers the query-points to the surface if set
+    bool m_lowerToSurf = false;
+
   public:
     /**
      * Constructor which initializes the UCVM interface.
@@ -51,11 +54,13 @@ class edge_v::io::Ucvm {
      * @param i_models UCVM models.
      * @param i_crdMode UCVM coordinate mode.
      * @param i_rule rule used for normalization of the velocities.
+     * @param i_lowerToSurf if true z-coordinates of all query-points are lowered to the UCVM surface before querying for the velocity model.
      **/
     Ucvm( std::string const & i_config,
           std::string const & i_models,
           std::string const & i_crdMode,
-          std::string const & i_rule="" );
+          std::string const & i_rule="",
+          bool                i_lowerToSurf=false );
 
     /**
      * Destructor.

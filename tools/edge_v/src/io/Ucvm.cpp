@@ -32,7 +32,9 @@ extern int ucvm_init_flag; // used as workaround for multiple objects of this cl
 edge_v::io::Ucvm::Ucvm( std::string const & i_config,
                         std::string const & i_models,
                         std::string const & i_crdMode,
-                        std::string const & i_rule ): m_rule(i_rule) {
+                        std::string const & i_rule,
+                        bool                i_lowerToSurf ): m_rule(i_rule),
+                                                             m_lowerToSurf(i_lowerToSurf) {
   // set coordinate mode
   ucvm_ctype_t l_crdMode = UCVM_COORD_GEO_ELEV;
   if( i_crdMode == "UCVM_COORD_GEO_DEPTH" ) {
@@ -106,10 +108,22 @@ void edge_v::io::Ucvm::getVels( std::size_t          i_nPts,
     l_ucvmPts[l_pt].coord[1] *= RAD_TO_DEG;
   }
 
+  // adjust coordinates if requested
+  if( m_lowerToSurf ) {
+    int l_err = ucvm_query( i_nPts,
+                            l_ucvmPts,
+                            l_ucvmData );
+    EDGE_V_CHECK_EQ( l_err, 0 );
+
+    for( std::size_t l_pt = 0; l_pt < i_nPts; l_pt++ ) {
+      l_ucvmPts[l_pt].coord[2] = std::min( l_ucvmPts[l_pt].coord[2], l_ucvmData[l_pt].surf );
+    }
+  }
+
   // perform the actual UCVM query
-  int l_err  = ucvm_query( i_nPts,
-                           l_ucvmPts,
-                           l_ucvmData );
+  int l_err = ucvm_query( i_nPts,
+                          l_ucvmPts,
+                          l_ucvmData );
   EDGE_V_CHECK_EQ( l_err, 0 );
 
   // convert from UCVM data type to float
@@ -135,6 +149,11 @@ void edge_v::io::Ucvm::getVels( std::size_t          i_nPts,
     m_rule.apply( o_vps[l_pt],
                   o_vss[l_pt],
                   o_rhos[l_pt] );
+
+    // check for nans in the result
+    EDGE_V_CHECK( !isnan(o_vps[l_pt]) );
+    EDGE_V_CHECK( !isnan(o_vss[l_pt]) );
+    EDGE_V_CHECK( !isnan(o_rhos[l_pt]) );
   }
 
   // free memory

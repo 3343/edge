@@ -68,6 +68,7 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_ucvm.modelType = l_ucvm.child("model_type").text().as_string();
   m_ucvm.crdMode = l_ucvm.child("coordinate_mode").text().as_string();
   m_ucvm.rule = l_ucvm.child("normalization_rule").text().as_string();
+  m_ucvm.lowerToSurf = l_ucvm.child("lower_to_surface").text().as_bool();
 
   pugi::xml_node l_ref = l_doc.child("edge_v").child("refinement");
   m_ref.expr = l_ref.child("expression").text().as_string();
