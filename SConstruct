@@ -225,6 +225,9 @@ vars.AddVariables(
                 True ),
   BoolVariable( 'inst',
                 'enable instrumentation',
+                False ),
+  BoolVariable( 'mmperf',
+                'enable matmul kernel performance telemetry',
                 False )
 )
 
@@ -535,6 +538,10 @@ if env['cov'] == True:
 # add Catch
 if env['tests']:
   env.Append( CXXFLAGS = ['-Isubmodules/Catch/include'] )
+
+# test for kernel timings
+if env['mmperf']:
+  env.Append( CPPDEFINES = ['PP_MMKERNEL_PERF'] )
 
 # get source files
 VariantDir( env['build_dir']+'/src', 'src')

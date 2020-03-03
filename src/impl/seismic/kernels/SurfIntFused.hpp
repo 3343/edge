@@ -7,7 +7,7 @@
  * @section LICENSE
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2020, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,10 @@
 #include "dg/Basis.h"
 #include "data/MmXsmmFused.hpp"
 #include "FakeMats.hpp"
+
+#ifdef PP_MMKERNEL_PERF
+#include "parallel/global.h"
+#endif 
 
 namespace edge {
   namespace seismic {
@@ -382,6 +386,41 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       }
     }
 
+    inline void execMmKernel( unsigned short         i_group, 
+                              unsigned short         i_kernel,
+                              TL_T_REAL      const * i_a,
+                              TL_T_REAL      const * i_b,
+                              TL_T_REAL            * io_c ) {
+#ifdef PP_MMKERNEL_PERF
+      size_t start = _rdtsc();
+#endif
+      m_mm.m_kernels[i_group][i_kernel]( i_a, i_b, io_c );
+#ifdef PP_MMKERNEL_PERF
+      size_t duration = _rdtsc() - start;
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].invocations++;
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].cycles += duration; 
+#endif
+    }
+
+    inline void execMmKernelPf( unsigned short         i_group, 
+                                unsigned short         i_kernel,
+                                TL_T_REAL      const * i_a,
+                                TL_T_REAL      const * i_b,
+                                TL_T_REAL            * io_c,
+                                TL_T_REAL      const * i_a_pf,
+                                TL_T_REAL      const * i_b_pf,
+                                TL_T_REAL      const * i_c_pf  ) {
+#ifdef PP_MMKERNEL_PERF
+      size_t start = _rdtsc();
+#endif
+      m_mm.m_kernels[i_group][i_kernel]( i_a, i_b, io_c, i_a_pf, i_b_pf, i_c_pf );
+#ifdef PP_MMKERNEL_PERF
+      size_t duration = _rdtsc() - start;
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].invocations++;
+      m_mm.m_kernelStats[edge::parallel::g_thread][i_group][i_kernel].cycles += duration; 
+#endif
+    }
+
   public:
     /**
      * Constructor of the fused surface integration.
@@ -441,7 +480,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                 TL_T_REAL       (*io_dofsA)[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS],
                 TL_T_REAL         o_scratch[2][TL_N_QTS_E][TL_N_MDS_FA][TL_N_CRS],
                 TL_T_REAL const   i_dofsP[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr,
-                TL_T_REAL const   i_tDofsP[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) const {
+                TL_T_REAL const   i_tDofsP[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) {
       // anelastic update
       TL_T_REAL l_upAn[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
       if( TL_N_RMS > 0 ) {
@@ -458,12 +497,12 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         // local flux matrix
-        m_mm.m_kernels[0][l_fa]( i_tDofsE[0][0],
-                                 m_fIntLN[l_fa],
-                                 o_scratch[0][0][0] );
+        execMmKernel( 0, l_fa, i_tDofsE[0][0],
+                               m_fIntLN[l_fa],
+                               o_scratch[0][0][0] );
 
         // flux solver
-        m_mm.m_kernels[1][0]( i_fsE[l_fa],
+        execMmKernelPf( 1, 0, i_fsE[l_fa],
                               o_scratch[0][0][0],
                               o_scratch[1][0][0],
                               nullptr,
@@ -471,20 +510,20 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                               nullptr );
 
         // transposed flux matrix
-        m_mm.m_kernels[2][l_fa]( o_scratch[1][0][0],
-                                 m_fIntT[l_fa],
-                                 io_dofsE[0][0] );
+        execMmKernel( 2, l_fa, o_scratch[1][0][0],
+                               m_fIntT[l_fa],
+                               io_dofsE[0][0] );
 
         if( TL_N_RMS > 0 ) {
           // anelastic flux solver
-          m_mm.m_kernels[3][0]( i_fsA[l_fa],
-                                o_scratch[0][0][0],
-                                o_scratch[1][0][0] );
+          execMmKernel( 3, 0, i_fsA[l_fa],
+                              o_scratch[0][0][0],
+                              o_scratch[1][0][0] );
 
           // transposed flux matrix
-          m_mm.m_kernels[4][l_fa]( o_scratch[1][0][0],
-                                   m_fIntT[l_fa],
-                                   l_upAn[0][0] );
+          execMmKernel( 4, l_fa, o_scratch[1][0][0],
+                                 m_fIntT[l_fa],
+                                 l_upAn[0][0] );
         }
       }
 
@@ -507,7 +546,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                        unsigned short       i_fId,
                        TL_T_REAL      const i_tDofsE[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
                        TL_T_REAL            o_tDofsFiE[TL_N_QTS_E][TL_N_MDS_FA][TL_N_CRS],
-                       TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) const {
+                       TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) {
       // derive the id of the neighboring flux matrix
       unsigned short l_fMatId = std::numeric_limits< unsigned short >::max();
       if( i_vId != std::numeric_limits< unsigned short >::max() ) {
@@ -518,9 +557,9 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       }
 
       // local or neighboring flux matrix
-      m_mm.m_kernels[0][l_fMatId]( i_tDofsE[0][0],
-                                   m_fIntLN[l_fMatId],
-                                   o_tDofsFiE[0][0] );
+      execMmKernel( 0, l_fMatId, i_tDofsE[0][0],
+                                 m_fIntLN[l_fMatId],
+                                 o_tDofsFiE[0][0] );
     }
 
     /**
@@ -547,7 +586,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                 TL_T_REAL            io_dofsE[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS],
                 TL_T_REAL            io_dofsA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS],
                 TL_T_REAL            o_scratch[2][TL_N_QTS_E][TL_N_MDS_FA][TL_N_CRS],
-                TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) const {
+                TL_T_REAL      const i_pre[TL_N_QTS_E][TL_N_MDS_EL][TL_N_CRS] = nullptr ) {
       // apply first face integration matrix or set pointer to pre-computed data
       TL_T_REAL const * l_tDofsFiE = o_scratch[0][0][0];
 
@@ -564,7 +603,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       }
 
       // flux solver
-      m_mm.m_kernels[1][0](                     i_fsE,
+      execMmKernelPf( 1, 0,                     i_fsE,
                                                 l_tDofsFiE,
                                                 o_scratch[1][0][0],
                                                 nullptr,
@@ -572,20 +611,20 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                                                 nullptr );
 
       // transposed flux matrix
-      m_mm.m_kernels[2][i_fa]( o_scratch[1][0][0],
-                               m_fIntT[i_fa],
-                               io_dofsE[0][0] );
+      execMmKernel( 2, i_fa, o_scratch[1][0][0],
+                             m_fIntT[i_fa],
+                             io_dofsE[0][0] );
 
       if( TL_N_RMS > 0 ) {
         // anelastic flux solver
-        m_mm.m_kernels[3][0]( i_fsA,
-                              l_tDofsFiE,
-                              o_scratch[1][0][0] );
+        execMmKernel( 3, 0, i_fsA,
+                            l_tDofsFiE,
+                            o_scratch[1][0][0] );
 
         // transposed flux matrix
-        m_mm.m_kernels[4][i_fa]( o_scratch[1][0][0],
-                                 m_fIntT[i_fa],
-                                 io_dofsA[0][0] );
+        execMmKernel( 4, i_fa, o_scratch[1][0][0],
+                               m_fIntT[i_fa],
+                               io_dofsA[0][0] );
       }
     }
 };
