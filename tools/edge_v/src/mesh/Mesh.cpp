@@ -24,7 +24,7 @@
 
 #include "../io/Moab.h"
 #include "../geom/Geom.h"
-#include "io/logging.h"
+#include "../io/logging.h"
 
 void edge_v::mesh::Mesh::getElFaEl( t_entityType         i_elTy,
                                     t_idx                i_nEls,

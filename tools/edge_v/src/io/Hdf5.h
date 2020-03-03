@@ -25,8 +25,8 @@
 
 #include <hdf5.h>
 #include <string>
-#include "io/logging.h"
-#include "constants.h"
+#include "logging.h"
+#include "../constants.h"
 
 namespace edge_v {
   namespace io {

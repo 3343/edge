@@ -22,7 +22,7 @@
  **/
 #include <limits>
 #include <Eigen/Dense>
-#include "io/logging.h"
+#include "../io/logging.h"
 #include "Tria3.h"
 
 double edge_v::geom::Tria3::area( double const (*i_veCrds)[3] ) {

@@ -24,7 +24,7 @@
 #define EDGE_V_MODELS_MODEL_H
 
 #include <cstddef>
-#include "constants.h"
+#include "../constants.h"
 
 namespace edge_v {
   namespace models {

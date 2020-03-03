@@ -22,7 +22,7 @@
  **/
 #include "Cfl.h"
 
-#include "io/logging.h"
+#include "../io/logging.h"
 
 edge_v::time::Cfl::Cfl( t_entityType  const    i_elTy,
                         t_idx                  i_nVes,

@@ -22,7 +22,7 @@
  * Velocity rules, typically applied in the upper layers.
  **/
 #include "Rule.h"
-#include "io/logging.h"
+#include "../../io/logging.h"
 
 edge_v::models::seismic::Rule::Rule( std::string const & i_rule ) {
   std::string l_vpName = "vp";

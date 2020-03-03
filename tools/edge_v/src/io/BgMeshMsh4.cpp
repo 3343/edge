@@ -21,7 +21,7 @@
  * Writes background meshes in msh4 format.
  **/
 #include "BgMeshMsh4.h"
-#include "io/logging.h"
+#include "logging.h"
 
 void edge_v::io::BgMeshMsh4::write( t_entityType               i_elTy,
                                     t_idx                      i_nVes,

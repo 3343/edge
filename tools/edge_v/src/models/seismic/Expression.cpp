@@ -21,8 +21,8 @@
  * Expression-based velocity model.
  **/
 #include "Expression.h"
-#include "io/logging.h"
-#include "io/ExprTk.h"
+#include "../../io/logging.h"
+#include "../../io/ExprTk.h"
 
 edge_v::models::seismic::Expression::Expression( std::string const & i_expr ) {
   m_expr = i_expr;

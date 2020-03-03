@@ -28,7 +28,7 @@
 #include "Tet4.h"
 
 #include <limits>
-#include "io/logging.h"
+#include "../io/logging.h"
 #include <Eigen/Dense>
 
 double edge_v::geom::Geom::volume( t_entityType         i_enTy,

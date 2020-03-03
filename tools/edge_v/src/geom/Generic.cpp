@@ -21,7 +21,7 @@
  * Generic geometry computations.
  **/
 #include "Generic.h"
-#include "io/logging.h"
+#include "../io/logging.h"
 
 void edge_v::geom::Generic::getFaIdsAd( t_entityType           i_elTy,
                                         t_idx                  i_nFas,

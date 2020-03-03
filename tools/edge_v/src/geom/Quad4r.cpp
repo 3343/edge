@@ -22,7 +22,7 @@
  **/
 #include "Quad4r.h"
 #include <cmath>
-#include "io/logging.h"
+#include "../io/logging.h"
 
 void edge_v::geom::Quad4r::distMax( double const (*i_veCrds)[3],
                                     double         o_distMax[2] ) {

@@ -21,7 +21,7 @@
  * Derives communication structures.
  **/
 #include "Communication.h"
-#include "io/logging.h"
+#include "../io/logging.h"
 
 bool edge_v::mesh::Communication::isComm( t_entityType         i_elTy,
                                           t_idx                i_el,

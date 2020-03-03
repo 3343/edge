@@ -22,7 +22,7 @@
  **/
 #include "Groups.h"
 
-#include "io/logging.h"
+#include "../io/logging.h"
 
 void edge_v::time::Groups::getLoads( t_idx                  i_nEls,
                                      double         const * i_tsCfl,

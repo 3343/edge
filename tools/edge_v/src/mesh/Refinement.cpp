@@ -21,8 +21,8 @@
  * Velocity-based mesh refinement.
  **/
 #include "Refinement.h"
-#include "io/logging.h"
-#include "io/ExprTk.h"
+#include "../io/logging.h"
+#include "../io/ExprTk.h"
 
 void edge_v::mesh::Refinement::free() {
   if( m_refVe != nullptr ) delete[] m_refVe;

@@ -24,7 +24,7 @@
 #include "Generic.h"
 
 #include <limits>
-#include "io/logging.h"
+#include "../io/logging.h"
 #include <Eigen/Dense>
 
 double edge_v::geom::Tet4::volume( double const (*i_veCrds)[3] ) {

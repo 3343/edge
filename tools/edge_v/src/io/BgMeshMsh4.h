@@ -24,7 +24,7 @@
 #define EDGE_V_IO_BGMESHMSH4_H
 
 #include <iostream>
-#include "constants.h"
+#include "../constants.h"
 
 namespace edge_v {
   namespace io {

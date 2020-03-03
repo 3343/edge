@@ -25,8 +25,6 @@
 #include "Moab.h"
 #undef private
 
-#include "io/logging.h"
-
 namespace edge_v {
   namespace test {
     extern std::string g_files;

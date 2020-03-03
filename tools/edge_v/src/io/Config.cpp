@@ -22,7 +22,7 @@
  **/
 #include "Config.h"
 
-#include "io/logging.h"
+#include "logging.h"
 #define PUGIXML_HEADER_ONLY
 #include <pugixml.hpp>
 #undef PUGIXML_HEADER_ONLY

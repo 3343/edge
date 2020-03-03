@@ -24,7 +24,7 @@
 #define EDGE_V_GEOM_TET4_H
 
 #include <cstdlib>
-#include "constants.h"
+#include "../constants.h"
 
 namespace edge_v {
   namespace geom {

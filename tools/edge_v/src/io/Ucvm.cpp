@@ -27,7 +27,7 @@ extern "C" {
 extern int ucvm_init_flag; // used as workaround for multiple objects of this class
 }
 #include <proj_api.h>
-#include "io/logging.h"
+#include "logging.h"
 
 edge_v::io::Ucvm::Ucvm( std::string const & i_config,
                         std::string const & i_models,

@@ -21,7 +21,7 @@
  * ExprTk interface.
  **/
 #include "ExprTk.h"
-#include "io/logging.h"
+#include "logging.h"
 
 void edge_v::io::ExprTk::addVar( std::string const & i_varName,
                                  double            & i_var ) {
