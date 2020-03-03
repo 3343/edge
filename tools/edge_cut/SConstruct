@@ -140,7 +140,7 @@ print( "#######################################################################c
 print( 'Running build script of EDGEcut.' )
 
 # configuration
-conf = Configure(env )
+conf = Configure( env )
 
 # include environment
 env['ENV'] = os.environ
