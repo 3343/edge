@@ -75,7 +75,7 @@ edge_v::io::Config::Config( std::string & i_xml ) {
 
   // time info
   pugi::xml_node l_time = l_doc.child("edge_v").child("time");
-  m_nTsGroups = l_time.child("n_groups").text().as_uint();
+  m_nTsGroups = std::max( l_time.child("n_groups").text().as_uint(), 1u );
   m_funDt     = l_time.child("fundamental_time_step").text().as_double();
   m_tsOut     = l_time.child("files").child("out_time_steps").text().as_string();
 }
