@@ -87,7 +87,7 @@ if 'xml' in env:
 # add command line arguments
 vars.AddVariables(
   EnumVariable( 'mode',
-                'compile modes, option \'san\' enables address and undefind sanitizers',
+                'compile modes, option \'san\' enables address and undefined sanitizers',
                 'release',
                  allowed_values=('release', 'debug', 'release+san', 'debug+san' )
               ),
