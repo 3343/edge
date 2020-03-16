@@ -100,15 +100,15 @@ class edge::seismic::solvers::AderDgInit {
 
       for( TL_T_LID l_el = 0; l_el < i_nEls; l_el++ ) {
         seismic::setups::ViscoElasticity::src( i_nRms,
-                                                i_freqCen,
-                                                i_freqRat,
-                                                io_bgPars[l_el].qp,
-                                                io_bgPars[l_el].qs,
-                                                io_bgPars[l_el].lam,
-                                                io_bgPars[l_el].mu,
-                                                l_lameE[0],
-                                                l_lameE[1],
-                                                (o_srcA+l_el*std::size_t(i_nRms)) );
+                                               i_freqCen,
+                                               i_freqRat,
+                                               io_bgPars[l_el].qp,
+                                               io_bgPars[l_el].qs,
+                                               io_bgPars[l_el].lam,
+                                               io_bgPars[l_el].mu,
+                                               l_lameE[0],
+                                               l_lameE[1],
+                                               (o_srcA+l_el*std::size_t(i_nRms)) );
 
         // write unrelaxed lame parameters
         io_bgPars[l_el].lam = l_lameE[0];
