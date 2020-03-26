@@ -76,7 +76,7 @@ l_output = h5py.File( l_args['output'], 'w' )
 l_nPts = len( l_input['time_parameters'] )
 assert( len(l_input['time_pointers']) == l_nPts+1 )
 
-logging.info( 'adjusting time series of ' + str(l_nPts) + ' point sources using a low-pass filter of ' + str(l_args['low_pass']) + ' Hz' )
+logging.info( 'adjusting time series of ' + str(l_nPts) + ' point sources using a low-pass filter of ' + str(l_args['low_pass']) + ' Hz, a delay of ' + str(l_args['delay']) + ' and ' + str(l_args['n_samples']) + ' samples' )
 
 # init time series data
 l_output['time_series'] = numpy.zeros( l_nPts*l_args['n_samples'], dtype='float32' )
