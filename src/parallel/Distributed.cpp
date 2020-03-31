@@ -77,12 +77,14 @@ edge::parallel::Distributed::Distributed( int    i_argc,
   MPI_Comm_rank( MPI_COMM_WORLD, &g_rank );
   MPI_Get_version( m_verStd, m_verStd+1 );
   g_rankStr = std::to_string( g_rank );
+
+  MPI_Barrier( MPI_COMM_WORLD );
 #endif
 }
 
 void edge::parallel::Distributed::fin() {
 #ifdef PP_USE_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier( MPI_COMM_WORLD );
   MPI_Finalize();
 #endif
 }
