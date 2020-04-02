@@ -5,7 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2019, Alexander Breuer
+# Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -35,49 +35,51 @@ cd ${EDGE_TMP_DIR}
 ###############
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
+  # install extra packages
+  sudo dnf install -y -q -e 0 epel-release
   # recent build tools
-  sudo yum install -y -q -e 0 centos-release-scl
-  sudo yum install -y -q -e 0 devtoolset-8
-  sudo yum install -y -q -e 0 devtoolset-8-libasan-devel devtoolset-8-libubsan-devel
-  source /opt/rh/devtoolset-8/enable
-  echo "source /opt/rh/devtoolset-8/enable > /dev/null" | sudo tee --append /etc/bashrc
+  sudo dnf install -y -q -e 0 gcc-toolset-9
+  sudo dnf install -y -q -e 0 libasan libubsan
+  source /opt/rh/gcc-toolset-9/enable
+  echo "source /opt/rh/gcc-toolset-9/enable > /dev/null" | sudo tee --append /etc/bashrc
   # other
-  sudo yum install -y -q -e 0 hostname
-  sudo yum install -y -q -e 0 wget
-  sudo yum install -y -q -e 0 unzip
-  sudo yum install -y -q -e 0 m4
-  sudo yum install -y -q -e 0 autoconf dh-autoreconf
-  sudo yum install -y -q -e 0 make
-  sudo yum install -y -q -e 0 cmake3
-  sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
-  sudo yum install -y -q -e 0 git
-  sudo yum install -y -q -e 0 libxml2-python.x86_64
-  sudo yum install -y -q -e 0 python python34 python-devel python34-devel python-setuptools python34-setuptools python-pip python34-pip
-  sudo yum install -y -q -e 0 cppcheck
-  sudo yum install -y -q -e 0 glibc-static
-  sudo yum install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
-  sudo yum install -y -q -e 0 irqbalance
-  sudo yum install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
-  sudo yum install -y -q -e 0 atop
-  sudo yum install -y -q -e 0 htop
-  sudo yum install -y -q -e 0 GMT
-  sudo yum install -y -q -e 0 ghostscript
+  sudo dnf install -y -q -e 0 hostname
+  sudo dnf install -y -q -e 0 wget
+  sudo dnf install -y -q -e 0 unzip
+  sudo dnf install -y -q -e 0 m4
+  sudo dnf install -y -q -e 0 autoconf
+  sudo dnf install -y -q -e 0 make
+  sudo dnf install -y -q -e 0 cmake3
+  sudo dnf install -y -q -e 0 git
+  sudo dnf install -y -q -e 0 git-lfs
+  sudo dnf install -y -q -e 0 python3-libxml2
+  sudo dnf install -y -q -e 0 python2 python3 python2-devel python3-devel python2-setuptools python3-setuptools python2-pip python3-pip
+  sudo ln -s /usr/bin/python3 /usr/bin/python
+  sudo ln -s /usr/bin/pip3 /usr/bin/pip
+  sudo dnf install -y -q -e 0 cppcheck
+  sudo dnf install -y -q -e 0 glibc-static
+  sudo dnf install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
+  sudo dnf install -y -q -e 0 irqbalance
+  sudo dnf install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
+  sudo dnf install -y -q -e 0 atop
+  sudo dnf install -y -q -e 0 htop
+  sudo dnf install -y -q -e 0 yum-plugin-copr
+  sudo dnf copr enable -y -q -e 0 genericmappingtools/gmt
+  sudo dnf install -y -q -e 0 gmt
+  sudo dnf install -y -q -e 0 ghostscript
   # UCVM and EDGEv dependencies
-  sudo yum install -y -q -e 0 metis metis-devel
-  sudo yum install -y -q -e 0 proj-static proj-devel
+  sudo dnf install -y -q -e 0 metis metis-devel
+  sudo dnf install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
-  sudo yum install -y -q -e 0 gmp-devel mpfr-devel boost-devel
   sudo pip install meshio > /dev/null
-  # GoCD dependencies
-  sudo yum install -y -q -e 0 java-latest-openjdk
   # Pipeline dependencies
-  sudo yum install -y -q -e 0 npm
+  sudo dnf install -y -q -e 0 npm
 fi
 
 ########
 # GMSH #
 ########
-wget http://gmsh.info/bin/Linux/gmsh-4.1.5-Linux64.tgz -O gmsh.tgz
+wget http://gmsh.info/bin/Linux/gmsh-4.5.6-Linux64.tgz -O gmsh.tgz
 sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 
 #########
@@ -85,16 +87,13 @@ sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 #########
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo yum install -y -q -e 0 llvm-toolset-7-clang llvm-toolset-7-libomp llvm-toolset-7-libomp-devel
-  sudo yum install -y -q -e 0 clang
-  source /opt/rh/llvm-toolset-7/enable
-  echo "source /opt/rh/llvm-toolset-7/enable > /dev/null" | sudo tee --append /etc/bashrc
+  sudo dnf install -y -q -e 0 llvm-toolset
 fi
 
 ###########
 # OpenMPI #
 ###########
-wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.1.tar.gz -O openmpi.tar.gz
+wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.3.tar.gz -O openmpi.tar.gz
 mkdir openmpi
 tar -xf openmpi.tar.gz -C openmpi --strip-components=1
 cd openmpi
@@ -118,37 +117,29 @@ then
   cd ..
 fi
 
-###########
-# Git LFS #
-###########
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
-then
-  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | sudo bash
-  sudo yum install -y -q -e 0 git-lfs
-fi
-
 ##################
 # Python modules #
 ##################
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
-then
-  sudo pip install pip==18.0
-  sudo pip install --upgrade setuptools
-  sudo pip3 install pip==18.0
-  sudo pip install --upgrade setuptools
-fi
-sudo pip3 -q install xmltodict matplotlib netCDF4 h5py
-
+sudo pip -q install xmltodict matplotlib netCDF4 h5py obspy
 
 #########
 # Scons #
 #########
-wget http://prdownloads.sourceforge.net/scons/scons-3.0.1.tar.gz -O scons.tar.gz
+wget http://prdownloads.sourceforge.net/scons/scons-3.1.2.tar.gz -O scons.tar.gz
 mkdir scons
 tar -xzf scons.tar.gz -C scons --strip-components=1
 cd scons
 sudo python setup.py install
 cd ..
+
+#############
+# Buildkite #
+#############
+if [[ ${EDGE_DIST} == *"CentOS"* ]]
+then
+  sudo sh -c 'echo -e "[buildkite-agent]\nname = Buildkite Pty Ltd\nbaseurl = https://yum.buildkite.com/buildkite-agent/stable/x86_64/\nenabled=1\ngpgcheck=0\npriority=1" > /etc/yum.repos.d/buildkite-agent.repo'
+  sudo dnf install -y -q -e 0 buildkite-agent
+fi
 
 #################
 # GCP specifics #
@@ -163,8 +154,8 @@ fi
 ############
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
-  sudo yum clean all
-  sudo rm -rf /var/cache/yum
+  sudo dnf clean all
+  sudo rm -rf /var/cache/dnf
 fi
 
 sudo rm -rf ${EDGE_TMP_DIR}
