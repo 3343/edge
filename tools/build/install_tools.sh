@@ -47,6 +47,7 @@ then
   sudo dnf install -y -q -e 0 hostname
   sudo dnf install -y -q -e 0 wget
   sudo dnf install -y -q -e 0 unzip
+  sudo dnf install -y -q -e 0 bzip2
   sudo dnf install -y -q -e 0 m4
   sudo dnf install -y -q -e 0 autoconf
   sudo dnf install -y -q -e 0 make
