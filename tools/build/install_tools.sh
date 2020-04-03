@@ -50,6 +50,8 @@ then
   sudo dnf install -y -q -e 0 bzip2
   sudo dnf install -y -q -e 0 m4
   sudo dnf install -y -q -e 0 autoconf
+  sudo dnf install -y -q -e 0 automake
+  sudo dnf install -y -q -e 0 libtool
   sudo dnf install -y -q -e 0 make
   sudo dnf install -y -q -e 0 cmake3
   sudo dnf install -y -q -e 0 git
