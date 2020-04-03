@@ -23,5 +23,4 @@
 steps:
   - label: 'Static Code Analysis'
     command:
-      - cd tools/edge_cut
       - cppcheck --template=gcc --suppressions-list=tools/build/cppcheck.supp --force --error-exitcode=1 src
