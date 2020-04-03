@@ -58,6 +58,7 @@ then
   sudo ln -s /usr/bin/python3 /usr/bin/python
   sudo ln -s /usr/bin/pip3 /usr/bin/pip
   sudo dnf install -y -q -e 0 cppcheck
+  sudo dnf install -y -q -e 0 valgrind
   sudo dnf install -y -q -e 0 glibc-static
   sudo dnf install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
   sudo dnf install -y -q -e 0 irqbalance
