@@ -38,10 +38,11 @@ then
   # install extra packages
   sudo dnf install -y -q -e 0 epel-release
   # recent build tools
-  sudo dnf install -y -q -e 0 gcc-toolset-9
+  sudo dnf install -y -q -e 0 gcc
   sudo dnf install -y -q -e 0 libasan libubsan
-  source /opt/rh/gcc-toolset-9/enable
-  echo "source /opt/rh/gcc-toolset-9/enable > /dev/null" | sudo tee --append /etc/bashrc
+  sudo dnf install -y -q -e 0 gcc-toolset-9
+  #source /opt/rh/gcc-toolset-9/enable
+  #echo "source /opt/rh/gcc-toolset-9/enable > /dev/null" | sudo tee --append /etc/bashrc
   # other
   sudo dnf install -y -q -e 0 hostname
   sudo dnf install -y -q -e 0 wget
