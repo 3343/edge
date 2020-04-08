@@ -93,6 +93,7 @@ sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo dnf install -y -q -e 0 llvm-toolset
+  sudo dnf install -y -q -e 0 libomp-devel
 fi
 
 ###########
