@@ -25,11 +25,11 @@
 #include "Basis.h"
 #include "linalg/Mappings.hpp"
 #include "QuadraturePoints.h"
-#include <cassert>
 #include <cmath>
 #include <io/logging.h>
 #include "data/common.hpp"
 #include "monitor/instrument.hpp"
+#include <limits>
 
 void edge::dg::Basis::initMassMatrix() {
   // check that the size matches
@@ -155,7 +155,7 @@ void edge::dg::Basis::qpts2modal( const real_base    *i_evalF,
     }
 
     // divide by matching mass entry
-    assert( m_mass.nz.size() > l_md && (m_mass.ro[l_md] == m_mass.co[l_md]) );
+    EDGE_CHECK( m_mass.nz.size() > l_md && (m_mass.ro[l_md] == m_mass.co[l_md]) );
     o_modes[l_md] /= m_mass.nz[l_md];
   }
 }
@@ -425,7 +425,7 @@ real_base edge::dg::Basis::evalBasis( unsigned int        i_b,
                                       unsigned int        i_order ) {
   PP_INSTR_FUN("eval_basis")
 
-  real_base l_val;
+  real_base l_val = std::numeric_limits< real_base >::max();
 
   if( i_enType == LINE )
     if( i_der != 1 ) evalBasisLine( i_b,
