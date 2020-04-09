@@ -368,6 +368,9 @@ before_install:
   - cd edge
   - ln -s $(pwd)/../edge_opt/cont .
 
+  # install EDGE-V
+  - if [ "$SYSTEM_SETUP" = "1" ]; then cd tools/edge_v; sudo scons install_dir=/usr/local -j ${N_BUILD_PROC}; cd ../.. fi;
+
   # update MPI wrappers
   - if [ "$USE_MPI" = "1" ]; then export CXX=mpiCC; fi;
   - ${CXX} --version
