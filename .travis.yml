@@ -349,6 +349,9 @@ before_install:
   # install libxsmm
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ./edge/tools/build/deps/libxsmm.sh -i $(pwd)/edge/submodules/libxsmm -o /usr/local -j ${N_BUILD_PROC}; fi;
 
+  # install metis
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ./edge/tools/build/deps/metis.sh -o /usr/local -j ${N_BUILD_PROC}; fi;
+
   # install EDGE-V
   - if [ "$SYSTEM_SETUP" = "1" ]; then cd edge/tools/edge_v; sudo scons install_dir=/usr/local -j ${N_BUILD_PROC}; cd ../../..; fi;
 
