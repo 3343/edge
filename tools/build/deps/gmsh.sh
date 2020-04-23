@@ -81,7 +81,7 @@ fi
 mkdir -p gmsh/build
 tar -xf gmsh.tgz -C gmsh --strip-components=1
 cd gmsh/build
-cmake -DENABLE_BUILD_LIB=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
+cmake -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
 make -j ${N_BUILD_PROCS}
 make install
 
