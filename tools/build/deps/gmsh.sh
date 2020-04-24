@@ -26,23 +26,28 @@ GMSH_SHA256=46eaeb0cdee5822fdaa4b15f92d8d160a8cc90c4565593cfa705de90df2a463f
 
 help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h] [-l BLAS_LAPACK_LIBRARIES -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs Gmsh.
      -h This help message.
+     -l BLAS_LAPACK_LIBRARIES (optional) string passed to Gmsh for the BLAS/LAPACK installation.
      -o INSTALL_DIR Absolute path of the installation directory, will be created if missing.
      -j N_BUILD_PROCS (optional) number of build processes, defaults to one.
 EOF
 }
 
-while getopts "ho:j:" opt; do
+while getopts "hl:o:j:" opt; do
   case "$opt" in
     h)
       help
       exit 0
       ;;
+    l)
+      BLAS_LAPACK_LIBRARIES=$OPTARG
+      ;;
     o)
       INSTALL_DIR=$OPTARG
       ;;
+
     j)
       N_BUILD_PROCS=$OPTARG
       ;;
@@ -81,7 +86,17 @@ fi
 mkdir -p gmsh/build
 tar -xf gmsh.tgz -C gmsh --strip-components=1
 cd gmsh/build
-cmake -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=ON -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
+
+# assemble cmake command
+cmake_command="cmake"
+if [[ ${BLAS_LAPACK_LIBRARIES} != "" ]]
+then
+  cmake_command="${cmake_command} -DBLAS_LAPACK_LIBRARIES=${BLAS_LAPACK_LIBRARIES}"
+fi
+cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=ON -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
+
+# configure and build
+$(${cmake_command})
 make -j ${N_BUILD_PROCS}
 make install
 
