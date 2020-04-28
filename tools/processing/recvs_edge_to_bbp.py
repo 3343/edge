@@ -24,6 +24,7 @@
 import logging
 import argparse
 import pandas
+import numpy
 
 # setup logger
 logging.basicConfig( level=logging.INFO,
@@ -60,12 +61,13 @@ l_parser.add_argument( '-t', '--time_shift',
                        default = 0.0,
                        help = 'Time shift applied to the seismogram. E.g., if set to 0.3 all entries smaller than 0.3 are removed with time 0.0 being the old 0.3.' )
 
-l_parser.add_argument( '-s', '--scale',
-                       dest = 'scale',
+l_parser.add_argument( '-m', '--transformation',
+                       dest = 'transformation',
                        required = False,
                        type = float,
-                       default = 100.0,
-                       help = 'Scales the seismograms by the given value, e.g., for m/s to cm/s by using a factor of 100.' )
+                       nargs = 9,
+                       default = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+                       help = 'Applies the given matrix to the seismograms (row-major), e.g., for m/s to cm/s by scaling through the diagonal: 100 0 0 0 100 0 0 0 100.' )
 
 l_parser.add_argument( '-o', '--output',
                        dest     = 'output',
@@ -113,9 +115,10 @@ l_data = pandas.read_csv( l_args['input'],
 l_data = l_data[ l_data['time'] >= l_args['time_shift'] ]
 l_data['time'] -= l_args['time_shift']
 
-# scale the particle velocities
-for l_co in l_args['columns']:
- l_data[l_co] *= l_args['scale']
+# apply the trafo to the data
+l_trafo = numpy.array( l_args['transformation'] )
+l_trafo = l_trafo.reshape( (3,3) )
+l_data[l_args['columns']] = l_data[l_args['columns']].dot( l_trafo )
 
 # open output file
 logging.info( 'writing output: ' + l_args['output'] )
