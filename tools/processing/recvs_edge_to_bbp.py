@@ -66,7 +66,7 @@ l_parser.add_argument( '-m', '--transformation',
                        required = False,
                        type = float,
                        nargs = 9,
-                       default = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+                       default = [0.0, -100.0, 0.0, -100.0, 0.0, 0.0, 0.0, 0.0, -100.0],
                        help = 'Applies the given matrix to the seismograms (row-major), e.g., for m/s to cm/s by scaling through the diagonal: 100 0 0 0 100 0 0 0 100.' )
 
 l_parser.add_argument( '-o', '--output',
