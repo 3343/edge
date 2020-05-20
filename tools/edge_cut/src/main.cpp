@@ -48,6 +48,7 @@ int main( int i_argc, char *i_argv[] ) {
 
   edge_cut::io::OptionParser l_options( i_argc, i_argv );
 
+  EDGE_CUT_LOG_INFO << "EDGE version: " << PP_EDGE_VERSION;
   EDGE_CUT_LOG_INFO << "parsing runtime config";
   edge_cut::io::Config l_config( l_options.getXml() );
   l_config.print();
