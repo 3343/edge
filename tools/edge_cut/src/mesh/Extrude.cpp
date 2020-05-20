@@ -344,6 +344,8 @@ edge_cut::mesh::Extrude::Extrude( std::size_t          i_nVes,
   for( std::size_t l_ve = 0; l_ve < m_nx[0]*m_ny[0]; l_ve += m_ny[0]*m_refRatio ) {
     l_tmpVes.push_back( m_veCrdsSurf[m_ny[0]-1 + l_ve] );
   }
+  // reverse for outward pointing normals
+  std::reverse( l_tmpVes.begin(), l_tmpVes.end() );
   addSide( m_nSteps,
            m_zTarget,
            l_tmpVes,
@@ -354,6 +356,8 @@ edge_cut::mesh::Extrude::Extrude( std::size_t          i_nVes,
   for( std::size_t l_ve = 0; l_ve < m_ny[0]; l_ve+=m_refRatio ) {
     l_tmpVes.push_back( m_veCrdsSurf[l_ve] );
   }
+  // reverse for outward pointing normals
+  std::reverse( l_tmpVes.begin(), l_tmpVes.end() );
   addSide( m_nSteps,
            m_zTarget,
            l_tmpVes,
@@ -422,20 +426,21 @@ void edge_cut::mesh::Extrude::writeOff( std::ostream & io_left,
 
   // bottom
   std::vector< point > l_bottom;
-  for( std::size_t l_vx = 0; l_vx < m_nx[0]; l_vx+=m_refRatio ) {
-    for( std::size_t l_vy = 0; l_vy < m_ny[0]; l_vy+=m_refRatio ) {
+  // x is fast dimension w.r.t. top for outward pointing normals
+  for( std::size_t l_vy = 0; l_vy < m_ny[0]; l_vy+=m_refRatio ) {
+    for( std::size_t l_vx = 0; l_vx < m_nx[0]; l_vx+=m_refRatio ) {
       std::size_t l_ve = l_vx * m_ny[0] + l_vy;
       l_bottom.push_back( std::make_tuple( std::get<0>( m_veCrdsSurf[l_ve] ),
-                                          std::get<1>( m_veCrdsSurf[l_ve] ),
-                                          m_zTarget ) );
+                                           std::get<1>( m_veCrdsSurf[l_ve] ),
+                                           m_zTarget ) );
     }
   }
   io_bottom << l_header;
   io_bottom << l_bottom.size() << " " << (m_nx[1]-1)*(m_ny[1]-1)*2 << " 0\n";
   writePtsOff( l_bottom,
                io_bottom );
-  writeTriaOff( m_nx[1],
-                m_ny[1],
+  writeTriaOff( m_ny[1],
+                m_nx[1],
                 io_bottom );
 
   // top
