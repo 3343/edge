@@ -24,6 +24,7 @@
 #include <vector>
 #include <tuple>
 #include <limits>
+#include <ostream>
 
 namespace edge_cut {
   namespace mesh {
@@ -56,7 +57,7 @@ class edge_cut::mesh::Extrude {
 
     //! minimum delta in x- and y-direction
     double m_dMin[2] = { std::numeric_limits< double >::max(),
-                        std::numeric_limits< double >::max() };
+                         std::numeric_limits< double >::max() };
 
     //! refinement ratio
     unsigned short m_refRatio = 1;
