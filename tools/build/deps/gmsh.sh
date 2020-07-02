@@ -19,23 +19,24 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Installs GMSH.
+# Installs Gmsh.
 ##
-GMSH_LINK=https://gmsh.info/src/gmsh-4.5.6-source.tgz
-GMSH_SHA256=46eaeb0cdee5822fdaa4b15f92d8d160a8cc90c4565593cfa705de90df2a463f
+GMSH_LINK=https://gmsh.info/src/gmsh-4.6.0-source.tgz
+GMSH_SHA256=0f2c55e50fb6c478ebc8977f6341c223754cbf3493b7b0d683b4395ae9f2ad1c
 
 help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-l BLAS_LAPACK_LIBRARIES -o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h] [-l BLAS_LAPACK_LIBRARIES -p EDGE_PARTITION_PLUGIN_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs Gmsh.
      -h This help message.
      -l BLAS_LAPACK_LIBRARIES (optional) string passed to Gmsh for the BLAS/LAPACK installation.
+     -p EDGE_PARTITION_PLUGIN_DIR path to EDGE's partition plugin.
      -o INSTALL_DIR Absolute path of the installation directory, will be created if missing.
      -j N_BUILD_PROCS (optional) number of build processes, defaults to one.
 EOF
 }
 
-while getopts "hl:o:j:" opt; do
+while getopts "hl:p:o:j:" opt; do
   case "$opt" in
     h)
       help
@@ -44,10 +45,12 @@ while getopts "hl:o:j:" opt; do
     l)
       BLAS_LAPACK_LIBRARIES=$OPTARG
       ;;
+    p)
+      EDGE_PARTITION_PLUGIN_DIR=$OPTARG
+      ;;
     o)
       INSTALL_DIR=$OPTARG
       ;;
-
     j)
       N_BUILD_PROCS=$OPTARG
       ;;
@@ -64,6 +67,16 @@ then
   echo "Error: ${INSTALL_DIR} is not absolute"
   help >&2
   exit 1
+fi
+
+if [[ ${EDGE_PARTITION_PLUGIN_DIR} != "" ]]
+then
+  if [[ ${EDGE_PARTITION_PLUGIN_DIR:0:1} != "/" ]]
+  then
+    echo "Error: ${EDGE_PARTITION_PLUGIN_DIR} is not absolute"
+    help >&2
+    exit 1
+  fi
 fi
 
 if [[ ${N_BUILD_PROCS} == "" ]]
@@ -85,7 +98,16 @@ fi
 
 mkdir -p gmsh/build
 tar -xf gmsh.tgz -C gmsh --strip-components=1
-cd gmsh/build
+cd gmsh
+
+# patch Gmsh with partition plugin if requested
+if [[ ${EDGE_PARTITION_PLUGIN_DIR} != "" ]]
+then
+  patch -p1 < ${EDGE_PARTITION_PLUGIN_DIR}/gmsh.patch
+  cp ${EDGE_PARTITION_PLUGIN_DIR}/EdgePartition.* Plugin
+fi
+
+cd build
 
 # assemble cmake command
 cmake_command="cmake"
@@ -93,7 +115,7 @@ if [[ ${BLAS_LAPACK_LIBRARIES} != "" ]]
 then
   cmake_command="${cmake_command} -DBLAS_LAPACK_LIBRARIES=${BLAS_LAPACK_LIBRARIES}"
 fi
-cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=ON -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
+cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=ON -DENABLE_MMG3D=OFF -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
 
 # configure and build
 $(${cmake_command})
