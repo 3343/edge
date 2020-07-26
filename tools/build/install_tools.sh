@@ -38,7 +38,8 @@ then
   # install extra packages
   sudo dnf install -y -q -e 0 epel-release
   # enable power tools repo
-  yum config-manager -y -q -e 0 --set-enabled PowerTools
+  sudo dnf install -y -q -e 0 dnf-plugins-core
+  sudo dnf config-manager -y -q -e 0 --set-enabled PowerTools
   # recent build tools
   sudo dnf install -y -q -e 0 gcc
   sudo dnf install -y -q -e 0 libasan libubsan
