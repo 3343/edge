@@ -37,6 +37,8 @@ if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   # install extra packages
   sudo dnf install -y -q -e 0 epel-release
+  # enable power tools repo
+  yum config-manager -y -q -e 0 --set-enabled PowerTools
   # recent build tools
   sudo dnf install -y -q -e 0 gcc
   sudo dnf install -y -q -e 0 libasan libubsan
@@ -135,7 +137,7 @@ wget http://prdownloads.sourceforge.net/scons/scons-3.1.2.tar.gz -O scons.tar.gz
 mkdir scons
 tar -xzf scons.tar.gz -C scons --strip-components=1
 cd scons
-sudo python setup.py install
+sudo python setup.py install > /dev/null
 cd ..
 
 #############
