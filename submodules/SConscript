@@ -145,7 +145,8 @@ if env['easylogging'] != False:
     l_el['def']=l_el['def']+['ELPP_THREAD_SAFE']
   l_el['obj'] = env.Object( 'easylogging/src/easylogging++.cc',
                             CXXFLAGS   = env['CXXFLAGS']+
-                                        ['-Wno-shadow'],
+                                        ['-Wno-shadow',
+                                         '-Wno-range-loop-construct'],
                             CPPDEFINES = l_el['def'] )
   l_easyLogging = env.StaticLibrary( 'easylogging/easylogging',
                                      l_el['obj'] )
