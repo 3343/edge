@@ -42,6 +42,7 @@ then
   sudo dnf config-manager -y -q -e 0 --set-enabled PowerTools
   # recent build tools
   sudo dnf install -y -q -e 0 gcc
+  sudo dnf install -y -q -e 0 gcc-gfortran
   sudo dnf install -y -q -e 0 libasan libubsan
   sudo dnf install -y -q -e 0 gcc-toolset-9
   #source /opt/rh/gcc-toolset-9/enable
