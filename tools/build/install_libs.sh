@@ -77,9 +77,8 @@ cd ..
 ##########
 # EDGE-V #
 ##########
-cd edge/tools/edge_v
-scons moab=yes ucvm=/usr/local/ucvm zlib=yes hdf5=yes netcdf=no
-sudo mv build/edge_v /usr/local/bin
+cd tools/edge_v
+sudo bash -c "PATH=$PATH scons parallel=omp ucvm=/usr/local/ucvm install_dir=/usr/local -j ${EDGE_N_BUILD_PROC}" > /dev/null
 cd ../..
 
 ############
