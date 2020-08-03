@@ -5,7 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
-# Copyright (c) 2019, Alexander Breuer
+# Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
 #
@@ -51,7 +51,7 @@ wget https://www.hdfgroup.org/package/gzip/?wpdmdl=13048 -O hdf5.tar.gz > /dev/n
 mkdir hdf5
 tar -xzf hdf5.tar.gz -C hdf5 --strip-components=1
 cd hdf5
-./configure --enable-shared=no --enable-parallel --prefix=/usr/local > /dev/null
+./configure --enable-shared=no --prefix=/usr/local > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo make install > /dev/null
 cd ..
