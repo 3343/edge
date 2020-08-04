@@ -5,7 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
-# Copyright (c) 2019, Alexander Breuer
+# Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2015-2019, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
 # All rights reserved.
@@ -176,8 +176,8 @@ vars.AddVariables(
               ),
   EnumVariable( 'arch',
                 'architecture to compile for',
-                'hsw',
-                 allowed_values=('snb', 'hsw', 'knl', 'skx', 'avx512')
+                'native',
+                 allowed_values=('native', 'snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
