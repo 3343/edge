@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -22,8 +22,10 @@
  * Sets processor options.
  **/
 #include "Cpu.h"
+#ifdef __SSE__
 #include "xmmintrin.h"
 #include "pmmintrin.h"
+#endif
 #include "io/logging.h"
 
 bool edge::setups::Cpu::getFlushToZero() {
