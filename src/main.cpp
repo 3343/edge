@@ -374,6 +374,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
     PP_INSTR_PAR_UINT64("sync_id",  (uint64_t) l_step )
 #pragma warning pop
 
+    EDGE_LOG_INFO << "progressing simulation by " << l_stepTime;
     l_time.simulate( l_stepTime );
     PP_INSTR_REG_END( sync )
 
