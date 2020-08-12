@@ -360,7 +360,6 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then mkdir sde; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then tar --strip-components=1 -xjf sde.tar.bz2 -C sde; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ln -s $(pwd)/sde/sde64 /usr/local/bin/sde64; fi;
-  - if [ "$SYSTEM_SETUP" = "1" ]; then cd ..; fi;
 
   # clone EDGE's asset repository
   - git lfs clone --exclude=* https://opt.dial3343.org/3343/edge_opt.git
