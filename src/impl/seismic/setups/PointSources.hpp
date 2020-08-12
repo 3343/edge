@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -79,7 +80,7 @@ class edge::seismic::setups::PointSources {
 
     //! point sources of single simulations
     typedef struct {
-      //! total number of point sources (includes send-duplicates)
+      //! total number of point sources
       TL_T_LID nPts = 0;
 
       //! dense ids of the point sources
@@ -191,7 +192,7 @@ class edge::seismic::setups::PointSources {
      * @param i_nEls number of elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_charsVe vertex characteristics.
-     * @param o_srcEls will be set to active source elements (including MPI-duplicates).
+     * @param o_srcEls will be set to active source elements.
      * @param o_srcIds will be set to the ids of the sources.
      *
      * @paramt TL_T_CHARS_VE type of the vertex characteristics, offering member .coords[3].
@@ -296,7 +297,7 @@ class edge::seismic::setups::PointSources {
      * @param i_nEl number of dense elements.
      * @param i_spTy sparse type of the sources.
      * @param i_charsEl elements characteristics with sparse types set for source terms.
-     * @param i_srcElP sparse source elements, sorted by their dense ids. If an elements holds more than one entry, multplie entries occur accordingly.
+     * @param i_srcElP sparse source elements, sorted by their dense ids. If an elements holds more than one entry, multiple entries occur accordingly.
      * @param io_dynMem dynamic memory allocations.
      * @param o_elSpPs will be set to the mapping.
      *
@@ -355,7 +356,7 @@ class edge::seismic::setups::PointSources {
 
               // increase index until we are in the next element
               if( i_srcElP[l_cr][l_ps] == l_el ) l_ptSrc[l_cr]++;
-              else                                break;
+              else                               break;
             }
           }
 
@@ -412,7 +413,7 @@ class edge::seismic::setups::PointSources {
 
       // get points space
       hid_t  l_ptsDsp = H5Dget_space( l_ptsDset );
-      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_ptsDsp ),   2 );
+      EDGE_CHECK_EQ( H5Sget_simple_extent_ndims( l_ptsDsp ), 2 );
 
       // check dimensions
       hsize_t l_ptsDis[2];
