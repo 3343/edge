@@ -527,8 +527,12 @@ else:
     env.Append( CXXFLAGS = '-ftree-vectorize' )
 # add sanitizers
 if 'san' in  env['mode']:
-  env.Append( CXXFLAGS =  ['-g', '-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
+  env.Append( CXXFLAGS =  ['-g', '-fsanitize=float-divide-by-zero', '-fsanitize=bounds', '-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
   env.Append( LINKFLAGS = ['-g', '-fsanitize=address', '-fsanitize=undefined'] )
+
+  # clang specifics
+  if ( 'clang' in compVer ):
+    env.Append( CXXFLAGS =  ['-fsanitize=integer', '-fsanitize=implicit-conversion', '-fsanitize=nullability'] )
 
 # enable code coverage, if requested
 if env['cov'] == True:
