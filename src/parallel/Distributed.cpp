@@ -25,6 +25,7 @@
 #ifdef PP_USE_MPI
 #include "mpi_wrapper.inc"
 #endif
+#include <limits>
 
 void edge::parallel::Distributed::sendCommBuffers2( unsigned short   i_tg,
                                                     unsigned short & o_cbL,
