@@ -303,7 +303,8 @@ before_install:
   - export F77=${FORT_COMPILER}
   - export F90=${FORT_COMPILER}
 
-  # install scons
+  # install cmake and scons
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install cmake; fi;
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo apt-get install scons; fi;
 
   # install open mpi
