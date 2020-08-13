@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -25,6 +26,7 @@
 #define EDGE_DATA_DYNAMIC_HPP
 
 #include "common.hpp"
+#include <vector>
 
 namespace edge {
   namespace data {
