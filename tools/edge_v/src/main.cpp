@@ -417,12 +417,12 @@ int main( int i_argc, char *i_argv[] ) {
 
   EDGE_V_LOG_INFO << "re-initializing time step groups with reordered data";
   l_tsGroups = new edge_v::time::Groups( l_mesh->getTypeEl(),
-                                          l_mesh->nEls(),
-                                          l_mesh->getElFaEl(),
-                                          l_nRates,
-                                          l_rates,
-                                          l_funDt,
-                                          l_cfl->getTimeSteps() );
+                                         l_mesh->nEls(),
+                                         l_mesh->getElFaEl(),
+                                         l_nRates,
+                                         l_rates,
+                                         l_funDt,
+                                         l_cfl->getTimeSteps() );
 
   std::string l_tagNtgElsIn = "edge_v_n_time_group_elements_inner";
   std::string l_tagNtgElsSe = "edge_v_n_time_group_elements_send";
@@ -436,6 +436,20 @@ int main( int i_argc, char *i_argv[] ) {
     EDGE_V_LOG_INFO << "adding meta data: " << l_pathMesh;
     edge_v::io::Hdf5 l_hdf( l_pathMesh,
                             false );
+
+#ifdef PP_HAS_UCVM
+      if( l_config.getVelModUcvmProjSrc() != "" ) {
+        l_hdf.set( l_tagVp,
+                   l_mesh->nEls(),
+                   l_velP );
+        l_hdf.set( l_tagVs,
+                   l_mesh->nEls(),
+                   l_velS );
+        l_hdf.set( l_tagRho,
+                   l_mesh->nEls(),
+                   l_rho );
+      }
+#endif
 
     l_hdf.set( l_tagNtgElsIn,
                l_tsGroups->nGroups(),
