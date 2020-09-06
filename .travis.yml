@@ -50,6 +50,9 @@ matrix:
     - os: linux
       compiler: gcc
       addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-9']
         coverity_scan:
           project:
             name: "3343/edge"
@@ -75,6 +78,10 @@ matrix:
     #
     - os: linux
       compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-9']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tet4
