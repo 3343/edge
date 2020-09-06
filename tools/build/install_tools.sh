@@ -88,6 +88,7 @@ then
   export DEBIAN_FRONTEND=noninteractive
   sudo apt-get -qq update
   sudo apt install -qq -y build-essential
+  sudo apt install -qq -y gfortran
   sudo apt install -qq -y autoconf
   sudo apt install -qq -y libtool
   sudo apt install -qq -y git
