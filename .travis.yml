@@ -22,7 +22,7 @@
 # Continuous integration via Travis CI.
 ##
 
-dist: xenial
+dist: focal
 sudo: required
 
 env:
@@ -50,9 +50,6 @@ matrix:
     - os: linux
       compiler: gcc
       addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
         coverity_scan:
           project:
             name: "3343/edge"
@@ -64,9 +61,9 @@ matrix:
           build_command:   "scons equations=elastic element_type=tet4 order=4 precision=32 cfr=16 arch=knl easylogging=no xsmm=yes zlib=yes hdf5=yes moab=yes parallel=mpi+omp mode=release tests=1"
           branch_pattern: develop
       env:
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
+        CXX_COMPILER=g++
+        CC_COMPILER=gcc
+        FORT_COMPILER=gfortran
         SYSTEM_SETUP=1
         USE_MPI=1
         N_BUILD_PROC=3
@@ -78,215 +75,14 @@ matrix:
     #
     - os: linux
       compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
       env:
         EQUATIONS=elastics
         T_ELEMENTS=tet4
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
+        CXX_COMPILER=g++
+        CC_COMPILER=gcc
+        FORT_COMPILER=gfortran
         USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # elastics - tria3
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=elastics
-        T_ELEMENTS=tria3
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # elastics - quad4r
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=elastics
-        T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # elastics - hex8r
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=elastics
-        T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # SWE - line
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=swe
-        T_ELEMENTS=line
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # advection - line
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=line
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # advection - quad4r
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=quad4r
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # advection - tria3
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=tria3
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=1
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=tria3
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # advection - hex8r
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=hex8r
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
-        SYSTEM_SETUP=1
-        N_BUILD_PROC=3
-
-    #
-    # advection - tet4
-    #
-    - os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'gfortran-7']
-      env:
-        EQUATIONS=advection
-        T_ELEMENTS=tet4
-        CXX_COMPILER=g++-7
-        CC_COMPILER=gcc-7
-        FORT_COMPILER=gfortran-7
-        USE_MPI=0
-        GCOV=gcov-7
+        GCOV=gcov
         SYSTEM_SETUP=1
         N_BUILD_PROC=3
 
