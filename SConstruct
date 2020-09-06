@@ -449,6 +449,8 @@ if env['equations'] == 'advection':
 elif 'elastic' == env['equations']:
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_SEISMIC'] )
   env.Append( CPPDEFINES=['PP_N_RELAXATION_MECHANISMS=0'] )
+  # disables warning of empty loops in kernels
+  env.Append( CPPFLAGS=['-Wno-type-limits'] )
 elif 'viscoelastic' in env['equations']:
   env.Append( CPPDEFINES=['PP_T_EQUATIONS_SEISMIC'] )
   env.Append( CPPDEFINES=['PP_N_RELAXATION_MECHANISMS='+env['equations'].split('viscoelastic')[1]] )
