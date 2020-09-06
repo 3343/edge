@@ -83,6 +83,20 @@ then
   sudo pip install meshio > /dev/null
   # Pipeline dependencies
   sudo dnf install -y -q -e 0 npm
+elif [[ ${EDGE_DIST} == *"Ubuntu"* ]]
+then
+  export DEBIAN_FRONTEND=noninteractive
+  sudo apt-get -qq update
+  sudo apt install -qq -y build-essential
+  sudo apt install -qq -y autoconf
+  sudo apt install -qq -y libtool
+  sudo apt install -qq -y git
+  sudo apt install -qq -y cmake
+  sudo apt install -qq -y python3 python3-pip python3-dev
+  sudo apt install -qq -y cppcheck
+  sudo apt install -qq -y valgrind
+  sudo ln -s /usr/bin/python3 /usr/bin/python
+  sudo ln -s /usr/bin/pip3 /usr/bin/pip
 fi
 
 ########
@@ -149,14 +163,6 @@ if [[ ${EDGE_DIST} == *"CentOS"* ]]
 then
   sudo sh -c 'echo -e "[buildkite-agent]\nname = Buildkite Pty Ltd\nbaseurl = https://yum.buildkite.com/buildkite-agent/stable/x86_64/\nenabled=1\ngpgcheck=0\npriority=1" > /etc/yum.repos.d/buildkite-agent.repo'
   sudo dnf install -y -q -e 0 buildkite-agent
-fi
-
-#################
-# GCP specifics #
-#################
-if [[ $(curl metadata.google.internal -si | grep Google) ]]
-then
-  sudo python -m pip install google-api-python-client
 fi
 
 ############
