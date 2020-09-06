@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2018, Regents of the University of California
  * All rights reserved.
  *
@@ -173,6 +174,68 @@ TEST_CASE( "Load balancing: balance function.", "[balance][loadBalancing]" ) {
 
   REQUIRE( l_lb1.m_wrkRgns[2].wrkPkgs[6].first == 11736 );
   REQUIRE( l_lb1.m_wrkRgns[2].wrkPkgs[6].size  ==   896 );
+}
+
+TEST_CASE( "Load balancing: corner cases of the balance function.", "[balanceCorner][loadBalancing]" ) {
+  // init the load balancing with 7 workers
+  edge::parallel::LoadBalancing l_lb1;
+  l_lb1.init( 5 );
+
+  // register four work regions
+  l_lb1.regWrkRgn( 0,
+                   20,
+                   10 );
+
+  // equal
+  l_lb1.balanceWrkRgn( 0 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[0].first == 20 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[0].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[1].first == 22 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[1].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[2].first == 24 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[2].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[3].first == 26 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[3].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[4].first == 28 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[4].size  ==  2 );
+
+  // equal but three worker did nothing in the past
+  l_lb1.m_wrkRgns[0].wrkPkgs[0].first = 20;
+  l_lb1.m_wrkRgns[0].wrkPkgs[0].size  = 8;
+
+  l_lb1.m_wrkRgns[0].wrkPkgs[1].first = 20;
+  l_lb1.m_wrkRgns[0].wrkPkgs[1].size  = 8;
+
+  l_lb1.m_wrkRgns[0].wrkPkgs[2].first = 20;
+  l_lb1.m_wrkRgns[0].wrkPkgs[2].size  = 0;
+
+  l_lb1.m_wrkRgns[0].wrkPkgs[3].first = 26;
+  l_lb1.m_wrkRgns[0].wrkPkgs[3].size  = 0;
+
+  l_lb1.m_wrkRgns[0].wrkPkgs[4].first = 26;
+  l_lb1.m_wrkRgns[0].wrkPkgs[4].size  = 0;
+
+  l_lb1.balanceWrkRgn( 0 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[0].first == 20 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[0].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[1].first == 22 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[1].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[2].first == 24 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[2].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[3].first == 26 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[3].size  ==  2 );
+
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[4].first == 28 );
+  REQUIRE( l_lb1.m_wrkRgns[0].wrkPkgs[4].size  ==  2 );
 }
 
 TEST_CASE( "Load balancing: sparse entities.", "[spEn][loadBalancing]" ) {

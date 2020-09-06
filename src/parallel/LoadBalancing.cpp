@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2018-2020, Regents of the University of California
  * All rights reserved.
  *
@@ -81,12 +82,19 @@ void edge::parallel::LoadBalancing::balanceWrkRgn( unsigned short i_id ) {
     m_wrkRgns[i_id].elaSum += l_elapsed.back();
   }
 
-  // fill in pseudo-data if any of the elapsed times is non-positive or the imbalance criterion is not fullfilled
+  // derive imbalance
   double l_imbalance  = (m_wrkRgns[i_id].elaMax - m_wrkRgns[i_id].elaMin);
          l_imbalance /= std::max( m_wrkRgns[i_id].elaSum / m_nWrks, m_zeroTime );
-  if( m_wrkRgns[i_id].elaMin < m_zeroTime || l_imbalance < m_maxImbalance ) {
-    for( unsigned int l_wo = 0; l_wo < m_nWrks; l_wo++ ) l_elapsed[l_wo] = 3343;
+
+  // fill in pseudo-data if any of the elapsed times is non-positive
+  if( m_wrkRgns[i_id].elaMin < m_zeroTime ) {
+    for( unsigned int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
+      l_elapsed[l_wo] = 3343;
+      l_wps[l_wo].size = 1;
+    }
   }
+  // continue with current balancing if treshold is not reached
+  else if( l_imbalance < m_maxImbalance ) return;
 
   // derive entity throughput per second
   std::vector< double > l_through;
@@ -112,26 +120,22 @@ void edge::parallel::LoadBalancing::balanceWrkRgn( unsigned short i_id ) {
   }
 
   // remove entries, if too many have been distributed
-  if( l_dist > m_wrkRgns[i_id].size ) {
-    while( l_dist > m_wrkRgns[i_id].size ) {
-      for( unsigned int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
-        if( l_wps[l_wo].size > 0 ) {
-          l_wps[l_wo].size--;
-          l_dist--;
-        }
-        if( l_dist == m_wrkRgns[i_id].size ) break;
+  while( l_dist > m_wrkRgns[i_id].size ) {
+    for( unsigned int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
+      if( l_wps[l_wo].size > 0 ) {
+        l_wps[l_wo].size--;
+        l_dist--;
       }
+      if( l_dist == m_wrkRgns[i_id].size ) break;
     }
   }
 
   // add entries, if too little have been distributed
-  if( l_dist < m_wrkRgns[i_id].size ) {
-    while( l_dist < m_wrkRgns[i_id].size ) {
-      for( unsigned int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
-        l_wps[l_wo].size++;
-        l_dist++;
-        if( l_dist == m_wrkRgns[i_id].size ) break;
-      }
+  while( l_dist < m_wrkRgns[i_id].size ) {
+    for( unsigned int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
+      l_wps[l_wo].size++;
+      l_dist++;
+      if( l_dist == m_wrkRgns[i_id].size ) break;
     }
   }
 
