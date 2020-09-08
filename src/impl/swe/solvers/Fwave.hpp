@@ -77,7 +77,7 @@ class edge::swe::solvers::Fwave {
         TL_T_REAL l_hSqrtL = std::sqrt(i_hL[l_cr]);
         TL_T_REAL l_hSqrtR = std::sqrt(i_hR[l_cr]);
 
-        l_hRoe[l_cr]  = TL_T_REAL(0.5) * ( i_hL[l_cr] + i_hL[l_cr] );
+        l_hRoe[l_cr]  = TL_T_REAL(0.5) * ( i_hL[l_cr] + i_hR[l_cr] );
         l_uRoe[l_cr]  = l_hSqrtL * i_uL[l_cr] + l_hSqrtR * i_uR[l_cr];
         l_uRoe[l_cr] /= l_hSqrtL + l_hSqrtR;
 
