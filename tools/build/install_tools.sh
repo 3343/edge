@@ -118,7 +118,7 @@ fi
 ###########
 # OpenMPI #
 ###########
-wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.4.tar.gz -O openmpi.tar.gz
+wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.5.tar.gz -O openmpi.tar.gz
 mkdir openmpi
 tar -xf openmpi.tar.gz -C openmpi --strip-components=1
 cd openmpi
