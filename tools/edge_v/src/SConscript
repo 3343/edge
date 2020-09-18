@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
@@ -27,7 +28,7 @@ l_sources = [ 'io/Config.cpp',
               'io/Csv.cpp',
               'io/BgMeshMsh4.cpp',
               'io/Hdf5.cpp',
-              'io/Moab.cpp',
+              'io/Gmsh.cpp',
               'io/ExprTk.cpp',
               'geom/Generic.cpp',
               'geom/Line.cpp',
@@ -51,16 +52,12 @@ l_headers = [ 'edge_v.h',
               'io/logging.h',
               'io/Config.h',
               'io/Hdf5.h',
-              'io/Moab.h',
+              'io/Gmsh.h',
               'mesh/Mesh.h',
               'models/Constant.h',
               'models/Model.h',
               'time/Cfl.h',
               'time/Groups.h' ]
-
-for l_he in l_headers:
-  env.headers.append( env.Substfile( l_he,
-                                     SUBST_DICT = {'PP_EDGE_V_ENTITY_SIZE': env['entity_size']} )[0] )
 
 if 'ucvm' in env and env['ucvm']:
   l_sources = l_sources + [ 'io/Ucvm.cpp',
@@ -74,7 +71,7 @@ env.standalone = env.Object( "main.cpp" )
 if env['tests']:
   l_tests = [ 'tests.cpp',
               'io/Hdf5.test.cpp',
-              'io/Moab.test.cpp',
+              'io/Gmsh.test.cpp',
               'io/BgMeshMsh4.test.cpp',
               'geom/Line.test.cpp',
               'geom/Quad4r.test.cpp',

@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
@@ -21,7 +22,6 @@
 # @section DESCRIPTION
 # EDGE-V's build file.
 ##
-
 import os
 import warnings
 import subprocess
@@ -147,10 +147,6 @@ vars.AddVariables(
                 'none',
                  allowed_values=('none', 'omp')
               ),
-  EnumVariable( 'entity_size',
-                'size of the entity ids in bits',
-                '64',
-                allowed_values=( '64', '32' ) ),
   BoolVariable( 'tests',
                 'enable unit tests.',
                  False ),
@@ -160,8 +156,8 @@ vars.AddVariables(
   PackageVariable( 'hdf5',
                    'enable HDF5',
                    'yes' ),
-  PackageVariable( 'moab',
-                   'Location of the MOAB-Installation.',
+  PackageVariable( 'gmsh',
+                   'Location of the Gmsh-Installation.',
                    'yes' ),
   PackageVariable( 'metis',
                    'Location of the METIS-Installation.',
@@ -222,7 +218,7 @@ env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
-for l_va in [ 'zlib', 'hdf5', 'moab', 'ucvm' ]:
+for l_va in [ 'zlib', 'hdf5', 'ucvm' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler
@@ -276,9 +272,6 @@ if 'san' in  env['mode']:
 
 # forward EDGE version
 env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
-
-# forward entity size
-env.Append( CPPDEFINES='PP_EDGE_V_ENTITY_SIZE=' + env['entity_size'] )
 
 # detect compilers
 try:

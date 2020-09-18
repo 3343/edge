@@ -5,6 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -110,9 +111,9 @@ PP_INSTR_REG_BEG(dofsMat,"dofs_mat")
 // query velocity model from mesh
 bool l_vmMesh = false;
 EDGE_LOG_INFO << "    querying mesh for velocity model";
-std::size_t l_nVelP = l_edgeV.nVas( "edge_v_vp" );
-std::size_t l_nVelS = l_edgeV.nVas( "edge_v_vs" );
-std::size_t l_nRho  = l_edgeV.nVas( "edge_v_rho" );
+std::size_t l_nVelP = l_edgeV.nVas( "vp" );
+std::size_t l_nVelS = l_edgeV.nVas( "vs" );
+std::size_t l_nRho  = l_edgeV.nVas( "rho" );
 if(    l_nVelP == l_edgeV.nEls()
     && l_nVelS == l_edgeV.nEls()
     && l_nRho  == l_edgeV.nEls() ) {
@@ -121,11 +122,11 @@ if(    l_nVelP == l_edgeV.nEls()
   float * l_velP = new float[l_nVelP];
   float * l_velS = new float[l_nVelS];
   float * l_rho = new float[l_nRho];
-  l_edgeV.getData( "edge_v_vp",
+  l_edgeV.getData( "vp",
                    l_velP );
-  l_edgeV.getData( "edge_v_vs",
+  l_edgeV.getData( "vs",
                    l_velS );
-  l_edgeV.getData( "edge_v_rho",
+  l_edgeV.getData( "rho",
                    l_rho );
 
   // store lame parameters

@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -144,12 +145,17 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "parsing xml config";
   edge::io::Config l_config( l_options.getXmlPath() );
 
-  // parse mesh
-  EDGE_LOG_INFO << "parsing mesh";
+  // parse mesh and mesh supplement
+  EDGE_LOG_INFO << "parsing mesh and supplement";
   std::string l_meshPath = l_config.m_meshInBase;
-  if( edge::parallel::g_nRanks > 1 ) l_meshPath += "_" + edge::parallel::g_rankStr;
+  l_meshPath += "_" + std::to_string(edge::parallel::g_rank+1);
   l_meshPath += l_config.m_meshInExt;
+
+  std::string l_supplementPath = l_config.m_meshInBase;
+  l_supplementPath += "_" + std::to_string(edge::parallel::g_rank+1) + ".h5";
+
   edge::mesh::EdgeV l_edgeV( l_meshPath,
+                             l_supplementPath,
                              l_config.m_periodic );
 
   // dynamic memory allocates

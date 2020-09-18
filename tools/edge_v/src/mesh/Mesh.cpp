@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -22,9 +23,57 @@
  **/
 #include "Mesh.h"
 
-#include "../io/Moab.h"
 #include "../geom/Geom.h"
 #include "../io/logging.h"
+
+void  edge_v::mesh::Mesh::sortLex( t_idx   i_n0,
+                                   t_idx   i_n1,
+                                   t_idx * io_data,
+                                   t_idx * o_sorted ) {
+  // duplicate data
+  t_idx * l_data = new t_idx[ i_n0 * i_n1 ];
+  for( t_idx l_id = 0; l_id < i_n0*i_n1; l_id++ ) {
+    l_data[l_id] = io_data[l_id];
+  }
+
+  // alloc and init sorted aray
+  t_idx * l_sorted = new t_idx[ i_n0 ];
+  for( t_idx l_i0 = 0; l_i0 < i_n0; l_i0++ ) {
+    l_sorted[l_i0] = l_i0;
+  }
+
+  // lambda which compares two entries
+  auto l_entryLess = [ i_n1, l_data ]( t_idx i_en0,
+                                       t_idx i_en1 ) {
+    for( t_idx l_i1 = 0; l_i1 < i_n1; l_i1++ ) {
+      if( l_data[i_en0*i_n1 + l_i1] < l_data[i_en1*i_n1 + l_i1] ) {
+        return true;
+      }
+      else if( l_data[i_en0*i_n1 + l_i1] > l_data[i_en1*i_n1 + l_i1] ) {
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // sort the entries
+  std::sort( l_sorted,
+             l_sorted+i_n0,
+             l_entryLess );
+
+  // store the result
+  for( t_idx l_i0 = 0; l_i0 < i_n0; l_i0++ ) {
+    t_idx l_id = l_sorted[l_i0];
+    if( o_sorted != nullptr ) o_sorted[l_i0] = l_id;
+
+    for( t_idx l_i1 = 0; l_i1 < i_n1; l_i1++ ) {
+      io_data[l_i0*i_n1 + l_i1] = l_data[l_id*i_n1 + l_i1];
+    }
+  }
+
+  delete[] l_sorted;
+  delete[] l_data;
+}
 
 void edge_v::mesh::Mesh::getElFaEl( t_entityType         i_elTy,
                                     t_idx                i_nEls,
@@ -86,6 +135,43 @@ void edge_v::mesh::Mesh::getEnVeCrds( t_entityType          i_enTy,
       o_enVeCrds[l_ve][l_di] = i_veCrds[l_veId][l_di];
     }
   }
+}
+
+void edge_v::mesh::Mesh::addSparseTypeEn( t_entityType         i_enTy,
+                                          t_idx                i_nEnsDe,
+                                          t_idx                i_nEnsSp,
+                                          t_idx        const * i_enVeDe,
+                                          t_idx        const * i_enVeSp,
+                                          t_sparseType         i_spTypeAdd,
+                                          t_sparseType       * io_spType ) {
+  // get the number of vertices
+  unsigned short l_nEnVes = CE_N_VES( i_enTy );
+
+  // current sparse id
+  t_idx l_sp = 0;
+
+  // iterate over the dense entities
+  for( t_idx l_de = 0; l_de < i_nEnsDe; l_de++ ) {
+    // abort if all sparse entities have been processed
+    if( l_sp >= i_nEnsSp ) break;
+
+    // check for number of matching vertices
+    unsigned short l_nMatch = 0;
+    for( unsigned short l_ve = 0; l_ve < l_nEnVes; l_ve++ ) {
+      if( i_enVeDe[ l_de * l_nEnVes + l_ve] == i_enVeSp[ l_sp * l_nEnVes + l_ve ] ) {
+        l_nMatch++;
+      }
+    }
+
+    // set type and increase counter for matches
+    if( l_nMatch == l_nEnVes ) {
+      io_spType[l_de] |= i_spTypeAdd;
+      l_sp++;
+    }
+  }
+
+  // check that we found all sparse entities
+  EDGE_V_CHECK_EQ( l_sp, i_nEnsSp );
 }
 
 void edge_v::mesh::Mesh::setInDiameter( t_entityType          i_enTy,
@@ -336,36 +422,103 @@ void edge_v::mesh::Mesh::normOrder( t_entityType          i_elTy,
   }
 }
 
-edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
+edge_v::mesh::Mesh::Mesh( edge_v::io::Gmsh const & i_gmsh,
                           int                      i_periodic ) {
   // get the element type of the mesh
-  m_elTy = i_moab.getElType();
+  m_elTy = i_gmsh.getElType();
   t_entityType l_faTy = CE_T_FA( m_elTy );
 
   // derive element properties
   unsigned short l_nElVes = CE_N_VES( m_elTy );
   unsigned short l_nElFas = CE_N_FAS( m_elTy );
+  unsigned short l_nFaVes = CE_N_VES( l_faTy );
 
   // query mesh
-  m_nVes = i_moab.nEnsByType( POINT  );
-  m_nFas = i_moab.nEnsByType( l_faTy );
-  m_nEls = i_moab.nEnsByType( m_elTy );
+  m_nVes = i_gmsh.nVes();
+  EDGE_V_CHECK_GT( m_nVes, 0 );
+  m_nEls = i_gmsh.nEls();
+  EDGE_V_CHECK_GT( m_nEls, 0 );
+
+  std::vector< t_idx > l_elVe;
+  l_elVe.resize( nEls()*l_nElVes );
+  i_gmsh.getElVe( l_elVe.data() );
+
+  std::vector< t_idx > l_elFaVe;
+  l_elFaVe.resize( m_nEls*l_nElFas*l_nFaVes );
+  i_gmsh.getElFaVe( l_elFaVe.data() );
+
+  // convert faces to custom struct
+  struct Face {
+    t_idx el;
+    unsigned short fa;
+    t_idx ves[4] = { std::numeric_limits< t_idx >::max(),
+                     std::numeric_limits< t_idx >::max(),
+                     std::numeric_limits< t_idx >::max(),
+                     std::numeric_limits< t_idx >::max() };
+  };
+  std::vector< Face > l_mapFas;
+  l_mapFas.resize( m_nEls*l_nElFas );
+  for( std::size_t l_el = 0; l_el < m_nEls; l_el++ ) {
+    for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      std::size_t l_mapId = l_el*l_nElFas + l_fa;
+      l_mapFas[l_mapId].el = l_el;
+      l_mapFas[l_mapId].fa = l_fa;
+      for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+        l_mapFas[l_mapId].ves[l_ve] = l_elFaVe[l_mapId*l_nFaVes + l_ve];
+      }
+      std::sort( l_mapFas[l_mapId].ves,
+                 l_mapFas[l_mapId].ves+4 );
+    }
+  }
+
+  // sort by vertices
+  std::sort( l_mapFas.begin(),
+             l_mapFas.end(),
+             []( Face const & l_f0, Face const & l_f1 ) -> bool {
+               return   std::tie( l_f0.ves[0], l_f0.ves[1], l_f0.ves[2], l_f0.ves[3] )
+                      < std::tie( l_f1.ves[0], l_f1.ves[1], l_f1.ves[2], l_f1.ves[3] ); } );
+
+  // derive number of internal faces
+  t_idx l_nFasInt = 0;
+  for( std::size_t l_fa = 0; l_fa < l_mapFas.size()-1; l_fa++ ) {
+    unsigned short l_nVesShared = 0;
+    for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+      if( l_mapFas[l_fa].ves[l_ve] == l_mapFas[l_fa+1].ves[l_ve] ) {
+        l_nVesShared++;
+      }
+    }
+    
+    if( l_nVesShared == l_nFaVes ) {
+      l_nFasInt++;
+    }
+  }
+  t_idx l_nFasBnd = l_mapFas.size() - l_nFasInt*2;
+  m_nFas = l_nFasInt + l_nFasBnd;
 
   // allocate memory
   t_idx l_size  = m_nVes * 3;
   m_veCrds = (double (*)[3]) new double[ l_size ];
 
-  l_size = m_nFas * CE_N_VES( l_faTy );
+  l_size = m_nFas * l_nFaVes;
   m_faVe = new t_idx[ l_size ];
 
   l_size = m_nFas * 2;
   m_faEl = new t_idx[ l_size ];
 
+  l_size  = m_nEls * l_nElVes;
+  m_elVe = new t_idx[ l_size ];
+
   l_size = m_nEls * l_nElFas;
   m_elFa = new t_idx[ l_size ];
 
-  l_size  = m_nEls * l_nElVes;
-  m_elVe = new t_idx[ l_size ];
+  l_size = m_nVes;
+  m_spTypeVe = new t_sparseType[ l_size ];
+
+  l_size = m_nFas;
+  m_spTypeFa = new t_sparseType[ l_size ];
+
+  l_size = m_nEls;
+  m_spTypeEl = new t_sparseType[ l_size ];
 
   l_size  = m_nEls;
   m_inDiasEl = new double[ l_size ];
@@ -373,39 +526,132 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
   l_size = m_nEls * l_nElFas;
   m_elFaEl = new t_idx[ l_size ];
 
-  // query moab
-  i_moab.getVeCrds( m_veCrds );
-  i_moab.getEnVe( l_faTy, m_faVe );
-  i_moab.getFaEl( m_elTy, m_faEl );
-  i_moab.getEnVe( m_elTy, m_elVe );
-  i_moab.getElFa( m_elTy, m_elFa );
+  // init data
+  for( t_idx l_ve = 0; l_ve < m_nVes; l_ve++ ) {
+    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+      m_veCrds[l_ve][l_di] = std::numeric_limits< double >::max();
+    }
+    m_spTypeVe[l_ve] = 0;
+  }
+  for( t_idx l_fa = 0; l_fa < m_nFas; l_fa++ ) {
+    for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+      m_faVe[l_fa*l_nFaVes + l_ve] = std::numeric_limits< t_idx >::max();
+    }
+    for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+      m_faEl[l_fa*2 + l_sd] = std::numeric_limits< t_idx >::max();
+    }
+    m_spTypeFa[l_fa] = 0;
+  }
+  for( t_idx l_el = 0; l_el < m_nEls; l_el++ ) {
+    for( unsigned short l_ve = 0; l_ve < l_nElVes; l_ve++ ) {
+      m_elVe[l_el*l_nElVes + l_ve] = std::numeric_limits< t_idx >::max();
+    }
+    for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      m_elFa[l_el*l_nElFas + l_fa] = std::numeric_limits< t_idx >::max();
+      m_elFaEl[l_el*l_nElFas + l_fa] = std::numeric_limits< t_idx >::max();
+    }
+    m_spTypeEl[l_el] = 0;
+  }
 
-  getElFaEl( m_elTy,
-             m_nEls,
-             m_faEl,
-             m_elFa,
-             m_elFaEl );
+  // query gmsh for 1-to-1 data structures
+  i_gmsh.getElVe( m_elVe );
+  i_gmsh.getVeCrds( m_veCrds );
 
-  // adjust periodic boundaries
-  std::vector< t_idx > l_pFasGt;
-  if( i_periodic != std::numeric_limits< int >::max() ) {
-    int * l_dataFa = new int[ m_nFas ];
-    i_moab.getEnDataFromSet( getTypeFa(),
-                             "MATERIAL_SET",
-                             l_dataFa );
+  // assign face related data
+  std::size_t l_mapId = 0;
+  for( t_idx l_fa = 0; l_fa < m_nFas; l_fa++ ) {
+    // check if this is an internal face
+    bool l_isInt = false;
+    if( l_mapId < l_mapFas.size()-1 ) {
+      unsigned short l_nVesShared = 0;
+      for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+        if( l_mapFas[l_mapId].ves[l_ve] == l_mapFas[l_mapId+1].ves[l_ve] ) {
+          l_nVesShared++;
+        }
+      }
+      if( l_nVesShared == l_nFaVes ) l_isInt = true;
+    }
 
-    setPeriodicBnds( m_elTy,
+    // assign data accordingly
+    for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+      m_faVe[l_fa*l_nFaVes + l_ve] = l_mapFas[l_mapId].ves[l_ve];
+    }
+
+    m_faEl[l_fa*2 + 0] = l_mapFas[l_mapId].el;
+    if( l_isInt ) {
+      m_faEl[l_fa*2 + 1] = l_mapFas[l_mapId+1].el;
+    }
+
+    m_elFa[l_mapFas[l_mapId].el*l_nElFas + l_mapFas[l_mapId].fa] = l_fa;
+    if( l_isInt ) {
+      m_elFa[l_mapFas[l_mapId+1].el*l_nElFas + l_mapFas[l_mapId+1].fa] = l_fa;
+    }
+
+    if( l_isInt ) {
+      m_elFaEl[l_mapFas[l_mapId  ].el*l_nElFas + l_mapFas[l_mapId  ].fa] = l_mapFas[l_mapId+1].el;
+      m_elFaEl[l_mapFas[l_mapId+1].el*l_nElFas + l_mapFas[l_mapId+1].fa] = l_mapFas[l_mapId  ].el;
+    }
+
+    l_mapId++;
+    if( l_isInt ) l_mapId++;
+  }
+
+  // derive sparse types
+  t_idx l_nPhGrs = i_gmsh.nPhysicalGroupsFa();
+  int const * l_phGrs = i_gmsh.getPhysicalGroupsFa();
+
+  for( t_idx l_gr = 0; l_gr < l_nPhGrs; l_gr++ ) {
+    t_idx l_nFasPhGr = i_gmsh.nFas( l_phGrs[l_gr] );
+
+    // get faces' vertices of the group
+    l_size = l_nFasPhGr * l_nFaVes;
+    t_idx * l_faVePhGr = new t_idx[ l_size ];
+    i_gmsh.getFaVe( l_phGrs[l_gr],
+                    l_faVePhGr );
+
+    // sort vertices
+    for( t_idx l_fa = 0; l_fa < l_nFasPhGr; l_fa++ ) {
+      std::sort( l_faVePhGr+l_fa*l_nFaVes, l_faVePhGr+(l_fa+1)*l_nFaVes );
+    }
+
+    // sort lexicographically
+    sortLex( l_nFasPhGr,
+             l_nFaVes,
+             l_faVePhGr );
+
+    // add physical group to sparse type
+    addSparseTypeEn( l_faTy,
                      m_nFas,
-                     i_periodic,
-                     l_dataFa,
+                     l_nFasPhGr,
                      m_faVe,
-                     m_veCrds,
-                     m_faEl,
-                     m_elFa,
-                     m_elFaEl,
-                     l_pFasGt );
+                     l_faVePhGr,
+                     l_phGrs[l_gr],
+                     m_spTypeFa );
 
-    delete[] l_dataFa;
+
+    // free memory
+    delete[] l_faVePhGr;
+  }
+
+  // perform sanity checks
+  for( t_idx l_ve = 0; l_ve < m_nVes; l_ve++ ) {
+    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+      EDGE_V_CHECK_NE( m_veCrds[l_ve][l_di], std::numeric_limits< double >::max() );
+    }
+  }
+  for( t_idx l_fa = 0; l_fa < m_nFas; l_fa++ ) {
+    for( unsigned short l_ve = 0; l_ve < l_nFaVes; l_ve++ ) {
+      EDGE_V_CHECK_NE( m_faVe[l_fa*l_nFaVes + l_ve], std::numeric_limits< t_idx >::max() );
+    }
+    EDGE_V_CHECK_NE( m_faEl[l_fa*2 + 0], std::numeric_limits< t_idx >::max() );
+  }
+  for( t_idx l_el = 0; l_el < m_nEls; l_el++ ) {
+    for( unsigned short l_ve = 0; l_ve < l_nElVes; l_ve++ ) {
+      EDGE_V_CHECK_NE( m_elVe[l_el*l_nElVes + l_ve], std::numeric_limits< t_idx >::max() );
+    }
+    for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      EDGE_V_CHECK_NE( m_elFa[l_el*l_nElFas + l_fa], std::numeric_limits< t_idx >::max() );
+    }
   }
 
   // compute mesh properties
@@ -414,6 +660,9 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
                  m_elVe,
                  m_veCrds,
                  m_inDiasEl );
+
+  // TODO: implement periodic boundaries
+  EDGE_V_CHECK_EQ( i_periodic, std::numeric_limits< int >::max() );
 
   normOrder( m_elTy,
              m_nFas,
@@ -424,15 +673,6 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Moab const & i_moab,
              m_elVe,
              m_elFa,
              m_elFaEl );
-
-  // reverse the order of larger-element periodic faces for consistent normals
-  for( std::size_t l_pf = 0; l_pf < l_pFasGt.size(); l_pf++ ) {
-    t_idx l_fa = l_pFasGt[l_pf];
-
-    t_idx l_tmpEl = m_faEl[l_fa*2+0];
-    m_faEl[l_fa*2+0] = m_faEl[l_fa*2+1];
-    m_faEl[l_fa*2+1] = l_tmpEl;
-  }
 }
 
 edge_v::mesh::Mesh::~Mesh() {

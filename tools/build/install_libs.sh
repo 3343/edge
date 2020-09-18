@@ -5,6 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
@@ -45,7 +46,6 @@ git submodule update > /dev/null
 sudo ./tools/build/deps/zlib.sh -o /usr/local -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo ./tools/build/deps/hdf5.sh -z /usr/local -o /usr/local -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo ./tools/build/deps/libxsmm.sh -i $(pwd)/submodules/libxsmm -o /usr/local -j ${EDGE_N_BUILD_PROC} > /dev/null
-sudo ./tools/build/deps/moab.sh -z /usr/local -5 /usr/local -e $(pwd)/submodules/eigen -m /usr/local -i $(pwd)/submodules/moab -o /usr/local -j ${EDGE_N_BUILD_PROC} > /dev/null
 
 ###########
 # EDGEcut #

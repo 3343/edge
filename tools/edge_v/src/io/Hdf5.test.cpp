@@ -4,6 +4,7 @@
  * @author Alexander Breuer (breuer AT mytum.de)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -25,8 +26,6 @@
 #include "Hdf5.h"
 #undef private
 
-#include <cstdio>
-
 TEST_CASE( "Tests set/get data HDF5 interface.", "[hdf5][setGetData]" ) {
   // dummy data
   std::string l_name0 = "data_0";
@@ -42,15 +41,6 @@ TEST_CASE( "Tests set/get data HDF5 interface.", "[hdf5][setGetData]" ) {
 
   // write to HDF5
   std::string l_path = std::tmpnam(nullptr);
-
-  // create the file
-  hid_t l_file = H5Fcreate( l_path.c_str(),
-                            H5F_ACC_EXCL,
-                            H5P_DEFAULT,
-                            H5P_DEFAULT );
-  REQUIRE( l_file >= 0 );
-  herr_t l_err = H5Fclose( l_file );
-  REQUIRE( l_err >= 0 );
 
   {
     edge_v::io::Hdf5 l_hdf( l_path,

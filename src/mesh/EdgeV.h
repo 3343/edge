@@ -4,7 +4,8 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2019, Alexander Breuer
+ * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -37,14 +38,14 @@ namespace edge {
  **/
 class edge::mesh::EdgeV {
   private:
-    //! EDGE-V moab interface
-    edge_v::io::Moab m_moab;
+    //! gmsh interface
+    edge_v::io::Gmsh *m_gmsh;
 
-    //! EDGE-V mesh interface
-    edge_v::mesh::Mesh m_mesh;
+    //! mesh interface
+    edge_v::mesh::Mesh *m_mesh;
 
-    //! HDF5 interface
-    edge_v::io::Hdf5 m_hdf;
+    //! hdf5 interface
+    edge_v::io::Hdf5 *m_hdf;
 
     //! relative time steps, first is fundamental
     double *m_relDt = nullptr;
@@ -145,9 +146,11 @@ class edge::mesh::EdgeV {
      * Constructor.
      *
      * @param i_pathToMesh path to the mesh file.
+     * @param i_pathToSupplement path to the mesh supplement file.
      * @parma i_periodic type of periodic boundaries.
      **/
     EdgeV( std::string const & i_pathToMesh,
+           std::string const & i_pathToSupplement,
            int                 i_periodic );
 
     /**
@@ -188,21 +191,21 @@ class edge::mesh::EdgeV {
      *
      * @return number of vertices.
      **/
-    std::size_t nVes() const { return m_mesh.nVes(); }
+    std::size_t nVes() const { return m_mesh->nVes(); }
 
     /**
      * Gets the number of faces.
      *
      * @return number of faces.
      **/
-    std::size_t nFas() const { return m_mesh.nFas(); }
+    std::size_t nFas() const { return m_mesh->nFas(); }
 
     /**
      * Gets the number of elements.
      *
      * @return number of elements.
      **/
-    std::size_t nEls() const { return m_mesh.nEls(); }
+    std::size_t nEls() const { return m_mesh->nEls(); }
 
     /**
      * Gets the number of inner elements.
@@ -257,77 +260,77 @@ class edge::mesh::EdgeV {
      *
      * @return faVe info.
      **/
-    std::size_t const * getFaVe() const { return m_mesh.getFaVe(); }
+    std::size_t const * getFaVe() const { return m_mesh->getFaVe(); }
 
     /**
      * Gets the elements adjacent to the faces.
      *
      * @return faEl info.
      **/
-    std::size_t const * getFaEl() const { return m_mesh.getFaEl(); }
+    std::size_t const * getFaEl() const { return m_mesh->getFaEl(); }
 
     /**
      * Gets the vertices adjacent to the elements.
      *
      * @return elVe info.
      **/
-    std::size_t const * getElVe() const { return m_mesh.getElVe(); }
+    std::size_t const * getElVe() const { return m_mesh->getElVe(); }
 
     /**
      * Gets the faces adjacent to the elements.
      *
      * @return elFa info.
      **/
-    std::size_t const * getElFa() const { return m_mesh.getElFa(); }
+    std::size_t const * getElFa() const { return m_mesh->getElFa(); }
 
     /**
      * Gets the face-adjacent elements.
      *
      * @return elFaEl info.
      **/
-    std::size_t const * getElFaEl() const { return m_mesh.getElFaEl(); }
+    std::size_t const * getElFaEl() const { return m_mesh->getElFaEl(); }
 
     /**
      * Gets the vertex coordinates.
      *
      * @return vertex coordinates.
      **/
-    double const (* getVeCrds() )[3]{ return m_mesh.getVeCrds(); }
+    double const (* getVeCrds() )[3]{ return m_mesh->getVeCrds(); }
 
     /**
      * Gets the normals of the faces.
      *
      * @return normals of the faces.
      **/
-    double const (* getNormalsFa() )[3] { return m_mesh.getNormalsFa(); }
+    double const (* getNormalsFa() )[3] { return m_mesh->getNormalsFa(); }
 
     /**
      * Gets the tangents of the faces.
      *
      * @return tangents of the faces.
      **/
-    double const (* getTangentsFa() )[2][3] { return m_mesh.getTangentsFa(); }
+    double const (* getTangentsFa() )[2][3] { return m_mesh->getTangentsFa(); }
 
     /**
      * Gets the areas of the faces.
      *
      * @return areas.
      **/
-    double const * getAreasFa() { return m_mesh.getAreasFa(); }
+    double const * getAreasFa() { return m_mesh->getAreasFa(); }
 
     /**
      * Gets the volumes of the elements.
      *
      * @return volumes.
      **/
-    double const * getVolumesEl() { return m_mesh.getVolumesEl(); }
+    double const * getVolumesEl() { return m_mesh->getVolumesEl(); }
 
     /**
      * Gets the in-diameters of the elements.
      *
      * @return in-diameters.
      **/
-    double const * getInDiasEl() { return m_mesh.getInDiasEl(); }
+    double const * getInDiasEl() { return m_mesh->getInDiasEl(); }
 
     /**
      * Gets the number of communicating element-face pairs.

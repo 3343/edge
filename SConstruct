@@ -5,6 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2015-2019, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
@@ -208,9 +209,6 @@ vars.AddVariables(
   PackageVariable( 'hdf5',
                    'Enables HDF5.',
                    'yes' ),
-  PackageVariable( 'moab',
-                   'Enables MOAB (The Mesh-Oriented datABase).',
-                   'yes' ),
   PackageVariable( 'edge_v',
                    'Enables EDGE-V.',
                    'yes' ),
@@ -281,7 +279,7 @@ env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
-for l_va in [ 'xsmm', 'zlib', 'hdf5', 'moab', 'edge_v', 'hugetlbfs' ]:
+for l_va in [ 'xsmm', 'zlib', 'hdf5', 'edge_v', 'hugetlbfs' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler

@@ -5,6 +5,7 @@
  * @author Rajdeep Konwar (rkonwar AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
@@ -29,11 +30,11 @@
 #include <cstddef>
 
 namespace edge_v {
-#if PP_EDGE_V_ENTITY_SIZE==32
-  typedef unsigned int t_idx;
-#else
+  // integral type for ids
   typedef std::size_t t_idx;
-#endif
+
+  // sparse type
+  typedef int t_sparseType;
 
   // entity types
   typedef enum {

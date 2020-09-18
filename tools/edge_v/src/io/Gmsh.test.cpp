@@ -1,10 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (breuer AT mytum.de)
  *
  * @section LICENSE
- * Copyright (c) 2019-2020, Alexander Breuer
+ * Copyright (c) 2020, Alexander Breuer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,34 +18,39 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @section DESCRIPTION
- * Generic geometry computations.
+ * Tests the Gmsh interface.
  **/
-#include "Generic.h"
-#include "../io/logging.h"
-#include <limits>
+#include <catch.hpp>
+#define private public
+#include "Gmsh.h"
+#undef private
 
-void edge_v::geom::Generic::getFaIdsAd( t_entityType           i_elTy,
-                                        t_idx                  i_nFas,
-                                        t_idx                  i_elOff,
-                                        t_idx    const       * i_el,
-                                        unsigned short const * i_fa,
-                                        t_idx    const       * i_elFaEl,
-                                        unsigned short       * o_faIdsAd ) {
-  unsigned short l_nElFas = CE_N_FAS( i_elTy );
-
-  for( t_idx l_id = 0; l_id < i_nFas; l_id++ ) {
-    t_idx l_el = i_el[l_id] + i_elOff;
-    t_idx l_fa = i_fa[l_id];
-
-    t_idx l_elAd = i_elFaEl[l_el*l_nElFas + l_fa];
-    EDGE_V_CHECK_NE( l_elAd, std::numeric_limits< t_idx >::max() );
-
-    for( unsigned short l_ad = 0; l_ad < l_nElFas; l_ad++ ) {
-      if( i_elFaEl[l_elAd*l_nElFas + l_ad] == l_el ) {
-        o_faIdsAd[l_id] = l_ad;
-        break;
-      }
-      EDGE_V_CHECK_NE( l_ad+1, l_nElFas );
-    }
+namespace edge_v {
+  namespace test {
+    extern std::string g_files;
   }
+}
+
+TEST_CASE( "Tests the derivation of entity types.", "[gmsh][entityTypes]" ) {
+  edge_v::io::Gmsh l_gmsh;
+  int l_gmshPoint  = l_gmsh.getGmshType( edge_v::POINT );
+  int l_gmshLine   = l_gmsh.getGmshType( edge_v::LINE );
+  int l_gmshQuad4r = l_gmsh.getGmshType( edge_v::QUAD4R );
+  int l_gmshTria3  = l_gmsh.getGmshType( edge_v::TRIA3 );
+  int l_gmshHex8r  = l_gmsh.getGmshType( edge_v::HEX8R );
+  int l_gmshTet4   = l_gmsh.getGmshType( edge_v::TET4 );
+
+  edge_v::t_entityType l_edgePoint  = l_gmsh.getEntityType( l_gmshPoint );
+  edge_v::t_entityType l_edgeLine   = l_gmsh.getEntityType( l_gmshLine );
+  edge_v::t_entityType l_edgeQuad4r = l_gmsh.getEntityType( l_gmshQuad4r );
+  edge_v::t_entityType l_edgeTria3  = l_gmsh.getEntityType( l_gmshTria3 );
+  edge_v::t_entityType l_edgeHex8r  = l_gmsh.getEntityType( l_gmshHex8r );
+  edge_v::t_entityType l_edgeTet4   = l_gmsh.getEntityType( l_gmshTet4 );
+
+  REQUIRE( l_edgePoint  == edge_v::POINT );
+  REQUIRE( l_edgeLine   == edge_v::LINE );
+  REQUIRE( l_edgeQuad4r == edge_v::QUAD4R );
+  REQUIRE( l_edgeTria3  == edge_v::TRIA3 );
+  REQUIRE( l_edgeHex8r  == edge_v::HEX8R );
+  REQUIRE( l_edgeTet4   == edge_v::TET4 );
 }

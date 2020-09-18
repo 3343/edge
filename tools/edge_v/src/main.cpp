@@ -5,6 +5,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
@@ -43,7 +44,8 @@
 INITIALIZE_EASYLOGGINGPP
 #endif
 
-int main( int i_argc, char *i_argv[] ) {
+int main( int   i_argc,
+          char *i_argv[] ) {
 #ifdef PP_USE_EASYLOGGING
   START_EASYLOGGINGPP( i_argc, i_argv );
 #endif
@@ -140,25 +142,25 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_V_LOG_INFO << "    fun dt:       " << l_config.getFunDt();
   EDGE_V_LOG_INFO << "    out:          " << l_config.getTsOut();
 
-  EDGE_V_LOG_INFO << "initializing MOAB";
-  std::string l_meshIn = l_config.getMeshIn();
-  edge_v::io::Moab l_moab( l_meshIn );
-  l_moab.printStats();
+  EDGE_V_LOG_INFO << "initializing Gmsh";
+  edge_v::io::Gmsh l_gmsh;
+  // enables verbosity of the interface
+  l_gmsh.setNumber( "General.Terminal",
+                    1 );
+  // writes one file per partition
+  l_gmsh.setNumber( "Mesh.PartitionSplitMeshFiles",
+                    1 );
+  l_gmsh.open( l_config.getMeshIn() );
+  l_gmsh.readMesh();
 
   // initialize and set mesh data
   EDGE_V_LOG_INFO << "initializing mesh interface";
-  if( l_config.getPeriodic() ) EDGE_V_LOG_INFO << "  assuming periodioc boundaries";
-  edge_v::mesh::Mesh* l_mesh = new edge_v::mesh::Mesh( l_moab,
-                                                       l_config.getPeriodic() );
+  edge_v::mesh::Mesh* l_mesh = new edge_v::mesh::Mesh( l_gmsh );
   l_mesh->printStats();
 
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
 #ifdef PP_HAS_UCVM
-  std::string l_tagVp = "edge_v_vp";
-  std::string l_tagVs = "edge_v_vs";
-  std::string l_tagRho = "edge_v_rho";
-
   edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
                                  l_config.getVelModUcvmModels(),
                                  l_config.getVelModUcvmCrdMode(),
@@ -209,9 +211,9 @@ int main( int i_argc, char *i_argv[] ) {
 
     if( l_config.getWriteElAn() ) {
       EDGE_V_LOG_INFO << "storing elements' target lengths";
-      l_moab.setEnData( l_mesh->getTypeEl(),
-                        "edge_v_target_lengths",
-                        l_ref.getTargetLengthsEl() );
+      l_gmsh.writeElData( "target_edge_length",
+                          l_ref.getTargetLengthsEl(),
+                          l_config.getMeshOutBase() + "_target_length_el" + l_config.getMeshOutExt() );
     }
   }
 
@@ -234,10 +236,9 @@ int main( int i_argc, char *i_argv[] ) {
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' cfl time steps";
-    std::string l_tagCfl = "edge_v_cfl_time_steps";
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagCfl,
-                      l_cfl->getTimeSteps() );
+    l_gmsh.writeElData( "cfl_time_step",
+                        l_cfl->getTimeSteps(),
+                        l_config.getMeshOutBase() + "_cfl_time_step" + l_config.getMeshOutExt() );
   }
 
   if( l_config.getTsOut() != "" ) {
@@ -292,10 +293,9 @@ int main( int i_argc, char *i_argv[] ) {
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' time step groups";
-    std::string l_tagElTg = "edge_v_element_time_groups";
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagElTg,
-                      l_tsGroups->getElTg() );
+    l_gmsh.writeElData( "element_time_step_group",
+                        l_tsGroups->getElTg(),
+                        l_config.getMeshOutBase() + "_element_time_step_group" + l_config.getMeshOutExt() );
   }
 
   EDGE_V_LOG_INFO << "partitioning the mesh";
@@ -304,39 +304,40 @@ int main( int i_argc, char *i_argv[] ) {
   if( l_config.nPartitions() > 1 ) {
     l_part.kWay( l_config.nPartitions() );
   }
+
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' partitions";
-    std::string l_tagElPa = "edge_v_partitions";
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagElPa,
-                      l_part.getElPa() );
+    l_gmsh.writeElData( "element_partition",
+                        l_part.getElPa(),
+                        l_config.getMeshOutBase() + "_element_partition" + l_config.getMeshOutExt() );
   }
-
-  EDGE_V_LOG_INFO << "computing and storing elements' priorities";
-  std::string l_tagElPr = "edge_v_element_priorities";
-  l_moab.setEnData( l_mesh->getTypeEl(),
-                    l_tagElPr,
-                    l_part.getElPr() );
 
   EDGE_V_LOG_INFO << "reordering by rank and time group";
-  l_moab.reorder( l_mesh->getTypeEl(),
-                  l_tagElPr );
+  l_gmsh.reorder( l_part.getElPr() );
 
-  if( !l_config.getWriteElAn() ) {
-    EDGE_V_LOG_INFO << "deleting elements' priorities";
-    l_moab.deleteTag( l_tagElPr );
-  }
+  // store partitioning in gmsh
+  EDGE_V_LOG_INFO << "storing partioning in Gmsh";
+  l_gmsh.partition( l_part.nPas(),
+                    l_part.nPaEls() );
+
+  std::string l_pathMesh = l_config.getMeshOutBase() + l_config.getMeshOutExt();
+  EDGE_V_LOG_INFO << "writing mesh: " << l_pathMesh;
+  l_gmsh.write( l_pathMesh );
+
+  // reinitialize internal data structures of the Gmsh-interface
+  EDGE_V_LOG_INFO << "re-initializing data structures of Gmsh-interface";
+  l_gmsh.readMesh();
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing element ids";
-    edge_v::t_idx * l_elIds = new edge_v::t_idx[ l_mesh->nEls() ];
+    double * l_elIds = new double[ l_mesh->nEls() ];
     for( edge_v::t_idx l_el = 0; l_el < l_mesh->nEls(); l_el++ ) {
       l_elIds[l_el] = l_el;
     }
-    std::string l_tagElIds = "edge_v_element_ids";
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagElIds,
-                      l_elIds );
+
+    l_gmsh.writeElData( "element_id",
+                        l_elIds,
+                        l_config.getMeshOutBase() + "_element_id" + l_config.getMeshOutExt() );
     delete[] l_elIds;
   }
 
@@ -347,8 +348,7 @@ int main( int i_argc, char *i_argv[] ) {
   delete l_velMod;
 
   EDGE_V_LOG_INFO << "re-initializing mesh interface with reordered data";
-  l_mesh = new edge_v::mesh::Mesh( l_moab,
-                                   l_config.getPeriodic() );
+  l_mesh = new edge_v::mesh::Mesh( l_gmsh );
 
   EDGE_V_LOG_INFO << "re-initializing velocity model";
 #ifdef PP_HAS_UCVM
@@ -394,15 +394,15 @@ int main( int i_argc, char *i_argv[] ) {
 #ifdef PP_HAS_UCVM
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing vp, vs and rho";
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagVp,
-                      l_velP );
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagVs,
-                      l_velS );
-    l_moab.setEnData( l_mesh->getTypeEl(),
-                      l_tagRho,
-                      l_rho );
+    l_gmsh.writeElData( "vp",
+                        l_velP,
+                        l_config.getMeshOutBase() + "_vp" + l_config.getMeshOutExt() );
+    l_gmsh.writeElData( "vs",
+                        l_velS,
+                        l_config.getMeshOutBase() + "_vs" + l_config.getMeshOutExt() );
+    l_gmsh.writeElData( "rho",
+                        l_rho,
+                        l_config.getMeshOutBase() + "_rho" + l_config.getMeshOutExt() );
   }
 #endif
 
@@ -424,155 +424,98 @@ int main( int i_argc, char *i_argv[] ) {
                                          l_funDt,
                                          l_cfl->getTimeSteps() );
 
-  std::string l_tagNtgElsIn = "edge_v_n_time_group_elements_inner";
-  std::string l_tagNtgElsSe = "edge_v_n_time_group_elements_send";
-  std::string l_tagRelTs = "edge_v_relative_time_steps";
+  EDGE_V_LOG_INFO << "deriving communication structure";
+  edge_v::mesh::Communication l_comm( l_tsGroups->nGroups(),
+                                      l_mesh->getTypeEl(),
+                                      l_mesh->nEls(),
+                                      l_mesh->getElFaEl(),
+                                      l_part.nPas(),
+                                      l_part.nPaEls(),
+                                      l_tsGroups->getElTg() );
 
-  if( l_config.nPartitions() == 1 ) {
-    std::string l_pathMesh = l_config.getMeshOutBase() + l_config.getMeshOutExt();
-    EDGE_V_LOG_INFO << "writing mesh: " << l_pathMesh;
-    l_moab.writeMesh( l_pathMesh );
+  // write the HDF5 support files
+  edge_v::t_idx l_first = 0;
+  for( edge_v::t_idx l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
+    // get number of elements in the partition
+    edge_v::t_idx l_nPaEls = l_part.nPaEls()[l_pa];
 
-    EDGE_V_LOG_INFO << "adding meta data: " << l_pathMesh;
-    edge_v::io::Hdf5 l_hdf( l_pathMesh,
+    // open support file
+    std::string l_pathSupport = l_config.getMeshOutBase() + "_" + std::to_string(l_pa+1) + ".h5";
+    EDGE_V_LOG_INFO << "writing mesh support: " << l_pathSupport;
+    edge_v::io::Hdf5 l_hdf( l_pathSupport,
                             false );
 
+    // write velocities
 #ifdef PP_HAS_UCVM
-      if( l_config.getVelModUcvmProjSrc() != "" ) {
-        l_hdf.set( l_tagVp,
-                   l_mesh->nEls(),
-                   l_velP );
-        l_hdf.set( l_tagVs,
-                   l_mesh->nEls(),
-                   l_velS );
-        l_hdf.set( l_tagRho,
-                   l_mesh->nEls(),
-                   l_rho );
-      }
+    l_hdf.set( "vp",
+               l_nPaEls,
+               l_velP + l_first );
+    l_hdf.set( "vs",
+               l_nPaEls,
+               l_velS + l_first );
+    l_hdf.set( "rho",
+               l_nPaEls,
+               l_rho + l_first );
 #endif
 
-    l_hdf.set( l_tagNtgElsIn,
-               l_tsGroups->nGroups(),
-               l_tsGroups->nGroupEls() );
-
-    // dummy number of send elements
-    edge_v::t_idx * l_nTgElsSe = new edge_v::t_idx[ l_tsGroups->nGroups() ];
-    for( unsigned short l_tg = 0; l_tg < l_tsGroups->nGroups(); l_tg++ ) l_nTgElsSe[l_tg] = 0;
-    l_hdf.set( l_tagNtgElsSe,
-               l_tsGroups->nGroups(),
-               l_nTgElsSe );
-    delete[] l_nTgElsSe;
-
-    l_hdf.set( l_tagRelTs,
+    // store relative time steps of the groups
+    l_hdf.set( "relative_time_steps",
                l_tsGroups->nGroups()+1,
                l_tsGroups->getTsIntervals() );
-  }
 
-  if( l_config.nPartitions() > 1 ) {
-    EDGE_V_LOG_INFO << "deriving communication structure";
-    edge_v::mesh::Communication l_comm( l_tsGroups->nGroups(),
-                                        l_mesh->getTypeEl(),
-                                        l_mesh->nEls(),
-                                        l_mesh->getElFaEl(),
-                                        l_part.nPas(),
-                                        l_part.nPaEls(),
-                                        l_tsGroups->getElTg() );
+    // write number of elements per time group partition-local
+    l_hdf.set( "n_time_group_elements_inner",
+               l_tsGroups->nGroups(),
+               l_comm.nGroupElsIn( l_pa ) );
+    l_hdf.set( "n_time_group_elements_send",
+               l_tsGroups->nGroups(),
+               l_comm.nGroupElsSe( l_pa ) );
 
-    EDGE_V_LOG_INFO << "writing mesh by partition";
-    edge_v::t_idx l_first = 0;
-    for( edge_v::t_idx l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
-      // get number of elements in the partition
-      edge_v::t_idx l_nPaEls = l_part.nPaEls()[l_pa];
+    // write comm data
+    edge_v::t_idx l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
+    l_hdf.set( "communication_structure",
+               l_coSize,
+               l_comm.getStruct( l_pa ) );
 
-      std::string l_pathMesh = l_config.getMeshOutBase() + "_" + std::to_string(l_pa) + l_config.getMeshOutExt();
-      EDGE_V_LOG_INFO << "  writing mesh: " << l_pathMesh;
-      l_moab.writeMesh( l_first,
-                        l_nPaEls,
-                        l_pathMesh );
+    l_hdf.set( "send_el",
+               l_comm.nSeRe( l_pa ),
+               l_comm.getSendEl( l_pa ) );
 
-      EDGE_V_LOG_INFO << "  adding meta data: " << l_pathMesh;
-      edge_v::io::Hdf5 l_hdf( l_pathMesh,
-                              false );
+    l_hdf.set( "send_fa",
+               l_comm.nSeRe( l_pa ),
+               l_comm.getSendFa( l_pa ) );
 
-#ifdef PP_HAS_UCVM
-      if( l_config.getVelModUcvmProjSrc() != "" ) {
-        l_hdf.set( l_tagVp,
-                   l_nPaEls,
-                   l_velP + l_first );
-        l_hdf.set( l_tagVs,
-                   l_nPaEls,
-                   l_velS + l_first );
-        l_hdf.set( l_tagRho,
-                   l_nPaEls,
-                   l_rho + l_first );
-      }
-#endif
+    l_hdf.set( "recv_el",
+               l_comm.nSeRe( l_pa ),
+               l_comm.getRecvEl( l_pa ) );
 
-      // store relative time steps of the groups
-      l_hdf.set( l_tagRelTs,
-                 l_tsGroups->nGroups()+1,
-                 l_tsGroups->getTsIntervals() );
+    l_hdf.set( "recv_fa",
+               l_comm.nSeRe( l_pa ),
+               l_comm.getRecvFa( l_pa ) );
 
-      // write number of elements per time group partition-local
-      l_hdf.set( l_tagNtgElsIn,
-                 l_tsGroups->nGroups(),
-                 l_comm.nGroupElsIn( l_pa ) );
-      l_hdf.set( l_tagNtgElsSe,
-                 l_tsGroups->nGroups(),
-                 l_comm.nGroupElsSe( l_pa ) );
+    // write face- and vertex-ids for ghost elements, adjacent to the send-elements
+    unsigned short * l_idsAd = new unsigned short[ l_comm.nSeRe( l_pa ) ];
+    l_mesh->getFaIdsAd( l_comm.nSeRe( l_pa ),
+                        l_first,
+                        l_comm.getSendEl( l_pa ),
+                        l_comm.getSendFa( l_pa ),
+                        l_idsAd );
+    l_hdf.set( "send_face_ids",
+                l_comm.nSeRe( l_pa ),
+                l_idsAd );
 
-      // annotate with comm data
-      std::string l_tagCoSt = "edge_v_communication_structure";
-      edge_v::t_idx l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
-      l_hdf.set( l_tagCoSt,
-                 l_coSize,
-                 l_comm.getStruct( l_pa ) );
+    l_mesh->getVeIdsAd( l_comm.nSeRe( l_pa ),
+                        l_first,
+                        l_comm.getSendEl( l_pa ),
+                        l_comm.getSendFa( l_pa ),
+                        l_idsAd );
 
-      std::string l_tagSeEl = "edge_v_send_el";
-      l_hdf.set( l_tagSeEl,
-                 l_comm.nSeRe( l_pa ),
-                 l_comm.getSendEl( l_pa ) );
+    l_hdf.set( "send_vertex_ids",
+               l_comm.nSeRe( l_pa ),
+               l_idsAd );
+    delete[] l_idsAd;
 
-      std::string l_tagSeFa = "edge_v_send_fa";
-      l_hdf.set( l_tagSeFa,
-                 l_comm.nSeRe( l_pa ),
-                 l_comm.getSendFa( l_pa ) );
-
-      std::string l_tagReEl = "edge_v_recv_el";
-      l_hdf.set( l_tagReEl,
-                 l_comm.nSeRe( l_pa ),
-                 l_comm.getRecvEl( l_pa ) );
-
-      std::string l_tagReFa = "edge_v_recv_fa";
-      l_hdf.set( l_tagReFa,
-                 l_comm.nSeRe( l_pa ),
-                 l_comm.getRecvFa( l_pa ) );
-
-      // write face- and vertex-ids for ghost elements, adjacent to the send-elements
-      unsigned short * l_idsAd = new unsigned short[ l_comm.nSeRe( l_pa ) ];
-      l_mesh->getFaIdsAd( l_comm.nSeRe( l_pa ),
-                          l_first,
-                          l_comm.getSendEl( l_pa ),
-                          l_comm.getSendFa( l_pa ),
-                          l_idsAd );
-      std::string l_tagFaIdsAd = "edge_v_send_face_ids";
-      l_hdf.set( l_tagFaIdsAd,
-                 l_comm.nSeRe( l_pa ),
-                 l_idsAd );
-
-      l_mesh->getVeIdsAd( l_comm.nSeRe( l_pa ),
-                          l_first,
-                          l_comm.getSendEl( l_pa ),
-                          l_comm.getSendFa( l_pa ),
-                          l_idsAd );
-      std::string l_tagVeIdsAd = "edge_v_send_vertex_ids";
-      l_hdf.set( l_tagVeIdsAd,
-                 l_comm.nSeRe( l_pa ),
-                 l_idsAd );
-      delete[] l_idsAd;
-
-      l_first += l_nPaEls;
-    }
+    l_first += l_nPaEls;
   }
 
 #ifdef PP_HAS_UCVM

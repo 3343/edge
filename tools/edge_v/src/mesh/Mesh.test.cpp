@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * All rights reserved.
  *
@@ -28,6 +29,33 @@
 namespace edge_v {
   namespace test {
     extern std::string g_files;
+  }
+}
+
+TEST_CASE( "Tests the lexicographic sorting.", "[mesh][sortLex]" ) {
+  edge_v::t_idx l_data[7*3] = { 2, 3, 1,   // 3
+                                1, 4, 5,   // 1
+                                3, 5, 1,   // 5
+                                0, 3, 4,   // 0
+                                2, 4, 0,   // 4
+                                1, 4, 6,   // 2
+                                6, 7, 9 }; // 6
+
+  edge_v::t_idx l_ref[7*3] = { 0, 3, 4,   // 0
+                               1, 4, 5,   // 1
+                               1, 4, 6,   // 2
+                               2, 3, 1,   // 3
+                               2, 4, 0,   // 4
+                               3, 5, 1,   // 5
+                               6, 7, 9 }; // 6
+
+  edge_v::mesh::Mesh::sortLex( 7,
+                               3,
+                               l_data,
+                               nullptr  );
+
+  for( unsigned short l_en = 0; l_en < 7*3; l_en++ ) {
+    REQUIRE( l_data[l_en] == l_ref[l_en] );
   }
 }
 
@@ -63,57 +91,28 @@ TEST_CASE( "Tests the derivation of the extra entry in two arrays.", "[mesh][get
   REQUIRE( l_add2 == 2 );
 }
 
-TEST_CASE( "Tests the mesh interface for triangular meshes.", "[mesh][Tria3]" ) {
-  // only continue if the unit test files are available
-  if( edge_v::test::g_files != "" ) {
-    // path to the mesh file
-    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+TEST_CASE( "Tests the derivation of sparse entities.", "[mesh][sparseEns]" ) {
+  // fake dense entities
+  edge_v::t_idx l_enVeDe[7*3] = { 0, 3, 4,   // 0
+                                  1, 4, 5,   // 1
+                                  1, 4, 6,   // 2
+                                  2, 3, 1,   // 3
+                                  2, 4, 0,   // 4
+                                  3, 5, 1,   // 5
+                                  6, 7, 9 }; // 6
 
-    // construct the mesh-interface
-    edge_v::mesh::Mesh l_mesh( l_path );
+  // fake sparse entities
+  edge_v::t_idx l_enVeSp[3*3] = { 1, 4, 6,   // 2
+                                  2, 3, 1,   // 3
+                                  3, 5, 1 }; // 5
 
-    REQUIRE( l_mesh.nVes() == 21 );
-    REQUIRE( l_mesh.nFas() == 48 );
-    REQUIRE( l_mesh.nEls() == 28 );
-  }
-}
+  edge_v::t_sparseType l_spType[7] = { 0 };
 
-TEST_CASE( "Tests the mesh interface in the case of periodic boundaries.", "[mesh][periodic]" ) {
-  // only continue if the unit test files are available
-  if( edge_v::test::g_files != "" ) {
-    // path to the mesh file
-    std::string l_path = edge_v::test::g_files + "/tria3.msh";
-
-    // construct the mesh-interface without periodic boundaries
-    edge_v::mesh::Mesh l_mesh0( l_path );
-
-    // check three faces
-    REQUIRE( l_mesh0.getFaEl()[0*2 + 0] == 5 );
-    REQUIRE( l_mesh0.getFaEl()[0*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
-
-    REQUIRE( l_mesh0.getFaEl()[1*2 + 0] == 18 );
-    REQUIRE( l_mesh0.getFaEl()[1*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
-
-    REQUIRE( l_mesh0.getFaEl()[2*2 + 0] == 1 );
-    REQUIRE( l_mesh0.getFaEl()[2*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
-
-    REQUIRE( l_mesh0.getFaEl()[3*2 + 0] == 3 );
-    REQUIRE( l_mesh0.getFaEl()[3*2 + 1] == std::numeric_limits< edge_v::t_idx >::max() );
-
-    // construct the mesh-interface with periodic boundaries
-    edge_v::mesh::Mesh l_mesh1( l_path,
-                                106 );
-
-    REQUIRE( l_mesh1.getFaEl()[0*2 + 0] == 5 );
-    REQUIRE( l_mesh1.getFaEl()[0*2 + 1] == 2 );
-
-    REQUIRE( l_mesh1.getFaEl()[1*2 + 0] == 18 );
-    REQUIRE( l_mesh1.getFaEl()[1*2 + 1] == 17 );
-
-    REQUIRE( l_mesh1.getFaEl()[2*2 + 0] == 1 );
-    REQUIRE( l_mesh1.getFaEl()[2*2 + 1] == 7 );
-
-    REQUIRE( l_mesh1.getFaEl()[3*2 + 0] == 3 );
-    REQUIRE( l_mesh1.getFaEl()[3*2 + 1] == 4 );
-  }
+  edge_v::mesh::Mesh::addSparseTypeEn( edge_v::t_entityType::TRIA3,
+                                       6,
+                                       3,
+                                       l_enVeDe,
+                                       l_enVeSp,
+                                       101,
+                                       l_spType );
 }

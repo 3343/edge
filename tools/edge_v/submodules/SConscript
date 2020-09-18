@@ -4,6 +4,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
@@ -66,6 +67,8 @@ env.Append( CXXFLAGS = [ ('-isystem', 'submodules/eigen') ] )
 # add Catch
 if env['tests']:
   env.Append( CXXFLAGS = ['-Isubmodules/Catch/include'] )
+  conf.CheckHeader( 'catch.hpp',
+                    language = 'c++' )
 
 # enable zlib if available
 if env['zlib'] != False:
@@ -82,6 +85,15 @@ if env['hdf5'] != False:
   conf.CheckLibWithHeaderFlags( 'hdf5' )
   conf.CheckLibWithHeaderFlags( 'hdf5_hl' )
 
+# forward Gmsh
+if env['gmsh'] != False:
+  if env['gmsh'] != True:
+    env.PrependUnique( CPPPATH=[ env['gmsh']+'/include'] )
+    env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib']     )
+    env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib64']   )
+  conf.CheckLibWithHeaderFlags( 'gmp', '', i_dynamic=True )
+  conf.CheckLibWithHeaderFlags( 'gmsh', 'gmsh.h' )
+
 # enable METIS if available
 if env['metis'] != False:
   if env['metis'] != True:
@@ -92,14 +104,6 @@ if env['metis'] != False:
       conf.CheckLibWithHeaderFlags( 'metis', 'metis.h', 'C', [], [], True) ):
     # enable METIS-dependencies
     env.AppendUnique( CPPDEFINES =['PP_USE_METIS'] )
-
-# forward MOAB
-if env['moab'] != False:
-  if env['moab'] != True:
-    env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
-    env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
-    env.AppendUnique( LIBPATH=[ env['moab']+'/lib64']   )
-  conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' )
 
 # UCVM
 if env['ucvm'] != False:

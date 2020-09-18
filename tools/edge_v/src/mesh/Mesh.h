@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -24,8 +25,8 @@
 #define EDGE_V_MESH_MESH_H
 
 #include "../constants.h"
-
-#include "../io/Moab.h"
+#include "../io/Gmsh.h"
+#include <limits>
 
 namespace edge_v {
   namespace mesh {
@@ -68,6 +69,15 @@ class edge_v::mesh::Mesh {
     //! elements adjacent to elements, faces as bridge
     t_idx * m_elFaEl = nullptr;
 
+    //! sparse type of the vertices
+    t_sparseType * m_spTypeVe = nullptr;
+
+    //! sparse type of the faces
+    t_sparseType * m_spTypeFa = nullptr;
+
+    //! sparse type of the elements
+    t_sparseType * m_spTypeEl = nullptr;
+
     //! indiameter of the elements
     double * m_inDiasEl = nullptr;
 
@@ -82,6 +92,20 @@ class edge_v::mesh::Mesh {
 
     //! tangents of the faces
     double (* m_tangents)[2][3] = nullptr;
+
+   /**
+    * Sorts the given data lexicographically.
+    * Total number of entries: n0 x n1.
+    *
+    * @param i_n0 number of entries in the slow dimension.
+    * @param i_n1 number of entries in the fast dimension.
+    * @param io_data data which is sorted.
+    * @param o_mapping will be set to mapping from sorted to original. nullptr if unused.
+    **/
+   static void sortLex( t_idx   i_n0,
+                        t_idx   i_n1,
+                        t_idx * io_data,
+                        t_idx * o_mapping = nullptr );
 
     /**
      * Gets the element-to-element adjacency (faces as bridge).
@@ -124,6 +148,29 @@ class edge_v::mesh::Mesh {
                              t_idx        const  * i_enVe,
                              double       const (* i_veCrds)[3],
                              double             (* o_enVeCrds)[3] );
+
+    /**
+     * Adds the given type to the sparse entities.
+     *
+     * Remark:
+     *   All per-entity vertices are assumed to be sorted ascending.
+     *   All entity arrays are assumed to be sorted lexicographically.
+     *
+     * @param i_enTy entity type.
+     * @param i_nEnsDe number of dense entities.
+     * @param i_nEnsSp number of sparse entities.
+     * @param i_enVeDe vertex ids of the dense entities.
+     * @param i_enVeSp vertex ids of the sparse entities.
+     * @param i_spTypeAdd sparse type which will be added to the entities' sparse types.
+     * @param io_spType will be updated by spTypeAdd if defined for the entity.
+     **/
+    static void addSparseTypeEn( t_entityType         i_enTy,
+                                 t_idx                i_nEnsDe,
+                                 t_idx                i_nEnsSp,
+                                 t_idx        const * i_enVeDe,
+                                 t_idx        const * i_enVeSp,
+                                 t_sparseType         i_spTypeAdd,
+                                 t_sparseType       * io_spType );
 
     /**
      * Computes the lengths (1d), incircle (2d) or insphere (3d) diameters.
@@ -198,10 +245,10 @@ class edge_v::mesh::Mesh {
     /**
      * Constructor.
      *
-     * @param i_moab moab interface.
+     * @param i_gmsh gmsh interface.
      * @param i_periodic if not max insert periodic adjacency info for faces at the boundary if available.
      **/
-    Mesh( io::Moab const & i_moab,
+    Mesh( io::Gmsh const & i_gmsh,
           int              i_periodic = std::numeric_limits< int >::max() );
 
     /**
@@ -297,6 +344,27 @@ class edge_v::mesh::Mesh {
      * @return elFaEl info.
      **/
     t_idx const * getElFaEl() const { return m_elFaEl; }
+
+    /**
+     * Gets the sparse types of the vertices.
+     *
+     * @return vertex sparse types.
+     **/
+    t_sparseType const * getSpTypeVe() const { return m_spTypeVe; }
+
+    /**
+     * Gets the sparse types of the faces.
+     *
+     * @return face sparse types.
+     **/
+    t_sparseType const * getSpTypeFa() const { return m_spTypeFa; }
+
+    /**
+     * Gets the sparse types of the elements.
+     *
+     * @return element sparse types.
+     **/
+    t_sparseType const * getSpTypeEl() const { return m_spTypeEl; }
 
     /**
      * Gets the vertex coordinates.

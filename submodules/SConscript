@@ -5,6 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2015-2018, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
@@ -91,22 +92,6 @@ if env['hdf5'] != False:
   else:
     warnings.warn( '  Warning: Could not enable HDF5.' )
 
-# forward MOAB
-if env['moab'] != False:
-  if env['moab'] != True:
-    env.AppendUnique( CPPPATH=[ env['moab']+'/include'] )
-    env.AppendUnique( LIBPATH=[ env['moab']+'/lib']     )
-    env.AppendUnique( LIBPATH=[ env['moab']+'/lib64'] )
-
-  # forward CGNS if available
-  conf.CheckLibWithHeaderFlags( 'cgns' )
-
-  # forward ifcore if available
-  conf.CheckLibWithHeaderFlags( 'ifcore' )
-
-  if not conf.CheckLibWithHeaderFlags( 'MOAB', 'moab/Core.hpp' ):
-    warnings.warn( '  Warning: Could not enable MOAB.' )
-
 # enable GPI2 if available
 if env['gpi2'] != False:
   if env['gpi2'] != True:
@@ -120,6 +105,7 @@ if env['gpi2'] != False:
 
 # forward EDGE-V
 if env['edge_v'] != False:
+  conf.CheckLib( 'gmsh' )
   if env['edge_v'] != True:
     env.AppendUnique( CPPPATH=[ env['edge_v']+'/include'] )
     env.AppendUnique( CPPPATH=[ env['edge_v']+'/include/third'] )

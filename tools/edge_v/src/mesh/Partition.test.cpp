@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -35,10 +36,14 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
   // only continue if the unit test files are available
   if( edge_v::test::g_files != "" ) {
     // path to the mesh file
-    std::string l_path = edge_v::test::g_files + "/tria3.msh";
+    std::string l_path = edge_v::test::g_files + "/la_habra_small.msh";
 
     // construct the mesh-interface
-    edge_v::mesh::Mesh l_mesh( l_path );
+    edge_v::io::Gmsh l_gmsh;
+    l_gmsh.open( l_path );
+    l_gmsh.readMesh();
+
+    edge_v::mesh::Mesh l_mesh( l_gmsh );
 
     // construct partitioner
     edge_v::mesh::Partition l_part0( l_mesh, nullptr );

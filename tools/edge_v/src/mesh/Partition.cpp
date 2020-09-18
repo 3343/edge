@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -22,6 +23,7 @@
  **/
 #include "Partition.h"
 #include <metis.h>
+#include "../io/logging.h"
 
 edge_v::mesh::Partition::Partition( Mesh           const & i_mesh,
                                     unsigned short const * i_elTg ): m_mesh( i_mesh ),

@@ -4,6 +4,7 @@
  * @author Alexander Breuer (breuer AT mytum.de)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -115,7 +116,7 @@ class edge_v::io::Hdf5 {
      * Constructor.
      *
      * @param i_path path to the HDF5 file which is opened.
-     * @param i_readOnly if true the file is opened read only, r+w otherwise.
+     * @param i_readOnly if true the file is opened read only, created otherwise.
      * @param i_group group under which the data is stored.
      **/
     Hdf5( std::string const & i_path,

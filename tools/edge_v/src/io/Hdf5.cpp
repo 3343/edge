@@ -4,6 +4,7 @@
  * @author Alexander Breuer (breuer AT mytum.de)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -21,6 +22,7 @@
  * HDF-5 interface.
  **/
 #include "Hdf5.h"
+#include <cstdio>
 
 edge_v::io::Hdf5::Hdf5( std::string const & i_path,
                         bool                i_readOnly,
@@ -31,16 +33,20 @@ edge_v::io::Hdf5::Hdf5( std::string const & i_path,
                               NULL );
   EDGE_V_CHECK_GE( l_err, 0 );
 
-  // create/open the file
   if( i_readOnly ) {
     m_fileId = H5Fopen( i_path.c_str(),
                         H5F_ACC_RDONLY,
                         H5P_DEFAULT );
   }
   else {
-    m_fileId = H5Fopen( i_path.c_str(),
-                        H5F_ACC_RDWR,
-                        H5P_DEFAULT );
+    // remove any existing file
+    std::remove( i_path.c_str() );
+
+    // create the file
+    m_fileId = H5Fcreate( i_path.c_str(),
+                          H5F_ACC_TRUNC,
+                          H5P_DEFAULT,
+                          H5P_DEFAULT );
   }
 
   m_groupStr = i_group;
