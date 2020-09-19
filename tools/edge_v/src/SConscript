@@ -59,6 +59,9 @@ l_headers = [ 'edge_v.h',
               'time/Cfl.h',
               'time/Groups.h' ]
 
+for l_he in l_headers:
+  env.headers.append( env.File( l_he ) )
+
 if 'ucvm' in env and env['ucvm']:
   l_sources = l_sources + [ 'io/Ucvm.cpp',
                             'models/seismic/Ucvm.cpp' ]
