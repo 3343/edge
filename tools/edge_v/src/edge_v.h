@@ -23,7 +23,7 @@
 #ifndef EDGE_V_EDGE_V_H
 #define EDGE_V_EDGE_V_H
 #include "io/Config.h"
-#include "io/Moab.h"
+#include "io/Gmsh.h"
 #include "io/Hdf5.h"
 #include "mesh/Mesh.h"
 #include "models/Constant.h"
