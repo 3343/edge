@@ -147,7 +147,7 @@ void edge_v::io::Gmsh::readMesh() {
     std::size_t l_tag = l_veTags[l_pe];
 
     // ignore duplicate tag (possibly created by partitioning)
-    if( m_veTags.back() == l_tag ) continue;
+    if( m_veTags.size() != 0 && m_veTags.back() == l_tag ) continue;
 
     m_veTags.push_back( l_tag );
     for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
