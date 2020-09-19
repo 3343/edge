@@ -4,6 +4,7 @@
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
+# Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2020, Alexander Breuer
 # All rights reserved.
 #
@@ -28,8 +29,8 @@ steps:
       - ./tools/build/deps/zlib.sh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- HDF5"
       - ./tools/build/deps/hdf5.sh -z $(pwd)/tools/edge_v/deps -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
-      - echo "--- MOAB"
-      - ./tools/build/deps/moab.sh -d -z $(pwd)/tools/edge_v/deps -5 $(pwd)/tools/edge_v/deps -e $(pwd)/submodules/eigen -i $(pwd)/submodules/moab -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - echo "--- Gmsh"
+      - ./tools/build/deps/gmsh.sh -p $(pwd)/tools/gmsh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- METIS"
       - ./tools/build/deps/metis.sh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
 
@@ -37,26 +38,14 @@ steps:
       - cd tools/edge_v
       - GIT_LFS_SKIP_SMUDGE=1 git clone https://opt.dial3343.org/3343/edge_opt.git
 
-      - scons mode=debug+san parallel=none entity_size=64 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - scons mode=debug+san parallel=none zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
 
-      - scons mode=debug+san parallel=omp entity_size=64 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - scons mode=debug+san parallel=omp lib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
 
-      - scons mode=debug parallel=none entity_size=64 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - scons mode=debug parallel=none zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
       - valgrind ./build/tests
 
-      - scons mode=debug parallel=omp entity_size=64 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
-      - valgrind ./build/tests
-
-      - scons mode=debug+san parallel=none entity_size=32 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
-      - ./build/tests
-
-      - scons mode=debug+san parallel=omp entity_size=32 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
-      - ./build/tests
-
-      - scons mode=debug parallel=none entity_size=32 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
-      - valgrind ./build/tests
-
-      - scons mode=debug parallel=omp entity_size=32 zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - scons mode=debug parallel=omp zlib=deps hdf5=deps moab=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
       - valgrind ./build/tests
