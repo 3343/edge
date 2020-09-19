@@ -297,9 +297,11 @@ if 'CFLAGS' in env['ENV'].keys():
 if 'CXXFLAGS' in env['ENV'].keys():
   env['CXXFLAGS'] = env['ENV']['CXXFLAGS']
 if 'LIBS' in env['ENV'].keys():
-  env['LIBS'] = env['ENV']['LIBS']
+  env.AppendUnique( LIBS = env['ENV']['LIBS'] )
 if 'LINKFLAGS' in env['ENV'].keys():
-  env['LINKFLAGS'] = env['ENV']['LINKFLAGS']
+  env.PrependUnique( LINKFLAGS = env['ENV']['LINKFLAGS'] )
+if '_LIBFLAGS' in env['ENV'].keys():
+  env.AppendUnique( _LIBFLAGS = env['ENV']['_LIBFLAGS'] )
 
 # forward paths
 if 'CPLUS_INCLUDE_PATH' in env['ENV'].keys():
