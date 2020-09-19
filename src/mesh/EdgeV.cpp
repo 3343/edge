@@ -182,11 +182,6 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
                           std::string const & i_pathToSupplement,
                           int                 i_periodic ) {
   m_gmsh = new edge_v::io::Gmsh();
-
-  // set number prob not needed
-  m_gmsh->setNumber( "General.Terminal",
-                     1 );
-
   m_gmsh->open( i_pathToMesh );
   m_gmsh->readMesh();
   m_mesh = new edge_v::mesh::Mesh( *m_gmsh );
