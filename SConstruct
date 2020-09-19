@@ -209,6 +209,9 @@ vars.AddVariables(
   PackageVariable( 'hdf5',
                    'Enables HDF5.',
                    'yes' ),
+  PackageVariable( 'gmsh',
+                   'Location of the Gmsh-Installation.',
+                   'yes' ),
   PackageVariable( 'edge_v',
                    'Enables EDGE-V.',
                    'yes' ),
@@ -279,7 +282,7 @@ env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
-for l_va in [ 'xsmm', 'zlib', 'hdf5', 'edge_v', 'hugetlbfs' ]:
+for l_va in [ 'xsmm', 'zlib', 'hdf5', 'gmsh', 'edge_v', 'hugetlbfs' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler

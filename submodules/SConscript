@@ -103,13 +103,21 @@ if env['gpi2'] != False:
   # enable ibverbs if available
   conf.CheckLibWithHeaderFlags( 'ibverbs', '', 'CXX', [], [], True)
 
+
+# forward Gmsh
+if env['gmsh'] != False:
+  if env['gmsh'] != True:
+    env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib']     )
+    env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib64']   )
+  conf.CheckLibWithHeaderFlags( 'gmp', '', i_dynamic=True )
+  conf.CheckLib( 'gmsh', language='CXX' )
+
 # forward EDGE-V
 if env['edge_v'] != False:
-  conf.CheckLib( 'gmsh' )
   if env['edge_v'] != True:
     env.AppendUnique( CPPPATH=[ env['edge_v']+'/include'] )
     env.AppendUnique( CPPPATH=[ env['edge_v']+'/include/third'] )
-    env.AppendUnique( LIBPATH=[ env['edge_v']+'/lib']     )
+    env.AppendUnique( LIBPATH=[ env['edge_v']+'/lib'] )
 
   if not conf.CheckLibWithHeaderFlags( 'edge_v', 'edge_v/edge_v.h' ):
     warnings.warn( '  Warning: Could not enable EDGE-V.' )
