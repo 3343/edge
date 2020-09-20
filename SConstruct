@@ -291,6 +291,17 @@ if 'CC' in env['ENV'].keys():
 if 'CXX' in env['ENV'].keys():
   env['CXX'] = env['ENV']['CXX']
 
+if env['PLATFORM'] == 'darwin':
+  env['op_sys'] = 'macos'
+else:
+  env['op_sys'] = 'linux'
+print( '  using ' + env['op_sys'] + ' as operating system' )
+
+# use static linking for EDGE's direct dependencies (if possible) and dynamic for the rest
+if env['op_sys'] != 'macos': # not supported by mac's ld
+  env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
+  env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
+
 # forward flags
 if 'CFLAGS' in env['ENV'].keys():
   env['CFLAGS'] = env['ENV']['CFLAGS']
@@ -316,7 +327,6 @@ if 'LIBRARY_PATH' in env['ENV'].keys():
       env.AppendUnique( LIBPATH = [l_libP] )
       env.AppendUnique( RPATH   = [l_libP] )
 
-
 # forward EDGE version
 env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
 
@@ -337,17 +347,6 @@ else:
   print( '  no compiler detected' )
 env['compilers']=compilers
 print( '  using ' + compilers + ' as compiler suite' )
-
-if env['PLATFORM'] == 'darwin':
-  env['op_sys'] = 'macos'
-else:
-  env['op_sys'] = 'linux'
-print( '  using ' + env['op_sys'] + ' as operating system' )
-
-# use static linking for EDGE's direct dependencies (if possible) and dynamic for the rest
-if env['op_sys'] != 'macos': # not supported by mac's ld
-  env.PrependUnique( LINKFLAGS = ['-Wl,-Bstatic'] )
-  env.AppendUnique( _LIBFLAGS = ['-Wl,-Bdynamic'] )
 
 # disable libxsmm if not build elastic
 if( env['xsmm'] ):
