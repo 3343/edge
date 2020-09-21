@@ -116,7 +116,7 @@ before_install:
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ./edge/tools/build/deps/hdf5.sh -z /usr/local -o /usr/local -j ${N_BUILD_PROC}; fi;
 
   # install gmsh
-  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ./edge/tools/build/deps/gmsh.sh -p ./edge/tools/gmsh -o /usr/local -j ${N_BUILD_PROC}; fi;
+  - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ./edge/tools/build/deps/gmsh.sh -p $(pwd)/edge/tools/gmsh -o /usr/local -j ${N_BUILD_PROC}; fi;
 
   # install libxsmm
   - if [ "$SYSTEM_SETUP" = "1" ]; then sudo ./edge/tools/build/deps/libxsmm.sh -i $(pwd)/edge/submodules/libxsmm -o /usr/local -j ${N_BUILD_PROC}; fi;
