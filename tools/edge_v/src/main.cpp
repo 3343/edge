@@ -317,8 +317,10 @@ int main( int   i_argc,
 
   // store partitioning in gmsh
   EDGE_V_LOG_INFO << "storing partioning in Gmsh";
-  l_gmsh.partition( l_part.nPas(),
-                    l_part.nPaEls() );
+  if( l_config.nPartitions() > 1 ) {
+    l_gmsh.partition( l_part.nPas(),
+                      l_part.nPaEls() );
+  }
 
   std::string l_pathMesh = l_config.getMeshOutBase() + l_config.getMeshOutExt();
   EDGE_V_LOG_INFO << "writing mesh: " << l_pathMesh;
@@ -470,6 +472,9 @@ int main( int   i_argc,
     l_hdf.set( "n_time_group_elements_send",
                l_tsGroups->nGroups(),
                l_comm.nGroupElsSe( l_pa ) );
+
+    // do not write additional communication-info for single-partition setting
+    if( l_config.nPartitions() == 1 ) break;
 
     // write comm data
     edge_v::t_idx l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;

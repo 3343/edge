@@ -29,8 +29,8 @@ edge_v::mesh::Partition::Partition( Mesh           const & i_mesh,
                                     unsigned short const * i_elTg ): m_mesh( i_mesh ),
                                                                      m_elTg( i_elTg ) {
   // allocate memory
-  m_elPa = new t_idx[ i_mesh.nEls() ];
-  m_elPr = new t_idx[ i_mesh.nEls() ];
+  m_elPa = new t_idx[ m_mesh.nEls() ];
+  m_elPr = new t_idx[ m_mesh.nEls() ];
 
   // init partitions and priorities
 #ifdef PP_USE_OMP
@@ -47,6 +47,16 @@ edge_v::mesh::Partition::Partition( Mesh           const & i_mesh,
            m_elPa,
            m_elTg,
            m_elPr );
+
+  // set dummy values for a single partition
+  m_nPas = 1;
+  m_nPaEls = new t_idx[ 1 ];
+  m_nPaEls[0] = m_mesh.nEls();
+
+  for( t_idx l_el = 0; l_el < m_mesh.nEls(); l_el++ ) {
+    m_elPa[l_el] = 0;
+    m_elPr[l_el] = m_elTg[l_el];
+  }
 }
 
 edge_v::mesh::Partition::~Partition() {
@@ -129,6 +139,8 @@ void edge_v::mesh::Partition::getElPr( edge_v::t_entityType         i_elTy,
 
 void edge_v::mesh::Partition::kWay( t_idx          i_nParts,
                                     unsigned short i_nCuts ) {
+  EDGE_V_CHECK_GT( i_nParts, 1 );
+
   // get info from mesh
   edge_v::t_entityType l_elTy = m_mesh.getTypeEl();
   unsigned short l_nElFas = CE_N_FAS( l_elTy );

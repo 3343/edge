@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -40,7 +41,7 @@ class edge_v::mesh::Partition {
     Mesh const & m_mesh;
 
     //! number of partitions
-    t_idx m_nPas;
+    t_idx m_nPas = 0;
 
     //! number of elements per partition
     t_idx *m_nPaEls = nullptr;

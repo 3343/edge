@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -87,10 +88,10 @@ class edge_v::mesh::Communication {
     t_idx * m_chs = nullptr;
 
     //! number of inner elements per partition and time group
-    t_idx * m_nElsIn;
+    t_idx * m_nElsIn = nullptr;
 
     //! number of send elements per partition and time group
-    t_idx * m_nElsSe;
+    t_idx * m_nElsSe = nullptr;
 
     //! per-partition offset of the send and receive element-face pairs
     t_idx * m_sendRecvOff = nullptr;

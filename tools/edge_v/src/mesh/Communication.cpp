@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -214,6 +215,11 @@ void edge_v::mesh::Communication::getStruct( t_entityType                   i_el
   t_idx l_nPas = i_elPa[i_nEls-1]+1;
   t_idx *l_firstComm = new t_idx[ l_nPas ];
   t_idx *l_sizeComm  = new t_idx[ l_nPas ];
+
+  for( t_idx l_pa = 0; l_pa < l_nPas; l_pa++ ) {
+    l_firstComm[l_pa] = 0;
+    l_sizeComm[l_pa] = 0;
+  }
 
   // get communicating elements
   getPaElComm( i_elTy,
