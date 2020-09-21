@@ -322,7 +322,10 @@ int main( int   i_argc,
                       l_part.nPaEls() );
   }
 
-  std::string l_pathMesh = l_config.getMeshOutBase() + l_config.getMeshOutExt();
+  std::string l_pathMesh = l_config.getMeshOutBase();
+  if( l_config.nPartitions() == 1 ) l_pathMesh += "_1";
+  l_pathMesh += l_config.getMeshOutExt();
+
   EDGE_V_LOG_INFO << "writing mesh: " << l_pathMesh;
   l_gmsh.write( l_pathMesh );
 
