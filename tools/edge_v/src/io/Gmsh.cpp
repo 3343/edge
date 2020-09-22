@@ -124,7 +124,7 @@ void edge_v::io::Gmsh::readMesh() {
   gmsh::model::mesh::getNodes( l_veTags,
                                l_veCrds,
                                l_parametricCoord,
-                               l_nDis,
+                               -1,
                                -1,
                                true,
                                false );
