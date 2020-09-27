@@ -71,16 +71,21 @@ TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
 
 # download METIS
-wget ${METIS_LINK} -O metis.tar.xz
-if [[ $(sha256sum metis.tar.xz | cut -d' ' -f1) != ${METIS_SHA256} ]]
+wget ${METIS_LINK} -O metis.tar.gz
+if [[ $(sha256sum metis.tar.gz | cut -d' ' -f1) != ${METIS_SHA256} ]]
 then
   echo "Error: Checksum not matching"
   exit 1
 fi
 
 mkdir metis
-tar -xf metis.tar.xz -C metis --strip-components=1
+tar -xf metis.tar.gz -C metis --strip-components=1
 cd metis
+
+# switch to 64bit ids
+sed -i '' 's/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/' include/metis.h
+
+# install
 make config prefix=${INSTALL_DIR}
 make -j ${N_BUILD_PROCS}
 make install
