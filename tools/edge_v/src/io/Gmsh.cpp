@@ -113,8 +113,7 @@ void edge_v::io::Gmsh::readMesh() {
   unsigned short l_nElVes = CE_N_VES( l_elTy );
   unsigned short l_nDis   = CE_N_DIS( l_elTy );
 
-  // renumber vertices and elements
-  gmsh::model::mesh::renumberNodes();
+  // renumber elements
   gmsh::model::mesh::renumberElements();
 
   // get vertices
