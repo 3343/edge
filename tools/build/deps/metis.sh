@@ -26,19 +26,23 @@ METIS_SHA256=76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2
 
 help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h] [-p EDGE_PATCH_PATH -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs METIS.
      -h This help message.
+     -p EDGE_PATCH_PATH patch-file specific to EDGE.
      -o INSTALL_DIR Absolute path of the installation directory, will be created if missing.
      -j N_BUILD_PROCS (optional) number of build processes, defaults to one.
 EOF
 }
 
-while getopts "ho:j:" opt; do
+while getopts "hp:o:j:" opt; do
   case "$opt" in
     h)
       help
       exit 0
+      ;;
+    p)
+      EDGE_PATCH_PATH=$OPTARG
       ;;
     o)
       INSTALL_DIR=$OPTARG
@@ -82,8 +86,11 @@ mkdir metis
 tar -xf metis.tar.gz -C metis --strip-components=1
 cd metis
 
-# switch to 64bit ids
-sed -i '' 's/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/' include/metis.h
+# patch Gmsh with partition plugin if requested
+if [[ ${EDGE_PATCH_PATH} != "" ]]
+then
+  patch -p1 < ${EDGE_PATCH_PATH}
+fi
 
 # install
 make config prefix=${INSTALL_DIR}
