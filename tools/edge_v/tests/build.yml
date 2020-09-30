@@ -32,7 +32,7 @@ steps:
       - echo "--- Gmsh"
       - ./tools/build/deps/gmsh.sh -p $(pwd)/tools/gmsh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- METIS"
-      - ./tools/build/deps/metis.sh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - ./tools/build/deps/metis.sh -p $(pwd)/tools/build/deps/metis.patch -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
 
       - echo "--- EDGE-V"
       - cd tools/edge_v

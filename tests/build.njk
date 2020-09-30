@@ -36,7 +36,7 @@ steps:
       - echo "--- Gmsh"
       - ./tools/build/deps/gmsh.sh -p $(pwd)/tools/gmsh -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- METIS"
-      - ./tools/build/deps/metis.sh -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
+      - ./tools/build/deps/metis.sh -p $(pwd)/tools/build/deps/metis.patch -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- EDGE-V"
       - cd tools/edge_v
       - scons parallel=none zlib=../../deps hdf5=../../deps gmsh=../../deps metis=../../deps install_dir=../../deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
