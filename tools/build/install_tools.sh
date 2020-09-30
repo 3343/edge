@@ -60,6 +60,7 @@ then
   sudo dnf install -y -q -e 0 cmake3
   sudo dnf install -y -q -e 0 git
   sudo dnf install -y -q -e 0 git-lfs
+  sudo dnf install -y -q -e 0 patch
   sudo dnf install -y -q -e 0 python3-libxml2
   sudo dnf install -y -q -e 0 python2 python3 python2-devel python3-devel python2-setuptools python3-setuptools python2-pip python3-pip
   sudo ln -s /usr/bin/python3 /usr/bin/python
