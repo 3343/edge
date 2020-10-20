@@ -161,13 +161,14 @@ int main( int   i_argc,
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
 #ifdef PP_HAS_UCVM
-  edge_v::io::Ucvm l_ucvmReader( PP_UCVM_CONF,
-                                 l_config.getVelModUcvmModels(),
-                                 l_config.getVelModUcvmCrdMode(),
-                                 l_config.getVelModUcvmRule(),
-                                 l_config.getLowerToSurf() );
+  edge_v::io::Ucvm * l_ucvmReader;
   if( l_config.getVelModUcvmProjSrc() != "" ) {
-    l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
+    l_ucvmReader = new edge_v::io::Ucvm( PP_UCVM_CONF,
+                                         l_config.getVelModUcvmModels(),
+                                         l_config.getVelModUcvmCrdMode(),
+                                         l_config.getVelModUcvmRule(),
+                                         l_config.getLowerToSurf() );
+    l_velMod = new edge_v::models::seismic::Ucvm( *l_ucvmReader,
                                                   l_config.getVelModUcvmTrafoSrc(),
                                                   l_config.getVelModUcvmProjSrc(),
                                                   l_config.getVelModUcvmProjDes(),
@@ -361,7 +362,7 @@ int main( int   i_argc,
   float * l_velS = new float[l_mesh->nEls()];
   float * l_rho  = new float[l_mesh->nEls()];
   if( l_config.getVelModUcvmProjSrc() != "" ) {
-    l_velMod = new edge_v::models::seismic::Ucvm( l_ucvmReader,
+    l_velMod = new edge_v::models::seismic::Ucvm( *l_ucvmReader,
                                                   l_config.getVelModUcvmTrafoSrc(),
                                                   l_config.getVelModUcvmProjSrc(),
                                                   l_config.getVelModUcvmProjDes(),
@@ -534,6 +535,7 @@ int main( int   i_argc,
   delete l_tsGroups;
   delete l_cfl;
   delete l_mesh;
+  delete l_ucvmReader;
   delete l_velMod;
   delete[] l_rates;
 
