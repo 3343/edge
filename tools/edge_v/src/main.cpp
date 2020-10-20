@@ -531,11 +531,11 @@ int main( int   i_argc,
   delete[] l_velP;
   delete[] l_velS;
   delete[] l_rho;
+  delete l_ucvmReader;
 #endif
   delete l_tsGroups;
   delete l_cfl;
   delete l_mesh;
-  delete l_ucvmReader;
   delete l_velMod;
   delete[] l_rates;
 
