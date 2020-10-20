@@ -682,6 +682,9 @@ edge_v::mesh::Mesh::~Mesh() {
   delete[] m_elVe;
   delete[] m_elFa;
   delete[] m_elFaEl;
+  delete[] m_spTypeVe;
+  delete[] m_spTypeFa;
+  delete[] m_spTypeEl;
   delete[] m_inDiasEl;
   if( m_volFa != nullptr    ) delete[] m_volFa;
   if( m_volEl != nullptr    ) delete[] m_volEl;
