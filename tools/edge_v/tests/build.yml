@@ -41,7 +41,7 @@ steps:
       - scons mode=debug+san parallel=none zlib=deps hdf5=deps gmsh=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
 
-      - scons mode=debug+san parallel=omp lib=deps hdf5=deps gmsh=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
+      - scons mode=debug+san parallel=omp zlib=deps hdf5=deps gmsh=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
 
       - scons mode=debug parallel=none zlib=deps hdf5=deps gmsh=deps metis=deps tests=1 -j ${EDGE_N_BUILD_PROCS}
