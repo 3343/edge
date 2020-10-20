@@ -126,6 +126,7 @@ cd openmpi
 ./configure --enable-static=yes --enable-mpi1-compatibility > /dev/null
 make -j ${EDGE_N_BUILD_PROC} > /dev/null
 sudo make install > /dev/null
+sudo ldconfig > /dev/null
 cd ..
 
 ############################
