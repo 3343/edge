@@ -453,15 +453,17 @@ int main( int   i_argc,
 
     // write velocities
 #ifdef PP_HAS_UCVM
-    l_hdf.set( "vp",
-               l_nPaEls,
-               l_velP + l_first );
-    l_hdf.set( "vs",
-               l_nPaEls,
-               l_velS + l_first );
-    l_hdf.set( "rho",
-               l_nPaEls,
-               l_rho + l_first );
+    if( l_config.getVelModUcvmProjSrc() != "" ) {
+      l_hdf.set( "vp",
+                l_nPaEls,
+                l_velP + l_first );
+      l_hdf.set( "vs",
+                l_nPaEls,
+                l_velS + l_first );
+      l_hdf.set( "rho",
+                l_nPaEls,
+                l_rho + l_first );
+    }
 #endif
 
     // store relative time steps of the groups
