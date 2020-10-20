@@ -91,7 +91,7 @@ matrix:
         USE_MPI=0
         GCOV=gcov
         SYSTEM_SETUP=1
-        N_BUILD_PROC=3
+        N_BUILD_PROC=8
 
 before_install:
   - cd ..
