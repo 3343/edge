@@ -45,8 +45,17 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
 
     edge_v::mesh::Mesh l_mesh( l_gmsh );
 
+    // assign single time group
+    unsigned short * l_elTg;
+    l_elTg = new unsigned short[ l_mesh.nEls() ];
+
+    for( edge_v::t_idx l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
+      l_elTg[l_el] = 0;
+    }
+
     // construct partitioner
-    edge_v::mesh::Partition l_part0( l_mesh, nullptr );
+    edge_v::mesh::Partition l_part0( l_mesh,
+                                     l_elTg );
  
     // test partitioner
     l_part0.kWay( 3 );
@@ -56,16 +65,9 @@ TEST_CASE( "Tests the PartGraphKway call of the partitioner.", "[partition][kWay
       REQUIRE( l_elPa[l_el] < 3 );
     }
 
-    // assign time groups
-    unsigned short * l_elTg;
-    l_elTg = new unsigned short[ l_mesh.nEls() ];
-
-    for( edge_v::t_idx l_el = 0; l_el < l_mesh.nEls(); l_el++ ) {
-      l_elTg[l_el] = l_el%4;
-    }
-
     // construct partitioner
-    edge_v::mesh::Partition l_part1( l_mesh, l_elTg );
+    edge_v::mesh::Partition l_part1( l_mesh,
+                                     l_elTg );
 
     // test with assigned time groups
     l_part1.kWay( 4 );
