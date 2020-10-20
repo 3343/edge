@@ -159,10 +159,23 @@ void GMSH_EdgePartitionPlugin::run() {
 
         // assign faces of the elements to respective partitions if explicitly stored
         // this assumes a unique mapping (no internal faces at partition boundaries)
-        for( unsigned short l_ef = 0; l_ef < l_entity->getNumFaces(); l_ef++ ) {
+        unsigned short l_nEf = 0;
+        if( l_nDis == 3 ) {
+          l_nEf = l_entity->getNumFaces();
+        }
+        else {
+          l_nEf = l_entity->getNumEdges();
+        }
+        for( unsigned short l_ef = 0; l_ef < l_nEf; l_ef++ ) {
           std::vector< MVertex* > l_faVes;
-          l_entity->getFaceVertices( l_ef,
-                                     l_faVes );
+          if( l_nDis == 3 ) {
+            l_entity->getFaceVertices( l_ef,
+                                       l_faVes );
+          }
+          else {
+            l_entity->getEdgeVertices( l_ef,
+                                       l_faVes );
+          }
           assert( l_faVes.size() <= 4 );
 
           Face l_fa;
