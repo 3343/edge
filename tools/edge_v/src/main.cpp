@@ -398,7 +398,7 @@ int main( int   i_argc,
   }
 
 #ifdef PP_HAS_UCVM
-  if( l_config.getWriteElAn() ) {
+  if( l_config.getVelModUcvmProjSrc() != "" && l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing vp, vs and rho";
     l_gmsh.writeElData( "vp",
                         l_velP,
