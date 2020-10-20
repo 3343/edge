@@ -218,7 +218,7 @@ env.Tool('default')
 env.Tool('default')
 
 # adjust path variables
-for l_va in [ 'zlib', 'hdf5', 'ucvm' ]:
+for l_va in [ 'zlib', 'hdf5', 'gmsh', 'metis', 'ucvm' ]:
   env[l_va] = adjustPath( env[l_va] )
 
 # forward compiler
