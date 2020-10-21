@@ -163,19 +163,6 @@ script:
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics"  ] && [ "${T_ELEMENTS}" = "tet4" ]; then gmsh -3 cont/elastic/plane_waves/tet4.geo -o tet4.msh; fi;
 
   # 3D elastics
-  ## tet4, unit tests
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=3 cfr=1 arch=skx -j $N_BUILD_PROC; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
-
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=3 cfr=16 arch=skx -j $N_BUILD_PROC; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
-
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=4 cfr=1 arch=skx -j $N_BUILD_PROC; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
-
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/unit_tests/elastic/tet4_reg.xml order=4 cfr=16 arch=skx -j $N_BUILD_PROC; fi;
-  - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then sde64 -skx -ptr_check -null_check -- ./build/tests; fi;
-
   ## tet4, unstructured, fv, cfr=1
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then scons xml=cont/elastic/plane_waves/tet4_uns.xml cfr=2 -j $N_BUILD_PROC; fi;
   - if [ "$USE_MPI" = "0" ] && [ "${EQUATIONS}" = "elastics" ] && [ "${T_ELEMENTS}" = "tet4" ]; then ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml; fi;
