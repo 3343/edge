@@ -20,7 +20,7 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Installs the tools used in CI/CD (tested for Debian 9.3, CentOS 7, Amazon Linux 2, Amazon Linux AMI).
+# Installs the tools used in CI/CD (tested for CentOS 8 and Ubuntu Focal).
 ##
 EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
@@ -78,7 +78,6 @@ then
   sudo dnf install -y -q -e 0 gmt
   sudo dnf install -y -q -e 0 ghostscript
   # UCVM and EDGEv dependencies
-  sudo dnf install -y -q -e 0 metis metis-devel
   sudo dnf install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
   sudo pip install meshio > /dev/null
@@ -100,12 +99,6 @@ then
   sudo ln -s /usr/bin/python3 /usr/bin/python
   sudo ln -s /usr/bin/pip3 /usr/bin/pip
 fi
-
-########
-# GMSH #
-########
-wget http://gmsh.info/bin/Linux/gmsh-4.5.6-Linux64.tgz -O gmsh.tgz
-sudo tar -xf gmsh.tgz -C /usr --strip-components=1
 
 #########
 # Clang #
