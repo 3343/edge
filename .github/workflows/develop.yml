@@ -41,4 +41,4 @@ jobs:
 
       - name: Dependencies
         run: |
-          ./edge/tools/build/install_tools.sh
+          ./tools/build/install_tools.sh
