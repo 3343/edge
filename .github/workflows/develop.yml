@@ -56,4 +56,4 @@ jobs:
           sudo ./tools/build/deps/metis.sh -o /usr/local -j ${N_BUILD_PROC}
           cd tools/edge_v; sudo scons install_dir=/usr/local -j ${N_BUILD_PROC}; cd ../..
         env:
-          N_BUILD_PROCS=4
+          N_BUILD_PROCS: 4
