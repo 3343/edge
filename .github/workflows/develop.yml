@@ -39,6 +39,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Dependencies
+      - name: Tools
         run: |
           ./tools/build/install_tools.sh
+          wget --user-agent="none" https://software.intel.com/content/dam/develop/external/us/en/documents/sde-external-8.56.0-2020-07-05-lin.tar.bz2 -O sde.tar.bz2
+          mkdir sde
+          tar --strip-components=1 -xjf sde.tar.bz2 -C sde
+          sudo ln -s $(pwd)/sde/sde64 /usr/local/bin/sde64
+
+      - name: Dependencies
+        run: |
+          sudo ./tools/build/deps/zlib.sh -o /usr/local -j ${N_BUILD_PROC}
+          sudo .//tools/build/deps/hdf5.sh -z /usr/local -o /usr/local -j ${N_BUILD_PROC}
+          sudo ./tools/build/deps/gmsh.sh -p $(pwd)/edge/tools/gmsh -o /usr/local -j ${N_BUILD_PROC}
+          sudo ./tools/build/deps/libxsmm.sh -i $(pwd)/edge/submodules/libxsmm -o /usr/local -j ${N_BUILD_PROC}
+          sudo ./tools/build/deps/metis.sh -o /usr/local -j ${N_BUILD_PROC}
+          cd tools/edge_v; sudo scons install_dir=/usr/local -j ${N_BUILD_PROC}; cd ../..
+        env:
+          N_BUILD_PROCS=4
