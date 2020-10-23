@@ -48,8 +48,14 @@ class edge::io::FileSystem {
                                       std::string &o_dir,
                                       std::string &o_file ) {
       std::size_t l_split = i_path.find_first_of("/\\");
-      o_dir  = i_path.substr( 0, l_split );
-      o_file = i_path.substr( l_split+1  );
+      if( l_split != std::string::npos ) {
+        o_dir  = i_path.substr( 0, l_split );
+        o_file = i_path.substr( l_split+1  );
+      }
+      else {
+        o_dir = "";
+        o_file = i_path;
+      }
     }
 
     /**
