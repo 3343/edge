@@ -92,6 +92,8 @@ if env['gmsh'] != False:
     env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib']     )
     env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib64']   )
   conf.CheckLibWithHeaderFlags( 'gmp', '', i_dynamic=True )
+  conf.CheckLibWithHeaderFlags( 'blas', '' )
+  conf.CheckLibWithHeaderFlags( 'lapack', '' )
   conf.CheckLibWithHeaderFlags( 'gmsh', 'gmsh.h' )
 
 # enable METIS if available
