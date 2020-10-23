@@ -78,7 +78,7 @@ then
   sudo dnf install -y -q -e 0 gmt
   sudo dnf install -y -q -e 0 ghostscript
   # Gmsh dependencies
-  sudo dnf install -y -q -e 0 blas-devel lapack-devel
+  sudo dnf install -y -q -e 0 blas-static lapack-static
   # UCVM and EDGEv dependencies
   sudo dnf install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
