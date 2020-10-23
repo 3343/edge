@@ -101,7 +101,7 @@ then
   sudo ln -s /usr/bin/python3 /usr/bin/python
   sudo ln -s /usr/bin/pip3 /usr/bin/pip
   # Gmsh dependencies
-  sudo apt install libblas3-dev liblapack3-dev
+  sudo apt install libblas-dev liblapack-dev
 fi
 
 #########
