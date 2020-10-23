@@ -78,7 +78,7 @@ then
   sudo dnf install -y -q -e 0 gmt
   sudo dnf install -y -q -e 0 ghostscript
   # Gmsh dependencies
-  sudo dnf install -y -q -e 0 blas lapack
+  sudo dnf install -y -q -e 0 blas-devel lapack-devel
   # UCVM and EDGEv dependencies
   sudo dnf install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
@@ -101,7 +101,7 @@ then
   sudo ln -s /usr/bin/python3 /usr/bin/python
   sudo ln -s /usr/bin/pip3 /usr/bin/pip
   # Gmsh dependencies
-  sudo apt install libblas3 liblapack3
+  sudo apt install libblas3-devel liblapack3-devel
 fi
 
 #########
