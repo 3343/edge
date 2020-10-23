@@ -161,7 +161,7 @@ int main( int   i_argc,
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
 #ifdef PP_HAS_UCVM
-  edge_v::io::Ucvm * l_ucvmReader;
+  edge_v::io::Ucvm * l_ucvmReader = nullptr;
   if( l_config.getVelModUcvmProjSrc() != "" ) {
     l_ucvmReader = new edge_v::io::Ucvm( PP_UCVM_CONF,
                                          l_config.getVelModUcvmModels(),
@@ -533,7 +533,7 @@ int main( int   i_argc,
   delete[] l_velP;
   delete[] l_velS;
   delete[] l_rho;
-  delete l_ucvmReader;
+  if( l_ucvmReader != nullptr  ) delete l_ucvmReader;
 #endif
   delete l_tsGroups;
   delete l_cfl;
