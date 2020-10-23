@@ -77,6 +77,8 @@ then
   sudo dnf copr enable -y -q -e 0 genericmappingtools/gmt
   sudo dnf install -y -q -e 0 gmt
   sudo dnf install -y -q -e 0 ghostscript
+  # Gmsh dependencies
+  sudo dnf install -y -q -e 0 blas lapack
   # UCVM and EDGEv dependencies
   sudo dnf install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
@@ -98,6 +100,8 @@ then
   sudo apt install -qq -y valgrind
   sudo ln -s /usr/bin/python3 /usr/bin/python
   sudo ln -s /usr/bin/pip3 /usr/bin/pip
+  # Gmsh dependencies
+  sudo apt install libblas3 liblapack3
 fi
 
 #########
