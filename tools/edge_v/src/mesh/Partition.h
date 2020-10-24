@@ -105,11 +105,11 @@ class edge_v::mesh::Partition {
      **/
     template< typename T_XADJ,
               typename T_ADJNCY >
-    void getDualGraph( edge_v::t_entityType         i_elTy,
-                       t_idx                        i_nEls,
-                       t_idx                const * i_elFaEl,
-                       T_XADJ                     * o_xadj,
-                       T_ADJNCY                   * o_adjncy ) {
+    static void getDualGraph( edge_v::t_entityType         i_elTy,
+                              t_idx                        i_nEls,
+                              t_idx                const * i_elFaEl,
+                              T_XADJ                     * o_xadj,
+                              T_ADJNCY                   * o_adjncy ) {
       unsigned short l_nElFas = CE_N_FAS( i_elTy );
 
       t_idx l_adId = 0;
@@ -150,13 +150,13 @@ class edge_v::mesh::Partition {
     template< typename T_XADJ,
               typename T_VWGT,
               typename T_ADJWGT >
-    void getWeights( edge_v::t_entityType       i_elTy,
-                     t_idx                      i_nEls,
-                     T_XADJ                     i_nAdjwgt,
-                     t_idx              const * i_elFaEl,
-                     unsigned short     const * i_elTg,
-                     T_VWGT                   * o_vwgt,
-                     T_ADJWGT                 * o_adjwgt ) {
+    static void getWeights( edge_v::t_entityType       i_elTy,
+                            t_idx                      i_nEls,
+                            T_XADJ                     i_nAdjwgt,
+                            t_idx              const * i_elFaEl,
+                            unsigned short     const * i_elTg,
+                            T_VWGT                   * o_vwgt,
+                            T_ADJWGT                 * o_adjwgt ) {
       unsigned short l_nElFas = CE_N_FAS( i_elTy );
 
       // assemble vertex and edge weights
@@ -182,7 +182,8 @@ class edge_v::mesh::Partition {
           if( l_ad != std::numeric_limits< t_idx >::max() ) {
             // larger time group elements have to sent twice the amount
             // -> comm volume is given by frequency of min time group
-            unsigned short l_minTg = std::min( m_elTg[l_el], m_elTg[l_ad] );
+            unsigned short l_minTg = std::min( i_elTg[l_el],
+                                               i_elTg[l_ad] );
 
             // set edge weight
             for( unsigned short l_tg = l_minTg; l_tg < l_tgMax; l_tg++ ) {
