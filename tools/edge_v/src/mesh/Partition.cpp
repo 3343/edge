@@ -22,7 +22,9 @@
  * Derives mesh partitions.
  **/
 #include "Partition.h"
+#ifdef PP_USE_METIS
 #include <metis.h>
+#endif
 #include "../io/logging.h"
 
 edge_v::mesh::Partition::Partition( Mesh           const & i_mesh,
@@ -150,66 +152,25 @@ void edge_v::mesh::Partition::kWay( t_idx          i_nParts,
   // assemble the adjacency info for the metis-call
   idx_t * l_xadj = new idx_t[ l_nEls+1 ];
   idx_t * l_adjncy = new idx_t[ l_nEls*l_nElFas ];
+  getDualGraph( l_elTy,
+                l_nEls,
+                l_elFaEl,
+                l_xadj,
+                l_adjncy );
 
-  t_idx l_adId = 0;
-  l_xadj[0] = 0;
-  for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
-    l_xadj[l_el+1] = l_xadj[l_el];
-
-    for( t_idx l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
-      t_idx l_ad = l_elFaEl[l_el*l_nElFas + l_fa];
-
-      if( l_ad != std::numeric_limits< t_idx >::max() ) {
-        l_adjncy[l_adId] = l_ad;
-        l_adId++;
-        l_xadj[l_el+1]++;
-      }
-    }
-
-    // sort by element id
-    std::sort( l_adjncy+l_xadj[l_el], l_adjncy+l_xadj[l_el+1] );
-  }
-
-  // assemble vertex and edge weights
   idx_t * l_vwgt = nullptr;
   idx_t * l_adjwgt = nullptr;
   if( m_elTg != nullptr ) {
     l_vwgt = new idx_t[ l_nEls ];
     l_adjwgt = new idx_t[ l_xadj[l_nEls] ];
 
-    unsigned short l_tgMax = 0;
-    for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
-      l_tgMax = std::max( l_tgMax, m_elTg[l_el] );
-      l_vwgt[l_el] = 1;
-    }
-
-    for( idx_t l_ad = 0; l_ad < l_xadj[l_nEls]; l_ad++ )
-      l_adjwgt[l_ad] = 1;
-
-    t_idx l_adId = 0;
-    for( t_idx l_el = 0; l_el < l_nEls; l_el++ ) {
-      // set vertex weight
-      for( unsigned short l_tg = m_elTg[l_el]; l_tg < l_tgMax; l_tg++ ) {
-        l_vwgt[l_el] *= 2;
-      }
-
-      for( t_idx l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
-        t_idx l_ad = l_elFaEl[l_el*l_nElFas + l_fa];
-
-        if( l_ad != std::numeric_limits< t_idx >::max() ) {
-          // larger time group elements have to sent twice the amount
-          // -> comm volume is given by frequency of min time group
-          unsigned short l_minTg = std::min( m_elTg[l_el], m_elTg[l_ad] );
-
-          // set edge weight
-          for( unsigned short l_tg = l_minTg; l_tg < l_tgMax; l_tg++ ) {
-            l_adjwgt[l_adId] *= 2;
-          }
-
-          l_adId++;
-        }
-      }
-    }
+    getWeights( l_elTy,
+                l_nEls,
+                l_xadj[l_nEls],
+                l_elFaEl,
+                m_elTg,
+                l_vwgt,
+                l_adjwgt );
   }
 
   // set remaining metis parameters
