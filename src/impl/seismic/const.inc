@@ -132,9 +132,9 @@ const unsigned short N_RELAXATION_MECHANISMS=PP_N_RELAXATION_MECHANISMS;
 #error not supported
 #endif
 // CFL-number
-const double SCALE_CFL_ORDER[9] = { 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9 };
+const double SCALE_CFL_ORDER[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 
-const double SCALE_CFL=(1.0/N_DIM)*SCALE_CFL_ORDER[PP_ORDER-1];
+const double SCALE_CFL=(1.0/2.0)*SCALE_CFL_ORDER[PP_ORDER-1];
 
 /*
  * Bitmasks for elastics.
