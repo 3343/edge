@@ -58,6 +58,13 @@ while getopts "hp:o:j:" opt; do
 done
 shift "$((OPTIND-1))"
 
+if [[ ${EDGE_PATCH_PATH:0:1} != "/" ]]
+then
+  echo "Error: ${EDGE_PATCH_PATH} is not absolute"
+  help >&2
+  exit 1
+fi
+
 if [[ ${INSTALL_DIR:0:1} != "/" ]]
 then
   echo "Error: ${INSTALL_DIR} is not absolute"
@@ -86,7 +93,7 @@ mkdir metis
 tar -xf metis.tar.gz -C metis --strip-components=1
 cd metis
 
-# patch Gmsh with partition plugin if requested
+# patch if requested
 if [[ ${EDGE_PATCH_PATH} != "" ]]
 then
   patch -p1 < ${EDGE_PATCH_PATH}
