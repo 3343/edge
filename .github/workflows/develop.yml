@@ -56,8 +56,8 @@ jobs:
         run: |
           sudo ./tools/build/deps/zlib.sh -o /usr/local -j ${EDGE_N_BUILD_PROCS}
           sudo ./tools/build/deps/hdf5.sh -z /usr/local -o /usr/local -j ${EDGE_N_BUILD_PROCS}
-          sudo ./tools/build/deps/gmsh.sh -p $(pwd)/edge/tools/gmsh -o /usr/local -j ${EDGE_N_BUILD_PROCS}
-          sudo ./tools/build/deps/libxsmm.sh -i $(pwd)/edge/submodules/libxsmm -o /usr/local -j ${EDGE_N_BUILD_PROCS}
+          sudo ./tools/build/deps/gmsh.sh -p $(pwd)/tools/gmsh -o /usr/local -j ${EDGE_N_BUILD_PROCS}
+          sudo ./tools/build/deps/libxsmm.sh -i $(pwd)/submodules/libxsmm -o /usr/local -j ${EDGE_N_BUILD_PROCS}
           sudo ./tools/build/deps/metis.sh -o /usr/local -j ${EDGE_N_BUILD_PROCS}
           cd tools/edge_v; sudo scons install_dir=/usr/local -j ${EDGE_N_BUILD_PROCS}; cd ../..
         env:
