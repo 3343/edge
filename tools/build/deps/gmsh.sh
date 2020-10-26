@@ -115,7 +115,7 @@ if [[ ${BLAS_LAPACK_LIBRARIES} != "" ]]
 then
   cmake_command="${cmake_command} -DBLAS_LAPACK_LIBRARIES=${BLAS_LAPACK_LIBRARIES}"
 fi
-cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=OFF -DENABLE_METIS=OFF -DENABLE_MMG3D=OFF -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
+cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=OFF -DENABLE_MMG3D=OFF -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
 
 # configure and build
 $(${cmake_command})
