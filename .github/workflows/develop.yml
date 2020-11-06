@@ -76,10 +76,10 @@ jobs:
       - name: Elastics
         run: |
           # generate mesh
-          gmsh -3 cont/elastic/plane_waves/tet4.geo -o tet4.msh
+          gmsh -3 cont/elastic/plane_waves/tet4_mpi.geo
 
           # tet4, unstructured order=2, cfr=2
           scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 -j ${EDGE_N_BUILD_PROCS}
-          ./build/edge -x cont/elastic/plane_waves/tet4_uns.xml
+          ./build/edge -x cont/elastic/plane_waves/tet4_uns_mpi.xml
         env:
           EDGE_N_BUILD_PROCS: 4
