@@ -110,8 +110,6 @@ if env['gmsh'] != False:
     env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib']     )
     env.PrependUnique( LIBPATH=[ env['gmsh']+'/lib64']   )
   conf.CheckLibWithHeaderFlags( 'gmp', '', i_dynamic=True )
-  conf.CheckLibWithHeaderFlags( 'lapack', '' )
-  conf.CheckLibWithHeaderFlags( 'blas', '' )
   conf.CheckLib( 'gmsh', language='CXX' )
 
 # forward EDGE-V
