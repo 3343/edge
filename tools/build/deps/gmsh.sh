@@ -21,15 +21,14 @@
 # @section DESCRIPTION
 # Installs Gmsh.
 ##
-GMSH_LINK=https://gmsh.info/src/gmsh-4.6.0-source.tgz
-GMSH_SHA256=0f2c55e50fb6c478ebc8977f6341c223754cbf3493b7b0d683b4395ae9f2ad1c
+GMSH_LINK=https://gmsh.info/src/gmsh-4.7.0-source.tgz
+GMSH_SHA256=e27f32f92b374ba2a746a9d9c496401c13f66ac6e3e70753e16fa4012d14320e
 
 help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-l BLAS_LAPACK_LIBRARIES -p EDGE_PARTITION_PLUGIN_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h] [-p EDGE_PARTITION_PLUGIN_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs Gmsh.
      -h This help message.
-     -l BLAS_LAPACK_LIBRARIES (optional) string passed to Gmsh for the BLAS/LAPACK installation.
      -p EDGE_PARTITION_PLUGIN_DIR path to EDGE's partition plugin.
      -o INSTALL_DIR Absolute path of the installation directory, will be created if missing.
      -j N_BUILD_PROCS (optional) number of build processes, defaults to one.
@@ -41,9 +40,6 @@ while getopts "hl:p:o:j:" opt; do
     h)
       help
       exit 0
-      ;;
-    l)
-      BLAS_LAPACK_LIBRARIES=$OPTARG
       ;;
     p)
       EDGE_PARTITION_PLUGIN_DIR=$OPTARG
@@ -111,11 +107,7 @@ cd build
 
 # assemble cmake command
 cmake_command="cmake"
-if [[ ${BLAS_LAPACK_LIBRARIES} != "" ]]
-then
-  cmake_command="${cmake_command} -DBLAS_LAPACK_LIBRARIES=${BLAS_LAPACK_LIBRARIES}"
-fi
-cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=OFF -DENABLE_MMG3D=OFF -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
+cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=OFF -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
 
 # configure and build
 $(${cmake_command})
