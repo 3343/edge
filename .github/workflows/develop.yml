@@ -80,6 +80,6 @@ jobs:
 
           # tet4, unstructured order=2, cfr=2
           scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 -j ${EDGE_N_BUILD_PROCS}
-          ./build/edge -x cont/elastic/plane_waves/tet4_uns_mpi.xml
+          ./build/edge -x edge_opt/cont/seismic/plane_waves/tet4/edge_outflow.xml
         env:
           EDGE_N_BUILD_PROCS: 4
