@@ -62,6 +62,29 @@ def adjustPath( i_var ):
 
   return l_var
 
+##
+# Detects the architecture of the building machine.
+#
+# @return detected architecture if found, 'native' otherwise.
+##
+def getArch():
+    l_arch = 'native'
+    try:
+      import sys
+      sys.path.append('submodules/py-cpuinfo')
+      from cpuinfo import get_cpu_info
+      l_cpuInfo = get_cpu_info()['flags']
+
+      if( 'avx512' in l_cpuInfo ):
+        l_arch = 'avx512'
+      elif( 'avx2' in l_cpuInfo ):
+        l_arch = 'hsw'
+      elif( 'avx' in l_cpuInfo ):
+        l_arch = 'snb'
+      return l_arch
+    except:
+      return l_arch
+
 def simpleWarning(message, category, filename, lineno, file=None, line=None):
     return '%s\n' % (message)
 warnings.formatwarning = simpleWarning
@@ -347,6 +370,12 @@ else:
   print( '  no compiler detected' )
 env['compilers']=compilers
 print( '  using ' + compilers + ' as compiler suite' )
+
+# discover architecture if native
+if( env['arch'] == 'native' ):
+  print( 'trying to discover architecture' )
+  env['arch'] = getArch()
+  print( '  now using the following architecture:', env['arch'] )
 
 # disable libxsmm if not build elastic
 if( env['xsmm'] ):

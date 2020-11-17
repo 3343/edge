@@ -22,3 +22,6 @@
 [submodule "submodules/wykobi"]
 	path = submodules/wykobi
 	url = https://github.com/ArashPartow/wykobi.git
+[submodule "submodules/py-cpuinfo"]
+	path = submodules/py-cpuinfo
+	url = https://github.com/workhorsy/py-cpuinfo.git
