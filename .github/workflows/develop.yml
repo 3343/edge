@@ -68,15 +68,15 @@ jobs:
           git lfs clone --exclude=* https://opt.dial3343.org/3343/edge_opt.git
           cd edge_opt
           git log | head -n 1
-          git lfs fetch -I cont/advection; git lfs fetch -I cont/elastic; git lfs fetch -I cont/swe
-          git lfs checkout cont/advection cont/elastic cont/swe
+          git lfs fetch -I cont/advection; git lfs fetch -I cont/seismic; git lfs fetch -I cont/swe
+          git lfs checkout cont/advection cont/seismic cont/swe
           cd ..
-          ln -s $(pwd)/edge_opt/cont .
 
       - name: Elastics
         run: |
           # generate mesh
-          gmsh -3 cont/elastic/plane_waves/tet4_mpi.geo
+          gmsh -3 edge_opt/cont/seismic/plane_waves/tet4/gmsh_outflow.geo -o gmsh_outflow.msh
+          edge_v -x  edge_opt/cont/seismic/plane_waves/tet4/edge_v_outflow.xml
 
           # tet4, unstructured order=2, cfr=2
           scons xml=cont/elastic/plane_waves/tet4_uns.xml order=2 cfr=2 -j ${EDGE_N_BUILD_PROCS}
