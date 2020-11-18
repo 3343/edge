@@ -68,22 +68,22 @@ def adjustPath( i_var ):
 # @return detected architecture if found, 'native' otherwise.
 ##
 def getArch():
-    l_arch = 'native'
-    try:
-      import sys
-      sys.path.append('submodules/py-cpuinfo')
-      from cpuinfo import get_cpu_info
-      l_cpuInfo = get_cpu_info()['flags']
+  l_arch = 'native'
+  try:
+    import sys
+    sys.path.append('submodules/py-cpuinfo')
+    from cpuinfo import get_cpu_info
+    l_cpuInfo = get_cpu_info()['flags']
 
-      if( 'avx512' in l_cpuInfo ):
-        l_arch = 'avx512'
-      elif( 'avx2' in l_cpuInfo ):
-        l_arch = 'hsw'
-      elif( 'avx' in l_cpuInfo ):
-        l_arch = 'snb'
-      return l_arch
-    except:
-      return l_arch
+    if( 'avx512' in l_cpuInfo ):
+      l_arch = 'avx512'
+    elif( 'avx2' in l_cpuInfo ):
+      l_arch = 'hsw'
+    elif( 'avx' in l_cpuInfo ):
+      l_arch = 'snb'
+    return l_arch
+  except:
+    return l_arch
 
 def simpleWarning(message, category, filename, lineno, file=None, line=None):
     return '%s\n' % (message)
