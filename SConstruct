@@ -73,14 +73,16 @@ def getArch():
     import sys
     sys.path.append('submodules/py-cpuinfo')
     from cpuinfo import get_cpu_info
-    l_cpuInfo = get_cpu_info()['flags']
+    l_cpuInfo = get_cpu_info()
 
-    if( 'avx512' in l_cpuInfo ):
+    if( 'avx512' in l_cpuInfo['flags'] ):
       l_arch = 'avx512'
-    elif( 'avx2' in l_cpuInfo ):
+    elif( 'avx2' in l_cpuInfo['flags'] ):
       l_arch = 'hsw'
-    elif( 'avx' in l_cpuInfo ):
+    elif( 'avx' in l_cpuInfo['flags'] ):
       l_arch = 'snb'
+    elif( l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
+      l_arch = 'n1'
     return l_arch
   except:
     return l_arch
@@ -375,7 +377,7 @@ print( '  using ' + compilers + ' as compiler suite' )
 if( env['arch'] == 'native' ):
   print( 'trying to discover architecture' )
   env['arch'] = getArch()
-  print( '  now using the following architecture:', env['arch'] )
+  print( '  now using the following architecture: ' + env['arch'] )
 
 # disable libxsmm if not build elastic
 if( env['xsmm'] ):
