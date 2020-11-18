@@ -485,7 +485,7 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
     env.Append( CPPDEFINES =['PP_USE_MEMKIND'] )
 elif env['arch'] == 'n1':
   if compilers=='gnu' or compilers=='clang':
-    env.Append( CPPFLAGS = ['-mtune=neoverse-n1’'] )
+    env.Append( CPPFLAGS = ['-mtune=neoverse-n1'] )
 
 # forward equations to build
 if env['equations'] == 'advection':
