@@ -433,6 +433,14 @@ if( env['xsmm'] ):
       elif( env['precision'] == '64' and env['cfr'] != '8' ):
         warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and AVX-512 (avx512)' )
         env['xsmm'] = False
+    # Neoverse N1
+    elif( env['arch'] == 'n1' ):
+      if( env['precision'] == '32' and env['cfr'] != '4' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 32-bit precision and Neoverse N1 (n1)' )
+        env['xsmm'] = False
+      elif( env['precision'] == '64' and env['cfr'] != '2' ):
+        warnings.warn( '  Warning: LIBXSMM disabled. Use 2 fused simulations for 64-bit precision and Neoverse N1 (n1)' )
+        env['xsmm'] = False
 
 # forward number of forward runs to compiler
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
@@ -450,7 +458,7 @@ if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
    conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], False):
   env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
 
-# set architecture and alignment
+# set isa
 if env['arch'] == 'snb':
   env.Append( CPPFLAGS = ['-mavx'] )
 elif env['arch'] == 'hsw':
@@ -475,6 +483,9 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
      conf.CheckLibWithHeaderFlags('memkind', 'hbwmalloc.h', 'CXX', [], [], True):
     env.AppendUnique( LINKFLAGS=['-pthread'] )
     env.Append( CPPDEFINES =['PP_USE_MEMKIND'] )
+elif env['arch'] == 'n1':
+  if compilers=='gnu' or compilers=='clang':
+    env.Append( CPPFLAGS = ['-mtune=neoverse-n1’'] )
 
 # forward equations to build
 if env['equations'] == 'advection':
