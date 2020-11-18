@@ -133,3 +133,4 @@ Based on the equations and the element type, the following table shows the imple
 | [Skylake](https://ark.intel.com/products/codename/37572/Skylake) | [Amazon Elastic Compute Cloud](https://aws.amazon.com/ec2/), [Google Cloud Platform](https://cloud.google.com/), [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2) |
 | [EPYC](http://products.amd.com/en-us/search/cpu/amd-epyc%E2%84%A2)                                         | [packet](https://www.packet.com/) |
 | [Knights Mill](https://ark.intel.com/products/codename/57723/Knights-Mill) | - |
+| [Cascade Lake](https://ark.intel.com/content/www/us/en/ark/products/codename/124664/cascade-lake.html) | [Frontera](https://frontera-portal.tacc.utexas.edu/) |
