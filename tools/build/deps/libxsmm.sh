@@ -83,7 +83,7 @@ cp -r ${LIBXSMM_DIR} .
 cd $(basename ${LIBXSMM_DIR})
 
 # install
-make PREFIX=${INSTALL_DIR} install -j ${N_BUILD_PROCS}
+make PLATFORM=1 PREFIX=${INSTALL_DIR} install -j ${N_BUILD_PROCS}
 
 # clean
 rm -r ${TMP_DIR}
