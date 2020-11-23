@@ -79,7 +79,7 @@ class edge::seismic::setups::PointSources {
     static unsigned short const TL_N_QTS_SRC = TL_N_QTS_SIM;
 
     //! point sources of single simulations
-    typedef struct {
+    typedef struct PointSourcesData {
       //! total number of point sources
       TL_T_LID nPts = 0;
 
