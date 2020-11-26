@@ -39,13 +39,13 @@ namespace edge {
 class edge::mesh::EdgeV {
   private:
     //! gmsh interface
-    edge_v::io::Gmsh *m_gmsh;
+    edge_v::io::Gmsh *m_gmsh = nullptr;
 
     //! mesh interface
-    edge_v::mesh::Mesh *m_mesh;
+    edge_v::mesh::Mesh *m_mesh = nullptr;
 
     //! hdf5 interface
-    edge_v::io::Hdf5 *m_hdf;
+    edge_v::io::Hdf5 *m_hdf = nullptr;
 
     //! relative time steps, first is fundamental
     double *m_relDt = nullptr;

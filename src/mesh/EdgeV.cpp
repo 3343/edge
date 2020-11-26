@@ -314,9 +314,12 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
 }
 
 edge::mesh::EdgeV::~EdgeV() {
-  delete[] m_nTgElsIn;
-  delete[] m_nTgElsSe;
-  delete[] m_relDt;
+  if( m_gmsh        != nullptr ) delete   m_gmsh;
+  if( m_mesh        != nullptr ) delete   m_mesh;
+  if( m_hdf         != nullptr ) delete   m_hdf;
+  if( m_nTgElsIn    != nullptr ) delete[] m_nTgElsIn;
+  if( m_nTgElsSe    != nullptr ) delete[] m_nTgElsSe;
+  if( m_relDt       != nullptr ) delete[] m_relDt;
   if( m_commStruct  != nullptr ) delete[] m_commStruct;
   if( m_sendFa      != nullptr ) delete[] m_sendFa;
   if( m_sendEl      != nullptr ) delete[] m_sendEl;
