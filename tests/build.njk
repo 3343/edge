@@ -21,10 +21,10 @@
 # @section DESCRIPTION
 # Pipline template which tests different builds of EDGE.
 ##
-{% for l_isa in i_isas %}
 steps:
+{% for l_isa in i_isas %}
   - label: 'Dependencies ({{l_isa}})'
-    key: 'deps'
+    key: 'deps_{{l_isa}}'
     agents:
       isa: {{l_isa}} 
     command:
@@ -47,12 +47,12 @@ steps:
       - cd ../..
 
       - echo "--- Build Artifact Upload"
-      - tar -cJf deps.tar.xz deps
-      - buildkite-agent artifact upload deps.tar.xz
+      - tar -cJf deps_{{l_isa}}.tar.xz deps
+      - buildkite-agent artifact upload deps_{{l_isa}}.tar.xz
 {%- for l_build in i_builds %}
 {%- macro toScons(i_build) %}cfr={{i_build.cfr}} equations={{i_build.equations}} element_type={{i_build.element_type}} order={{i_build.order}} precision={{i_build.precision}}{% endmacro %}
   - label: 'EDGE ({{l_isa}} {{toScons(l_build)}})'
-    depends_on: 'deps'
+    depends_on: 'deps_{{l_isa}}'
     agents:
       isa: {{l_isa}}
     command:
@@ -60,8 +60,8 @@ steps:
       - export OMPI_CXX=${EDGE_CXX_SEQ}
 
       - echo "--- Build Artifact Download"
-      - buildkite-agent artifact download deps.tar.xz .
-      - tar -xf deps.tar.xz
+      - buildkite-agent artifact download deps_{{l_isa}}.tar.xz .
+      - tar -xf deps_{{l_isa}}.tar.xz
 
       - echo "--- EDGE"
       - scons {{toScons(l_build)}} mode=debug+san tests=1 parallel=none zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
