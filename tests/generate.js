@@ -28,22 +28,30 @@ var l_fs = require('fs');
 
 var l_builds = []
 
-for( var l_cf of [1, 16] ) {
-  for( var l_eq of ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'] ) {
-    for( var l_et of ['tet4', 'tria3'] ) {
-      for( var l_or of [1, 2, 3, 4, 5] ) {
-        for( var l_pr of [32, 64] ) {
-          l_builds.push( {
-            'cfr':          l_cf,
-            'equations':    l_eq,
-            'element_type': l_et,
-            'order':        l_or,
-            'precision':    l_pr
-          } )
+for( var l_isa of ['sse', 'avx2'] ) {
+  for( var l_cf of [1, 16] ) {
+    for( var l_eq of ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'] ) {
+      for( var l_et of ['tet4', 'tria3'] ) {
+        for( var l_or of [1, 2, 3, 4, 5] ) {
+          for( var l_pr of [32, 64] ) {
+            l_builds.push( {
+              'isa':          l_isa,
+              'cfr':          l_cf,
+              'equations':    l_eq,
+              'element_type': l_et,
+              'order':        l_or,
+              'precision':    l_pr
+            } )
+          }
         }
       }
     }
   }
 }
 
-console.log( l_nunjucks.render( 'build.njk', { 'i_builds': l_builds } ) )
+console.log( l_nunjucks.render( 'build.njk', {
+	                          'i_isas': ['sse', 'avx2'],
+                                  'i_builds': l_builds
+                                }
+                              )
+)

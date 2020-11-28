@@ -21,9 +21,12 @@
 # @section DESCRIPTION
 # Pipline template which tests different builds of EDGE.
 ##
+{% for l_isa in i_isas %}
 steps:
-  - label: 'Dependencies'
+  - label: 'Dependencies ({{l_isa}})'
     key: 'deps'
+    agents:
+      isa: {{l_isa}} 
     command:
       - export CC=${EDGE_CC_SEQ}
       - export CXX=${EDGE_CXX_SEQ}
@@ -48,8 +51,10 @@ steps:
       - buildkite-agent artifact upload deps.tar.xz
 {%- for l_build in i_builds %}
 {%- macro toScons(i_build) %}cfr={{i_build.cfr}} equations={{i_build.equations}} element_type={{i_build.element_type}} order={{i_build.order}} precision={{i_build.precision}}{% endmacro %}
-  - label: 'EDGE ({{toScons(l_build)}})'
+  - label: 'EDGE ({{l_isa}} {{toScons(l_build)}})'
     depends_on: 'deps'
+    agents:
+      isa: {{l_isa}}
     command:
       - export CXX=${EDGE_CXX_SEQ}
       - export OMPI_CXX=${EDGE_CXX_SEQ}
@@ -67,4 +72,5 @@ steps:
       - ./build/tests
       - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} mode=debug+san parallel=mpi+omp zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
+{% endfor %}
 {% endfor %}
