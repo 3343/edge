@@ -26,15 +26,14 @@
 var l_nunjucks = require('nunjucks');
 var l_fs = require('fs');
 
-var l_args = require('yargs')(
-  process.argv.slice(2))
-  .default('isa', 'avx2')
-  .default('cfs', [1, 16])
-  .default('eqs', ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'] )
-  .default('ets', ['tet4', 'tria3'] )
-  .default('ors', [1, 2, 3, 4, 5] )
-  .default('prs', [32, 64] )
-  .argv;
+var l_args = require('minimist')( process.argv.slice(2), {
+  default: { isa: 'avx2',
+             cfs: [1, 16],
+             eqs: ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'],
+             ets: ['tet4', 'tria3'],
+             ors: [1, 2, 3, 4, 5],
+             prs: [32, 64] }
+});
 
 var l_builds = []
 
