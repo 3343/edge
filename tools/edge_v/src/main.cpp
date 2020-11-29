@@ -450,32 +450,33 @@ int main( int   i_argc,
     EDGE_V_LOG_INFO << "writing mesh support: " << l_pathSupport;
     edge_v::io::Hdf5 l_hdf( l_pathSupport,
                             false );
+    l_hdf.createGroup( "/edge_v" );
 
     // write velocities
 #ifdef PP_HAS_UCVM
     if( l_config.getVelModUcvmProjSrc() != "" ) {
-      l_hdf.set( "vp",
-                l_nPaEls,
-                l_velP + l_first );
-      l_hdf.set( "vs",
-                l_nPaEls,
-                l_velS + l_first );
-      l_hdf.set( "rho",
-                l_nPaEls,
-                l_rho + l_first );
+      l_hdf.set( "/edge_v/vp",
+                 l_nPaEls,
+                 l_velP + l_first );
+      l_hdf.set( "/edge_v/vs",
+                 l_nPaEls,
+                 l_velS + l_first );
+      l_hdf.set( "/edge_v/rho",
+                 l_nPaEls,
+                 l_rho + l_first );
     }
 #endif
 
     // store relative time steps of the groups
-    l_hdf.set( "relative_time_steps",
+    l_hdf.set( "/edge_v/relative_time_steps",
                l_tsGroups->nGroups()+1,
                l_tsGroups->getTsIntervals() );
 
     // write number of elements per time group partition-local
-    l_hdf.set( "n_time_group_elements_inner",
+    l_hdf.set( "/edge_v/n_time_group_elements_inner",
                l_tsGroups->nGroups(),
                l_comm.nGroupElsIn( l_pa ) );
-    l_hdf.set( "n_time_group_elements_send",
+    l_hdf.set( "/edge_v/n_time_group_elements_send",
                l_tsGroups->nGroups(),
                l_comm.nGroupElsSe( l_pa ) );
 
@@ -484,23 +485,23 @@ int main( int   i_argc,
 
     // write comm data
     edge_v::t_idx l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
-    l_hdf.set( "communication_structure",
+    l_hdf.set( "/edge_v/communication_structure",
                l_coSize,
                l_comm.getStruct( l_pa ) );
 
-    l_hdf.set( "send_el",
+    l_hdf.set( "/edge_v/send_el",
                l_comm.nSeRe( l_pa ),
                l_comm.getSendEl( l_pa ) );
 
-    l_hdf.set( "send_fa",
+    l_hdf.set( "/edge_v/send_fa",
                l_comm.nSeRe( l_pa ),
                l_comm.getSendFa( l_pa ) );
 
-    l_hdf.set( "recv_el",
+    l_hdf.set( "/edge_v/recv_el",
                l_comm.nSeRe( l_pa ),
                l_comm.getRecvEl( l_pa ) );
 
-    l_hdf.set( "recv_fa",
+    l_hdf.set( "/edge_v/recv_fa",
                l_comm.nSeRe( l_pa ),
                l_comm.getRecvFa( l_pa ) );
 
@@ -511,7 +512,7 @@ int main( int   i_argc,
                         l_comm.getSendEl( l_pa ),
                         l_comm.getSendFa( l_pa ),
                         l_idsAd );
-    l_hdf.set( "send_face_ids",
+    l_hdf.set( "/edge_v/send_face_ids",
                 l_comm.nSeRe( l_pa ),
                 l_idsAd );
 
@@ -521,7 +522,7 @@ int main( int   i_argc,
                         l_comm.getSendFa( l_pa ),
                         l_idsAd );
 
-    l_hdf.set( "send_vertex_ids",
+    l_hdf.set( "/edge_v/send_vertex_ids",
                l_comm.nSeRe( l_pa ),
                l_idsAd );
     delete[] l_idsAd;

@@ -78,14 +78,6 @@ class edge_v::io::Hdf5 {
     }
 
     /**
-     * Opens this object group if it exists.
-     * Otherwise: create and open.
-     *
-     * @return hid_t identifier of the group.
-     **/
-    hid_t openCreateGroup() const;
-
-    /**
      * Sets the data to a dataset.
      *
      * @param i_name name of the dataset.
@@ -120,8 +112,7 @@ class edge_v::io::Hdf5 {
      * @param i_group group under which the data is stored.
      **/
     Hdf5( std::string const & i_path,
-          bool                i_readOnly = true,
-          std::string const & i_group = "/edge_v" );
+          bool                i_readOnly = true );
 
     /**
      * Destructor
@@ -129,7 +120,7 @@ class edge_v::io::Hdf5 {
     ~Hdf5();
 
     /**
-     * Tests if the given link in the interface's group exists.
+     * Tests if the given link exists.
      *
      * @param i_path path of the link.
      * @return true if it exists, false if not.
@@ -143,6 +134,13 @@ class edge_v::io::Hdf5 {
      * @return number of values.
      **/
     t_idx nVas( std::string const & i_name ) const;
+
+    /**
+     * Creates the given group.
+     *
+     * @param i_group group which is created.
+     **/
+    void createGroup( std::string const & i_group ) const;
 
     /**
      * Sets the data to a dataset.

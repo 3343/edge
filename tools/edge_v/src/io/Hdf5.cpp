@@ -25,8 +25,7 @@
 #include <cstdio>
 
 edge_v::io::Hdf5::Hdf5( std::string const & i_path,
-                        bool                i_readOnly,
-                        std::string const & i_group ) {
+                        bool                i_readOnly ) {
   // silence error printing
   herr_t l_err = H5Eset_auto( H5P_DEFAULT,
                               NULL,
@@ -48,8 +47,6 @@ edge_v::io::Hdf5::Hdf5( std::string const & i_path,
                           H5P_DEFAULT,
                           H5P_DEFAULT );
   }
-
-  m_groupStr = i_group;
 }
 
 edge_v::io::Hdf5::~Hdf5() {
@@ -57,28 +54,9 @@ edge_v::io::Hdf5::~Hdf5() {
   EDGE_V_CHECK_GE( l_err, 0 );
 }
 
-bool edge_v::io::Hdf5::exists( std::string const & i_path ) const {
-  // open group
-  hid_t l_group = openCreateGroup();
-
-  htri_t l_ex = H5Lexists( l_group,
-                           i_path.c_str(),
-                           H5P_DEFAULT );
-  EDGE_V_CHECK_GE( l_ex, 0 );
-
-  // close group
-  herr_t l_err = H5Gclose( l_group );
-  EDGE_V_CHECK_GE( l_err, 0 );
-
-  return l_ex > 0;
-}
-
 edge_v::t_idx edge_v::io::Hdf5::nVas( std::string const & i_name ) const {
-  // open group
-  hid_t l_group = openCreateGroup();
-
   // open dataset
-  hid_t l_dset = H5Dopen2( l_group,
+  hid_t l_dset = H5Dopen2( m_fileId,
                            i_name.c_str(),
                            H5P_DEFAULT );
   EDGE_V_CHECK_GE( l_dset, 0 );
@@ -87,49 +65,46 @@ edge_v::t_idx edge_v::io::Hdf5::nVas( std::string const & i_name ) const {
   hid_t l_space = H5Dget_space( l_dset );
   EDGE_V_CHECK_GE( l_space, 0 );
 
-  hsize_t l_nEns;
+  hsize_t l_nEns[3] = {1, 1, 1};
   int l_nDims = H5Sget_simple_extent_dims( l_space,
-                                           &l_nEns,
+                                           l_nEns,
                                            NULL );
-  EDGE_V_CHECK_EQ( l_nDims, 1 );
+  EDGE_V_CHECK_LE( l_nDims, 3 );
+  for( unsigned short l_di = 1; l_di < l_nDims; l_di++ ) {
+    l_nEns[0] *= l_nEns[l_di];
+  }
 
-  // close set, space and group
+  // close set and space
   herr_t l_err = H5Dclose( l_dset );
   EDGE_V_CHECK_GE( l_err, 0 );
   l_err = H5Sclose( l_space );
   EDGE_V_CHECK_GE( l_err, 0 );
-  l_err = H5Gclose( l_group );
-  EDGE_V_CHECK_GE( l_err, 0 );
 
-  return l_nEns;
+  return l_nEns[0];
 }
 
-hid_t edge_v::io::Hdf5::openCreateGroup() const {
-  // try to open the group
-  hid_t l_id = H5Gopen( m_fileId,
-                        m_groupStr.c_str(),
-                        H5P_DEFAULT );
+void edge_v::io::Hdf5::createGroup( std::string const & i_group ) const {
+  H5Gcreate( m_fileId,
+             i_group.c_str(),
+             H5P_DEFAULT,
+             H5P_DEFAULT,
+             H5P_DEFAULT );
+}
 
-  // create the group if it doesn't exist
-  if( l_id < 0 ) {
-    l_id = H5Gcreate( m_fileId,
-                      m_groupStr.c_str(),
-                      H5P_DEFAULT,
-                      H5P_DEFAULT,
-                      H5P_DEFAULT );
-  }
+bool edge_v::io::Hdf5::exists( std::string const & i_path ) const {
+  htri_t l_ex = H5Lexists( m_fileId,
+                           i_path.c_str(),
+                           H5P_DEFAULT );
+  EDGE_V_CHECK_GE( l_ex, 0 );
 
-  return l_id;
+  return l_ex > 0;
 }
 
 void edge_v::io::Hdf5::get( std::string const & i_name,
                             hid_t               i_memType,
                             void              * o_data ) const {
-  // open group
-  hid_t l_group = openCreateGroup();
-
   // open dataset
-  hid_t l_dset = H5Dopen2( l_group,
+  hid_t l_dset = H5Dopen2( m_fileId,
                            i_name.c_str(),
                            H5P_DEFAULT );
   EDGE_V_CHECK_GE( l_dset, 0 );
@@ -143,10 +118,8 @@ void edge_v::io::Hdf5::get( std::string const & i_name,
                           o_data );
   EDGE_V_CHECK_GE( l_err, 0 );
   
-  // close set and group
+  // close set
   l_err = H5Dclose( l_dset );
-  EDGE_V_CHECK_GE( l_err, 0 );
-  l_err = H5Gclose( l_group );
   EDGE_V_CHECK_GE( l_err, 0 );
 }
 
@@ -160,10 +133,9 @@ void edge_v::io::Hdf5::set( std::string const & i_name,
   hid_t l_dspace = H5Screate_simple( 1,
                                      &l_nVas,
                                      NULL );
-  hid_t l_group = openCreateGroup();
 
   // create dataset
-  hid_t l_dset = H5Dcreate( l_group,
+  hid_t l_dset = H5Dcreate( m_fileId,
                             i_name.c_str(),
                             i_fileType ,
                             l_dspace,
@@ -180,12 +152,10 @@ void edge_v::io::Hdf5::set( std::string const & i_name,
                            i_data );
   EDGE_V_CHECK_GE( l_err, 0 );
 
-  // close set, space and group
+  // close set and space
   l_err = H5Dclose( l_dset );
   EDGE_V_CHECK_GE( l_err, 0 );
   l_err = H5Sclose( l_dspace );
-  EDGE_V_CHECK_GE( l_err, 0 );
-  l_err = H5Gclose( l_group );
   EDGE_V_CHECK_GE( l_err, 0 );
 }
 
