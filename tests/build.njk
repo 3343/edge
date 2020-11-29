@@ -46,8 +46,8 @@ steps:
       - cd ../..
 
       - echo "--- Build Artifact Upload"
-      - tar -cJf deps.tar.xz deps
-      - buildkite-agent artifact upload deps.tar.xz
+      - tar -cJf deps_{{i_isa}}.tar.xz deps
+      - buildkite-agent artifact upload deps_{{i_isa}}.tar.xz
 {% for l_build in i_builds %}
 {%- macro toScons(i_build) %}cfr={{i_build.cfr}} equations={{i_build.equations}} element_type={{i_build.element_type}} order={{i_build.order}} precision={{i_build.precision}}{% endmacro %}
   - label: 'EDGE ({{i_isa}} {{toScons(l_build)}})'
@@ -59,8 +59,8 @@ steps:
       - export OMPI_CXX=${EDGE_CXX_SEQ}
 
       - echo "--- Build Artifact Download"
-      - buildkite-agent artifact download deps.tar.xz .
-      - tar -xf deps.tar.xz
+      - buildkite-agent artifact download deps_{{i_isa}}.tar.xz .
+      - tar -xf deps_{{i_isa}}.tar.xz
 
       - echo "--- EDGE"
       - scons {{toScons(l_build)}} mode=debug+san tests=1 parallel=none zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_none -j ${EDGE_N_BUILD_PROCS}
