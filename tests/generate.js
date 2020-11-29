@@ -26,13 +26,23 @@
 var l_nunjucks = require('nunjucks');
 var l_fs = require('fs');
 
+var l_args = require('yargs')(
+  process.argv.slice(2))
+  .default('isa', 'avx2')
+  .default('cfs', [1, 16])
+  .default('eqs', ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'] )
+  .default('ets', ['tet4', 'tria3'] )
+  .default('ors', [1, 2, 3, 4, 5] )
+  .default('prs', [32, 64] )
+  .argv;
+
 var l_builds = []
 
-for( var l_cf of [1, 16] ) {
-  for( var l_eq of ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'] ) {
-    for( var l_et of ['tet4', 'tria3'] ) {
-      for( var l_or of [1, 2, 3, 4, 5] ) {
-        for( var l_pr of [32, 64] ) {
+for( var l_cf of l_args.cfs ) {
+  for( var l_eq of l_args.eqs ) {
+    for( var l_et of l_args.ets ) {
+      for( var l_or of l_args.ors ) {
+        for( var l_pr of l_args.prs ) {
           l_builds.push( {
             'cfr':          l_cf,
             'equations':    l_eq,
@@ -47,7 +57,7 @@ for( var l_cf of [1, 16] ) {
 }
 
 console.log( l_nunjucks.render( 'build.njk', {
-	                          'i_isas': ['sse', 'avx2'],
+	                          'i_isa': l_args.isa,
                                   'i_builds': l_builds
                                 }
                               )
