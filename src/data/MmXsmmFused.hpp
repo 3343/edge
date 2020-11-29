@@ -1,10 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
@@ -154,9 +155,9 @@ class edge::data::MmXsmmFused< float > {
  
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).smm );
       else
-        m_kernels[i_group].push_back( libxsmm_create_xcsc_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).smm );
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
@@ -237,13 +238,13 @@ class edge::data::MmXsmmFused< float > {
                                  l_rows, l_cols, l_vals );
 
         // generate and store function for this kernels
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), l_rows, l_cols, l_vals, N_CRUNS ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, l_rows, l_cols, l_vals ).smm );
 
         // free memory of fake CSR-structure
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).smm );
       }
 
       // check that we generated a kernel
@@ -365,9 +366,9 @@ class edge::data::MmXsmmFused< double > {
 
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).dmm );
       else
-        m_kernels[i_group].push_back( libxsmm_create_xcsc_soa( m_descs[i_group].back(), i_ptr, i_idx, i_val, N_CRUNS ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).dmm );
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
@@ -448,13 +449,13 @@ class edge::data::MmXsmmFused< double > {
                                  l_rows, l_cols, l_vals );
   
         // generate and store function for this kernels
-        m_kernels[i_group].push_back( libxsmm_create_xcsr_soa( m_descs[i_group].back(), l_rows, l_cols, l_vals, N_CRUNS ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, l_rows, l_cols, l_vals ).dmm );
 
         // free memory of fake CSR-structure
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_pgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).dmm );
       }
 
       // check that we generated a kernel
