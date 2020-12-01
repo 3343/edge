@@ -83,6 +83,8 @@ def getArch():
       l_arch = 'snb'
     elif( l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
       l_arch = 'n1'
+    elif( l_cpuInfo['arch_string_raw'] == 'aarch64' ):
+      l_arch = 'aarch64'
     return l_arch
   except:
     return l_arch
@@ -433,8 +435,8 @@ if( env['xsmm'] ):
       elif( env['precision'] == '64' and env['cfr'] != '8' ):
         warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and AVX-512 (avx512)' )
         env['xsmm'] = False
-    # Neoverse N1
-    elif( env['arch'] == 'n1' ):
+    # Neoverse N1 and generic aarch64
+    elif( env['arch'] == 'n1' or env['arch'] == 'aarch64' ):
       if( env['precision'] == '32' and env['cfr'] != '4' ):
         warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 32-bit precision and Neoverse N1 (n1)' )
         env['xsmm'] = False
@@ -486,6 +488,9 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
 elif env['arch'] == 'n1':
   if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mtune=neoverse-n1'] )
+    env.Append( CPPDEFINES = ['LIBXSMM_PLATFORM_FORCE'] )
+elif env['arch'] == 'aarch64':
+  if compilers=='gnu' or compilers=='clang':
     env.Append( CPPDEFINES = ['LIBXSMM_PLATFORM_FORCE'] )
 
 # forward equations to build
