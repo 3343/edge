@@ -21,8 +21,8 @@
 # @section DESCRIPTION
 # Installs Gmsh.
 ##
-GMSH_LINK=https://gmsh.info/src/gmsh-4.7.0-source.tgz
-GMSH_SHA256=e27f32f92b374ba2a746a9d9c496401c13f66ac6e3e70753e16fa4012d14320e
+GMSH_LINK=https://gmsh.info/src/gmsh-4.7.1-source.tgz
+GMSH_SHA256=c984c295116c757ed165d77149bd5fdd1068cbd7835e9bcd077358b503891c6a
 
 help() {
 cat << EOF
