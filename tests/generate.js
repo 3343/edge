@@ -25,6 +25,7 @@
 
 var l_nunjucks = require('nunjucks');
 var l_fs = require('fs');
+const { exit } = require('process');
 
 var l_args = require('minimist')( process.argv.slice(2), {
   default: { isa: 'avx2',
@@ -35,6 +36,12 @@ var l_args = require('minimist')( process.argv.slice(2), {
              prs: [32, 64] }
 });
 
+// convert potential single-entry command line input to arrays
+for( var l_key of ['cfs', 'eqs', 'ets', 'ors', 'prs'] ) {
+  l_args[l_key] = Array.isArray( l_args[l_key] ) ? l_args[l_key] : [l_args[l_key]];
+}
+
+// assemble builds
 var l_builds = []
 
 for( var l_cf of l_args.cfs ) {
@@ -56,7 +63,7 @@ for( var l_cf of l_args.cfs ) {
 }
 
 console.log( l_nunjucks.render( 'build.njk', {
-	                          'i_isa': l_args.isa,
+                                  'i_isa': l_args.isa,
                                   'i_builds': l_builds
                                 }
                               )
