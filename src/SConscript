@@ -143,8 +143,10 @@ if env['tests']:
   # add objects and make sure we are allowed to overwrite private keywords
   env.tests.append( env.sources )
   l_cxxflags = ['-DPP_UNIT_TEST']
-  if  env['compilers'] != 'intel':
+  if env['compilers'] == 'clang':
     l_cxxflags.append( '-Wno-keyword-macro' )
+  elif env['compilers'] == 'gnu':
+    l_cxxflags.append( '-Wno-type-limits' )
 
   for l_test in l_tests:
     env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+l_cxxflags ) )
