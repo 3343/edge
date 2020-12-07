@@ -12,7 +12,7 @@
 	url = https://github.com/philsquared/Catch.git
 [submodule "submodules/exprtk"]
 	path = submodules/exprtk
-	url = https://github.com/ArashPartow/exprtk.git
+	url = https://github.com/3343/exprtk.git
 [submodule "submodules/edge_pre"]
 	path = submodules/edge_pre
 	url = https://github.com/3343/edge_pre.git
