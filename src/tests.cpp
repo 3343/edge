@@ -22,6 +22,7 @@
  **/
 #include "parallel/DistributedDummy.hpp"
 #include <string>
+#include <sys/stat.h>
 #include "io/logging.h"
 #ifdef PP_USE_EASYLOGGING
 INITIALIZE_EASYLOGGINGPP
@@ -34,6 +35,7 @@ INITIALIZE_EASYLOGGINGPP
 namespace edge {
   namespace test {
     std::string g_files = "cont/unit_tests";
+    std::string g_tmpDir = "tmp_edge_unit_tests/";
   }
 }
 
@@ -48,6 +50,9 @@ int main( int i_argc, char* i_argv[] ) {
   if( !std::ifstream(edge::test::g_files) ) {
     edge::test::g_files = "";
   }
+
+  // create tmp-directory for unit tests to use
+  mkdir( edge::test::g_tmpDir.c_str(), S_IRWXU | S_IRWXG );
 
   // run unit tests
   int l_result = Catch::Session().run( i_argc, i_argv );

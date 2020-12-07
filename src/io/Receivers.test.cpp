@@ -23,6 +23,12 @@
 #include <catch.hpp>
 #include "Receivers.h"
 
+namespace edge {
+  namespace test {
+    extern std::string g_tmpDir;
+  }
+}
+
 TEST_CASE( "Receivers: Initialization", "[receivers][init]" ) {
   edge::io::Receivers l_recv;
 
@@ -61,7 +67,7 @@ TEST_CASE( "Receivers: Initialization", "[receivers][init]" ) {
   //  Graphics3D[ {{Opacity[.3], Tetrahedron[]}, {PointSize[0.1], Point[{0.15, 0.15, 0.15}] }}, Axes -> True ]
 
   std::string l_recvNames[6] = {"1", "2", "3", "4", "5", "6"};
-  std::string l_oDir = "/tmp";
+  std::string l_oDir = edge::test::g_tmpDir+"receivers";
 
   std::size_t l_nTgElsIn[2] = {2, 3};
   std::size_t l_nTgElsSe[2] = {0, 0};

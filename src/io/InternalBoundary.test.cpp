@@ -27,6 +27,12 @@
 #include "InternalBoundary.hpp"
 #undef private
 
+namespace edge {
+  namespace test {
+    extern std::string g_tmpDir;
+  }
+}
+
 TEST_CASE( "Tests the assembly of the sub-face mesh for triangular elements.", "[io/InternalBoundary][meshTria3]" ) {
   /*
    * Our example setup:
@@ -133,7 +139,7 @@ TEST_CASE( "Tests the assembly of the sub-face mesh for triangular elements.", "
   };
 
   // internal boundary writer
-  std::string l_path = "/tmp/output/wpppp";
+  std::string l_path = edge::test::g_tmpDir+"internal_boundary";
   edge::io::InternalBoundary< int, TRIA3, 2 > l_iBndWriter( l_path );
 
   // allocate memory
