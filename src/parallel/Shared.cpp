@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -143,7 +144,7 @@ bool edge::parallel::Shared::getWrkTd( unsigned short & o_tg,
 
   // iterate over work region
   for( std::size_t l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
-    volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
+    volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
     if( l_wps[g_thread].status == RDY ) {
       o_tg    = m_wrkRgns[l_rg].tg;
@@ -178,7 +179,7 @@ void edge::parallel::Shared::setStatusAll( t_status     i_status,
 
   std::size_t l_rg = getWrkRgn( i_id );
 
-  volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
+  volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
   // iterate over all workers and set status
   for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
@@ -202,7 +203,7 @@ void edge::parallel::Shared::resetStatus( t_status i_status ) {
 
   // iterate over all regions
   for( unsigned short l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
-    volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
+    volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
     // iterate over all workers
     for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
@@ -250,7 +251,7 @@ bool edge::parallel::Shared::getStatusAll( t_status     i_status,
   // find the correct work region
   std::size_t l_rg = getWrkRgn( i_id );
 
-  volatile WrkPkg* l_wps = &m_wrkRgns[l_rg].wrkPkgs[0];
+  volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
   // iterate over all workers and check if we are finished
   for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
