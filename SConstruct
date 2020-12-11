@@ -393,57 +393,6 @@ if( env['xsmm'] ):
     warnings.warn( '  Warning: LIBXSMM not supported for arch != (snb, hsw, knl, skx, avx512, n1 or aarch64), continuing without' )
     env['xsmm'] = False
 
-  # disable libxsmm, if the number of fused simulations does not match the target-architecture
-  if( env['cfr'] != '1' ):
-    # Sandy Bridge
-    if( env['arch'] == 'snb' ):
-      if( env['precision'] == '32' and env['cfr'] != '8' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 32-bit precision and Sandy Bridge (snb)' )
-        env['xsmm'] = False
-      elif( env['precision'] == '64' and env['cfr'] != '4' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 64-bit precision and Sandy Bridge (snb)' )
-        env['xsmm'] = False
-    # Haswell
-    elif( env['arch'] == 'hsw' ):
-      if( env['precision'] == '32' and env['cfr'] != '8' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 32-bit precision and Haswell (hsw)' )
-        env['xsmm'] = False
-      elif( env['precision'] == '64' and env['cfr'] != '4' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 64-bit precision and Haswell (hsw)' )
-        env['xsmm'] = False
-    # Knights Landing
-    elif( env['arch'] == 'knl' ):
-      if( env['precision'] == '32' and env['cfr'] != '16' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 16 fused simulations for 32-bit precision and Knights Landing (knl)' )
-        env['xsmm'] = False
-      elif( env['precision'] == '64' and env['cfr'] != '8' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and Knights Landing (knl)' )
-        env['xsmm'] = False
-    # Skylake
-    elif( env['arch'] == 'skx' ):
-      if( env['precision'] == '32' and env['cfr'] != '16' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 16 fused simulations for 32-bit precision and Skylake (skx)' )
-        env['xsmm'] = False
-      elif( env['precision'] == '64' and env['cfr'] != '8' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and Skylake (skx)' )
-        env['xsmm'] = False
-    # AVX-512
-    elif( env['arch'] == 'avx512' ):
-      if( env['precision'] == '32' and env['cfr'] != '16' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 16 fused simulations for 32-bit precision and AVX-512 (avx512)' )
-        env['xsmm'] = False
-      elif( env['precision'] == '64' and env['cfr'] != '8' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 8 fused simulations for 64-bit precision and AVX-512 (avx512)' )
-        env['xsmm'] = False
-    # Neoverse N1 and generic aarch64
-    elif( env['arch'] == 'n1' or env['arch'] == 'aarch64' ):
-      if( env['precision'] == '32' and env['cfr'] != '4' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 4 fused simulations for 32-bit precision and Neoverse N1 (n1)' )
-        env['xsmm'] = False
-      elif( env['precision'] == '64' and env['cfr'] != '2' ):
-        warnings.warn( '  Warning: LIBXSMM disabled. Use 2 fused simulations for 64-bit precision and Neoverse N1 (n1)' )
-        env['xsmm'] = False
-
 # forward number of forward runs to compiler
 env.Append( CPPDEFINES='PP_N_CRUNS='+env['cfr'] )
 
