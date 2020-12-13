@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+* Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -136,23 +137,24 @@ class edge::swe::solvers::FiniteVolume {
             }
           }
         }
-        else if( (i_spType & OUTFLOW) == OUTFLOW ) {
-          // set bathymetry
-          o_bath[1] = o_bath[0];
+      }
 
-          // set DOFs
-          for( unsigned short l_qt = 0; l_qt < 2; l_qt++ )
-            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
-              o_dofs[1][l_qt][l_cr] = o_dofs[0][l_qt][l_cr];
-        }
-        else {
-          // set bathymetry
-          o_bath[1] = o_bath[0];
+      if( (i_spType & OUTFLOW) == OUTFLOW ) {
+        // set bathymetry
+        o_bath[1] = o_bath[0];
 
-          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-            o_dofs[1][0][l_cr] =  o_dofs[0][0][l_cr];
-            o_dofs[1][1][l_cr] = -o_dofs[0][1][l_cr];
-          }
+        // set DOFs
+        for( unsigned short l_qt = 0; l_qt < 2; l_qt++ )
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
+            o_dofs[1][l_qt][l_cr] = o_dofs[0][l_qt][l_cr];
+      }
+      else if( (i_spType & REFLECTING) == REFLECTING ) {
+        // set bathymetry
+        o_bath[1] = o_bath[0];
+
+        for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+          o_dofs[1][0][l_cr] =  o_dofs[0][0][l_cr];
+          o_dofs[1][1][l_cr] = -o_dofs[0][1][l_cr];
         }
       }
     }
@@ -255,13 +257,59 @@ class edge::swe::solvers::FiniteVolume {
                l_dofs,
                l_bath );
 
+        // init net-updates
+        for( unsigned short l_sd = 0; l_sd < 2; l_sd++ ) {
+          for( unsigned short l_qt = 0; l_qt < 2; l_qt++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              o_nusN[l_fa][l_sd][l_qt][l_cr] = 0;
+            }
+          }
+        }
+
+        // take care of dry elements
+        TL_T_REAL l_bathSol[2] = { l_bath[0], l_bath[1] };
+        if( l_bath[0] < 0 && l_bath[1] < 0 ) {}
+        else if( l_bath[1] < 0 ) { // reflecting boundary if left is dry
+          l_bathSol[0] = l_bath[1];
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_dofs[0][0][l_cr] =  l_dofs[1][0][l_cr];
+            l_dofs[0][1][l_cr] = -l_dofs[1][1][l_cr];
+          }
+        }
+        else if( l_bath[0] < 0 ) { // reflecting boundary if right is dry
+          l_bathSol[1] = l_bath[0];
+          for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+            l_dofs[1][0][l_cr] =  l_dofs[0][0][l_cr];
+            l_dofs[1][1][l_cr] = -l_dofs[0][1][l_cr];
+          }
+        }
+        else { // no net-update computation if both are dry
+          continue;
+        }
+
         // compute net-updates
         solvers::Fwave<
           TL_N_CRS
         >::nusN( l_dofs[0][0],    l_dofs[1][0],
                  l_dofs[0][1],    l_dofs[1][1],
-                 l_bath[0],       l_bath[1],
+                 l_bathSol[0],    l_bathSol[1],
                  o_nusN[l_fa][0], o_nusN[l_fa][1] );
+
+        // reset net-updates for dry cells
+        if( l_bath[0] >= 0 ) {
+          for( unsigned short l_qt = 0; l_qt < 2; l_qt++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              o_nusN[l_fa][0][l_qt][l_cr] = 0;
+            }
+          }
+        }
+        if( l_bath[1] >= 0 ) {
+          for( unsigned short l_qt = 0; l_qt < 2; l_qt++ ) {
+            for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
+              o_nusN[l_fa][1][l_qt][l_cr] = 0;
+            }
+          }
+        }
       }
     }
 

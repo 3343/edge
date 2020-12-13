@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016, Regents of the University of California
  * All rights reserved.
@@ -22,6 +23,56 @@
  * Setup for the shallow water equations.
  **/
 
+// get bathymetry and displacement model from mesh
+EDGE_LOG_INFO << "    querying mesh for bathymetry and displacement data";
+bool l_meshData = true;
+std::size_t l_nBath = l_edgeV.nVas( "/edge_v/bath" );
+if( l_nBath != l_edgeV.nEls() ) l_meshData = false;
+
+std::size_t l_nDisp[N_CRUNS] = {0};
+for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+  l_nDisp[l_cr] = l_edgeV.nVas( "edge_v/disp_" + std::to_string(l_cr) );
+  if( l_nDisp[l_cr] != l_edgeV.nEls() ) l_meshData = false;
+}
+
+if( l_meshData ) {
+  float * l_bath = new float[l_nBath];
+  l_edgeV.getData( "/edge_v/bath",
+                   l_bath );
+
+  float * l_disp[N_CRUNS];
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    l_disp[l_cr] = new float[l_nDisp[l_cr]];
+    l_edgeV.getData( "/edge_v/disp_" + std::to_string(l_cr),
+                     l_disp[l_cr] );
+  }
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ ) {
+    l_internal.m_elementModeShared1[l_el][0][0] = l_bath[l_el];
+    for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+      // add displacement to water column since we share the bathymetry
+      l_internal.m_elementModePrivate1[l_el][0][0][l_cr] = std::max( -l_bath[l_el] + l_disp[l_cr][l_el], real_base(0) );
+      l_internal.m_elementModePrivate1[l_el][1][0][l_cr] = 0;
+      l_internal.m_elementModePrivate1[l_el][2][0][l_cr] = 0;
+    }
+  }
+
+  delete[] l_bath;
+  for( unsigned short l_cr = 0; l_cr < N_CRUNS; l_cr++ ) {
+    delete[] l_disp[l_cr];
+  }
+}
+
+if( l_meshData ) {
+  EDGE_LOG_INFO << "    successfully obtained data from mesh";
+}
+else {
+  EDGE_LOG_INFO << "    failed obtaining data from mesh, continuing w/o";
+}
+
 // setup shared memory parallelization
 l_shared.regWrkRgn( 0, 0, 0,
                     0,
@@ -34,11 +85,10 @@ l_shared.regWrkRgn( 0, 1, 1,
                     0 );
 
 // initialize Bathymetry and DOFs
-{
+if( !l_meshData ) {
   for( std::size_t l_el = 0; l_el < l_edgeV.nEls(); l_el++ )
     l_internal.m_elementModeShared1[l_el][0][0] = 0;
 
-  // DG
   edge::setups::InitialDofs<
     T_SDISC.ELEMENT,
     ORDER,
