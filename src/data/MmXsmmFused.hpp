@@ -73,28 +73,9 @@ class edge::data::MmXsmmFused< float > {
     std::vector< std::vector< std::vector< MmXsmmStats > > > m_kernelStats;
 
     /**
-     * @brief Constructor, which limits the LIBXSMM target architecture, if required.
+     * @brief Constructor.
      */
     MmXsmmFused() {
-      if( PP_N_CRUNS == 16 ) {
-#if !defined(__AVX512F__)
-        EDGE_LOG_FATAL;
-#endif
-      }
-      else if( PP_N_CRUNS == 8 ) {
-#if defined(__AVX2__)
-        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx2 to match 8 FP32-fused sims";
-        libxsmm_set_target_arch( "avx2" );
-#elif defined(__AVX__)
-        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx to match 8 FP32-fused sims";
-        libxsmm_set_target_arch( "avx" );
-#else
-        EDGE_LOG_FATAL;
-#endif
-      }
-      else {
-        EDGE_LOG_FATAL;
-      }
       m_kernelStats.resize(edge::parallel::g_nThreads);
     }
 
