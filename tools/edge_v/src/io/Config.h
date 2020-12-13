@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -61,6 +62,18 @@ class edge_v::io::Config {
       std::string rule = "";
       bool lowerToSurf = false;
     } m_ucvm;
+
+    //! tsunami model
+    struct {
+      //! dry tolerance
+      float dryTol = -25;
+      //! path to the bathymetry grid
+      std::string bath = "";
+      //! path to the displacement grids
+      std::vector< std::string > disp;
+      //! expression which is evaluated
+      std::string expr = "";
+    } m_tsunami;
 
     //! mesh refinement parameters
     struct {
@@ -177,6 +190,38 @@ class edge_v::io::Config {
      * @return lower-to-surface option.
      **/
     bool const & getLowerToSurf() const { return m_ucvm.lowerToSurf; }
+
+    /**
+     * Gets the dry tolerance (negative) of the tsunami model.
+     * The bathymetry of all elements with an (averaged) initial negative bathymetry value,
+     * larger than this tolerance, obtain a -dryTol-bathymetry in the output grid.
+     *
+     * @return dry tolerance.
+     **/
+    float const & getModTsunamiDryTol() const { return m_tsunami.dryTol; }
+
+    /**
+     * Gets the path to the bathemtry grid of the tsunami model.
+     *
+     * @return path to the bathymetry grid.
+     **/
+    std::string const & getModTsunamiBath() const { return m_tsunami.bath; }
+
+    /**
+     * Gets the paths to the displacement grids of the tsunami model.
+     *
+     * @return path to the displacement grids.
+     **/
+    std::vector< std::string > const & getModTsunamiDisp() const { return m_tsunami.disp; }
+
+    /**
+     * Gets the expression which determines the velocities in the tsunami model.
+     * Input variables are "x" and "y" the coordinates of a queried point.
+     * Further "data" is the height of the closest-by data point in the bathymetry grid.
+     *
+     * @return expression.
+     **/
+    std::string const & getModTsunamiExpr() const { return m_tsunami.expr; }
 
     /**
      * Gets the expression of the mesh refinement.

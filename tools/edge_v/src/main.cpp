@@ -32,6 +32,7 @@
 #ifdef PP_HAS_UCVM
 #include "models/seismic/Ucvm.h"
 #endif
+#include "models/GridExpression.h"
 #include "mesh/Refinement.h"
 #include "mesh/Mesh.h"
 #include "time/Cfl.h"
@@ -129,6 +130,15 @@ int main( int   i_argc,
     EDGE_V_LOG_INFO << "    seismic expression: ";
     EDGE_V_LOG_INFO << "      " << l_config.getVelModSeismicExpr();
   }
+  else if( l_config.getModTsunamiBath() != "" ) {
+    EDGE_V_LOG_INFO << "    tsunami:";
+    EDGE_V_LOG_INFO << "      dry_tolerance: " << l_config.getModTsunamiDryTol();
+    EDGE_V_LOG_INFO << "      bathymetry: " << l_config.getModTsunamiBath();
+    EDGE_V_LOG_INFO << "      displacements:";
+    for( std::size_t l_ds = 0; l_ds < l_config.getModTsunamiDisp().size(); l_ds++ )
+      EDGE_V_LOG_INFO << "      displacement #" << l_ds << ": "  << l_config.getModTsunamiDisp()[l_ds];
+    EDGE_V_LOG_INFO << "      expr: " << l_config.getModTsunamiExpr();
+  }
   else {
     EDGE_V_LOG_INFO << "  constant";
   }
@@ -160,6 +170,9 @@ int main( int   i_argc,
 
   EDGE_V_LOG_INFO << "initializing velocity model";
   edge_v::models::Model *l_velMod = nullptr;
+  edge_v::io::Hdf5 * l_tsunamiHdfBath = nullptr;
+  edge_v::io::Grid * l_tsunamiGridBath = nullptr;
+
 #ifdef PP_HAS_UCVM
   edge_v::io::Ucvm * l_ucvmReader = nullptr;
   if( l_config.getVelModUcvmProjSrc() != "" ) {
@@ -179,6 +192,14 @@ int main( int   i_argc,
 #endif
   else if( l_config.getVelModSeismicExpr() != ""  ) {
     l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
+  }
+  else if( l_config.getModTsunamiBath() != "" ) {
+    l_tsunamiHdfBath = new edge_v::io::Hdf5( l_config.getModTsunamiBath() );
+    l_tsunamiGridBath = new edge_v::io::Grid( l_tsunamiHdfBath );
+    l_tsunamiGridBath->init( l_mesh->nVes(),
+                             l_mesh->getVeCrds() );
+    l_velMod = new edge_v::models::GridExpression( l_tsunamiGridBath,
+                                                   l_config.getModTsunamiExpr() );
   }
   else {
     l_velMod = new edge_v::models::Constant( 1 );
@@ -210,7 +231,7 @@ int main( int   i_argc,
                                    l_stream );
     l_stream.close();
 
-    if( l_config.getWriteElAn() ) {
+    if( l_config.getWriteElAn() && l_config.getMeshOutBase() != "" ) {
       EDGE_V_LOG_INFO << "storing elements' target lengths";
       l_gmsh.writeElData( "target_edge_length",
                           l_ref.getTargetLengthsEl(),
@@ -220,6 +241,8 @@ int main( int   i_argc,
 
   // abort if mesh doesn't have output
   if( l_config.getMeshOutBase() == "" ) {
+    if( l_tsunamiHdfBath != nullptr ) delete l_tsunamiHdfBath;
+    if( l_tsunamiGridBath != nullptr ) delete l_tsunamiGridBath;
     delete l_mesh;
     delete l_velMod;
     return EXIT_SUCCESS;
@@ -358,18 +381,38 @@ int main( int   i_argc,
 
   EDGE_V_LOG_INFO << "re-initializing velocity model";
 #ifdef PP_HAS_UCVM
-  float * l_velP = new float[l_mesh->nEls()];
-  float * l_velS = new float[l_mesh->nEls()];
-  float * l_rho  = new float[l_mesh->nEls()];
   if( l_config.getVelModUcvmProjSrc() != "" ) {
     l_velMod = new edge_v::models::seismic::Ucvm( *l_ucvmReader,
                                                   l_config.getVelModUcvmTrafoSrc(),
                                                   l_config.getVelModUcvmProjSrc(),
                                                   l_config.getVelModUcvmProjDes(),
                                                   l_config.getVelModUcvmModelType() );
-    l_velMod->init( l_mesh->nVes(),
-                    l_mesh->getVeCrds() );
+  }
+#else
+  if( false ){}
+#endif
+  else if( l_config.getModTsunamiBath() != "" ) {
+    l_tsunamiGridBath->init( l_mesh->nVes(),
+                             l_mesh->getVeCrds() );
+    l_velMod = new edge_v::models::GridExpression( l_tsunamiGridBath,
+                                                   l_config.getModTsunamiExpr() );
+  }
+  else if( l_config.getVelModSeismicExpr() != ""  ) {
+    l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
+  }
+  else {
+    l_velMod = new edge_v::models::Constant( 1 );
+  }
 
+  l_velMod->init( l_mesh->nVes(),
+                  l_mesh->getVeCrds() );
+
+  // UCVM data
+#ifdef PP_HAS_UCVM
+  float * l_velP = new float[l_mesh->nEls()];
+  float * l_velS = new float[l_mesh->nEls()];
+  float * l_rho  = new float[l_mesh->nEls()];
+  if( l_config.getVelModUcvmProjSrc() != "" ) {
     // compute elemnent averages of seismic velocities
     l_velMod->getElAve( l_mesh->nElVes(),
                         l_mesh->nEls(),
@@ -387,17 +430,7 @@ int main( int   i_argc,
                         ( (edge_v::models::seismic::Ucvm*) l_velMod)->getRho(),
                         l_rho );
   }
-#else
-  if( false ){}
-#endif
-  else if( l_config.getVelModSeismicExpr() != ""  ) {
-    l_velMod = new edge_v::models::seismic::Expression( l_config.getVelModSeismicExpr() );
-  }
-  else {
-    l_velMod = new edge_v::models::Constant( 1 );
-  }
 
-#ifdef PP_HAS_UCVM
   if( l_config.getVelModUcvmProjSrc() != "" && l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing vp, vs and rho";
     l_gmsh.writeElData( "vp",
@@ -411,6 +444,55 @@ int main( int   i_argc,
                         l_config.getMeshOutBase() + "_rho" + l_config.getMeshOutExt() );
   }
 #endif
+
+  // tsunami data
+  float * l_tsunamiBath = nullptr;
+  float ** l_tsunamiDisp = nullptr;
+  if( l_config.getModTsunamiBath() != "" ) {
+    l_tsunamiBath = new float[l_mesh->nEls()];
+    l_velMod->getElAve( l_mesh->nElVes(),
+                        l_mesh->nEls(),
+                        l_mesh->getElVe(),
+                        l_tsunamiGridBath->getData(),
+                        l_tsunamiBath );
+
+    // apply dry tolerance after averaging
+    for( edge_v::t_idx l_el = 0; l_el < l_mesh->nEls(); l_el++ ) {
+      if( l_tsunamiBath[l_el] > l_config.getModTsunamiDryTol() ) {
+        l_tsunamiBath[l_el] = std::max( l_tsunamiBath[l_el], -l_config.getModTsunamiDryTol() );
+      }
+    }
+
+    if( l_config.getWriteElAn() ) {
+      EDGE_V_LOG_INFO << "storing bathmetry";
+      l_gmsh.writeElData( "bath",
+                          l_tsunamiBath,
+                          l_config.getMeshOutBase() + "_bath" + l_config.getMeshOutExt() );
+    }
+  }
+  if( l_config.getModTsunamiDisp().size() > 0 ) {
+    l_tsunamiDisp = new float*[ l_config.getModTsunamiDisp().size() ];
+    for( std::size_t l_ds = 0; l_ds < l_config.getModTsunamiDisp().size(); l_ds++ ) {
+      edge_v::io::Hdf5 l_dispHdf( l_config.getModTsunamiDisp()[l_ds] );
+      edge_v::io::Grid l_dispGrid( &l_dispHdf );
+      l_dispGrid.init( l_mesh->nVes(),
+                       l_mesh->getVeCrds() );
+
+      l_tsunamiDisp[l_ds] = new float[l_mesh->nEls()];
+      l_velMod->getElAve( l_mesh->nElVes(),
+                          l_mesh->nEls(),
+                          l_mesh->getElVe(),
+                          l_dispGrid.getData(),
+                          l_tsunamiDisp[l_ds] );
+
+      if( l_config.getWriteElAn() ) {
+        EDGE_V_LOG_INFO << "storing displacements";
+        l_gmsh.writeElData( "disp",
+                            l_tsunamiDisp[l_ds],
+                            l_config.getMeshOutBase() + "_disp_" + std::to_string(l_ds) + l_config.getMeshOutExt() );
+      }
+    }
+  }
 
   EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
   l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
@@ -466,6 +548,16 @@ int main( int   i_argc,
                  l_rho + l_first );
     }
 #endif
+    if( l_config.getModTsunamiBath() != "" ) {
+      l_hdf.set( "/edge_v/bath",
+                 l_nPaEls,
+                 l_tsunamiBath + l_first );
+    }
+    for( std::size_t l_ds = 0; l_ds < l_config.getModTsunamiDisp().size(); l_ds++ ) {
+      l_hdf.set( "/edge_v/disp_" + std::to_string(l_ds),
+                 l_nPaEls,
+                 l_tsunamiDisp[l_ds] + l_first );
+    }
 
     // store relative time steps of the groups
     l_hdf.set( "/edge_v/relative_time_steps",
@@ -536,6 +628,15 @@ int main( int   i_argc,
   delete[] l_rho;
   if( l_ucvmReader != nullptr  ) delete l_ucvmReader;
 #endif
+  if( l_tsunamiBath != nullptr ) delete[] l_tsunamiBath;
+  if( l_tsunamiHdfBath != nullptr ) delete l_tsunamiHdfBath;
+  if( l_tsunamiGridBath != nullptr ) delete l_tsunamiGridBath;
+  if( l_tsunamiDisp != nullptr ) {
+    for( std::size_t l_ds = 0; l_ds < l_config.getModTsunamiDisp().size(); l_ds++ ) {
+      if( l_tsunamiDisp[l_ds] != nullptr ) delete[] l_tsunamiDisp[l_ds];
+    }
+    delete[] l_tsunamiDisp;
+  }
   delete l_tsGroups;
   delete l_cfl;
   delete l_mesh;

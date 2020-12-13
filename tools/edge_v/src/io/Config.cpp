@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -70,6 +71,16 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_ucvm.rule = l_ucvm.child("normalization_rule").text().as_string();
   m_ucvm.lowerToSurf = l_ucvm.child("lower_to_surface").text().as_bool();
 
+  // tsunami models
+  pugi::xml_node l_tsunami = l_velMod.child("tsunami");
+  m_tsunami.dryTol = l_tsunami.child("dry_tolerance").text().as_double();
+  m_tsunami.bath = l_tsunami.child("bathymetry").text().as_string();
+  for( pugi::xml_node l_disp = l_tsunami.child("displacements"); l_disp; l_disp = l_disp.next_sibling("displacements") ) {
+    m_tsunami.disp.push_back( l_disp.text().as_string() );
+  }
+  m_tsunami.expr = l_tsunami.child("expression").text().as_string();
+
+  // mesh refinement
   pugi::xml_node l_ref = l_doc.child("edge_v").child("refinement");
   m_ref.expr = l_ref.child("expression").text().as_string();
   m_ref.out = l_ref.child("out").text().as_string();
