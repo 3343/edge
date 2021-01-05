@@ -81,6 +81,8 @@ def getArch():
       l_arch = 'hsw'
     elif( 'avx' in l_cpuInfo['flags'] ):
       l_arch = 'snb'
+    elif( 'sse4_2' in l_cpuInfo['flags'] ):
+      l_arch = 'wsm'
     elif( l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
       l_arch = 'n1'
     elif( l_cpuInfo['arch_string_raw'] == 'aarch64' ):
@@ -205,7 +207,7 @@ vars.AddVariables(
   EnumVariable( 'arch',
                 'architecture to compile for',
                 'native',
-                 allowed_values=('native', 'snb', 'hsw', 'knl', 'skx', 'avx512')
+                 allowed_values=('native', 'wsm', 'snb', 'hsw', 'knl', 'skx', 'avx512')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
@@ -389,8 +391,8 @@ if( env['xsmm'] ):
   if( env['order'] == '1' ):
     warnings.warn('  Warning: LIBXSMM is not supported finite volume settings, continuing without' )
     env['xsmm'] = False
-  if( env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512' and env['arch'] != 'n1' and env['arch'] != 'aarch64' ):
-    warnings.warn( '  Warning: LIBXSMM not supported for arch != (snb, hsw, knl, skx, avx512, n1 or aarch64), continuing without' )
+  if( not (env['arch'] == 'wsm' and env['cfr'] == '1') and env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512' and env['arch'] != 'n1' and env['arch'] != 'aarch64' ):
+    warnings.warn( '  Warning: LIBXSMM not supported for arch != (wsm (cfr=1), snb, hsw, knl, skx, avx512, n1 or aarch64), continuing without' )
     env['xsmm'] = False
 
 # forward number of forward runs to compiler
@@ -410,7 +412,9 @@ if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
   env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
 
 # set isa
-if env['arch'] == 'snb':
+if env['arch'] == 'wsm':
+  env.Append( CPPFLAGS = ['-msse4.2'] )
+elif env['arch'] == 'snb':
   env.Append( CPPFLAGS = ['-mavx'] )
 elif env['arch'] == 'hsw':
   env.Append( CPPFLAGS = ['-march=core-avx2'] )
