@@ -1,0 +1,124 @@
+/**
+ * @file This file is part of EDGE.
+ *
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
+ *
+ * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @section DESCRIPTION
+ * Reference solutions for sparse matrix-matrix multiplications.
+ **/
+// python code of the reference solution
+/*
+import numpy as np
+from scipy.sparse import csc_matrix
+from __future__ import print_function
+
+np.random.seed(3343)
+
+l_sparse = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+4.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+-2.5,7.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+0.5,1.5,6.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+0.5,-0.16666666666666666,2.6666666666666665,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+0.5,1.5,0.0,6.0,0.0,0.0,0.0,0.0,0.0,0.0,
+0.5,-0.16666666666666666,1.6666666666666667,1.0,0.0,0.0,0.0,0.0,0.0,0.0,
+0.5,-0.16666666666666666,-0.3333333333333333,3.0,0.0,0.0,0.0,0.0,0.0,0.0,]
+
+l_sparse = np.array(l_sparse).reshape(10, 10)
+l_dense = np.random.rand( 9, 10 )
+
+l_csc = csc_matrix( l_sparse )
+l_cscT = csc_matrix( np.transpose( l_sparse ) )
+
+def printCStyle1d( i_vec ):
+  print( '{', end=" " )
+  for l_en in i_vec:
+    print( l_en, end="," )
+  print( ' },' )
+
+def printCStyle2d( i_mat ):
+  print( '{' )
+  for l_ro in i_mat:
+    print( '  {', end="" )
+    for l_co in l_ro:
+      print( l_co, end="," )
+    print( '},' )
+  print( '},' )
+
+print( '*** dense x sparse = dense ***' )
+
+print( 'CSC input matrix: non-zeroes' )
+printCStyle1d( l_csc.data )
+print( 'CSC input matrix: column pointer' )
+printCStyle1d( l_csc.indptr )
+print( 'CSC input matrix: row index' )
+printCStyle1d( l_csc.indices )
+
+print( 'transposed CSC input matrix: non-zeroes' )
+printCStyle1d( l_cscT.data )
+print( 'transposed CSC input matrix: column pointer' )
+printCStyle1d( l_cscT.indptr )
+print( 'transposed CSC input matrix: row index' )
+printCStyle1d( l_cscT.indices )
+
+print( 'dense input matrix' )
+printCStyle2d( l_dense )
+
+print( 'dense output matrix')
+l_result = np.matmul( l_dense, l_sparse )
+printCStyle2d( l_result )
+*/
+#pragma GCC diagnostic push
+#if !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
+float l_sparseDenseCscNzs[] = { 4.0,1.0,1.0,-2.5,0.5,0.5,0.5,0.5,0.5,7.5,1.5,-0.16666666666666666,1.5,-0.16666666666666666,-0.16666666666666666,6.0,2.6666666666666665,1.6666666666666667,-0.3333333333333333,6.0,1.0,3.0, };
+unsigned int l_sparseDenseCscColPtrs[] = { 0,9,15,19,22,22,22,22,22,22,22, };
+unsigned int l_sparseDenseCscRowIds[] = { 1,2,3,4,5,6,7,8,9,4,5,6,7,8,9,5,6,8,9,7,8,9, };
+
+float l_sparseDenseCscTrNzs[] = { 4.0,1.0,1.0,-2.5,7.5,0.5,1.5,6.0,0.5,-0.16666666666666666,2.6666666666666665,0.5,1.5,6.0,0.5,-0.16666666666666666,1.6666666666666667,1.0,0.5,-0.16666666666666666,-0.3333333333333333,3.0, };
+unsigned int l_sparseDenseCscTrColPtrs[] = { 0,0,1,2,3,5,8,11,14,18,22, };
+unsigned int l_sparseDenseCscTrRowIds[] = { 0,0,0,0,1,0,1,2,0,1,2,0,1,3,0,1,2,3,0,1,2,3, };
+
+
+float l_dense[9][10] = {
+  {0.31502566345387806,0.6686942615102741,0.5240257048836324,0.4324515724140714,0.600432130975785,0.8142123084940156,0.39985121899704656,0.1543684265191141,0.5628388222969362,0.026977345180984713,},
+  {0.7876563493948178,0.7019650033591671,0.7065805011608832,0.0545912011591182,0.8062014187557345,0.32789142635669444,0.04383277467728808,0.7817780345840171,0.04545564425537796,0.5915543218638859,},
+  {0.38133187855089923,0.16271141716730497,0.21032165415132298,0.27146748213875926,0.17661476441941415,0.7092632178694926,0.8300734026653475,0.145104758725479,0.2839499700651775,0.18675814738620922,},
+  {0.5990846238512505,0.9228883330076139,0.9162052839690623,0.5288961059771209,0.8675113822389373,0.9762351708589396,0.9129466698574331,0.8834094321184481,0.6444924751024506,0.8246843537270405,},
+  {0.7942610785991858,0.5273766966702069,0.8825073057786866,0.5338618339303438,0.021139176990840447,0.7787644147790614,0.4570543602158038,0.8613874091831872,0.5254352366074431,0.38171894458920097,},
+  {0.13633714234056504,0.041031159253460125,0.9405131629213024,0.3193337700706066,0.08073245532632756,0.10697545851427537,0.852299854007144,0.12845718677742402,0.21055395198417304,0.8521368248412993,},
+  {0.35175193313938524,0.855427863616338,0.7440056231049751,0.10995184613860953,0.20956599868882875,0.40645785458234174,0.9716609168068608,0.39611007683105093,0.08272249318852198,0.675749791648789,},
+  {0.20563187445027964,0.6787477335595944,0.23383889363393773,0.054742675839971056,0.9313589190382872,0.38216201131090644,0.08053171920572111,0.627140149419777,0.4817278632059505,0.5319296537452306,},
+  {0.9748488015617851,0.600785080814032,0.5915212916928712,0.3493547717613231,0.9662846252857071,0.8548456926628406,0.7735629263553444,0.04391413183260806,0.6854049605932606,0.8858152430736789,},
+};
+
+float l_refResult[9][10] = {
+  {3.1092980566433868,5.791167520425589,6.880616023724116,1.5699814169545747,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {2.4487842697359654,7.597541041946318,1.9628105904172692,6.510786817351137,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {1.7686726422666195,2.389365778018608,6.8801056153044415,1.7148529645766792,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {5.0887603172114515,8.898781688143625,9.091194818701863,8.419002128994261,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {4.975208166600106,2.3914034731392686,6.63988386206585,6.838916525474168,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {2.2973520697520886,0.6394772777462364,2.981530006797892,3.537707547172615,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {5.018104493515646,2.487241353678943,4.942463797076953,4.4866323291211945,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {1.7269209045603617,8.316780261190361,3.1332932065088688,5.840357720960305,0.0,0.0,0.0,0.0,0.0,0.0,},
+  {2.5500763007549208,8.20447723804893,8.038978479555503,3.6063354808099453,0.0,0.0,0.0,0.0,0.0,0.0,},
+};
+
+#pragma GCC diagnostic pop

@@ -83,6 +83,7 @@ class edge::data::MmXsmmFused< float > {
      * Adds a sparse, single-precision libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
      * @param i_group id of the kernel group.
+     * @param i_nCrs number of used simulations.
      * @param i_csr true for CSR, false for CSC.
      * @param i_ptr row-pointer of CSR or column pointer of CSC; last element holds the number of non-zero entries.
      * @param i_idx column index of CSR or row index of CSC.
@@ -97,6 +98,7 @@ class edge::data::MmXsmmFused< float > {
      * @param i_prefetch prefetch strategy.
      **/
     void add( unsigned short                    i_group,
+              unsigned short                    i_nCrs,
               bool                              i_csr,
               unsigned int               const *i_ptr,
               unsigned int               const *i_idx,
@@ -136,9 +138,9 @@ class edge::data::MmXsmmFused< float > {
  
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), i_nCrs, i_ptr, i_idx, i_val ).smm );
       else
-        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), i_nCrs, i_ptr, i_idx, i_val ).smm );
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
@@ -159,6 +161,7 @@ class edge::data::MmXsmmFused< float > {
      * Adds a dense, single-precision libxsmm-kernel.
      *
      * @param i_group id of the kernel group.
+     * @param i_nCrs number of used simulations.
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
      * @param i_k number of columns/rows in column-major A/B.
@@ -172,6 +175,7 @@ class edge::data::MmXsmmFused< float > {
      * @param i_prefetch prefetch strategy.
      **/
     void add( unsigned short             i_group,
+              unsigned short             i_nCrs,
               unsigned int               i_m,
               unsigned int               i_n,
               unsigned int               i_k,
@@ -219,13 +223,13 @@ class edge::data::MmXsmmFused< float > {
                                  l_rows, l_cols, l_vals );
 
         // generate and store function for this kernels
-        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, l_rows, l_cols, l_vals ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), i_nCrs, l_rows, l_cols, l_vals ).smm );
 
         // free memory of fake CSR-structure
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).smm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), i_nCrs ).smm );
       }
 
       // check that we generated a kernel
@@ -267,25 +271,6 @@ class edge::data::MmXsmmFused< double > {
      * @brief Constructor, which limits the LIBXSMM target architecture, if required.
      */
     MmXsmmFused() {
-      if( PP_N_CRUNS == 8 ) {
-#if !defined(__AVX512F__)
-        EDGE_LOG_FATAL;
-#endif
-      }
-      else if( PP_N_CRUNS == 4 ) {
-#if defined(__AVX2__)
-        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx2 to match 4 FP64-fused sims";
-        libxsmm_set_target_arch( "avx2" );
-#elif defined(__AVX__)
-        EDGE_VLOG(1) << "limiting LIBXSMM inst. set to avx to match 4 FP64-fused sims";
-        libxsmm_set_target_arch( "avx" );
-#else
-        EDGE_LOG_FATAL;
-#endif
-      }
-      else {
-        EDGE_LOG_FATAL;
-      }
       m_kernelStats.resize(edge::parallel::g_nThreads);
     }
 
@@ -293,6 +278,7 @@ class edge::data::MmXsmmFused< double > {
      * Adds a sparse libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
      * @param i_group id of the kernel group.
+     * @param i_nCrs number of used simulations.
      * @param i_csr true for CSR, false for CSC.
      * @param i_ptr row-pointer of CSR or column pointer of CSC; last element holds the number of non-zero entries.
      * @param i_idx column index of CSR or row index of CSC.
@@ -308,6 +294,7 @@ class edge::data::MmXsmmFused< double > {
      * @param i_prefetch prefetch strategy.
      **/
     void add( unsigned short                    i_group,
+              unsigned short                    i_nCrs,
               bool                              i_csr,
               unsigned int               const *i_ptr,
               unsigned int               const *i_idx,
@@ -347,9 +334,9 @@ class edge::data::MmXsmmFused< double > {
 
       // generate and store function for this kernels
       if( i_csr )
-        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), i_nCrs, i_ptr, i_idx, i_val ).dmm );
       else
-        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), N_CRUNS, i_ptr, i_idx, i_val ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), i_nCrs, i_ptr, i_idx, i_val ).dmm );
 
       // check that we generated a kernel
       EDGE_CHECK( m_kernels[i_group].back() != 0 );
@@ -370,6 +357,7 @@ class edge::data::MmXsmmFused< double > {
      * Adds a dense, double-precision libxsmm-kernel.
      *
      * @param i_group id of the kernel group.
+     * @param i_nCrs number of used simulations.
      * @param i_m number of rows in column-major A and C.
      * @param i_n number of columns in column-major B and C.
      * @param i_k number of columns/rows in column-major A/B.
@@ -383,6 +371,7 @@ class edge::data::MmXsmmFused< double > {
      * @param i_prefetch prefetch strategy.
      **/
     void add( unsigned short             i_group,
+              unsigned short             i_nCrs,
               unsigned int               i_m,
               unsigned int               i_n,
               unsigned int               i_k,
@@ -430,13 +419,13 @@ class edge::data::MmXsmmFused< double > {
                                  l_rows, l_cols, l_vals );
   
         // generate and store function for this kernels
-        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), N_CRUNS, l_rows, l_cols, l_vals ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), i_nCrs, l_rows, l_cols, l_vals ).dmm );
 
         // free memory of fake CSR-structure
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), N_CRUNS ).dmm );
+        m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), i_nCrs ).dmm );
       }
 
       // check that we generated a kernel

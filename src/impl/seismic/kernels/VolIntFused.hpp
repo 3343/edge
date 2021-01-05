@@ -5,6 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -194,6 +195,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
       // stiffness matrices
       for( unsigned short l_di = 0; l_di < N_DIM; l_di++ ) {
         m_mm.add(  0,                                                 // group
+                   TL_N_CRS,                                          // number of sims
                    false,                                             // csc
                   &l_stiffCsc[l_di].colPtr[0],                        // column pointer
                   &l_stiffCsc[l_di].rowIdx[0],                        // row index
@@ -211,6 +213,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
       // elastic star matrix
       m_mm.add(  1,                                                 // group
+                 TL_N_CRS,                                          // number of sims
                  true,                                              // csr
                 &l_starCsrE.rowPtr[0],                              // row pointer
                 &l_starCsrE.colIdx[0],                              // column index
@@ -238,6 +241,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
         // multiplication with anelastic star matrix
         m_mm.add( 2,                     // group
+                  TL_N_CRS,              // number of sims
                   true,                  // csr
                   &l_starCsrA.rowPtr[0], // ptr
                   &l_starCsrA.colIdx[0], // ids
@@ -254,6 +258,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
         // multiplication with anelastic source matrices
         m_mm.add( 2,                    // group
+                  TL_N_CRS,             // number of sims
                   true,                 // csr
                   &l_srcCsrA.rowPtr[0], // ptr
                   &l_srcCsrA.colIdx[0], // ids

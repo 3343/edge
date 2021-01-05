@@ -5,6 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2020, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016-2020, Intel Corporation
@@ -221,6 +222,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       // local contribution flux matrices
       for( unsigned short l_fl = 0; l_fl < TL_N_FAS; l_fl++ ) {
         m_mm.add(  0,                         // group
+                   TL_N_CRS,                  // number of sims
                    false,                     // csc
                   &l_fIntCsc[l_fl].colPtr[0], // column pointer
                   &l_fIntCsc[l_fl].rowIdx[0], // row index
@@ -241,6 +243,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
         unsigned short l_ma = TL_N_FAS + l_fn;
 
         m_mm.add(  0,                         // group
+                   TL_N_CRS,                  // number of sims
                    false,                     // csc
                   &l_fIntCsc[l_ma].colPtr[0], // column pointer
                   &l_fIntCsc[l_ma].rowIdx[0], // row index
@@ -261,6 +264,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
         unsigned short l_ma = TL_N_FAS + TL_N_FMNS + l_ft;
 
         m_mm.add(  2,                         // group
+                   TL_N_CRS,                  // number of sims
                    false,                     // csc
                   &l_fIntCsc[l_ma].colPtr[0], // column pointer
                   &l_fIntCsc[l_ma].rowIdx[0], // row index
@@ -281,6 +285,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
         unsigned short l_ma = TL_N_FAS + TL_N_FMNS + l_ft;
 
         m_mm.add(  4,                         // group
+                   TL_N_CRS,                  // number of sims
                    false,                     // csc
                   &l_fIntCsc[l_ma].colPtr[0], // column pointer
                   &l_fIntCsc[l_ma].rowIdx[0], // row index
@@ -302,6 +307,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       EDGE_CHECK_EQ( l_fsCsrE.val.size(), TL_N_QTS_E*TL_N_QTS_E );
 
       m_mm.add(  1,                   // group
+                 TL_N_CRS,            // number of sims
                  true,                // csr
                  &l_fsCsrE.rowPtr[0], // row pointer
                  &l_fsCsrE.colIdx[0], // column index
@@ -323,6 +329,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
         EDGE_CHECK_EQ( l_fsCsrA.val.size(), TL_N_QTS_M*TL_N_QTS_E );
 
         m_mm.add(  3,                   // group
+                   TL_N_CRS,            // number of sims
                    true,                // csr
                    &l_fsCsrA.rowPtr[0], // row pointer
                    &l_fsCsrA.colIdx[0], // column index
