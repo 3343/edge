@@ -26,7 +26,7 @@
 #undef private
 
 
-TEST_CASE( "Tests the fused matrix multiplications in libxsmm (sparse matrix)x(dense tensor)", "[data][MmXsmmFusedSparseDense]" ) {
+TEST_CASE( "Tests the fused matrix multiplications in libxsmm (dense tensor)x(sparse matrix)x", "[data][MmXsmmFusedDenseSparse]" ) {
   // set up matrix structures
 #include "MmSparse.test.inc"
 
@@ -48,27 +48,27 @@ TEST_CASE( "Tests the fused matrix multiplications in libxsmm (sparse matrix)x(d
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
       for( unsigned short l_cr = 0; l_cr < 32; l_cr++ ) {
         if( l_cr < 1 ) {
-          l_input1[l_ro][l_co][l_cr] = l_dense[l_ro][l_co] * (l_cr+1);
+          l_input1[l_ro][l_co][l_cr] = l_denseSparseInput[l_ro][l_co] * (l_cr+1);
         }
 
         if( l_cr < 2 ) {
-          l_input2[l_ro][l_co][l_cr] = l_dense[l_ro][l_co] * (l_cr+1);
+          l_input2[l_ro][l_co][l_cr] = l_denseSparseInput[l_ro][l_co] * (l_cr+1);
         }
 
         if( l_cr < 4 ) {
-          l_input4[l_ro][l_co][l_cr] = l_dense[l_ro][l_co] * (l_cr+1);
+          l_input4[l_ro][l_co][l_cr] = l_denseSparseInput[l_ro][l_co] * (l_cr+1);
         }
 
         if( l_cr < 8 ) {
-          l_input8[l_ro][l_co][l_cr] = l_dense[l_ro][l_co] * (l_cr+1);
+          l_input8[l_ro][l_co][l_cr] = l_denseSparseInput[l_ro][l_co] * (l_cr+1);
         }
 
 
         if( l_cr < 16 ) {
-          l_input16[l_ro][l_co][l_cr] = l_dense[l_ro][l_co] * (l_cr+1);
+          l_input16[l_ro][l_co][l_cr] = l_denseSparseInput[l_ro][l_co] * (l_cr+1);
         }
 
-        l_input32[l_ro][l_co][l_cr] = l_dense[l_ro][l_co] * (l_cr+1);
+        l_input32[l_ro][l_co][l_cr] = l_denseSparseInput[l_ro][l_co] * (l_cr+1);
       }
     }
   }
@@ -80,9 +80,9 @@ TEST_CASE( "Tests the fused matrix multiplications in libxsmm (sparse matrix)x(d
     m_mm.add( 0, // group
               l_nc, // nCrs
               false, // csc
-              l_sparseDenseCscColPtrs, // column pointer
-              l_sparseDenseCscRowIds, // row indices
-              l_sparseDenseCscNzs, // values
+              l_denseSparseCscColPtrs, // column pointer
+              l_denseSparseCscRowIds, // row indices
+              l_denseSparseCscNzs, // values
               9, // m
               10, // n
               10, // k
@@ -96,82 +96,82 @@ TEST_CASE( "Tests the fused matrix multiplications in libxsmm (sparse matrix)x(d
 
   // run 1-kernel
   m_mm.m_kernels[0][0]( l_input1[0][0],
-                        l_sparseDenseCscNzs,
+                        l_denseSparseCscNzs,
                         l_result1[0][0] );
 
   // check 1-results
   for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
-      REQUIRE( l_result1[l_ro][l_co][0] == Approx( l_refResult[l_ro][l_co] * 1 ) );
+      REQUIRE( l_result1[l_ro][l_co][0] == Approx( l_denseSparseRefResult[l_ro][l_co] * 1 ) );
     }
   }
 
   // run 2-kernel
   m_mm.m_kernels[0][1]( l_input2[0][0],
-                        l_sparseDenseCscNzs,
+                        l_denseSparseCscNzs,
                         l_result2[0][0] );
 
   // check 2-results
   for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
       for( unsigned short l_cr = 0; l_cr < 2; l_cr++ ) {
-        REQUIRE( l_result2[l_ro][l_co][l_cr] == Approx( l_refResult[l_ro][l_co] * (l_cr+1) ) );
+        REQUIRE( l_result2[l_ro][l_co][l_cr] == Approx( l_denseSparseRefResult[l_ro][l_co] * (l_cr+1) ) );
       }
     }
   }
 
   // run 4-kernel
   m_mm.m_kernels[0][2]( l_input4[0][0],
-                        l_sparseDenseCscNzs,
+                        l_denseSparseCscNzs,
                         l_result4[0][0] );
 
   // check 4-results
   for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
       for( unsigned short l_cr = 0; l_cr < 4; l_cr++ ) {
-        REQUIRE( l_result4[l_ro][l_co][l_cr] == Approx( l_refResult[l_ro][l_co] * (l_cr+1) ) );
+        REQUIRE( l_result4[l_ro][l_co][l_cr] == Approx( l_denseSparseRefResult[l_ro][l_co] * (l_cr+1) ) );
       }
     }
   }
 
   // run 8-kernel
   m_mm.m_kernels[0][3]( l_input8[0][0],
-                        l_sparseDenseCscNzs,
+                        l_denseSparseCscNzs,
                         l_result8[0][0] );
 
   // check 8-results
   for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
       for( unsigned short l_cr = 0; l_cr < 8; l_cr++ ) {
-        REQUIRE( l_result8[l_ro][l_co][l_cr] == Approx( l_refResult[l_ro][l_co] * (l_cr+1) ) );
+        REQUIRE( l_result8[l_ro][l_co][l_cr] == Approx( l_denseSparseRefResult[l_ro][l_co] * (l_cr+1) ) );
       }
     }
   }
 
   // run 16-kernel
   m_mm.m_kernels[0][4]( l_input16[0][0],
-                        l_sparseDenseCscNzs,
+                        l_denseSparseCscNzs,
                         l_result16[0][0] );
 
   // check 16-results
   for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
       for( unsigned short l_cr = 0; l_cr < 16; l_cr++ ) {
-        REQUIRE( l_result16[l_ro][l_co][l_cr] == Approx( l_refResult[l_ro][l_co] * (l_cr+1) ) );
+        REQUIRE( l_result16[l_ro][l_co][l_cr] == Approx( l_denseSparseRefResult[l_ro][l_co] * (l_cr+1) ) );
       }
     }
   }
 
   // run 32-kernel
   m_mm.m_kernels[0][5]( l_input32[0][0],
-                        l_sparseDenseCscNzs,
+                        l_denseSparseCscNzs,
                         l_result32[0][0] );
 
   // check 32-results
   for( unsigned short l_ro = 0; l_ro < 9; l_ro++ ) {
     for( unsigned short l_co = 0; l_co < 10; l_co++ ) {
       for( unsigned short l_cr = 0; l_cr < 32; l_cr++ ) {
-        REQUIRE( l_result32[l_ro][l_co][l_cr] == Approx( l_refResult[l_ro][l_co] * (l_cr+1) ) );
+        REQUIRE( l_result32[l_ro][l_co][l_cr] == Approx( l_denseSparseRefResult[l_ro][l_co] * (l_cr+1) ) );
       }
     }
   }
