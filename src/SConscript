@@ -103,7 +103,8 @@ if env['tests']:
 
   if not env['xsmm']:
     l_tests = l_tests + [ 'sc/Kernels.test.cpp' ]
-  else:
+
+  if env['xsmm'] and env['cfr'] != "1":
     l_tests = l_tests + [ 'data/MmXsmmFused.test.cpp' ]
 
   if env['element_type'] == 'tet4' and env['order'] == '3':
