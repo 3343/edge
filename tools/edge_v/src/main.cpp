@@ -165,7 +165,8 @@ int main( int   i_argc,
 
   // initialize and set mesh data
   EDGE_V_LOG_INFO << "initializing mesh interface";
-  edge_v::mesh::Mesh* l_mesh = new edge_v::mesh::Mesh( l_gmsh );
+  edge_v::mesh::Mesh* l_mesh = new edge_v::mesh::Mesh( l_gmsh,
+                                                       l_config.getPeriodic() );
   l_mesh->printStats();
 
   EDGE_V_LOG_INFO << "initializing velocity model";
@@ -377,7 +378,9 @@ int main( int   i_argc,
   delete l_velMod;
 
   EDGE_V_LOG_INFO << "re-initializing mesh interface with reordered data";
-  l_mesh = new edge_v::mesh::Mesh( l_gmsh );
+  EDGE_V_CHECK( l_config.getPeriodic() == std::numeric_limits< int >::max() || l_config.nPartitions() == 1 );
+  l_mesh = new edge_v::mesh::Mesh( l_gmsh,
+                                   l_config.getPeriodic() );
 
   EDGE_V_LOG_INFO << "re-initializing velocity model";
 #ifdef PP_HAS_UCVM

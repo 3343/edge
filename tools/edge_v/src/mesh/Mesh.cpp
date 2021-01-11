@@ -661,8 +661,20 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Gmsh const & i_gmsh,
                  m_veCrds,
                  m_inDiasEl );
 
-  // TODO: implement periodic boundaries
-  EDGE_V_CHECK_EQ( i_periodic, std::numeric_limits< int >::max() );
+  // adjust for periodic boundaries
+  std::vector< t_idx > l_pFasGt;
+  if( i_periodic != std::numeric_limits< int >::max() ) {
+    setPeriodicBnds( m_elTy,
+                     m_nFas,
+                     i_periodic,
+                     m_spTypeFa,
+                     m_faVe,
+                     m_veCrds,
+                     m_faEl,
+                     m_elFa,
+                     m_elFaEl,
+                     l_pFasGt );
+  }
 
   normOrder( m_elTy,
              m_nFas,
@@ -673,6 +685,15 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Gmsh const & i_gmsh,
              m_elVe,
              m_elFa,
              m_elFaEl );
+
+  // reverse the order of larger-element periodic faces for consistent normals
+  for( std::size_t l_pf = 0; l_pf < l_pFasGt.size(); l_pf++ ) {
+    t_idx l_fa = l_pFasGt[l_pf];
+
+    t_idx l_tmpEl = m_faEl[l_fa*2+0];
+    m_faEl[l_fa*2+0] = m_faEl[l_fa*2+1];
+    m_faEl[l_fa*2+1] = l_tmpEl;
+  }
 }
 
 edge_v::mesh::Mesh::~Mesh() {
