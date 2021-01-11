@@ -184,7 +184,8 @@ edge::mesh::EdgeV::EdgeV( std::string const & i_pathToMesh,
   m_gmsh = new edge_v::io::Gmsh();
   m_gmsh->open( i_pathToMesh );
   m_gmsh->readMesh();
-  m_mesh = new edge_v::mesh::Mesh( *m_gmsh );
+  m_mesh = new edge_v::mesh::Mesh( *m_gmsh,
+                                   i_periodic );
   m_hdf = new edge_v::io::Hdf5( i_pathToSupplement );
 
   // check if the mesh is EDGE-V annotated for LTS
