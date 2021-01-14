@@ -39,7 +39,9 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   m_meshOut[0] = l_mesh.child("files").child("out").child("base").text().as_string();
   m_meshOut[1] = l_mesh.child("files").child("out").child("extension").text().as_string();
   m_writeElAn = l_mesh.child("write_element_annotations").text().as_bool();
-  m_periodic = l_mesh.child("periodic").text().as_int();
+  if( l_mesh.child("periodic") ) {
+    m_periodic = l_mesh.child("periodic").text().as_int();
+  }
   m_nPartitions = l_mesh.child("n_partitions").text().as_ullong();
   m_nPartitions = std::max( m_nPartitions, std::size_t(1) );
 

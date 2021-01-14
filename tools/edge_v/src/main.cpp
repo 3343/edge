@@ -160,6 +160,10 @@ int main( int   i_argc,
   // writes one file per partition
   l_gmsh.setNumber( "Mesh.PartitionSplitMeshFiles",
                     1 );
+  // disables the creation of mesh topologies which leads to
+  // unwanted reorderings when storing the partitioning in gmsh while using periodic/transfinite boundaries
+  l_gmsh.setNumber( "Mesh.PartitionCreateTopology",
+                    0 );
   l_gmsh.open( l_config.getMeshIn() );
   l_gmsh.readMesh();
 
@@ -378,7 +382,6 @@ int main( int   i_argc,
   delete l_velMod;
 
   EDGE_V_LOG_INFO << "re-initializing mesh interface with reordered data";
-  EDGE_V_CHECK( l_config.getPeriodic() == std::numeric_limits< int >::max() || l_config.nPartitions() == 1 );
   l_mesh = new edge_v::mesh::Mesh( l_gmsh,
                                    l_config.getPeriodic() );
 
