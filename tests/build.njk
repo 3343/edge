@@ -50,6 +50,7 @@ steps:
       - buildkite-agent artifact upload deps_{{i_isa}}.tar.xz
 {% for l_build in i_builds %}
 {%- macro toScons(i_build) %}cfr={{i_build.cfr}} equations={{i_build.equations}} element_type={{i_build.element_type}} order={{i_build.order}} precision={{i_build.precision}}{% endmacro %}
+{%- macro toFileName(i_build) %}cfr_{{i_build.cfr}}_equations_{{i_build.equations}}_element_type_{{i_build.element_type}}_order_{{i_build.order}}_precision_{{i_build.precision}}{% endmacro %}
   - label: 'EDGE ({{i_isa}} {{toScons(l_build)}})'
     depends_on: 'deps_{{i_isa}}'
     agents:
@@ -71,4 +72,18 @@ steps:
       - ./build/tests
       - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} mode=debug+san parallel=mpi+omp zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
+
+      - scons {{toScons(l_build)}} mode=release tests=1 parallel=omp zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
+{% if l_build.upload %}
+      - mv ./build/edge ./edge_{{toFileName(l_build)}}_parallel_omp
+      - buildkite-agent artifact upload edge_{{toFileName(l_build)}}_parallel_omp
+{% endif %}
+      - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} mode=release parallel=mpi+omp zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
+      - ./build/tests
+{% if l_build.upload %}
+      - mv ./build/edge ./edge_{{toFileName(l_build)}}_parallel_mpi+omp
+      - buildkite-agent artifact upload edge_{{toFileName(l_build)}}_parallel_mpi+omp
+{% endif %}
+
 {% endfor %}

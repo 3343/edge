@@ -33,11 +33,12 @@ var l_args = require('minimist')( process.argv.slice(2), {
              eqs: ['elastic', 'viscoelastic2', 'viscoelastic3', 'viscoelastic4', 'viscoelastic5'],
              ets: ['tet4', 'tria3'],
              ors: [1, 2, 3, 4, 5],
-             prs: [32, 64] }
+             prs: [32, 64],
+             up:  '' }
 });
 
 // convert potential single-entry command line input to arrays
-for( var l_key of ['cfs', 'eqs', 'ets', 'ors', 'prs'] ) {
+for( var l_key of ['cfs', 'eqs', 'ets', 'ors', 'prs', 'up'] ) {
   l_args[l_key] = Array.isArray( l_args[l_key] ) ? l_args[l_key] : [l_args[l_key]];
 }
 
@@ -54,7 +55,8 @@ for( var l_cf of l_args.cfs ) {
             'equations':    l_eq,
             'element_type': l_et,
             'order':        l_or,
-            'precision':    l_pr
+            'precision':    l_pr,
+            'upload':       l_args.up
           } )
         }
       }
