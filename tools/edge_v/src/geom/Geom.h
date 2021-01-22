@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -126,16 +127,18 @@ class edge_v::geom::Geom {
      * @param i_fa local face ids w.r.t. the elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_elFalEl elements adjacent to elements (faces as bridge).
+     * @param i_veCrds vertex coordinates used for periodic boundaries if id-based search fails for a face; ignored if nullptr.
      * @param o_veIdsAd will be set to vertex ids w.r.t. to the adjacent elements.
      **/
-    static void getVeIdsAd( t_entityType           i_elTy,
-                            t_idx                  i_nFas,
-                            t_idx                  i_elOff,
-                            t_idx          const * i_el,
-                            unsigned short const * i_fa,
-                            t_idx          const * i_elVe,
-                            t_idx          const * i_elFaEl,
-                            unsigned short       * o_veIdsAd );
+    static void getVeIdsAd( t_entityType            i_elTy,
+                            t_idx                   i_nFas,
+                            t_idx                   i_elOff,
+                            t_idx          const  * i_el,
+                            unsigned short const  * i_fa,
+                            t_idx          const  * i_elVe,
+                            t_idx          const  * i_elFaEl,
+                            double         const (* i_veCrds)[3],
+                            unsigned short        * o_veIdsAd );
 };
 
 #endif

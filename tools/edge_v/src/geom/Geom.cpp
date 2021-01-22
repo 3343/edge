@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -133,14 +134,15 @@ void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
   else EDGE_V_LOG_FATAL;
 }
 
-void edge_v::geom::Geom::getVeIdsAd( t_entityType           i_elTy,
-                                     t_idx                  i_nFas,
-                                     t_idx                  i_elOff,
-                                     t_idx          const * i_el,
-                                     unsigned short const * i_fa,
-                                     t_idx          const * i_elVe,
-                                     t_idx          const * i_elFaEl,
-                                     unsigned short       * o_veIdsAd ) {
+void edge_v::geom::Geom::getVeIdsAd( t_entityType            i_elTy,
+                                     t_idx                   i_nFas,
+                                     t_idx                   i_elOff,
+                                     t_idx          const  * i_el,
+                                     unsigned short const  * i_fa,
+                                     t_idx          const  * i_elVe,
+                                     t_idx          const  * i_elFaEl,
+                                     double         const (* i_veCrds)[3],
+                                     unsigned short        * o_veIdsAd ) {
   if( i_elTy == TET4 ) {
     Tet4::getVeIdsAd( i_nFas,
                       i_elOff,
@@ -148,6 +150,7 @@ void edge_v::geom::Geom::getVeIdsAd( t_entityType           i_elTy,
                       i_fa,
                       i_elVe,
                       i_elFaEl,
+                      i_veCrds,
                       o_veIdsAd );
   }
   else {

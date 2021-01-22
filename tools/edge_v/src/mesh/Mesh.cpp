@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -884,5 +884,6 @@ void edge_v::mesh::Mesh::getVeIdsAd( t_idx                  i_nFas,
                                   i_fa,
                                   m_elVe,
                                   m_elFaEl,
+                                  m_veCrds,
                                   o_veIdsAd );
 }

@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * All rights reserved.
  *
@@ -110,13 +111,14 @@ void edge_v::geom::Tet4::normVesFas( double const (* i_veCrds)[3],
   }
 }
 
-void edge_v::geom::Tet4::getVeIdsAd( t_idx                  i_nFas,
-                                     t_idx                  i_elOff,
-                                     t_idx          const * i_el,
-                                     unsigned short const * i_fa,
-                                     t_idx          const * i_elVe,
-                                     t_idx          const * i_elFaEl,
-                                     unsigned short       * o_veIdsAd ) {
+void edge_v::geom::Tet4::getVeIdsAd( t_idx                   i_nFas,
+                                     t_idx                   i_elOff,
+                                     t_idx          const  * i_el,
+                                     unsigned short const  * i_fa,
+                                     t_idx          const  * i_elVe,
+                                     t_idx          const  * i_elFaEl,
+                                     double         const (* i_veCrds)[3],
+                                     unsigned short        * o_veIdsAd ) {
   for( t_idx l_id = 0; l_id < i_nFas; l_id++ ) {
     // get element and face id
     t_idx l_el = i_el[l_id] + i_elOff;
@@ -132,6 +134,22 @@ void edge_v::geom::Tet4::getVeIdsAd( t_idx                  i_nFas,
     t_idx l_veAd = std::numeric_limits< t_idx >::max();
     for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
       if( i_elVe[l_elAd*4+l_ve] == l_ve0 ) l_veAd = l_ve;
+    }
+    // go through coordinates if available (periodic boundaries)
+    if( i_veCrds != nullptr && l_veAd == std::numeric_limits< t_idx >::max() ) {
+      for( unsigned short l_ve = 0; l_ve < 4; l_ve++ ) {
+        t_idx l_veId = i_elVe[l_elAd*4+l_ve];
+
+        unsigned short l_nEq = 0;
+        for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+          double l_diff = i_veCrds[l_ve0][l_di] - i_veCrds[l_veId][l_di];
+          if( std::abs(l_diff) < 1E-5 ) l_nEq++;
+        }
+        if( l_nEq == 2 ) {
+          EDGE_V_CHECK_EQ( l_veAd, std::numeric_limits< t_idx >::max() );
+          l_veAd = l_ve;
+        }
+      }
     }
     EDGE_V_CHECK_LT( l_veAd, 4 );
 

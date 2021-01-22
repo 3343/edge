@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -94,21 +95,27 @@ class edge_v::geom::Tet4 {
      * Gets the adjacent elements' face-vertex ids for the given element-faces.
      * This is the local id of the vertex, which matches the faces' first vertex.
      *
+     * In the case of periodic boundaries conditions, the vertex ids of the elements don't match for the respective face.
+     *   In that case, one can provide the vertex coordinates through i_veCrds to trigger a
+     *   coordinate-based search after a failed id-search.
+     *
      * @param i_nFas number of element-faces to get ids for.
      * @param i_elOff element offset (added to element-ids in queries).
      * @param i_el elements to which the faces belong.
      * @param i_fa local face ids w.r.t. the elements.
      * @param i_elVe vertices adjacent to the elements.
      * @param i_elFalEl elements adjacent to elements (faces as bridge).
+     * @param i_veCrds coordinates of the vertices which will be used if id-search failed; ignored if nullptr is passed.
      * @param o_veIdsAd will be set to vertex ids w.r.t. to the adjacent elements.
      **/
-    static void getVeIdsAd( t_idx                  i_nFas,
-                            t_idx                  i_elOff,
-                            t_idx          const * i_el,
-                            unsigned short const * i_fa,
-                            t_idx          const * i_elVe,
-                            t_idx          const * i_elFaEl,
-                            unsigned short       * o_veIdsAd );
+    static void getVeIdsAd( t_idx                   i_nFas,
+                            t_idx                   i_elOff,
+                            t_idx          const  * i_el,
+                            unsigned short const  * i_fa,
+                            t_idx          const  * i_elVe,
+                            t_idx          const  * i_elFaEl,
+                            double         const (* i_veCrds)[3],
+                            unsigned short        * o_veIdsAd );
 };
 
 #endif

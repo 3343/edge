@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * All rights reserved.
  *
@@ -51,4 +52,56 @@ TEST_CASE( "Tests the insphere diameter computation for 4-node tetrahedrons.", "
 
   // check result
   REQUIRE( l_dia == Approx(0.45358449083204) );
+}
+
+TEST_CASE( "Tests the derivation of vertex-ids for 4-node tetrahedrons.", "[getVeIdsAd][tet4]" ) {
+  // test derivation through ids
+  edge_v::t_idx l_el0[2] = {0, 1};
+  unsigned short l_fa0[2] = {3, 1};
+  edge_v::t_idx l_elVe0[8] = { 0, 1, 2, 3,
+                               3, 1, 5, 2 };
+  edge_v::t_idx l_elFaEl0[8] = { 3343, 3343, 3343, 1,
+                                 3343, 0,    3343, 3343 };
+  unsigned short l_veIdsAd0[2] = { 3343, 3343 };
+
+  edge_v::geom::Tet4::getVeIdsAd( 2,
+                                  0,
+                                  l_el0,
+                                  l_fa0,
+                                  l_elVe0,
+                                  l_elFaEl0,
+                                  nullptr,
+                                  l_veIdsAd0 );
+
+  REQUIRE( l_veIdsAd0[0] == 1 );
+  REQUIRE( l_veIdsAd0[1] == 2 );
+
+  // test derivation through coordinates
+  edge_v::t_idx l_el1[2] = {0, 1};
+  unsigned short l_fa1[2] = {3, 1};
+  edge_v::t_idx l_elVe1[8] = { 0, 1, 2, 3,
+                               3, 6, 5, 2 };
+  edge_v::t_idx l_elFaEl1[8] = { 3343, 3343, 3343, 1,
+                                 3343, 0,    3343, 3343 };
+  unsigned short l_veIdsAd1[2] = { 3343, 3343 };
+
+  double l_veCrds1[7][3] = { { 0,  1, 3343 },   // 0
+                             { 7, -5, 3343 },   // 1
+                             { 2,  3, 3343 },   // 2
+                             { 4,  5, 3343 },   // 3
+                             { 6,  7, 6686 },   // 4
+                             { 8,  9, 6686 },   // 5
+                             { 7, -5, 6686 } }; // 6
+
+  edge_v::geom::Tet4::getVeIdsAd( 2,
+                                  0,
+                                  l_el1,
+                                  l_fa1,
+                                  l_elVe1,
+                                  l_elFaEl1,
+                                  l_veCrds1,
+                                  l_veIdsAd1 );
+
+  REQUIRE( l_veIdsAd1[0] == 1 );
+  REQUIRE( l_veIdsAd1[1] == 2 );
 }
