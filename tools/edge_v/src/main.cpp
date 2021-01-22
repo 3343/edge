@@ -154,6 +154,9 @@ int main( int   i_argc,
 
   EDGE_V_LOG_INFO << "initializing Gmsh";
   edge_v::io::Gmsh l_gmsh;
+  // set verbosity
+  l_gmsh.setNumber( "General.Verbosity",
+                    5 );
   // enables verbosity of the interface
   l_gmsh.setNumber( "General.Terminal",
                     1 );

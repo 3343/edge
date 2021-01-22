@@ -257,6 +257,9 @@ void edge_v::io::Gmsh::readMesh() {
 
 edge_v::io::Gmsh::Gmsh() {
   gmsh::initialize();
+  // silence gmsh by default
+  setNumber( "General.Verbosity",
+             0 );
 }
 
 edge_v::io::Gmsh::~Gmsh() {
