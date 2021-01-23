@@ -240,13 +240,13 @@ class edge::mesh::EdgeV {
                      t_elementChars * io_elChars ) const;
 
     /**
-     * Sets the adjacent vertex- and face-ids for respective ghost elements.
+     * Sets the adjacent vertex- and face-ids.
      *
-     * @param io_veIdsAd will be updated with the vertex ids of the adjacent ghost elements.
-     * @param io_faIdsAd will be updated with the face ids of the adjacent ghost elements.
+     * @param o_veIdsAd will be set to the vertex ids.
+     * @param o_faIdsAd will be set to the face ids.
      **/
-    void setSeVeFaIdsAd( unsigned short * io_veIdsAd,
-                         unsigned short * io_faIdsAd ) const;
+    void setSeVeFaIdsAd( unsigned short * o_veIdsAd,
+                         unsigned short * o_faIdsAd ) const;
 
     /**
      * Gets the element layout.

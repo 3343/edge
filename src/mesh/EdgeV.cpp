@@ -412,18 +412,44 @@ void edge::mesh::EdgeV::setSpTypes( t_vertexChars  * io_veChars,
   }
 }
 
-void edge::mesh::EdgeV::setSeVeFaIdsAd( unsigned short * io_veIdsAd,
-                                        unsigned short * io_faIdsAd ) const {
+void edge::mesh::EdgeV::setSeVeFaIdsAd( unsigned short * o_veIdsAd,
+                                        unsigned short * o_faIdsAd ) const {
   edge_v::t_entityType l_elTy = m_mesh->getTypeEl();
   unsigned short l_nElFas = edge_v::CE_N_FAS( l_elTy );
 
+  // set ids for inner entities
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+  for( std::size_t l_el = 0; l_el < nEls(); l_el++ ) {
+    for( unsigned short l_fa = 0; l_fa < l_nElFas; l_fa++ ) {
+      o_veIdsAd[l_el*l_nElFas + l_fa] = std::numeric_limits< unsigned short >::max();
+      o_faIdsAd[l_el*l_nElFas + l_fa] = std::numeric_limits< unsigned short >::max();
+
+      if( getElFaEl()[l_el*l_nElFas + l_fa] != std::numeric_limits< std::size_t >::max() ) {
+        m_mesh->getVeIdsAd( 1,
+                            0,
+                            &l_el,
+                            &l_fa,
+                            o_veIdsAd+(l_el*l_nElFas + l_fa) );
+
+        m_mesh->getFaIdsAd( 1,
+                            0,
+                            &l_el,
+                            &l_fa,
+                            o_faIdsAd+(l_el*l_nElFas + l_fa) );
+      }
+    }
+  }
+
+  // set ids for send entities
   if( m_sendVeIdsAd != nullptr ) {
     for( std::size_t l_co = 0; l_co < m_nCommElFa; l_co++ ) {
       std::size_t l_el = m_sendEl[l_co];
       unsigned short l_fa = m_sendFa[l_co];
 
-      io_veIdsAd[l_el*l_nElFas + l_fa] = m_sendVeIdsAd[l_co];
-      io_faIdsAd[l_el*l_nElFas + l_fa] = m_sendFaIdsAd[l_co];
+      o_veIdsAd[l_el*l_nElFas + l_fa] = m_sendVeIdsAd[l_co];
+      o_faIdsAd[l_el*l_nElFas + l_fa] = m_sendFaIdsAd[l_co];
     }
   }
 }

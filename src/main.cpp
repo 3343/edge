@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -219,22 +219,9 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
                     l_internal.m_faceChars,
                     l_internal.m_elementChars );
 
-  // get the neighboring elements' local face ids
-  edge::mesh::common< T_SDISC.ELEMENT >::getFIdsElFaEl( l_edgeV.nEls(),
-                                                        l_internal.m_connect.elFaEl,
-                                                        l_internal.m_connect.fIdElFaEl );
-
-  // get the neighboring elements' local vertex ids, which match the faces' first vertex
-  edge::mesh::common< T_SDISC.ELEMENT >::getVIdsElFaEl( l_edgeV.nEls(),
-                                                        l_internal.m_connect.elFaEl,
-                                                        l_internal.m_connect.elVe,
-                                                        l_internal.m_connect.fIdElFaEl,
-                                                        l_internal.m_connect.vIdElFaEl,
-                                                        false,
-                                                        l_internal.m_vertexChars );
-
   l_edgeV.setSeVeFaIdsAd( l_internal.m_connect.vIdElFaEl[0],
                           l_internal.m_connect.fIdElFaEl[0] );
+
   l_edgeV.setLtsTypes( l_internal.m_elementChars );
 
   // enhance entity chars if set in the config
