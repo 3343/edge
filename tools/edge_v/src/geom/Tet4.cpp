@@ -146,8 +146,30 @@ void edge_v::geom::Tet4::getVeIdsAd( t_idx                   i_nFas,
           if( std::abs(l_diff) < 1E-5 ) l_nEq++;
         }
         if( l_nEq == 2 ) {
-          EDGE_V_CHECK_EQ( l_veAd, std::numeric_limits< t_idx >::max() );
-          l_veAd = l_ve;
+          // directly assign if we haven't found a matching vertex so far
+          if( l_veAd == std::numeric_limits< t_idx >::max() ) {
+            l_veAd = l_ve;
+          }
+          // select furthest away vertex if all vertices are on a ray
+          else {
+            double l_dist0 = 0;
+            double l_dist1 = 0;
+            for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+              // current squared distance
+              t_idx l_tmpId = i_elVe[l_elAd*4+l_veAd];
+              double l_distTmp = i_veCrds[l_ve0][l_di] - i_veCrds[l_tmpId][l_di];
+              l_dist0 += l_distTmp * l_distTmp;
+
+              // new squared distance
+              l_tmpId = i_elVe[l_elAd*4+l_ve];
+              l_distTmp = i_veCrds[l_ve0][l_di] - i_veCrds[l_tmpId][l_di];
+              l_dist1 += l_distTmp * l_distTmp;
+            }
+
+            if( l_dist1 > l_dist0 ) {
+              l_veAd = l_ve;
+            }
+          }
         }
       }
     }
