@@ -4,7 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -24,7 +24,6 @@
  **/
 #include "Shared.h"
 #include "io/logging.h"
-#include <atomic>
 
 #ifdef PP_USE_OMP
 #include <omp.h>
@@ -106,7 +105,7 @@ bool edge::parallel::Shared::isSched() {
   EDGE_CHECK( m_nWrks > 0 );
   // if every thread is a worker, the last one schedules
   if( m_nWrks == g_nThreads ) return g_thread == m_nWrks-1;
-  // if scheduling and communication threads are available, the first one of these schedules work
+  // the last thread schedules if not every thread is a worker
   else                        return g_thread == m_nWrks;
 }
 
