@@ -5,7 +5,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
- * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2017-2018, Regents of the University of California
  * All rights reserved.
@@ -96,6 +96,7 @@ int main( int   i_argc,
   EDGE_V_LOG_INFO << "    periodic:                  " << l_config.getPeriodic();
   EDGE_V_LOG_INFO << "    write_element_annotations: " << l_config.getWriteElAn();
   EDGE_V_LOG_INFO << "    n_partitions:              " << l_config.nPartitions();
+  EDGE_V_LOG_INFO << "    reorder_only:              " << l_config.getReorderOnly();
   EDGE_V_LOG_INFO << "    in:                        " << l_config.getMeshIn();
   EDGE_V_LOG_INFO << "    out:";
   EDGE_V_LOG_INFO << "      base:                    " << l_config.getMeshOutBase();
@@ -331,31 +332,38 @@ int main( int   i_argc,
   }
 
   EDGE_V_LOG_INFO << "partitioning the mesh";
-  edge_v::mesh::Partition l_part( *l_mesh,
-                                   l_tsGroups->getElTg() );
+  edge_v::mesh::Partition * l_part = new edge_v::mesh::Partition( *l_mesh,
+                                                                   l_tsGroups->getElTg() );
   if( l_config.nPartitions() > 1 ) {
-    l_part.kWay( l_config.nPartitions() );
+    l_part->kWay( l_config.nPartitions() );
   }
 
   if( l_config.getWriteElAn() ) {
     EDGE_V_LOG_INFO << "storing elements' partitions";
     l_gmsh.writeElData( "element_partition",
-                        l_part.getElPa(),
+                        l_part->getElPa(),
                         l_config.getMeshOutBase() + "_element_partition" + l_config.getMeshOutExt() );
   }
 
   EDGE_V_LOG_INFO << "reordering by rank and time group";
-  l_gmsh.reorder( l_part.getElPr() );
+  l_gmsh.reorder( l_part->getElPr() );
+
+  // clear partitioning if only a reordering was requested
+  if( l_config.getReorderOnly() ) {
+    delete l_part;
+    l_part = new edge_v::mesh::Partition( *l_mesh,
+                                          l_tsGroups->getElTg() );
+  }
 
   // store partitioning in gmsh
-  EDGE_V_LOG_INFO << "storing partioning in Gmsh";
-  if( l_config.nPartitions() > 1 ) {
-    l_gmsh.partition( l_part.nPas(),
-                      l_part.nPaEls() );
+  if( l_part->nPas() > 1 ) {
+    EDGE_V_LOG_INFO << "storing partioning in Gmsh";
+    l_gmsh.partition( l_part->nPas(),
+                      l_part->nPaEls() );
   }
 
   std::string l_pathMesh = l_config.getMeshOutBase();
-  if( l_config.nPartitions() == 1 ) l_pathMesh += "_1";
+  if( l_part->nPas() == 1 ) l_pathMesh += "_1";
   l_pathMesh += l_config.getMeshOutExt();
 
   EDGE_V_LOG_INFO << "writing mesh: " << l_pathMesh;
@@ -526,15 +534,15 @@ int main( int   i_argc,
                                       l_mesh->getTypeEl(),
                                       l_mesh->nEls(),
                                       l_mesh->getElFaEl(),
-                                      l_part.nPas(),
-                                      l_part.nPaEls(),
+                                      l_part->nPas(),
+                                      l_part->nPaEls(),
                                       l_tsGroups->getElTg() );
 
   // write the HDF5 support files
   edge_v::t_idx l_first = 0;
-  for( edge_v::t_idx l_pa = 0; l_pa < l_config.nPartitions(); l_pa++ ) {
+  for( edge_v::t_idx l_pa = 0; l_pa < l_part->nPas(); l_pa++ ) {
     // get number of elements in the partition
-    edge_v::t_idx l_nPaEls = l_part.nPaEls()[l_pa];
+    edge_v::t_idx l_nPaEls = l_part->nPaEls()[l_pa];
 
     // open support file
     std::string l_pathSupport = l_config.getMeshOutBase() + "_" + std::to_string(l_pa+1) + ".h5";
@@ -582,7 +590,7 @@ int main( int   i_argc,
                l_comm.nGroupElsSe( l_pa ) );
 
     // do not write additional communication-info for single-partition setting
-    if( l_config.nPartitions() == 1 ) break;
+    if( l_part->nPas() == 1 ) break;
 
     // write comm data
     edge_v::t_idx l_coSize = l_comm.getStruct( l_pa )[0]*4 + 1;
@@ -646,6 +654,7 @@ int main( int   i_argc,
     }
     delete[] l_tsunamiDisp;
   }
+  delete l_part;
   delete l_tsGroups;
   delete l_cfl;
   delete l_mesh;

@@ -90,6 +90,9 @@ class edge_v::io::Config {
     //! number of partitions to derive
     std::size_t m_nPartitions = 1;
 
+    //! if true the mesh-entities are reordered but the mesh is not partitioned.
+    bool m_reorderOnly = false;
+
     //! path to the output-csv for the time steps
     std::string m_tsOut = "";
 
@@ -257,6 +260,13 @@ class edge_v::io::Config {
      * @return number of partitions.
      **/
     std::size_t nPartitions() const { return m_nPartitions; }
+
+    /**
+     * Gets the configuration of the reorder-only setting.
+     *
+     * @return true if the mesh-entities should only be reordered but not partitioned.
+     **/
+    bool getReorderOnly() const { return m_reorderOnly; }
 
     /**
      * Gets the the number of time step groups.
