@@ -46,6 +46,7 @@ env.Append( CXXFLAGS = [ ('-isystem', 'submodules/pugixml/src') ] )
 
 # add Eigen
 env.Append( CXXFLAGS = [ ('-isystem', 'submodules/eigen') ] )
+env.Append( CPPDEFINES=['EIGEN_MAX_STATIC_ALIGN_BYTES=0'] )
 
 # enable libdl available
 conf.CheckLibWithHeaderFlags('dl', '', 'CXX', [], [], True)
