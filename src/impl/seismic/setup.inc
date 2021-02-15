@@ -45,9 +45,9 @@
     std::size_t    l_el = l_edgeV.getSendEl()[l_co];
     unsigned short l_fa = l_edgeV.getSendFa()[l_co];
     unsigned short l_vId = l_internal.m_connect.vIdElFaEl[l_el][l_fa];
-    unsigned short l_nElVes = C_ENT[T_SDISC.ELEMENT].N_VERTICES;
+    unsigned short l_nFaVes = C_ENT[T_SDISC.FACE].N_VERTICES;
 
-    unsigned short l_dist = (l_nElVes - l_vId)%l_nElVes;
+    unsigned short l_dist = (l_nFaVes - l_vId)%l_nFaVes;
     l_internal.m_connect.vIdElFaEl[l_el][l_fa] = l_dist;
   }
 }
