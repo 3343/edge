@@ -5,7 +5,7 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -24,33 +24,6 @@
  * @section DESCRIPTION
  * Setup for seismic simulations.
  **/
-
-// adjust vertex ids of send elements as we are performing the first face-int in the local update
-{
-  /*
-   * Adjust for "local":
-   *  Distance to 0 in counter-clockwise orientation is the local id:
-   *
-   *  2                 1
-   *  *  *              *  *
-   *  *    *        ->  *    *
-   *  *      *          *      *
-   *  *         *       *        *
-   *  0 * * * * * 1     2 < dist >  0
-   */
-#ifdef PP_USE_OMP
-#pragma omp parallel for
-#endif
-  for( std::size_t l_co = 0; l_co < l_edgeV.nCommElFa(); l_co++ ) {
-    std::size_t    l_el = l_edgeV.getSendEl()[l_co];
-    unsigned short l_fa = l_edgeV.getSendFa()[l_co];
-    unsigned short l_vId = l_internal.m_connect.vIdElFaEl[l_el][l_fa];
-    unsigned short l_nFaVes = C_ENT[T_SDISC.FACE].N_VERTICES;
-
-    unsigned short l_dist = (l_nFaVes - l_vId)%l_nFaVes;
-    l_internal.m_connect.vIdElFaEl[l_el][l_fa] = l_dist;
-  }
-}
 
 // set up sparse types
 {
