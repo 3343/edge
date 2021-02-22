@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2016, Regents of the University of California
  * All rights reserved.
  *
@@ -20,9 +21,4 @@
  * @section DESCRIPTION
  * Dependencies of the advection computations in a static time cluster.
  **/
-
-#if PP_ORDER==1
-#include "impl/advection/solvers/FiniteVolume.hpp"
-#else
 #include "impl/advection/solvers/AderDg.hpp"
-#endif
