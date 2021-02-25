@@ -26,6 +26,7 @@
 #include "Line.h"
 #include "Quad4r.h"
 #include "Tria3.h"
+#include "Hex8r.h"
 #include "Tet4.h"
 
 #include <limits>
@@ -44,6 +45,9 @@ double edge_v::geom::Geom::volume( t_entityType         i_enTy,
   }
   else if( i_enTy == TRIA3 ) {
     l_vol = Tria3::area( i_veCrds );
+  }
+  else if( i_enTy == HEX8R ) {
+    l_vol = Hex8r::volume( i_veCrds );
   }
   else if( i_enTy == TET4 ) {
     l_vol = Tet4::volume( i_veCrds );
@@ -67,6 +71,11 @@ void edge_v::geom::Geom::normal( t_entityType         i_enTy,
                    i_nPt,
                    o_normal );
   }
+  else if( i_enTy == QUAD4R ) {
+    Quad4r::normal( i_veCrds,
+                    i_nPt,
+                    o_normal );
+  }
   else EDGE_V_LOG_FATAL;
 }
 
@@ -88,6 +97,11 @@ void edge_v::geom::Geom::tangents( t_entityType         i_enTy,
                      i_nPt,
                      o_tangents );
   }
+  else if( i_enTy == QUAD4R ) {
+    Quad4r::tangents( i_veCrds,
+                      i_nPt,
+                      o_tangents );
+  }
   else EDGE_V_LOG_FATAL;
 }
 
@@ -99,6 +113,9 @@ double edge_v::geom::Geom::inDiameter( t_entityType         i_enTy,
   }
   else if( i_enTy == TRIA3 ) {
     l_dia = Tria3::inDiameter( i_veCrds );
+  }
+  else if( i_enTy == HEX8R ) {
+    l_dia = Hex8r::inDiameter( i_veCrds );
   }
   else if( i_enTy == TET4 ) {
     l_dia = Tet4::inDiameter( i_veCrds );
@@ -121,6 +138,12 @@ void edge_v::geom::Geom::normVesFas( t_entityType         i_elTy,
   }
   else if( i_elTy == TRIA3 ) {
     Tria3::normVesFas( i_veCrds,
+                       io_elVe,
+                       io_elFa,
+                       io_elFaEl );
+  }
+  else if( i_elTy == HEX8R ) {
+    Hex8r::normVesFas( i_veCrds,
                        io_elVe,
                        io_elFa,
                        io_elFaEl );
