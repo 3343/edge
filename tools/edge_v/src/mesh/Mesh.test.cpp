@@ -32,33 +32,6 @@ namespace edge_v {
   }
 }
 
-TEST_CASE( "Tests the lexicographic sorting.", "[mesh][sortLex]" ) {
-  edge_v::t_idx l_data[7*3] = { 2, 3, 1,   // 3
-                                1, 4, 5,   // 1
-                                3, 5, 1,   // 5
-                                0, 3, 4,   // 0
-                                2, 4, 0,   // 4
-                                1, 4, 6,   // 2
-                                6, 7, 9 }; // 6
-
-  edge_v::t_idx l_ref[7*3] = { 0, 3, 4,   // 0
-                               1, 4, 5,   // 1
-                               1, 4, 6,   // 2
-                               2, 3, 1,   // 3
-                               2, 4, 0,   // 4
-                               3, 5, 1,   // 5
-                               6, 7, 9 }; // 6
-
-  edge_v::mesh::Mesh::sortLex( 7,
-                               3,
-                               l_data,
-                               nullptr  );
-
-  for( unsigned short l_en = 0; l_en < 7*3; l_en++ ) {
-    REQUIRE( l_data[l_en] == l_ref[l_en] );
-  }
-}
-
 TEST_CASE( "Tests the derivation of the extra entry in two arrays.", "[mesh][getAddEntry]" ) {
   edge_v::t_idx l_first0[3]  = { 4, 9, 1    };
   edge_v::t_idx l_second0[4] = { 1, 9, 5, 4 };

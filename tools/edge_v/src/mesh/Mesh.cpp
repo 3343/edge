@@ -23,57 +23,9 @@
  **/
 #include "Mesh.h"
 
+#include "../geom/Generic.h"
 #include "../geom/Geom.h"
 #include "../io/logging.h"
-
-void  edge_v::mesh::Mesh::sortLex( t_idx   i_n0,
-                                   t_idx   i_n1,
-                                   t_idx * io_data,
-                                   t_idx * o_sorted ) {
-  // duplicate data
-  t_idx * l_data = new t_idx[ i_n0 * i_n1 ];
-  for( t_idx l_id = 0; l_id < i_n0*i_n1; l_id++ ) {
-    l_data[l_id] = io_data[l_id];
-  }
-
-  // alloc and init sorted aray
-  t_idx * l_sorted = new t_idx[ i_n0 ];
-  for( t_idx l_i0 = 0; l_i0 < i_n0; l_i0++ ) {
-    l_sorted[l_i0] = l_i0;
-  }
-
-  // lambda which compares two entries
-  auto l_entryLess = [ i_n1, l_data ]( t_idx i_en0,
-                                       t_idx i_en1 ) {
-    for( t_idx l_i1 = 0; l_i1 < i_n1; l_i1++ ) {
-      if( l_data[i_en0*i_n1 + l_i1] < l_data[i_en1*i_n1 + l_i1] ) {
-        return true;
-      }
-      else if( l_data[i_en0*i_n1 + l_i1] > l_data[i_en1*i_n1 + l_i1] ) {
-        return false;
-      }
-    }
-    return false;
-  };
-
-  // sort the entries
-  std::sort( l_sorted,
-             l_sorted+i_n0,
-             l_entryLess );
-
-  // store the result
-  for( t_idx l_i0 = 0; l_i0 < i_n0; l_i0++ ) {
-    t_idx l_id = l_sorted[l_i0];
-    if( o_sorted != nullptr ) o_sorted[l_i0] = l_id;
-
-    for( t_idx l_i1 = 0; l_i1 < i_n1; l_i1++ ) {
-      io_data[l_i0*i_n1 + l_i1] = l_data[l_id*i_n1 + l_i1];
-    }
-  }
-
-  delete[] l_sorted;
-  delete[] l_data;
-}
 
 void edge_v::mesh::Mesh::getElFaEl( t_entityType         i_elTy,
                                     t_idx                i_nEls,
@@ -240,7 +192,7 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                  i_elTy,
           t_idx l_ve1Id = i_faVe[i_f1*l_nFaVes + l_ve1];
 
           double l_diff = i_veCrds[l_ve0Id][l_di] - i_veCrds[l_ve1Id][l_di];
-          if( std::abs(l_diff) < 1E-5 ) l_nEq++;
+          if( std::abs(l_diff) < m_tol ) l_nEq++;
         }
       }
 
@@ -265,7 +217,7 @@ void edge_v::mesh::Mesh::setPeriodicBnds( t_entityType                  i_elTy,
         for( unsigned short l_di = 0; l_di < l_nDis; l_di++) {
           double l_diff = i_veCrds[l_ve0Id][l_di] - i_veCrds[l_ve1Id][l_di];
           if(    l_di != i_fixedDi
-              && std::abs(l_diff) < 1E-5 ) l_nMaDis++;
+              && std::abs(l_diff) < m_tol ) l_nMaDis++;
         }
 
         if( l_nMaDis == l_nDis-1 ) l_nMaVes++;
@@ -615,9 +567,9 @@ edge_v::mesh::Mesh::Mesh( edge_v::io::Gmsh const & i_gmsh,
     }
 
     // sort lexicographically
-    sortLex( l_nFasPhGr,
-             l_nFaVes,
-             l_faVePhGr );
+    geom::Generic::sortLex( l_nFasPhGr,
+                            l_nFaVes,
+                            l_faVePhGr );
 
     // add physical group to sparse type
     addSparseTypeEn( l_faTy,

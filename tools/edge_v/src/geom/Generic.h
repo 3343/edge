@@ -35,6 +35,20 @@ namespace edge_v {
 class edge_v::geom::Generic {
   public:
     /**
+     * Sorts the given data lexicographically.
+     * Total number of entries: n0 x n1.
+     *
+     * @param i_n0 number of entries in the slow dimension.
+     * @param i_n1 number of entries in the fast dimension.
+     * @param io_data data which is sorted.
+     * @param o_mapping will be set to mapping from sorted to original. nullptr if unused.
+     **/
+    static void sortLex( t_idx   i_n0,
+                         t_idx   i_n1,
+                         t_idx * io_data,
+                         t_idx * o_mapping = nullptr );
+
+    /**
      * Gets the adjacent elements' face ids for the given element-faces.
      *
      * @param i_elTy element type.

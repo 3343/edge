@@ -39,6 +39,9 @@ namespace edge_v {
  **/
 class edge_v::mesh::Mesh {
   private:
+    //! tolerance used for zero-comparisons
+    static constexpr double m_tol = 1E-5;
+
     //! element type
     t_entityType m_elTy;
 
@@ -92,20 +95,6 @@ class edge_v::mesh::Mesh {
 
     //! tangents of the faces
     double (* m_tangents)[2][3] = nullptr;
-
-   /**
-    * Sorts the given data lexicographically.
-    * Total number of entries: n0 x n1.
-    *
-    * @param i_n0 number of entries in the slow dimension.
-    * @param i_n1 number of entries in the fast dimension.
-    * @param io_data data which is sorted.
-    * @param o_mapping will be set to mapping from sorted to original. nullptr if unused.
-    **/
-   static void sortLex( t_idx   i_n0,
-                        t_idx   i_n1,
-                        t_idx * io_data,
-                        t_idx * o_mapping = nullptr );
 
     /**
      * Gets the element-to-element adjacency (faces as bridge).
