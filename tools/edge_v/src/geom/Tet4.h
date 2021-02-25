@@ -34,6 +34,10 @@ namespace edge_v {
 }
 
 class edge_v::geom::Tet4 {
+  private:
+    //! tolerance used for zero-comparisons
+    static constexpr double m_tol = 1E-5;
+
   public:
     /**
      * Computes the volume.

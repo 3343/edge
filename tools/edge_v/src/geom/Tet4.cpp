@@ -91,7 +91,7 @@ void edge_v::geom::Tet4::normVesFas( double const (* i_veCrds)[3],
   double l_det = l_m.determinant();
 
   // assert non-planar vertices
-  EDGE_V_CHECK_GT( std::abs(l_det), 1E-5 );
+  EDGE_V_CHECK_GT( std::abs(l_det), m_tol );
 
   // negative determinant -> clockwise -> exchange vertices 2,3 and faces 0,1
   if( l_det < 0 ) {
@@ -143,7 +143,7 @@ void edge_v::geom::Tet4::getVeIdsAd( t_idx                   i_nFas,
         unsigned short l_nEq = 0;
         for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
           double l_diff = i_veCrds[l_ve0][l_di] - i_veCrds[l_veId][l_di];
-          if( std::abs(l_diff) < 1E-5 ) l_nEq++;
+          if( std::abs(l_diff) < m_tol ) l_nEq++;
         }
         if( l_nEq == 2 ) {
           // directly assign if we haven't found a matching vertex so far
