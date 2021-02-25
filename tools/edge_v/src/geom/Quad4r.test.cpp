@@ -25,7 +25,7 @@
 #include "Quad4r.h"
 #undef private
 
-TEST_CASE( "Tests the area computation for quad4r elements.", "[area][quad4r]" ) {
+TEST_CASE( "Tests the area computation for quad4r elements.", "[quad4r][area]" ) {
   double l_ves[4][3] = { {1, 0, 0}, {5, 0, 0}, {5, 10, 0}, {1, 10, 0} };
 
   double l_area = edge_v::geom::Quad4r::area( l_ves );
@@ -33,15 +33,15 @@ TEST_CASE( "Tests the area computation for quad4r elements.", "[area][quad4r]" )
   REQUIRE( l_area == Approx( 40 ) );
 }
 
-TEST_CASE( "Tests the insphere diameter computation for quad4r elements.", "[inDiameter][quad4r]" ) {
+TEST_CASE( "Tests the incircle diameter computation for quad4r elements.", "[quad4r][inDiameter]" ) {
   double l_ves[4][3] = { {1, 0, 0}, {5, 0, 0}, {5, 10, 0}, {1, 10, 0} };
 
-  double l_area = edge_v::geom::Quad4r::inDiameter( l_ves );
+  double l_dia = edge_v::geom::Quad4r::inDiameter( l_ves );
 
-  REQUIRE( l_area == Approx( 4 ) );
+  REQUIRE( l_dia == Approx( 4 ) );
 }
 
-TEST_CASE( "Tests the normalization of the elements' vertex-orders.", "[normVe][quad4r]" ) {
+TEST_CASE( "Tests the normalization of the elements' vertex-orders.", "[quad4r][normVe]" ) {
   /*
    *        0
    *  |0---------2|

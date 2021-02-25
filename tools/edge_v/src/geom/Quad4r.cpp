@@ -21,6 +21,7 @@
  * Geometry computations for quad4r elements.
  **/
 #include "Quad4r.h"
+#include "Tria3.h"
 #include <cmath>
 #include "../io/logging.h"
 
@@ -41,12 +42,29 @@ void edge_v::geom::Quad4r::distMax( double const (*i_veCrds)[3],
 }
 
 double edge_v::geom::Quad4r::area( double const (*i_veCrds)[3] ) {
-  double l_distMax[2] = {0};
-  distMax( i_veCrds,
-           l_distMax );
-  double l_area = l_distMax[0] * l_distMax[1];
+  // split quad4r in equal-area triangles
+  double l_area = Tria3::area( i_veCrds );
+  l_area *= 2;
 
   return l_area;
+}
+
+void edge_v::geom::Quad4r::tangents( double const (*i_veCrds)[3],
+                                     double const   i_nPt[3],
+                                     double         o_tangents[2][3] ) {
+  // quad4r elements are planar -> ignore a vertex
+  Tria3::tangents( i_veCrds,
+                    i_nPt,
+                    o_tangents );
+}
+
+void edge_v::geom::Quad4r::normal( double const (*i_veCrds)[3],
+                                   double const   i_nPt[3],
+                                   double         o_normal[3] ) {
+  // quad4r elements are planar -> ignore a vertex
+  Tria3::normal( i_veCrds,
+                 i_nPt,
+                 o_normal );
 }
 
 double edge_v::geom::Quad4r::inDiameter( double const (*i_veCrds)[3] ) {
