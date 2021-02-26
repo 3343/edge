@@ -40,7 +40,7 @@ namespace edge_v {
 class edge_v::mesh::Mesh {
   private:
     //! tolerance used for zero-comparisons
-    static constexpr double m_tol = 1E-5;
+    static constexpr double m_tol = 1E-6;
 
     //! element type
     t_entityType m_elTy;

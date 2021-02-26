@@ -35,7 +35,7 @@ namespace edge_v {
 class edge_v::geom::Hex8r {
   private:
     //! tolerance used for zero-comparisons of coordinates
-    static constexpr double m_tol = 1E-5;
+    static constexpr double m_tol = 1E-6;
 
     /**
      * Computes the maximum per-dimension distance of the vertices.
