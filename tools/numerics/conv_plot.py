@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 ##
 # @file This file is part of EDGE.
 #
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # Copyright (c) 2016, Regents of the University of California
 # All rights reserved.
@@ -21,7 +23,6 @@
 # @section DESCRIPTION
 # Convergence plots.
 ##
-
 import logging
 import argparse
 import glob
@@ -83,12 +84,12 @@ l_arguments = vars(l_parser.parse_args())
 
 # parse filters
 if( l_arguments['qfilter'] != '' ):
-  l_arguments['qfilter'] = map( int, l_arguments['qfilter'].split(',') )
+  l_arguments['qfilter'] = list( map( int, l_arguments['qfilter'].split(',') ) )
 else:
   l_arguments['qfilter'] = range(0, 100)
 
 if( l_arguments['cfrfilter'] != '' ):
-  l_arguments['cfrfilter'] = map( int, l_arguments['cfrfilter'].split(',') )
+  l_arguments['cfrfilter'] = list( map( int, l_arguments['cfrfilter'].split(',') ) )
 else:
   l_arguments['cfrfilter'] = range(0, 100)
 
@@ -96,10 +97,6 @@ logging.info( "reading files" )
 
 # get the files
 l_files = glob.glob( l_arguments['xdir']+'/'+l_arguments['xregexp'].replace("ORDER_TAG", "*").replace("REFINEMENT_TAG", "*") )
-
-# get files only
-for l_file in range(len(l_files)):
-  l_files[l_file] = os.path.basename(l_files[l_file])
 
 # set up regular epressions
 l_regExp = { 'order':     l_arguments['xregexp'].replace( "ORDER_TAG", "([0-9]+)" ).replace( "REFINEMENT_TAG", "(\d*[.])?\d+"   ),
@@ -120,14 +117,14 @@ for l_file in range(len(l_files)):
     l_simRes[l_order][l_ref] = {}
 
   # read the results
-  with open(l_arguments['xdir']+'/'+l_files[l_file], 'rb') as l_xmlFile:
+  with open(l_files[l_file], 'rb') as l_xmlFile:
     l_simRes[l_order][l_ref] = xmltodict.parse(l_xmlFile)
 
 # get number of quantities and cfrs
 l_firstKey = [ list(l_simRes.keys())[0] ]
 l_firstKey = l_firstKey + [ list(l_simRes[l_firstKey[0]].keys())[0] ]
 
-l_nQs  = len(l_simRes[l_firstKey[0]][l_firstKey[1]]['error_norms']['l1']['q'])
+l_nQs = len(l_simRes[l_firstKey[0]][l_firstKey[1]]['error_norms']['l1']['q'])
 
 l_tmp = []
 if l_nQs > 1:
@@ -220,13 +217,13 @@ l_style = { 'markers': {  1: '.',
                           4: ':' },
            'color':    {  1: 'blue',
                           2: '#0065BD',
-                          3: '#00FFFF',
+                          3: '#989898',
                           4: 'red',
-                          5: 'yellow',
+                          5: 'orange',
                           6: '#808080',
                           7: 'c',
                           8: 'black',
-                          9: '#989898',
+                          9: '#00FFFF',
                          10: '#A9A9A9',
                          11: '#BEBEBE',
                          12: '#D0D0D0',
@@ -268,12 +265,8 @@ for l_enorm in ['l1', 'l2', 'linf']:
   matplotlib.pyplot.title( l_enorm )
   l_nCols = col=(len(l_yVals[l_enorm])/60+1)
 
-  l_legPos = 'upper right'
-  if 'line' in l_arguments['xdir'] or 'quad' in l_arguments['xdir'] or 'hex' in l_arguments['xdir']:
-    l_legPos = 'upper left'
-
   if l_arguments['legend']:
-    matplotlib.pyplot.legend( l_leg, loc=l_legPos, fontsize=4, ncol=int(l_nCols)  )
+    matplotlib.pyplot.legend( l_leg, loc='lower right', fontsize=4, ncol=int(l_nCols)  )
   matplotlib.pyplot.xlabel('refinement')
   matplotlib.pyplot.ylabel('error')
   matplotlib.pyplot.grid( which='both' )
