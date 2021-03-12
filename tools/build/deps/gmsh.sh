@@ -5,6 +5,7 @@
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2020, Alexander Breuer
 # All rights reserved.
 #
@@ -21,8 +22,8 @@
 # @section DESCRIPTION
 # Installs Gmsh.
 ##
-GMSH_LINK=https://gmsh.info/src/gmsh-4.7.1-source.tgz
-GMSH_SHA256=c984c295116c757ed165d77149bd5fdd1068cbd7835e9bcd077358b503891c6a
+GMSH_LINK=https://gmsh.info/src/gmsh-4.8.0-source.tgz
+GMSH_SHA256=2587783c4b02963f9d8afb717c9954caefa463ea2e0a12e1659307e6a0d7ea6b
 
 help() {
 cat << EOF
