@@ -1,10 +1,12 @@
 #!/bin/bash
+set -euo pipefail
 ##
 # @file This file is part of EDGE.
 #
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # All rights reserved.
 #
@@ -21,6 +23,8 @@
 # @section DESCRIPTION
 # Installs METIS.
 ##
+set -euo pipefail
+
 METIS_LINK=http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz
 METIS_SHA256=76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2
 

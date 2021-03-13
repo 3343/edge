@@ -22,6 +22,8 @@
 # @section DESCRIPTION
 # Installs Gmsh.
 ##
+set -euo pipefail
+
 GMSH_LINK=https://gmsh.info/src/gmsh-4.8.0-source.tgz
 GMSH_SHA256=2587783c4b02963f9d8afb717c9954caefa463ea2e0a12e1659307e6a0d7ea6b
 

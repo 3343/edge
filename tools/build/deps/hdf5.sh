@@ -5,6 +5,7 @@
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # All rights reserved.
 #
@@ -21,6 +22,8 @@
 # @section DESCRIPTION
 # Installs HDF5.
 ##
+set -euo pipefail
+
 HDF5_LINK=https://s3.amazonaws.com/hdf-wordpress-1/wp-content/uploads/manual/HDF5/HDF5_1_10_5/source/hdf5-1.10.5.tar.bz2
 HDF5_SHA256=68d6ea8843d2a106ec6a7828564c1689c7a85714a35d8efafa2fee20ca366f44
 

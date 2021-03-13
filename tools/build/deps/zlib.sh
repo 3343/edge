@@ -1,10 +1,12 @@
 #!/bin/bash
+set -euo pipefail
 ##
 # @file This file is part of EDGE.
 #
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # All rights reserved.
 #
@@ -21,6 +23,8 @@
 # @section DESCRIPTION
 # Installs zlib.
 ##
+set -euo pipefail
+
 ZLIB_LINK=https://www.zlib.net/zlib-1.2.11.tar.xz
 ZLIB_SHA256=4ff941449631ace0d4d203e3483be9dbc9da454084111f97ea0a2114e19bf066
 

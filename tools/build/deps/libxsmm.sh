@@ -5,6 +5,7 @@
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # All rights reserved.
 #
@@ -21,6 +22,8 @@
 # @section DESCRIPTION
 # Installs LIBXSMM.
 ##
+set -euo pipefail
+
 help() {
 cat << EOF
 Usage: ${0##*/} [-h] [-i LIBXSMM_DIR -o INSTALL_DIR -j N_BUILD_PROCS]
