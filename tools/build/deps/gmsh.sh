@@ -38,6 +38,9 @@ Installs Gmsh.
 EOF
 }
 
+EDGE_PARTITION_PLUGIN_DIR=""
+INSTALL_DIR=""
+N_BUILD_PROCS=1
 while getopts "hl:p:o:j:" opt; do
   case "$opt" in
     h)
@@ -78,11 +81,6 @@ then
   fi
 fi
 
-if [[ ${N_BUILD_PROCS} == "" ]]
-then
-  N_BUILD_PROCS=1
-fi
-
 # move to temporary directory
 TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
@@ -113,7 +111,7 @@ cmake_command="cmake"
 cmake_command="${cmake_command} -DENABLE_BUILD_LIB=ON -DENABLE_OPENMP=OFF -DENABLE_FLTK=OFF -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .."
 
 # configure and build
-$(${cmake_command})
+${cmake_command}
 make -j ${N_BUILD_PROCS}
 make install
 
