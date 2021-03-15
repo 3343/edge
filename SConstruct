@@ -5,6 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2020, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2015-2019, Regents of the University of California
@@ -355,6 +356,17 @@ if 'LIBRARY_PATH' in env['ENV'].keys():
       l_libP = adjustPath( l_libP )
       env.AppendUnique( LIBPATH = [l_libP] )
       env.AppendUnique( RPATH   = [l_libP] )
+
+if 'CMAKE_PREFIX_PATH' in env['ENV'].keys():
+  l_paths = env['ENV']['CMAKE_PREFIX_PATH'].split(':')
+  for l_pa in l_paths:
+    print( 'appending', l_pa )
+    l_pa = adjustPath( l_pa )
+    env.AppendUnique( CPPPATH = [l_pa + '/include'] )
+    env.AppendUnique( LIBPATH = [l_pa + '/lib'] )
+    env.AppendUnique( LIBPATH = [l_pa + '/lib64'] )
+    env.AppendUnique( RPATH = [l_pa + '/lib'] )
+    env.AppendUnique( RPATH = [l_pa + '/lib64'] )
 
 # forward EDGE version
 env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
