@@ -5,8 +5,7 @@
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
-# Copyright (c) 2021, Friedrich Schiller University Jena
-# Copyright (c) 2020, Friedrich Schiller University Jena
+# Copyright (c) 2020-2021, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2015-2019, Regents of the University of California
 # Copyright (c) 2016, Intel Corporation
@@ -208,7 +207,7 @@ vars.AddVariables(
   EnumVariable( 'arch',
                 'architecture to compile for',
                 'native',
-                 allowed_values=('native', 'wsm', 'snb', 'hsw', 'knl', 'skx', 'avx512')
+                 allowed_values=('native', 'wsm', 'snb', 'hsw', 'knl', 'skx', 'avx512', 'n1', 'a64fx')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
@@ -453,6 +452,10 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
 elif env['arch'] == 'n1':
   if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mtune=neoverse-n1'] )
+    env.Append( CPPDEFINES = ['LIBXSMM_PLATFORM_FORCE'] )
+elif env['arch'] == 'a64fx':
+  if compilers=='gnu' or compilers=='clang':
+    env.Append( CPPFLAGS = ['-march=armv8-a+sve', '-msve-vector-bits=512'] )
     env.Append( CPPDEFINES = ['LIBXSMM_PLATFORM_FORCE'] )
 elif env['arch'] == 'aarch64':
   if compilers=='gnu' or compilers=='clang':
