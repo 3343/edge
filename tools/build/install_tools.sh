@@ -5,6 +5,7 @@
 # @author Alexander Breuer (anbreuer AT ucsd.edu)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2018, Regents of the University of California
 # All rights reserved.
@@ -20,11 +21,11 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # @section DESCRIPTION
-# Installs the tools used in CI/CD (tested for CentOS 8 and Ubuntu Focal).
+# Installs the tools used in CI/CD (tested for Fedora 33 and Ubuntu Focal).
 ##
 EDGE_CURRENT_DIR=$(pwd)
 EDGE_TMP_DIR=$(mktemp -d)
-EDGE_N_BUILD_PROC=$(cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $NF}')
+EDGE_N_BUILD_PROC=$(grep -c ^processor /proc/cpuinfo)
 
 EDGE_DIST=$(cat /etc/*-release | grep PRETTY_NAME)
 
@@ -33,52 +34,43 @@ cd ${EDGE_TMP_DIR}
 ###############
 # Basic Tools #
 ###############
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
+if [[ ${EDGE_DIST} == *"Fedora"* ]]
 then
-  # install extra packages
-  sudo dnf install -y -q -e 0 epel-release
-  # enable power tools repo
-  sudo dnf install -y -q -e 0 dnf-plugins-core
-  sudo dnf config-manager -y -q -e 0 --set-enabled PowerTools
   # recent build tools
-  sudo dnf install -y -q -e 0 gcc
+  sudo dnf install -y -q -e 0 gcc-c++
   sudo dnf install -y -q -e 0 gcc-gfortran
   sudo dnf install -y -q -e 0 libasan libubsan
-  sudo dnf install -y -q -e 0 gcc-toolset-9
-  #source /opt/rh/gcc-toolset-9/enable
-  #echo "source /opt/rh/gcc-toolset-9/enable > /dev/null" | sudo tee --append /etc/bashrc
+  sudo dnf install -y -q -e 0 glibc-static
+
   # other
+  sudo dnf install -y -q -e 0 environment-modules
   sudo dnf install -y -q -e 0 hostname
   sudo dnf install -y -q -e 0 wget
   sudo dnf install -y -q -e 0 unzip
   sudo dnf install -y -q -e 0 bzip2
+  sudo dnf install -y -q -e 0 expect
   sudo dnf install -y -q -e 0 m4
   sudo dnf install -y -q -e 0 autoconf
   sudo dnf install -y -q -e 0 automake
   sudo dnf install -y -q -e 0 libtool
   sudo dnf install -y -q -e 0 make
-  sudo dnf install -y -q -e 0 cmake3
+  sudo dnf install -y -q -e 0 cmake
   sudo dnf install -y -q -e 0 git
   sudo dnf install -y -q -e 0 git-lfs
   sudo dnf install -y -q -e 0 patch
-  sudo dnf install -y -q -e 0 python3-libxml2
-  sudo dnf install -y -q -e 0 python2 python3 python2-devel python3-devel python2-setuptools python3-setuptools python2-pip python3-pip
-  sudo ln -s /usr/bin/python3 /usr/bin/python
-  sudo ln -s /usr/bin/pip3 /usr/bin/pip
+  sudo dnf install -y -q -e 0 python3-libxml2 python3-scons
+  sudo dnf install -y -q -e 0 python2 python3 python2-devel python3-devel python2-setuptools python3-setuptools python3-pip
   sudo dnf install -y -q -e 0 cppcheck
   sudo dnf install -y -q -e 0 valgrind
-  sudo dnf install -y -q -e 0 glibc-static
-  sudo dnf install -y -q -e 0 libhugetlbfs libhugetlbfs-devel libhugetlbfs-utils
   sudo dnf install -y -q -e 0 irqbalance
   sudo dnf install -y -q -e 0 mesa-libGLU libXcursor libXft libXinerama
   sudo dnf install -y -q -e 0 atop
   sudo dnf install -y -q -e 0 htop
+  sudo dnf install -y -q -e 0 npm
   sudo dnf install -y -q -e 0 yum-plugin-copr
   sudo dnf copr enable -y -q -e 0 genericmappingtools/gmt
   sudo dnf install -y -q -e 0 gmt
   sudo dnf install -y -q -e 0 ghostscript
-  # Gmsh dependencies
-  sudo dnf install -y -q -e 0 blas-static lapack-static
   # UCVM and EDGEv dependencies
   sudo dnf install -y -q -e 0 proj-static proj-devel
   # EDGEcut dependencies
@@ -95,6 +87,7 @@ then
   sudo apt install -qq -y libtool
   sudo apt install -qq -y git
   sudo apt install -qq -y cmake
+  sudo apt install -qq -y scons
   sudo apt install -qq -y python3 python3-pip python3-dev
   sudo apt install -qq -y cppcheck
   sudo apt install -qq -y valgrind
@@ -107,16 +100,16 @@ fi
 #########
 # Clang #
 #########
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
+if [[ ${EDGE_DIST} == *"Fedora"* ]]
 then
-  sudo dnf install -y -q -e 0 llvm-toolset
+  sudo dnf install -y -q -e 0 llvm-devel clang-devel
   sudo dnf install -y -q -e 0 libomp-devel
 fi
 
 ###########
 # OpenMPI #
 ###########
-wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.5.tar.gz -O openmpi.tar.gz
+wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.0.tar.gz -O openmpi.tar.gz
 mkdir openmpi
 tar -xf openmpi.tar.gz -C openmpi --strip-components=1
 cd openmpi
@@ -141,34 +134,40 @@ then
   cd ..
 fi
 
+#########
+# ArmIE #
+#########
+if [ -f ${EDGE_CURRENT_DIR}/ARM-Instruction-Emulator_*.tar.gz ]
+then
+  tar -xzf ${EDGE_CURRENT_DIR}/ARM-Instruction-Emulator_*.tar.gz
+  cd ARM-Instruction-Emulator*
+  sudo ./arm-instruction-emulator-* -a
+  udo bash -c 'echo export MODULEPATH=\$MODULEPATH:/opt/arm/modulefiles/ >> /etc/bashrc'
+fi
+
 ##################
 # Python modules #
 ##################
-sudo pip -q install xmltodict matplotlib netCDF4 h5py obspy
-
-#########
-# Scons #
-#########
-wget http://prdownloads.sourceforge.net/scons/scons-3.1.2.tar.gz -O scons.tar.gz
-mkdir scons
-tar -xzf scons.tar.gz -C scons --strip-components=1
-cd scons
-sudo python setup.py install > /dev/null
-cd ..
+sudo pip -q install xmltodict matplotlib obspy
 
 #############
 # Buildkite #
 #############
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
+if [[ ${EDGE_DIST} == *"Fedora"* ]]
 then
-  sudo sh -c 'echo -e "[buildkite-agent]\nname = Buildkite Pty Ltd\nbaseurl = https://yum.buildkite.com/buildkite-agent/stable/x86_64/\nenabled=1\ngpgcheck=0\npriority=1" > /etc/yum.repos.d/buildkite-agent.repo'
+  if [[ $(uname -m) == "aarch64" ]]
+  then
+    sudo sh -c 'echo -e "[buildkite-agent]\nname = Buildkite Pty Ltd\nbaseurl = https://yum.buildkite.com/buildkite-agent/stable/aarch64/\nenabled=1\ngpgcheck=0\npriority=1" > /etc/yum.repos.d/buildkite-agent.repo'
+  else
+    sudo sh -c 'echo -e "[buildkite-agent]\nname = Buildkite Pty Ltd\nbaseurl = https://yum.buildkite.com/buildkite-agent/stable/x86_64/\nenabled=1\ngpgcheck=0\npriority=1" > /etc/yum.repos.d/buildkite-agent.repo'
+  fi
   sudo dnf install -y -q -e 0 buildkite-agent
 fi
 
 ############
 # Clean up #
 ############
-if [[ ${EDGE_DIST} == *"CentOS"* ]]
+if [[ ${EDGE_DIST} == *"Fedora"* ]]
 then
   sudo dnf clean all
   sudo rm -rf /var/cache/dnf
