@@ -83,7 +83,7 @@ def getArch():
       l_arch = 'snb'
     elif( 'sse4_2' in l_cpuInfo['flags'] ):
       l_arch = 'wsm'
-    elif( l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
+    elif( 'brand_raw' in l_cpuInfo.keys() and l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
       l_arch = 'n1'
     elif( l_cpuInfo['arch_string_raw'] == 'aarch64' ):
       l_arch = 'aarch64'
