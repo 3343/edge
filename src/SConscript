@@ -1,9 +1,10 @@
 ##
 # @file This file is part of EDGE.
 #
-# @author Alexander Breuer (anbreuer AT ucsd.edu)
+# @author Alexander Breuer (alex.breuer AT uni-jena.de)
 #
 # @section LICENSE
+# Copyright (c) 2021, Friedrich Schiller University Jena
 # Copyright (c) 2019-2020, Alexander Breuer
 # Copyright (c) 2015-2018, Regents of the University of California
 # All rights reserved.
@@ -105,7 +106,8 @@ if env['tests']:
     l_tests = l_tests + [ 'sc/Kernels.test.cpp' ]
 
   if env['xsmm'] and env['cfr'] != "1":
-    l_tests = l_tests + [ 'data/MmXsmmFused.test.cpp' ]
+    if env['arch'] not in ['aarch64', 'n1', 'a64fx']: # TODO: this can be removed once LIBXSMM supports fused sims not matching vector length
+      l_tests = l_tests + [ 'data/MmXsmmFused.test.cpp' ]
 
   if env['element_type'] == 'tet4' and env['order'] == '3':
     l_tests = l_tests + ['impl/advection/kernels/TimePred.test.cpp']
