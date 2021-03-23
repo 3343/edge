@@ -83,6 +83,8 @@ def getArch():
       l_arch = 'snb'
     elif( 'sse4_2' in l_cpuInfo['flags'] ):
       l_arch = 'wsm'
+    elif( 'sve' in l_cpuInfo['flags'] ):
+      l_arch = 'a64fx'
     elif( 'brand_raw' in l_cpuInfo.keys() and l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
       l_arch = 'n1'
     elif( l_cpuInfo['arch_string_raw'] == 'aarch64' ):
@@ -402,7 +404,7 @@ if( env['xsmm'] ):
   if( env['order'] == '1' ):
     warnings.warn('  Warning: LIBXSMM is not supported finite volume settings, continuing without' )
     env['xsmm'] = False
-  if( not (env['arch'] == 'wsm' and env['cfr'] == '1') and env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512' and env['arch'] != 'n1' and env['arch'] != 'aarch64' ):
+  if( not (env['arch'] == 'wsm' and env['cfr'] == '1') and env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512' and env['arch'] != 'n1' and env['arch'] != 'aarch64' and env['arch'] != 'a64fx' ):
     warnings.warn( '  Warning: LIBXSMM not supported for arch != (wsm (cfr=1), snb, hsw, knl, skx, avx512, n1 or aarch64), continuing without' )
     env['xsmm'] = False
 
