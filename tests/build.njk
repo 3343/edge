@@ -77,14 +77,14 @@ steps:
       - ./build/tests
 {% if l_build.upload %}
       - mv ./build/edge ./edge_{{toFileName(l_build)}}_parallel_omp
-      - tar -cf ./edge_{{toFileName(l_build)}}_parallel_omp.tar.xz ./edge_{{toFileName(l_build)}}_parallel_omp
+      - tar -cJf ./edge_{{toFileName(l_build)}}_parallel_omp.tar.xz ./edge_{{toFileName(l_build)}}_parallel_omp
       - buildkite-agent artifact upload edge_{{toFileName(l_build)}}_parallel_omp.tar.xz
 {% endif %}
       - CXX=${EDGE_CXX_MPI} scons {{toScons(l_build)}} mode=release parallel=mpi+omp zlib=deps hdf5=deps gmsh=deps xsmm=deps edge_v=deps/edge_v_omp -j ${EDGE_N_BUILD_PROCS}
       - ./build/tests
 {% if l_build.upload %}
       - mv ./build/edge ./edge_{{toFileName(l_build)}}_parallel_mpi+omp
-      - tar -cf ./edge_{{toFileName(l_build)}}_parallel_mpi+omp.tar.xz ./edge_{{toFileName(l_build)}}_parallel_mpi+omp
+      - tar -cJf ./edge_{{toFileName(l_build)}}_parallel_mpi+omp.tar.xz ./edge_{{toFileName(l_build)}}_parallel_mpi+omp
       - buildkite-agent artifact upload edge_{{toFileName(l_build)}}_parallel_mpi+omp.tar.xz
 {% endif %}
 
