@@ -374,6 +374,15 @@ void edge_v::io::Gmsh::getFaVe( int     i_physicalGroupFa,
 }
 
 void edge_v::io::Gmsh::reorder( t_idx const * i_priorities ) {
+  // check if a reordering is possible (we assume a single tag for all elements)
+  int l_nDis = gmsh::model::getDimension();
+  gmsh::vectorpair l_dimTags;
+  gmsh::model::getEntities( l_dimTags,
+                            l_nDis );
+  EDGE_V_CHECK_EQ( l_dimTags.size(), 1 )
+  << "error, can't reorder: the elements are split into multiple tags; "
+  << "try using a single tag, i.e., volume in 3D, for all elements when meshing";
+
   // derive the permutation based on the priorities
   std::vector< std::size_t > l_elPerm;
   l_elPerm.resize( m_elTags.size() );
