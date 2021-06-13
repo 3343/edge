@@ -1,9 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (breuer AT mytum.de)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2020, Alexander Breuer
  * All rights reserved.
  *
@@ -26,6 +27,7 @@
 #include "meshPartition.h"
 #include "Context.h"
 #include <cassert>
+#include <limits>
 
 StringXNumber EdgePartitionOptions_Number[] = {
   { GMSH_FULLRC,
