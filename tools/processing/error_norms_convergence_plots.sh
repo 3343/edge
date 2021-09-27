@@ -99,10 +99,10 @@ do for [l in \"1 2 inf\" ] {
 		set xlabel 'mesh width';
 		set xtics (1,2,5,10,20,50);
 		set format y \"%4.1e\";
-		plot '$1/plots/l'.l.'_'.q.'_gts_pa_1.csv' with linespoints linestyle 2 title 'L'.l.' Q'.q.' gts non parallel', \
-		'$1/plots/l'.l.'_'.q.'_gts_pa_13.csv' with linespoints linestyle 4 title 'L'.l.' Q'.q.' gts parallel', \
-		'$1/plots/l'.l.'_'.q.'_lts_pa_1.csv' with linespoints linestyle 1 title 'L'.l.' Q'.q.' lts non parallel', \
-		'$1/plots/l'.l.'_'.q.'_lts_pa_13.csv' with linespoints linestyle 3 title 'L'.l.' Q'.q.' lts parallel'; 
+		plot '$1/plots/l'.l.'_'.q.'_gts_pa_1.csv' with linespoints linestyle 2 title 'L'.l.' Q'.q.' gts', \
+		'$1/plots/l'.l.'_'.q.'_gts_pa_13.csv' with linespoints linestyle 4 title 'L'.l.' Q'.q.' gts mpi', \
+		'$1/plots/l'.l.'_'.q.'_lts_pa_1.csv' with linespoints linestyle 1 title 'L'.l.' Q'.q.' lts', \
+		'$1/plots/l'.l.'_'.q.'_lts_pa_13.csv' with linespoints linestyle 3 title 'L'.l.' Q'.q.' lts mpi'; 
 		unset logscale;
 		unset multiplot;
 	}
