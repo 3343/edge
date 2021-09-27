@@ -23,7 +23,7 @@
 # Identifies error norms in xml files and extracts them for plotting according to the error norm. 
 # The extracted files and the plots will be placed inside a "plots" folder in the same directory as the error directory.
 # MAKE SURE there is no other directory named "plots" in there!
-# The goal is to use display one plot for every error norm and quantity and display the values for gts, lts, parallel and not parallel
+# The goal is to use display one plot for every error norm and quantity and display the values for gts, lts, parallel and not parallel.
 #
 # Usage ./error_norms_convergence_plots.sh /path/to/error/folder NumberOfQuantities 
 # 
@@ -36,37 +36,36 @@
 echo "Hi, I am starting now!"
 
 # remove and make new files
+# $1 is /path/to/error/folder
+# $2 is NumberOfQuantities
 
 rm -r -f $1/plots
 mkdir $1/plots
 
-for norm_val in '1' '2' 'inf'
-do
-	for quantity_val in $(seq 1 $2)
-	do 
-		echo "#L${norm_val} Data Quantity ${quantity_val}" > plots/l${norm_val}_${quantity_val}.csv
-	done
-done
-
 # find relevant data and extract into different files 
 # here, 
 
-for timestepping in gts lts
+#: '
+echo 'start extracting ... '
+for timestepping in 'gts' 'lts'
 do
 	for cl in 25 20 15 10 9 8 7 6 5 4 3 2 1
 	do
 		for parallel in 1 13
 		do 
-			echo $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml
+			#echo $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml
 			for i in $(seq 1 $2)
 			do
-				echo ${cl}, $(xmlstarlet sel -t -v "error_norms/l1/q[${i}]" -nl $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml) >> $1/plots/l1_${i}.csv
-				echo ${cl}, $(xmlstarlet sel -t -v "error_norms/l2/q[${i}]" -nl $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml) >> $1/plots/l2_${i}.csv
-				echo ${cl}, $(xmlstarlet sel -t -v "error_norms/linf/q[${i}]" -nl $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml) >> $1/plots/linf_${i}.csv
+				echo ${cl}, $(xmlstarlet sel -t -v "error_norms/l1/q[${i}]" -nl $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml) >> $1/plots/l1_${i}_${timestepping}_pa_${parallel}.csv
+				echo ${cl}, $(xmlstarlet sel -t -v "error_norms/l2/q[${i}]" -nl $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml) >> $1/plots/l2_${i}_${timestepping}_pa_${parallel}.csv
+				echo ${cl}, $(xmlstarlet sel -t -v "error_norms/linf/q[${i}]" -nl $1/errors/${timestepping}_cl_${cl}_pa_${parallel}.xml) >> $1/plots/linf_${i}_${timestepping}_pa_${parallel}.csv
 			done
 		done
 	done 
 done 
+
+echo 'All data extracted... start plotting'
+#'
 
 # plot data to pdf with gnuplot
 gnuplot -e "set terminal pdf ;
@@ -87,31 +86,18 @@ set style line 4 \
     linecolor rgb '#132f38' \
     linetype 1 linewidth 2 \
     pointtype 3 pointsize 1.5;
-set multiplot; 
-set yrange [0:3700];
-set datafile separator comma;
-plot [25:0] '$1/plots/l1_1.csv' with linespoints linestyle 1; 
-plot [25:0] '$1/plots/l1_2.csv' with linespoints linestyle 2; 
-plot [25:0] '$1/plots/l1_3.csv' with linespoints linestyle 3; 
-plot [25:0] '$1/plots/l1_4.csv' with linespoints linestyle 4; 
-plot [25:0] '$1/plots/l1_5.csv' with linespoints linestyle 5; 
-unset multiplot;
-set multiplot; 
-set yrange [0:45];
-set datafile separator comma;
-plot [25:0] '$1/plots/l2_1.csv' with linespoints linestyle 1; 
-plot [25:0] '$1/plots/l2_2.csv' with linespoints linestyle 2; 
-plot [25:0] '$1/plots/l2_3.csv' with linespoints linestyle 3; 
-plot [25:0] '$1/plots/l2_4.csv' with linespoints linestyle 4; 
-plot [25:0] '$1/plots/l2_5.csv' with linespoints linestyle 5; 
-unset multiplot;
-set multiplot; 
-set yrange [0:0.8];
-set datafile separator comma;
-plot [25:0] '$1/plots/linf_1.csv' with linespoints linestyle 1; 
-plot [25:0] '$1/plots/linf_2.csv' with linespoints linestyle 2; 
-plot [25:0] '$1/plots/linf_3.csv' with linespoints linestyle 3; 
-plot [25:0] '$1/plots/linf_4.csv' with linespoints linestyle 4; 
-plot [25:0] '$1/plots/linf_5.csv' with linespoints linestyle 5; 
-unset multiplot ;
+do for [l in \"1 2 inf\" ] {
+	do for [ q = 1:$2]{
+		set multiplot title 'L'.l.' Q'.q; 
+		set datafile separator comma;
+		set logscale xy;
+		plot '$1/plots/l'.l.'_'.q.'_gts_pa_1.csv' with linespoints linestyle 2 title 'L'.l.' Q'.q.' gts non parallel', \
+		'$1/plots/l'.l.'_'.q.'_gts_pa_13.csv' with linespoints linestyle 4 title 'L'.l.' Q'.q.' gts parallel', \
+		'$1/plots/l'.l.'_'.q.'_lts_pa_1.csv' with linespoints linestyle 3 title 'L'.l.' Q'.q.' lts non parallel', \
+		'$1/plots/l'.l.'_'.q.'_lts_pa_13.csv' with linespoints linestyle 1 title 'L'.l.' Q'.q.' lts parallel'; 
+		unset logscale;
+		unset multiplot;
+	}
+}
 "
+echo 'finished plotting'
