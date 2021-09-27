@@ -39,16 +39,15 @@ echo "Hi, I am starting now!"
 # $1 is /path/to/error/folder
 # $2 is NumberOfQuantities
 
-#rm -r -f $1/plots
-#mkdir $1/plots
+rm -r -f $1/plots
+mkdir $1/plots
 
 # find relevant data and extract into different files  
 
 
 echo 'start extracting ... '
 
-#for timestepping in 'gts' 'lts'
-: '
+for timestepping in 'gts' 'lts'
 do
 	for cl in 25 20 15 10 9 8 7 6 5 4 3 2 1
 	do
@@ -64,7 +63,7 @@ do
 		done
 	done 
 done 
-'
+
 
 echo 'All data extracted... start plotting'
 
@@ -75,32 +74,35 @@ set output '$1/plots/output.pdf';
 set style line 1 \
     linecolor rgb '#0060ad' \
     linetype 1 linewidth 2 \
-    pointtype 7 pointsize 1.5 ;
-set style line 2 \
+    pointtype 7 pointsize 1;
+	set style line 2 \
     linecolor rgb '#dd181f' \
     linetype 1 linewidth 2 \
-    pointtype 5 pointsize 1.5;
+    pointtype 5 pointsize 1;
 set style line 3 \
     linecolor rgb '#51ff2e' \
     linetype 1 linewidth 2 \
-    pointtype 2 pointsize 1.5;
+    pointtype 2 pointsize 1;
 set style line 4 \
     linecolor rgb '#132f38' \
     linetype 1 linewidth 2 \
-    pointtype 3 pointsize 1.5;
+    pointtype 3 pointsize 1;
 do for [l in \"1 2 inf\" ] {
 	do for [ q = 1:$2]{
 		set multiplot title 'L'.l.' Q'.q; 
 		set datafile separator comma;
 		set grid;
+		set xrange [25:1];
 		set logscale xy;
 		set size ratio 0.5;
 		set ylabel 'error';
 		set xlabel 'mesh width';
+		set xtics (1,2,5,10,20,50);
+		set format y \"%4.1e\";
 		plot '$1/plots/l'.l.'_'.q.'_gts_pa_1.csv' with linespoints linestyle 2 title 'L'.l.' Q'.q.' gts non parallel', \
 		'$1/plots/l'.l.'_'.q.'_gts_pa_13.csv' with linespoints linestyle 4 title 'L'.l.' Q'.q.' gts parallel', \
-		'$1/plots/l'.l.'_'.q.'_lts_pa_1.csv' with linespoints linestyle 3 title 'L'.l.' Q'.q.' lts non parallel', \
-		'$1/plots/l'.l.'_'.q.'_lts_pa_13.csv' with linespoints linestyle 1 title 'L'.l.' Q'.q.' lts parallel'; 
+		'$1/plots/l'.l.'_'.q.'_lts_pa_1.csv' with linespoints linestyle 1 title 'L'.l.' Q'.q.' lts non parallel', \
+		'$1/plots/l'.l.'_'.q.'_lts_pa_13.csv' with linespoints linestyle 3 title 'L'.l.' Q'.q.' lts parallel'; 
 		unset logscale;
 		unset multiplot;
 	}
