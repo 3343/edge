@@ -80,10 +80,6 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
                                       models::Model        & io_velMod,
                                       double               & o_tsAbsMin,
                                       double               * o_ts ) {
-  // init the velocity model at the vertices
-  io_velMod.init( i_nVes,
-                  i_veCrds );
-
   unsigned short l_nElVes = CE_N_VES( i_elTy );
 
   o_tsAbsMin = std::numeric_limits< double >::max();

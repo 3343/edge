@@ -214,11 +214,11 @@ int main( int   i_argc,
     l_velMod = new edge_v::models::Constant( 1 );
   }
 
+  l_velMod->init( l_mesh->nVes(),
+                  l_mesh->getVeCrds() );
+
   if( l_config.getRefExpr() != "" ) {
     EDGE_V_LOG_INFO << "computing mesh refinement";
-    l_velMod->init( l_mesh->nVes(),
-                    l_mesh->getVeCrds() );
-
     edge_v::mesh::Refinement l_ref;
     l_ref.init(  l_mesh->nVes(),
                  l_mesh->nEls(),
