@@ -39,15 +39,16 @@ echo "Hi, I am starting now!"
 # $1 is /path/to/error/folder
 # $2 is NumberOfQuantities
 
-rm -r -f $1/plots
-mkdir $1/plots
+#rm -r -f $1/plots
+#mkdir $1/plots
 
-# find relevant data and extract into different files 
-# here, 
+# find relevant data and extract into different files  
 
-#: '
+
 echo 'start extracting ... '
-for timestepping in 'gts' 'lts'
+
+#for timestepping in 'gts' 'lts'
+: '
 do
 	for cl in 25 20 15 10 9 8 7 6 5 4 3 2 1
 	do
@@ -63,9 +64,10 @@ do
 		done
 	done 
 done 
+'
 
 echo 'All data extracted... start plotting'
-#'
+
 
 # plot data to pdf with gnuplot
 gnuplot -e "set terminal pdf ;
@@ -90,7 +92,11 @@ do for [l in \"1 2 inf\" ] {
 	do for [ q = 1:$2]{
 		set multiplot title 'L'.l.' Q'.q; 
 		set datafile separator comma;
+		set grid;
 		set logscale xy;
+		set size ratio 0.5;
+		set ylabel 'error';
+		set xlabel 'mesh width';
 		plot '$1/plots/l'.l.'_'.q.'_gts_pa_1.csv' with linespoints linestyle 2 title 'L'.l.' Q'.q.' gts non parallel', \
 		'$1/plots/l'.l.'_'.q.'_gts_pa_13.csv' with linespoints linestyle 4 title 'L'.l.' Q'.q.' gts parallel', \
 		'$1/plots/l'.l.'_'.q.'_lts_pa_1.csv' with linespoints linestyle 3 title 'L'.l.' Q'.q.' lts non parallel', \
