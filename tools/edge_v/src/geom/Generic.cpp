@@ -24,6 +24,22 @@
 #include "../io/logging.h"
 #include <limits>
 
+void edge_v::geom::Generic::centroid( t_entityType         i_enTy,
+                                      double       const (*i_veCrds)[3],
+                                      double               o_cen[3] ) {
+  unsigned short l_nEnVes = CE_N_VES( i_enTy );
+
+  for( unsigned short l_ve = 0; l_ve < l_nEnVes; l_ve++ ) {
+    for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+      o_cen[l_di] += i_veCrds[l_ve][l_di];
+    }
+  }
+
+  for( unsigned short l_di = 0; l_di < 3; l_di++ ) {
+    o_cen[l_di] /= l_nEnVes;
+  }
+}
+
 void edge_v::geom::Generic::sortLex( t_idx   i_n0,
                                      t_idx   i_n1,
                                      t_idx * io_data,

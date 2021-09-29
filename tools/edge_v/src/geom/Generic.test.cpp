@@ -26,6 +26,23 @@
 #include "Generic.h"
 #undef private
 
+TEST_CASE( "Tests the centroid computation", "[generic][centroid]" ) {
+  double l_veCrds[4][3] = { { 0,  1,  2 },
+                            { 3,  4,  5 },
+                            { 6,  7,  8 },
+                            { 9, 10, 11 } };
+
+  double l_cen[3] = {0};
+
+  edge_v::geom::Generic::centroid( edge_v::t_entityType::TET4,
+                                   l_veCrds,
+                                   l_cen );
+
+  REQUIRE( l_cen[0] == Approx( 4.5 ) );
+  REQUIRE( l_cen[1] == Approx( 5.5 ) );
+  REQUIRE( l_cen[2] == Approx( 6.5 ) );
+}
+
 TEST_CASE( "Tests the lexicographic sorting.", "[generic][sortLex]" ) {
   edge_v::t_idx l_data[7*3] = { 2, 3, 1,   // 3
                                 1, 4, 5,   // 1

@@ -46,6 +46,17 @@ class edge_v::geom::Geom {
                           double       const (*i_veCrds)[3] );
 
     /**
+     * Computes the centroid of the given entity.
+     *
+     * @param i_enTy entity type.
+     * @param i_veCrds vertex coordinates.
+     * @param o_cen will be set to centroid of the entity.
+     **/
+    static void centroid( t_entityType         i_enTy,
+                          double       const (*i_veCrds)[3],
+                          double               o_cen[3] );
+
+    /**
      * Computes the normal for the given entity
      *
      * @param i_enTy entity type.

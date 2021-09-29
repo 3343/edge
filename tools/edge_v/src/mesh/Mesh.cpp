@@ -661,6 +661,7 @@ edge_v::mesh::Mesh::~Mesh() {
   delete[] m_inDiasEl;
   if( m_volFa != nullptr    ) delete[] m_volFa;
   if( m_volEl != nullptr    ) delete[] m_volEl;
+  if( m_cenEl != nullptr    ) delete[] m_cenEl;
   if( m_normals != nullptr  ) delete[] m_normals;
   if( m_tangents != nullptr ) delete[] m_tangents;
 }
@@ -670,6 +671,36 @@ void edge_v::mesh::Mesh::printStats() const {
   EDGE_V_LOG_INFO << "  #vertices: " << m_nVes;
   EDGE_V_LOG_INFO << "  #faces:    " << m_nFas;
   EDGE_V_LOG_INFO << "  #elements: " << m_nEls;
+}
+
+double const (* edge_v::mesh::Mesh::getCentroidsEl())[3] {
+  // only work on this once
+  if( m_cenEl == nullptr ) {
+    // allocate memory
+    t_idx l_size  = m_nEls * 3;
+    m_cenEl = (double (*)[3]) new double[ l_size ];
+
+    unsigned short l_nElVes = CE_N_VES( m_elTy );
+
+#ifdef PP_USE_OMP
+#pragma omp parallel for
+#endif
+    for( t_idx l_el = 0; l_el < m_nEls; l_el++ ) {
+      // get vertex coordinates
+      double l_veCrds[8][3] = {};
+      getEnVeCrds( m_elTy,
+                   m_elVe + (l_nElVes * l_el),
+                   m_veCrds,
+                   l_veCrds );
+
+      // compute centroid
+      geom::Geom::centroid( m_elTy,
+                            l_veCrds,
+                            m_cenEl[l_el] );
+    }
+  }
+
+  return m_cenEl;
 }
 
 double const * edge_v::mesh::Mesh::getAreasFa() {

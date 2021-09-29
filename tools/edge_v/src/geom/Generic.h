@@ -35,6 +35,17 @@ namespace edge_v {
 class edge_v::geom::Generic {
   public:
     /**
+     * Computes the centroid of the given entity.
+     *
+     * @param i_enTy entity type.
+     * @param i_veCrds vertex coordinates.
+     * @param o_cen will be set to centroid of the entity.
+     **/
+    static void centroid( t_entityType         i_enTy,
+                          double       const (*i_veCrds)[3],
+                          double               o_cen[3] );
+
+    /**
      * Sorts the given data lexicographically.
      * Total number of entries: n0 x n1.
      *

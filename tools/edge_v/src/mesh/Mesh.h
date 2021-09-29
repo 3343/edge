@@ -90,6 +90,9 @@ class edge_v::mesh::Mesh {
     //! volumes of the elements
     double * m_volEl = nullptr;
 
+    //! centroids of the elements
+    double (* m_cenEl)[3] = nullptr;
+
     //! normals of the faces
     double (* m_normals)[3] = nullptr;
 
@@ -375,6 +378,13 @@ class edge_v::mesh::Mesh {
      * @return volumes.
      **/
     double const * getVolumesEl();
+
+    /**
+     * Gets the centroids of the elements.
+     *
+     * @return centroids of the elements.
+     **/
+    double const (* getCentroidsEl())[3];
 
     /**
      * Gets the normals of the faces.

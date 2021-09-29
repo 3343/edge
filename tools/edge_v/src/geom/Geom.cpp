@@ -57,6 +57,21 @@ double edge_v::geom::Geom::volume( t_entityType         i_enTy,
   return l_vol;
 }
 
+void edge_v::geom::Geom::centroid( t_entityType         i_enTy,
+                                   double       const (*i_veCrds)[3],
+                                   double               o_cen[3] ) {
+  if( i_enTy == LINE   ||
+      i_enTy == QUAD4R ||
+      i_enTy == TRIA3  ||
+      i_enTy == HEX8R  ||
+      i_enTy == TET4 ) {
+    Generic::centroid( i_enTy,
+                       i_veCrds,
+                       o_cen );
+  }
+  else EDGE_V_LOG_FATAL;
+}
+
 void edge_v::geom::Geom::normal( t_entityType         i_enTy,
                                  double       const (*i_veCrds)[3],
                                  double       const   i_nPt[3],
