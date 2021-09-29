@@ -73,8 +73,8 @@ class edge_v::models::seismic::Expression: public Model {
      * @param i_nPts number of points.
      * @param i_pts coordinates of the points.
      **/
-    void init( t_idx                i_nPts,
-               double      const (* i_pts)[3] );
+    void init( t_idx           i_nPts,
+               double const (* i_pts)[3] );
 
     /**
      * Frees point-related data (allocated and initialized in the init call).

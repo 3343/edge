@@ -33,8 +33,8 @@ double edge_v::models::Constant::getMaxSpeed( t_idx i_pt ) const {
   return m_vel;
 }
 
-void edge_v::models::Constant::init( t_idx                i_nPts,
-                                     double      const (* i_pts)[3] ) {
+void edge_v::models::Constant::init( t_idx           i_nPts,
+                                     double const (* i_pts)[3] ) {
 }
 
 void edge_v::models::Constant::free() {

@@ -32,8 +32,11 @@ edge_v::models::seismic::Expression::~Expression() {
   free();
 }
 
-void edge_v::models::seismic::Expression::init( t_idx                i_nPts,
-                                                double      const (* i_pts)[3] ) {
+void edge_v::models::seismic::Expression::init( t_idx           i_nPts,
+                                                double const (* i_pts)[3] ) {
+  // free memory if allocated
+  free();
+
   // variables in the velocity model
   double l_crds[3] = { std::numeric_limits< double >::max(),
                        std::numeric_limits< double >::max(),
@@ -100,6 +103,11 @@ void edge_v::models::seismic::Expression::free() {
   if( m_vs != nullptr ) delete[] m_vs;
   if( m_qp != nullptr ) delete[] m_qp;
   if( m_qs != nullptr ) delete[] m_qs;
+
+  m_vp = nullptr;
+  m_vs = nullptr;
+  m_qp = nullptr;
+  m_qs = nullptr;
 }
 
 double edge_v::models::seismic::Expression::getMinSpeed( t_idx i_pt ) const {

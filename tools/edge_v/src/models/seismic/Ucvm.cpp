@@ -49,8 +49,8 @@ edge_v::models::seismic::Ucvm::~Ucvm() {
   free();
 }
 
-void edge_v::models::seismic::Ucvm::init( t_idx                i_nPts,
-                                          double      const (* i_pts)[3] ) {
+void edge_v::models::seismic::Ucvm::init( t_idx           i_nPts,
+                                          double const (* i_pts)[3] ) {
   // free memory if allocated
   free();
 

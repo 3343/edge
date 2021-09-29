@@ -48,8 +48,8 @@ class edge_v::models::Model {
      * @param i_nPts number of points.
      * @param i_pts coordinates of the points.
      **/
-    virtual void init( t_idx                i_nPts,
-                       double      const (* i_pts)[3] ) = 0;
+    virtual void init( t_idx           i_nPts,
+                       double const (* i_pts)[3] ) = 0;
 
     /**
      * Frees point-related data (allocated and initialized in the init call).
