@@ -102,6 +102,9 @@ class edge_v::io::Config {
     //! relative minimum time step
     double m_funDt = 0;
 
+    //! centroid-based CFL-number
+    bool m_cenCfl = false;
+
   public:
     /**
      * Constructor.
@@ -281,6 +284,13 @@ class edge_v::io::Config {
      * @return relative fundamental time step.
      **/
     double getFunDt() const { return m_funDt; }
+
+    /**
+     * Gets the condition for the derivation of the maximum wave speeds in the CFL-condition.
+     *
+     * @return if true the velocity model is queried at the elements' centroids, otherwise the averaged speeds of the respective vertices are used.
+     **/
+    bool getCenCfl() const { return m_cenCfl; }
 
     /**
      * Gets the output file for the time steps of the elements.

@@ -59,6 +59,7 @@ class edge_v::time::Cfl {
      * @param i_elVe vertices adjacent to the elements.
      * @param i_veCrds vertex coordinates.
      * @param i_inDia length, incircle or insphere diameters of the elements.
+     * @param i_velModEl true if the velocity model is defined in terms of elements, vertices otherwise.
      * @param io_velMod velocity model.
      * @param o_tsAbsMin will be set to absolute minimum time step.
      * @param o_ts will be set to the normalized time steps (divided by absolute minimum) of the elements.
@@ -69,6 +70,7 @@ class edge_v::time::Cfl {
                               t_idx         const  * i_elVe,
                               double        const (* i_veCrds)[3],
                               double        const  * i_inDia,
+                              bool                   i_velModEl,
                               models::Model        & io_velMod,
                               double               & o_tsAbsMin,
                               double               * o_ts );
@@ -83,6 +85,7 @@ class edge_v::time::Cfl {
      * @param i_elVe vertices adjacent to the elements.
      * @param i_veCrds vertex coordinates.
      * @param i_inDia length, incircle or insphere diameters of the elements.
+     * @param i_velModEl true if the velocity model is defined in terms of elements, vertices otherwise.
      * @param io_velMod velocity model.
      **/
     Cfl( t_entityType  const    i_elTy,
@@ -91,6 +94,7 @@ class edge_v::time::Cfl {
          t_idx         const  * i_elVe,
          double        const (* i_veCrds)[3],
          double        const  * i_inDia,
+         bool                   i_velModEl,
          models::Model        & io_velMod );
 
     /**

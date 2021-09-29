@@ -30,6 +30,7 @@ edge_v::time::Cfl::Cfl( t_entityType  const    i_elTy,
                         t_idx         const  * i_elVe,
                         double        const (* i_veCrds)[3],
                         double        const  * i_inDia,
+                        bool                   i_velModEl,
                         models::Model        & io_velMod ) {
   m_nEls = i_nEls;
 
@@ -44,6 +45,7 @@ edge_v::time::Cfl::Cfl( t_entityType  const    i_elTy,
                 i_elVe,
                 i_veCrds,
                 i_inDia,
+                i_velModEl,
                 io_velMod,
                 m_tsAbsMin,
                 m_ts );
@@ -77,6 +79,7 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
                                       t_idx         const  * i_elVe,
                                       double        const (* i_veCrds)[3],
                                       double        const  * i_inDia,
+                                      bool                   i_velModEl,
                                       models::Model        & io_velMod,
                                       double               & o_tsAbsMin,
                                       double               * o_ts ) {
@@ -89,16 +92,21 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
 #endif
   // compute absolute time steps
   for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
-    // iterate over vertices and determine mean wave speed
     double l_cMean = 0;
-    for( unsigned short l_ve = 0; l_ve < l_nElVes; l_ve++ ) {
-      // get the id of the vertex
-      t_idx l_veId = i_elVe[ l_el*l_nElVes + l_ve ];
-
-      // add to velocity
-      l_cMean += io_velMod.getMaxSpeed( l_veId );
+    if( i_velModEl ) {
+      l_cMean = io_velMod.getMaxSpeed( l_el );
     }
-    l_cMean /= l_nElVes;
+    else {
+      // iterate over vertices and determine mean wave speed
+      for( unsigned short l_ve = 0; l_ve < l_nElVes; l_ve++ ) {
+        // get the id of the vertex
+        t_idx l_veId = i_elVe[ l_el*l_nElVes + l_ve ];
+
+        // add to velocity
+        l_cMean += io_velMod.getMaxSpeed( l_veId );
+      }
+      l_cMean /= l_nElVes;
+    }
     EDGE_V_CHECK_GT( l_cMean, 0 );
 
     // compute time step

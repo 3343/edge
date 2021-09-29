@@ -43,6 +43,7 @@ TEST_CASE( "Tests the step derivation.", "[time][cfl]" ) {
                            l_elVe,
                            l_veCrds,
                            l_inDia,
+                           false,
                            l_mod );
 
   // check the results

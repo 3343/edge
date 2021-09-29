@@ -149,9 +149,12 @@ int main( int   i_argc,
     EDGE_V_LOG_INFO << "    out: " << l_config.getRefOut();
   }
   EDGE_V_LOG_INFO << "  time:";
-  EDGE_V_LOG_INFO << "    #time groups: " << l_config.nTsGroups();
-  EDGE_V_LOG_INFO << "    fun dt:       " << l_config.getFunDt();
-  EDGE_V_LOG_INFO << "    out:          " << l_config.getTsOut();
+  EDGE_V_LOG_INFO << "    n_groups: " << l_config.nTsGroups();
+  EDGE_V_LOG_INFO << "    fundamental_time_step: " << l_config.getFunDt();
+  EDGE_V_LOG_INFO << "    centroid_based_cfl:    " << l_config.getCenCfl();
+  EDGE_V_LOG_INFO << "    files:";
+  EDGE_V_LOG_INFO << "      out:";
+  EDGE_V_LOG_INFO << "        time_steps:        " << l_config.getTsOut();
 
   EDGE_V_LOG_INFO << "initializing Gmsh";
   edge_v::io::Gmsh l_gmsh;
@@ -257,6 +260,11 @@ int main( int   i_argc,
     return EXIT_SUCCESS;
   }
 
+  if( l_config.getCenCfl() ) {
+    EDGE_V_LOG_INFO << "re-initializing velocity model at elements' centroids";
+    l_velMod->init( l_mesh->nEls(),
+                    l_mesh->getCentroidsEl() );
+  }
   EDGE_V_LOG_INFO << "computing CFL time steps";
   edge_v::time::Cfl *l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
                                                      l_mesh->nVes(),
@@ -264,6 +272,7 @@ int main( int   i_argc,
                                                      l_mesh->getElVe(),
                                                      l_mesh->getVeCrds(),
                                                      l_mesh->getInDiasEl(),
+                                                     l_config.getCenCfl(),
                                                     *l_velMod );
   l_cfl->printStats();
 
@@ -511,6 +520,11 @@ int main( int   i_argc,
     }
   }
 
+  if( l_config.getCenCfl() ) {
+    EDGE_V_LOG_INFO << "re-initializing velocity model at elements' centroids";
+    l_velMod->init( l_mesh->nEls(),
+                    l_mesh->getCentroidsEl() );
+  }
   EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
   l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
                                   l_mesh->nVes(),
@@ -518,6 +532,7 @@ int main( int   i_argc,
                                   l_mesh->getElVe(),
                                   l_mesh->getVeCrds(),
                                   l_mesh->getInDiasEl(),
+                                  l_config.getCenCfl(),
                                   *l_velMod );
 
   EDGE_V_LOG_INFO << "re-initializing time step groups with reordered data";

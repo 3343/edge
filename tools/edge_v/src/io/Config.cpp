@@ -93,5 +93,6 @@ edge_v::io::Config::Config( std::string & i_xml ) {
   pugi::xml_node l_time = l_doc.child("edge_v").child("time");
   m_nTsGroups = std::max( l_time.child("n_groups").text().as_uint(), 1u );
   m_funDt     = l_time.child("fundamental_time_step").text().as_double();
+  m_cenCfl    = l_time.child("centroid_based_cfl").text().as_bool();
   m_tsOut     = l_time.child("files").child("out").child("time_steps").text().as_string();
 }
