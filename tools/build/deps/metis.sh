@@ -86,7 +86,7 @@ TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
 
 # download METIS
-wget ${METIS_LINK} -O metis.tar.gz
+wget --no-check-certificate ${METIS_LINK} -O metis.tar.gz
 if [[ $(sha256sum metis.tar.gz | cut -d' ' -f1) != ${METIS_SHA256} ]]
 then
   echo "Error: Checksum not matching"

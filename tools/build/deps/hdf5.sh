@@ -85,7 +85,7 @@ TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
 
 # download hdf5
-wget ${HDF5_LINK} -O hdf5.tar.bz2
+wget --no-check-certificate ${HDF5_LINK} -O hdf5.tar.bz2
 if [[ $(sha256sum hdf5.tar.bz2 | cut -d' ' -f1) != ${HDF5_SHA256} ]]
 then
   echo "Error: Checksum not matching"

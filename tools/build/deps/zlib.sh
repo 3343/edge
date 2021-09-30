@@ -75,7 +75,7 @@ TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
 
 # download zlib
-wget ${ZLIB_LINK} -O zlib.tar.xz
+wget --no-check-certificate ${ZLIB_LINK} -O zlib.tar.xz
 if [[ $(sha256sum zlib.tar.xz | cut -d' ' -f1) != ${ZLIB_SHA256} ]]
 then
   echo "Error: Checksum not matching"

@@ -86,7 +86,7 @@ TMP_DIR=$(mktemp -d)
 cd ${TMP_DIR}
 
 # download Gmsh
-wget ${GMSH_LINK} -O gmsh.tgz
+wget --no-check-certificate ${GMSH_LINK} -O gmsh.tgz
 if [[ $(sha256sum gmsh.tgz | cut -d' ' -f1) != ${GMSH_SHA256} ]]
 then
   echo "Error: Checksum not matching"
