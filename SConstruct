@@ -77,6 +77,8 @@ def getArch():
 
     if( 'avx512' in l_cpuInfo['flags'] ):
       l_arch = 'avx512'
+    elif( 'avx512f' in l_cpuInfo['flags'] ):
+      l_arch = 'avx512'
     elif( 'avx2' in l_cpuInfo['flags'] ):
       l_arch = 'hsw'
     elif( 'avx' in l_cpuInfo['flags'] ):
