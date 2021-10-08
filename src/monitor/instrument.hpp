@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
