@@ -1,7 +1,7 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *
  * @section LICENSE
  * Copyright (c) 2020-2021, Friedrich Schiller University Jena
@@ -361,11 +361,7 @@ l_edgeV.setSpTypes( l_internal.m_vertexChars,
 
 
     PP_INSTR_REG_DEF( sync )
-    PP_INSTR_REG_BEG( sync, "sync" )
-#pragma warning push
-#pragma warning(disable:68)
-    PP_INSTR_PAR_UINT64("sync_id",  (uint64_t) l_step )
-#pragma warning pop
+    PP_INSTR_REG_BEG_DYN( sync, "sync" )
 
     EDGE_LOG_INFO << "progressing simulation by " << l_stepTime;
     l_time.simulate( l_stepTime );

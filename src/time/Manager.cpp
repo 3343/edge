@@ -1,9 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -114,17 +115,76 @@ void edge::time::Manager::compute() {
       m_shared.setStatusTd( parallel::Shared::IPR, l_id );
 
       // compute
-      PP_INSTR_REG_DEF(step)
-      PP_INSTR_REG_BEG(step,"step")
-#pragma warning push
-#pragma warning(disable:68)
-      PP_INSTR_PAR_UINT64("step_id",  (uint64_t) l_st )
-      PP_INSTR_PAR_UINT64("cflow_id", (uint64_t) l_id )
-#pragma warning pop
+#ifdef PP_USE_INSTR
+      PP_INSTR_REG_DEF( wrk_rgn_0  ) PP_INSTR_REG_DEF( wrk_rgn_1  )
+      PP_INSTR_REG_DEF( wrk_rgn_2  ) PP_INSTR_REG_DEF( wrk_rgn_3  )
+      PP_INSTR_REG_DEF( wrk_rgn_4  ) PP_INSTR_REG_DEF( wrk_rgn_5  )
+      PP_INSTR_REG_DEF( wrk_rgn_6  ) PP_INSTR_REG_DEF( wrk_rgn_7  )
+      PP_INSTR_REG_DEF( wrk_rgn_8  ) PP_INSTR_REG_DEF( wrk_rgn_9  )
+      PP_INSTR_REG_DEF( wrk_rgn_10 ) PP_INSTR_REG_DEF( wrk_rgn_11 )
+      PP_INSTR_REG_DEF( wrk_rgn_12 ) PP_INSTR_REG_DEF( wrk_rgn_13 )
+      PP_INSTR_REG_DEF( wrk_rgn_14 ) PP_INSTR_REG_DEF( wrk_rgn_15 )
+      PP_INSTR_REG_DEF( wrk_rgn_16 ) PP_INSTR_REG_DEF( wrk_rgn_17 )
+      PP_INSTR_REG_DEF( wrk_rgn_18 ) PP_INSTR_REG_DEF( wrk_rgn_19 )
+      PP_INSTR_REG_DEF( wrk_rgn_20 ) PP_INSTR_REG_DEF( wrk_rgn_21 )
+      PP_INSTR_REG_DEF( wrk_rgn_22 ) PP_INSTR_REG_DEF( wrk_rgn_23 )
+      PP_INSTR_REG_DEF( wrk_rgn_24 ) PP_INSTR_REG_DEF( wrk_rgn_25 )
+      PP_INSTR_REG_DEF( wrk_rgn_26 ) PP_INSTR_REG_DEF( wrk_rgn_27 )
+      PP_INSTR_REG_DEF( wrk_rgn_28 ) PP_INSTR_REG_DEF( wrk_rgn_29 )
+      PP_INSTR_REG_DEF( wrk_rgn_30 ) PP_INSTR_REG_DEF( wrk_rgn_31 )
+      PP_INSTR_REG_DEF( wrk_rgn_32 ) PP_INSTR_REG_DEF( wrk_rgn_33 )
+      PP_INSTR_REG_DEF( wrk_rgn_34 ) PP_INSTR_REG_DEF( wrk_rgn_35 )
+      PP_INSTR_REG_DEF( wrk_rgn_36 ) PP_INSTR_REG_DEF( wrk_rgn_37 )
+      PP_INSTR_REG_DEF( wrk_rgn_38 ) PP_INSTR_REG_DEF( wrk_rgn_39 )
+      PP_INSTR_REG_DEF( wrk_rgn_undef )
+      if(      l_id ==  0  ) { PP_INSTR_REG_BEG( wrk_rgn_0,  "wrk_rgn_0"  ) } else if( l_id ==  1  ) { PP_INSTR_REG_BEG( wrk_rgn_1,  "wrk_rgn_1"  ) }
+      else if( l_id ==  2  ) { PP_INSTR_REG_BEG( wrk_rgn_2,  "wrk_rgn_2"  ) } else if( l_id ==  3  ) { PP_INSTR_REG_BEG( wrk_rgn_3,  "wrk_rgn_3"  ) }
+      else if( l_id ==  4  ) { PP_INSTR_REG_BEG( wrk_rgn_4,  "wrk_rgn_4"  ) } else if( l_id ==  5  ) { PP_INSTR_REG_BEG( wrk_rgn_5,  "wrk_rgn_5"  ) }
+      else if( l_id ==  6  ) { PP_INSTR_REG_BEG( wrk_rgn_6,  "wrk_rgn_6"  ) } else if( l_id ==  7  ) { PP_INSTR_REG_BEG( wrk_rgn_7,  "wrk_rgn_7"  ) }
+      else if( l_id ==  8  ) { PP_INSTR_REG_BEG( wrk_rgn_8,  "wrk_rgn_8"  ) } else if( l_id ==  9  ) { PP_INSTR_REG_BEG( wrk_rgn_9,  "wrk_rgn_9"  ) }
+      else if( l_id == 10  ) { PP_INSTR_REG_BEG( wrk_rgn_10, "wrk_rgn_10" ) } else if( l_id == 11  ) { PP_INSTR_REG_BEG( wrk_rgn_11, "wrk_rgn_11" ) }
+      else if( l_id == 12  ) { PP_INSTR_REG_BEG( wrk_rgn_12, "wrk_rgn_12" ) } else if( l_id == 13  ) { PP_INSTR_REG_BEG( wrk_rgn_13, "wrk_rgn_13" ) }
+      else if( l_id == 14  ) { PP_INSTR_REG_BEG( wrk_rgn_14, "wrk_rgn_14" ) } else if( l_id == 15  ) { PP_INSTR_REG_BEG( wrk_rgn_15, "wrk_rgn_15" ) }
+      else if( l_id == 16  ) { PP_INSTR_REG_BEG( wrk_rgn_16, "wrk_rgn_16" ) } else if( l_id == 17  ) { PP_INSTR_REG_BEG( wrk_rgn_17, "wrk_rgn_17" ) }
+      else if( l_id == 18  ) { PP_INSTR_REG_BEG( wrk_rgn_18, "wrk_rgn_18" ) } else if( l_id == 19  ) { PP_INSTR_REG_BEG( wrk_rgn_19, "wrk_rgn_19" ) }
+      else if( l_id == 20  ) { PP_INSTR_REG_BEG( wrk_rgn_20, "wrk_rgn_20" ) } else if( l_id == 21  ) { PP_INSTR_REG_BEG( wrk_rgn_21, "wrk_rgn_21" ) }
+      else if( l_id == 22  ) { PP_INSTR_REG_BEG( wrk_rgn_22, "wrk_rgn_22" ) } else if( l_id == 23  ) { PP_INSTR_REG_BEG( wrk_rgn_23, "wrk_rgn_23" ) }
+      else if( l_id == 24  ) { PP_INSTR_REG_BEG( wrk_rgn_24, "wrk_rgn_24" ) } else if( l_id == 25  ) { PP_INSTR_REG_BEG( wrk_rgn_25, "wrk_rgn_25" ) }
+      else if( l_id == 26  ) { PP_INSTR_REG_BEG( wrk_rgn_26, "wrk_rgn_26" ) } else if( l_id == 27  ) { PP_INSTR_REG_BEG( wrk_rgn_27, "wrk_rgn_27" ) }
+      else if( l_id == 28  ) { PP_INSTR_REG_BEG( wrk_rgn_28, "wrk_rgn_28" ) } else if( l_id == 29  ) { PP_INSTR_REG_BEG( wrk_rgn_29, "wrk_rgn_29" ) }
+      else if( l_id == 30  ) { PP_INSTR_REG_BEG( wrk_rgn_30, "wrk_rgn_30" ) } else if( l_id == 31  ) { PP_INSTR_REG_BEG( wrk_rgn_31, "wrk_rgn_31" ) }
+      else if( l_id == 32  ) { PP_INSTR_REG_BEG( wrk_rgn_32, "wrk_rgn_32" ) } else if( l_id == 33  ) { PP_INSTR_REG_BEG( wrk_rgn_33, "wrk_rgn_33" ) }
+      else if( l_id == 34  ) { PP_INSTR_REG_BEG( wrk_rgn_34, "wrk_rgn_34" ) } else if( l_id == 35  ) { PP_INSTR_REG_BEG( wrk_rgn_35, "wrk_rgn_35" ) }
+      else if( l_id == 36  ) { PP_INSTR_REG_BEG( wrk_rgn_36, "wrk_rgn_36" ) } else if( l_id == 37  ) { PP_INSTR_REG_BEG( wrk_rgn_37, "wrk_rgn_37" ) }
+      else if( l_id == 38  ) { PP_INSTR_REG_BEG( wrk_rgn_38, "wrk_rgn_38" ) } else if( l_id == 39  ) { PP_INSTR_REG_BEG( wrk_rgn_39, "wrk_rgn_39" ) }
+      else { PP_INSTR_REG_BEG( wrk_rgn_undef, "wrk_rgn_undef" ) }
+#endif
 
       m_timeGroups[l_tg]->computeStep( l_st, l_first, l_size, l_enSp, m_recvs );
 
-      PP_INSTR_REG_END(step)
+#ifdef PP_USE_INSTR
+      if(      l_id ==  0  ) { PP_INSTR_REG_END( wrk_rgn_0  ) } else if( l_id ==   1  ) { PP_INSTR_REG_END( wrk_rgn_1  ) }
+      else if( l_id ==  2  ) { PP_INSTR_REG_END( wrk_rgn_2  ) } else if( l_id ==   3  ) { PP_INSTR_REG_END( wrk_rgn_3  ) }
+      else if( l_id ==  4  ) { PP_INSTR_REG_END( wrk_rgn_4  ) } else if( l_id ==   5  ) { PP_INSTR_REG_END( wrk_rgn_5  ) }
+      else if( l_id ==  6  ) { PP_INSTR_REG_END( wrk_rgn_6  ) } else if( l_id ==   7  ) { PP_INSTR_REG_END( wrk_rgn_7  ) }
+      else if( l_id ==  8  ) { PP_INSTR_REG_END( wrk_rgn_8  ) } else if( l_id ==   9  ) { PP_INSTR_REG_END( wrk_rgn_9  ) }
+      else if( l_id == 10  ) { PP_INSTR_REG_END( wrk_rgn_10 ) } else if( l_id ==  11  ) { PP_INSTR_REG_END( wrk_rgn_11 ) }
+      else if( l_id == 12  ) { PP_INSTR_REG_END( wrk_rgn_12 ) } else if( l_id ==  13  ) { PP_INSTR_REG_END( wrk_rgn_13 ) }
+      else if( l_id == 14  ) { PP_INSTR_REG_END( wrk_rgn_14 ) } else if( l_id ==  15  ) { PP_INSTR_REG_END( wrk_rgn_15 ) }
+      else if( l_id == 16  ) { PP_INSTR_REG_END( wrk_rgn_16 ) } else if( l_id ==  17  ) { PP_INSTR_REG_END( wrk_rgn_17 ) }
+      else if( l_id == 18  ) { PP_INSTR_REG_END( wrk_rgn_18 ) } else if( l_id ==  19  ) { PP_INSTR_REG_END( wrk_rgn_19 ) }
+      else if( l_id == 20  ) { PP_INSTR_REG_END( wrk_rgn_20 ) } else if( l_id ==  21  ) { PP_INSTR_REG_END( wrk_rgn_21 ) }
+      else if( l_id == 22  ) { PP_INSTR_REG_END( wrk_rgn_22 ) } else if( l_id ==  23  ) { PP_INSTR_REG_END( wrk_rgn_23 ) }
+      else if( l_id == 24  ) { PP_INSTR_REG_END( wrk_rgn_24 ) } else if( l_id ==  25  ) { PP_INSTR_REG_END( wrk_rgn_25 ) }
+      else if( l_id == 26  ) { PP_INSTR_REG_END( wrk_rgn_26 ) } else if( l_id ==  27  ) { PP_INSTR_REG_END( wrk_rgn_27 ) }
+      else if( l_id == 28  ) { PP_INSTR_REG_END( wrk_rgn_28 ) } else if( l_id ==  29  ) { PP_INSTR_REG_END( wrk_rgn_29 ) }
+      else if( l_id == 30  ) { PP_INSTR_REG_END( wrk_rgn_30 ) } else if( l_id ==  31  ) { PP_INSTR_REG_END( wrk_rgn_31 ) }
+      else if( l_id == 32  ) { PP_INSTR_REG_END( wrk_rgn_32 ) } else if( l_id ==  33  ) { PP_INSTR_REG_END( wrk_rgn_33 ) }
+      else if( l_id == 34  ) { PP_INSTR_REG_END( wrk_rgn_34 ) } else if( l_id ==  35  ) { PP_INSTR_REG_END( wrk_rgn_35 ) }
+      else if( l_id == 36  ) { PP_INSTR_REG_END( wrk_rgn_36 ) } else if( l_id ==  37  ) { PP_INSTR_REG_END( wrk_rgn_37 ) }
+      else if( l_id == 38  ) { PP_INSTR_REG_END( wrk_rgn_38 ) } else if( l_id ==  39  ) { PP_INSTR_REG_END( wrk_rgn_39 ) }
+      else { PP_INSTR_REG_END( wrk_rgn_undef ) }
+#endif
 
       // set status to "finished"
       m_shared.setStatusTd( parallel::Shared::FIN, l_id );

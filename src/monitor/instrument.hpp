@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2016-2018, Regents of the University of California
  * All rights reserved.
  *
@@ -36,13 +37,14 @@ class gccDisableUnusedScoreP {
 #endif
 
 // forward scorep-macros for instrumentation
-#define PP_INSTR_FUN(str)              SCOREP_USER_REGION(str,SCOREP_USER_REGION_TYPE_FUNCTION)
-#define PP_INSTR_REG_DEF(str)          SCOREP_USER_REGION_DEFINE(str)
-#define PP_INSTR_REG_BEG(str1,str2)    SCOREP_USER_REGION_BEGIN(str1,str2,SCOREP_USER_REGION_TYPE_COMMON)
-#define PP_INSTR_PAR_UINT64(str1,str2) SCOREP_USER_PARAMETER_UINT64(str1,str2)
-#define PP_INSTR_REG_END(str)          SCOREP_USER_REGION_END(str)
-#define PP_INSTR_REG_NAME_BEG(str)     SCOREP_USER_REGION_BY_NAME_BEGIN(str,SCOREP_USER_REGION_TYPE_COMMON)
-#define PP_INSTR_REG_NAME_END(str)     SCOREP_USER_REGION_BY_NAME_END(str)
+#define PP_INSTR_FUN(str)               SCOREP_USER_REGION(str,SCOREP_USER_REGION_TYPE_FUNCTION)
+#define PP_INSTR_REG_DEF(str)           SCOREP_USER_REGION_DEFINE(str)
+#define PP_INSTR_REG_BEG(str1,str2)     SCOREP_USER_REGION_BEGIN(str1,str2,SCOREP_USER_REGION_TYPE_COMMON)
+#define PP_INSTR_REG_BEG_DYN(str1,str2) SCOREP_USER_REGION_BEGIN(str1,str2,SCOREP_USER_REGION_TYPE_DYNAMIC)
+#define PP_INSTR_PAR_UINT64(str1,str2)  SCOREP_USER_PARAMETER_UINT64(str1,str2)
+#define PP_INSTR_REG_END(str)           SCOREP_USER_REGION_END(str)
+#define PP_INSTR_REG_NAME_BEG(str)      SCOREP_USER_REGION_BY_NAME_BEGIN(str,SCOREP_USER_REGION_TYPE_COMMON)
+#define PP_INSTR_REG_NAME_END(str)      SCOREP_USER_REGION_BY_NAME_END(str)
 
 #else
 
@@ -50,6 +52,7 @@ class gccDisableUnusedScoreP {
 #define PP_INSTR_FUN(str)
 #define PP_INSTR_REG_DEF(str)
 #define PP_INSTR_REG_BEG(str1,str2)
+#define PP_INSTR_REG_BEG_DYN(str1,str2)
 #define PP_INSTR_PAR_UINT64(str1,str2)
 #define PP_INSTR_REG_END(str)
 #define PP_INSTR_REG_NAME_BEG(str)
