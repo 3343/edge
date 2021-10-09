@@ -1,10 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -273,6 +274,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
           // multiply with relaxation frequency and add
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+#pragma omp simd
             for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
               o_derA[l_rm][l_de][l_qt][l_md][0] = l_rfs[l_rm] * ( l_scratch[l_qt][l_md]+ o_derA[l_rm][l_de-1][l_qt][l_md][0] );
               o_tIntA[l_rm][l_qt][l_md][0] += l_scalar * o_derA[l_rm][l_de][l_qt][l_md][0];

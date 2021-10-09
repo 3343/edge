@@ -1,11 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2020, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -104,6 +104,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       // reset result to zero
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
           for( unsigned short l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
             o_mat[l_qt][l_md][l_cfr] = 0;
           }

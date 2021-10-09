@@ -352,7 +352,7 @@ class edge::seismic::solvers::AderDg {
       // counter for receivers
       unsigned int l_enRe = i_firstSpRe;
 
-      // temporary data structurre for product for two-way mult and receivers
+      // temporary data structure for product for two-way mult and receivers
       TL_T_REAL (*l_tmp)[TL_N_MDS_EL][TL_N_CRS] = parallel::g_scratchMem->tRes[0];
 
       // buffer for derivatives
@@ -385,14 +385,26 @@ class edge::seismic::solvers::AderDg {
           // reset, if required
           if( i_firstTs ) {
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
               for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                   o_tDofs[1][l_el][l_qt][l_md][l_cr] = 0;
           }
 
           // add tDofs of this time step
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
             for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 o_tDofs[1][l_el][l_qt][l_md][l_cr] += o_tDofs[0][l_el][l_qt][l_md][l_cr];
         }
@@ -443,7 +455,13 @@ class edge::seismic::solvers::AderDg {
 
               // move second integral from [0, dt] to [1/2dt, dt]
               for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
                 for( unsigned short l_md = 0; l_md < TL_N_MDS_FA; l_md++ ) {
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                   for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                     o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E+l_qt][l_md][l_cr] -= o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr];
                   }
@@ -555,7 +573,13 @@ class edge::seismic::solvers::AderDg {
         TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
         if( TL_N_RMS > 0) {
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
             for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 l_upA[l_qt][l_md][l_cr] = 0;
         }
@@ -594,25 +618,57 @@ class edge::seismic::solvers::AderDg {
             TL_T_REAL const (*l_tDofsFiE)[TL_N_MDS_FA][TL_N_CRS] = nullptr;
 
             if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
-              for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-                for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
-                  for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
-                    // element and face-adjacent one have an equal time step
-                    if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+              // element and face-adjacent one have an equal time step
+              if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+                for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
+                  for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
+                    for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                       l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr];
-                    }
-                    // element has a greater time step than the face-adjacent one
-                    else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+              }
+              // element has a greater time step than the face-adjacent one
+              else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+                for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
+                  for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
+                    for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                       l_tDofs[l_qt][l_md][l_cr] = i_tDofs[1][l_ne][l_qt][l_md][l_cr];
-                    }
-                    // element has a time step less than the adjacent one
-                    else {
-                      if( i_firstTs )
+              }
+              // element has a time step less than the adjacent one
+              else {
+                if( i_firstTs ) {
+                  for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
+                    for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
+                      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                         l_tDofs[l_qt][l_md][l_cr] = i_tDofs[2][l_ne][l_qt][l_md][l_cr];
-                      else
+                }
+                else {
+                  for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
+                    for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
+                      for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                         l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr] - i_tDofs[2][l_ne][l_qt][l_md][l_cr];
-                    }
-                  }
                 }
               }
             }

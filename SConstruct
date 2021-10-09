@@ -1,7 +1,7 @@
 ##
 # @file This file is part of EDGE.
 #
-# @author Alexander Breuer (anbreuer AT ucsd.edu)
+# @author Alexander Breuer (alex.breuer AT uni-jena.de)
 #         Alexander Heinecke (alexander.heinecke AT intel.com)
 #
 # @section LICENSE
@@ -440,9 +440,9 @@ elif env['arch'] == 'avx512':
     env.Append( CPPFLAGS = ['-xCOMMON-AVX512'] )
 elif env['arch'] == 'skx':
   if compilers=='gnu' or compilers=='clang':
-    env.Append( CPPFLAGS = ['-mfma', '-mavx512f', '-mavx512cd', '-mavx512bw', '-mavx512dq', '-mavx512vl'] )
+    env.Append( CPPFLAGS = ['-mfma', '-mavx512f', '-mavx512cd', '-mavx512bw', '-mavx512dq', '-mavx512vl', '-mprefer-vector-width=512'] )
   elif compilers=='intel':
-    env.Append( CPPFLAGS = ['-xCORE-AVX512'] )
+    env.Append( CPPFLAGS = ['-xCOMMON-AVX512', '-qopt-zmm-usage=high'] )
 elif env['arch'] == 'knl' or env['arch'] == 'knm':
   if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mfma', '-mavx512f', '-mavx512cd', '-mavx512er', '-mavx512pf'] )
@@ -505,10 +505,12 @@ if 'omp' in env['parallel']:
 
   if compilers == 'intel':
     env.Append( CPPFLAGS = ['-qopenmp'] )
+    env.Append( CPPFLAGS = ['-qopenmp-simd'] )
     env.Append( LINKFLAGS = ['-qopenmp'] )
     env.Append( LINKFLAGS = ['-qopenmp-link=static'] )
   elif compilers == 'gnu' or compilers == 'clang':
     env.Append( CPPFLAGS = ['-fopenmp'] )
+    env.Append( CPPFLAGS = ['-fopenmp-simd'] )
     env.Append( LINKFLAGS = ['-fopenmp'] )
 
 # fix braces issues in clang with versions below 6 (https://bugs.llvm.org/show_bug.cgi?id=21629)

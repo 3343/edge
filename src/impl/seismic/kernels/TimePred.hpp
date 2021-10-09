@@ -1,10 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -169,7 +170,13 @@ class edge::seismic::kernels::TimePred {
 
       // init time integrated dofs
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
             o_tIntE[l_qt][l_md][l_cr] = l_sca * i_derE[0][l_qt][l_md][l_cr];
 
@@ -182,7 +189,13 @@ class edge::seismic::kernels::TimePred {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
           for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               o_tIntE[l_qt][l_md][l_cr] += l_sca * i_derE[l_de][l_qt][l_md][l_cr];
       }

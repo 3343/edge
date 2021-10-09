@@ -1,10 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -139,7 +140,13 @@ class edge::seismic::kernels::SurfInt {
                          TL_T_REAL       (*io_dofsA)[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS] ) const {
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
           for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ){
               io_dofsA[l_rm][l_qt][l_md][l_cr] += m_rfs[l_rm] * i_update[l_qt][l_md][l_cr];
             }
