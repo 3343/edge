@@ -384,6 +384,7 @@ class edge::seismic::solvers::AderDg {
         if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
           // reset, if required
           if( i_firstTs ) {
+#pragma omp simd collapse(3)
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
               for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
@@ -391,6 +392,7 @@ class edge::seismic::solvers::AderDg {
           }
 
           // add tDofs of this time step
+#pragma omp simd collapse(3)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
             for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
@@ -442,6 +444,7 @@ class edge::seismic::solvers::AderDg {
                                                  o_sendDofs[l_el*TL_N_FAS + l_fa]+TL_N_QTS_E );
 
               // move second integral from [0, dt] to [1/2dt, dt]
+#pragma omp simd collapse(3)
               for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
                 for( unsigned short l_md = 0; l_md < TL_N_MDS_FA; l_md++ ) {
                   for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
@@ -554,6 +557,7 @@ class edge::seismic::solvers::AderDg {
         // anelastic updates (excluding frequency scaling)
         TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
         if( TL_N_RMS > 0) {
+#pragma omp simd collapse(3)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
             for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
