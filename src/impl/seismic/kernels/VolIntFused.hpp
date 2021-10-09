@@ -371,17 +371,17 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
       // buffer for the anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
       if( TL_N_RMS > 0 ) {
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) l_scratch[l_qt][l_md][l_cr] = 0;
       }
 
       // set scratch memory to zero for attenuation, which multiplies by stiffness matrices first
       if( TL_N_RMS > 0 ) {
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_scratch[l_qt][l_md][l_cr] = 0;
       }
 
@@ -425,9 +425,9 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
                               io_dofsE[0][0] );
 
         // multiply with relaxation frequency and add
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               io_dofsA[l_rm][l_qt][l_md][l_cr] += l_rfs[l_rm] * ( l_scratch[l_qt][l_md][l_cr] - i_tDofsA[l_rm][l_qt][l_md][l_cr] );
             }

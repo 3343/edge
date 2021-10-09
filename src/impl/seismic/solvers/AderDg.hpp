@@ -384,17 +384,27 @@ class edge::seismic::solvers::AderDg {
         if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
           // reset, if required
           if( i_firstTs ) {
-#pragma omp simd collapse(3)
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
               for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                   o_tDofs[1][l_el][l_qt][l_md][l_cr] = 0;
           }
 
           // add tDofs of this time step
-#pragma omp simd collapse(3)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
             for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 o_tDofs[1][l_el][l_qt][l_md][l_cr] += o_tDofs[0][l_el][l_qt][l_md][l_cr];
         }
@@ -444,9 +454,14 @@ class edge::seismic::solvers::AderDg {
                                                  o_sendDofs[l_el*TL_N_FAS + l_fa]+TL_N_QTS_E );
 
               // move second integral from [0, dt] to [1/2dt, dt]
-#pragma omp simd collapse(3)
               for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
                 for( unsigned short l_md = 0; l_md < TL_N_MDS_FA; l_md++ ) {
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                   for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                     o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E+l_qt][l_md][l_cr] -= o_sendDofs[l_el*TL_N_FAS + l_fa][l_qt][l_md][l_cr];
                   }
@@ -557,9 +572,14 @@ class edge::seismic::solvers::AderDg {
         // anelastic updates (excluding frequency scaling)
         TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
         if( TL_N_RMS > 0) {
-#pragma omp simd collapse(3)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
             for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 l_upA[l_qt][l_md][l_cr] = 0;
         }
@@ -600,33 +620,53 @@ class edge::seismic::solvers::AderDg {
             if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
               // element and face-adjacent one have an equal time step
               if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
-#pragma omp simd collapse(3)
                 for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
                   for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                     for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                       l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr];
               }
               // element has a greater time step than the face-adjacent one
               else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
-#pragma omp simd collapse(3)
                 for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
                   for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                     for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                       l_tDofs[l_qt][l_md][l_cr] = i_tDofs[1][l_ne][l_qt][l_md][l_cr];
               }
               // element has a time step less than the adjacent one
               else {
                 if( i_firstTs ) {
-#pragma omp simd collapse(3)
                   for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
                     for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                         l_tDofs[l_qt][l_md][l_cr] = i_tDofs[2][l_ne][l_qt][l_md][l_cr];
                 }
                 else {
-#pragma omp simd collapse(3)
                   for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
                     for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
                       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                         l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr] - i_tDofs[2][l_ne][l_qt][l_md][l_cr];
                 }

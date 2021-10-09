@@ -102,9 +102,9 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
      **/
     static void inline zero( TL_T_REAL o_mat[TL_N_QTS_E][TL_N_MDS][TL_N_CRS] ) {
       // reset result to zero
-#pragma omp simd collapse(3)
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
           for( unsigned short l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
             o_mat[l_qt][l_md][l_cfr] = 0;
           }
@@ -422,9 +422,9 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       TL_T_REAL l_scalar = i_dT;
 
       // elastic initialize zero-derivative, reset time integrated dofs
-#pragma omp simd collapse(3)
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
           for( unsigned short l_cfr = 0; l_cfr < TL_N_CRS; l_cfr++ ) {
             o_derE[0][l_qt][l_md][l_cfr] = i_dofsE[l_qt][l_md][l_cfr];
             o_tIntE[l_qt][l_md][l_cfr]   = l_scalar * i_dofsE[l_qt][l_md][l_cfr];
@@ -433,10 +433,10 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       }
 
       // anelastic: init zero-derivative, reset tDofs
-#pragma omp simd collapse(4)
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               o_derA[l_rm][0][l_qt][l_md][l_cr] = i_dofsA[l_rm][l_qt][l_md][l_cr];
               o_tIntA[l_rm][l_qt][l_md][l_cr] = l_scalar * i_dofsA[l_rm][l_qt][l_md][l_cr];
@@ -451,16 +451,16 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         unsigned short l_re = (TL_N_RMS == 0) ? l_de : 1;
 
         // elastic: reset this derivative
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_derE[l_de][l_qt][l_md][l_cr] = 0;
 
         // scratch memory for viscoelastic part
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) l_scratch[l_qt][l_md][l_cr] = 0;
 
         // compute the derivatives
@@ -499,9 +499,9 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
                                 o_derE[l_de][0][0] );
 
           // multiply with relaxation frequency and add
-#pragma omp simd collapse(3)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
             for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+#pragma omp simd
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
                 o_derA[l_rm][l_de][l_qt][l_md][l_cr] = l_rfs[l_rm] * ( l_scratch[l_qt][l_md][l_cr] + o_derA[l_rm][l_de-1][l_qt][l_md][l_cr] );
                 o_tIntA[l_rm][l_qt][l_md][l_cr] += l_scalar * o_derA[l_rm][l_de][l_qt][l_md][l_cr];
@@ -513,9 +513,9 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         // elastic: update time integrated DOFs
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ ) {
+#pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) {
               o_tIntE[l_qt][l_md][l_cr] += l_scalar * o_derE[l_de][l_qt][l_md][l_cr];
             }

@@ -169,9 +169,14 @@ class edge::seismic::kernels::TimePred {
       TL_T_REAL l_sca = i_dt;
 
       // init time integrated dofs
-#pragma omp simd collapse(3)
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
           for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
             o_tIntE[l_qt][l_md][l_cr] = l_sca * i_derE[0][l_qt][l_md][l_cr];
 
@@ -183,9 +188,14 @@ class edge::seismic::kernels::TimePred {
         // elastic: update time integrated DOFs
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
-#pragma omp simd collapse(3)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
           for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ )
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
               o_tIntE[l_qt][l_md][l_cr] += l_sca * i_derE[l_de][l_qt][l_md][l_cr];
       }

@@ -138,10 +138,15 @@ class edge::seismic::kernels::SurfInt {
      **/
     void scatterUpdateA( TL_T_REAL const   i_update[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS],
                          TL_T_REAL       (*io_dofsA)[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS] ) const {
-#pragma omp simd collapse(4)
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+#if PP_N_CRUNS==1
+#pragma omp simd
+#endif
           for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
+#if PP_N_CRUNS>1
+#pragma omp simd
+#endif
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ){
               io_dofsA[l_rm][l_qt][l_md][l_cr] += m_rfs[l_rm] * i_update[l_qt][l_md][l_cr];
             }
