@@ -1,10 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2019, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -205,8 +206,8 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       TL_T_REAL l_scalar = i_dT;
 
       // initialize zero-derivative, reset time integrated dofs
+#pragma omp simd collapse(2)
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-#pragma omp simd
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
           o_derE[0][l_qt][l_md][0] = i_dofsE[l_qt][l_md][0];
           o_tIntE[l_qt][l_md][0]   = l_scalar * i_dofsE[l_qt][l_md][0];
@@ -214,9 +215,9 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       }
 
       // anelastic: init zero-derivative, reset tDofs
+#pragma omp simd collapse(3)
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
-#pragma omp simd
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
             o_derA[l_rm][0][l_qt][l_md][0] = i_dofsA[l_rm][l_qt][l_md][0];
             o_tIntA[l_rm][l_qt][l_md][0] = l_scalar * i_dofsA[l_rm][l_qt][l_md][0];
@@ -230,15 +231,15 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         unsigned short l_re = (TL_N_RMS == 0) ? l_de : 1;
 
         // elastic: reset this derivative
+#pragma omp simd collapse(2)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
-#pragma omp simd
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) o_derE[l_de][l_qt][l_md][0] = 0;
 
         // buffer for the anelastic computations
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS];
         if( TL_N_RMS > 0 ) {
+#pragma omp simd collapse(2)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
-#pragma omp simd
             for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) l_scratch[l_qt][l_md] = 0;
          }
         }
@@ -272,6 +273,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
                                 o_derE[l_de][0][0] );
 
           // multiply with relaxation frequency and add
+#pragma omp simd collapse(2)
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
             for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
               o_derA[l_rm][l_de][l_qt][l_md][0] = l_rfs[l_rm] * ( l_scratch[l_qt][l_md]+ o_derA[l_rm][l_de-1][l_qt][l_md][0] );
@@ -284,8 +286,8 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
         // update time integrated dofs
+#pragma omp simd collapse(2)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
-#pragma omp simd
           for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ ) {
             o_tIntE[l_qt][l_md][0] += l_scalar * o_derE[l_de][l_qt][l_md][0];
           }

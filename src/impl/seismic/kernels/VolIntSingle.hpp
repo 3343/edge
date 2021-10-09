@@ -1,10 +1,11 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
  * Copyright (c) 2016, Intel Corporation
@@ -188,6 +189,7 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
       // buffer for anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][1];
+#pragma omp simd collapse(2)
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) l_scratch[l_qt][l_md][0] = 0;
 
@@ -218,8 +220,8 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                               io_dofsE[0][0] );
 
         // multiply with relaxation frequency and add
+#pragma omp simd collapse(2)
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
-#pragma omp simd
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
             io_dofsA[l_rm][l_qt][l_md][0] += l_rfs[l_rm] * ( l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] );
           }
