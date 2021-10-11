@@ -27,6 +27,7 @@
 #include "EdgeV.h"
 #include "../data/EntityLayout.h"
 
+#include <cmath>
 
 void edge::mesh::EdgeV::setElLayout( unsigned short         i_nTgs,
                                      std::size_t    const * i_nTgElsIn,
