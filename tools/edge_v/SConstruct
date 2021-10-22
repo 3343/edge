@@ -272,7 +272,7 @@ if 'CMAKE_PREFIX_PATH' in env['ENV'].keys():
 env.Append( CPPPATH = ['#', '#/src'] )
 
 # add default flags
-env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror"] )
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Wno-unknown-warning-option", "-Werror"] )
 
 # set optimization mode
 if 'debug' in env['mode']:

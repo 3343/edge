@@ -533,7 +533,7 @@ if 'mpi' in env['parallel']:
 env.Append( CPPPATH = ['#', '#/src'] )
 
 # add default flags
-env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror"] )
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Wno-unknown-warning-option", "-Werror"] )
 
 if env['inst'] == False:
   env.Append( CXXFLAGS = ["-pedantic", "-Wshadow"] ) # some strict flags break compilation with opari..
