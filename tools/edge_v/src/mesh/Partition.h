@@ -25,7 +25,9 @@
 #define EDGE_V_MESH_PARTITION_H
 
 #include "Mesh.h"
+#include "../constants.h"
 #include <algorithm>
+
 
 namespace edge_v {
   namespace mesh {
