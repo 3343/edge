@@ -363,7 +363,6 @@ if 'LIBRARY_PATH' in env['ENV'].keys():
 if 'CMAKE_PREFIX_PATH' in env['ENV'].keys():
   l_paths = env['ENV']['CMAKE_PREFIX_PATH'].split(':')
   for l_pa in l_paths:
-    print( 'appending', l_pa )
     l_pa = adjustPath( l_pa )
     env.AppendUnique( CPPPATH = [l_pa + '/include'] )
     env.AppendUnique( LIBPATH = [l_pa + '/lib'] )
