@@ -271,22 +271,6 @@ if 'CMAKE_PREFIX_PATH' in env['ENV'].keys():
 # add current path to search path
 env.Append( CPPPATH = ['#', '#/src'] )
 
-# add default flags
-env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Wno-unknown-warning-option", "-Werror"] )
-
-# set optimization mode
-if 'debug' in env['mode']:
-  env.Append( CXXFLAGS = ['-g','-O0'] )
-else:
-  env.Append( CXXFLAGS = ['-O2'] )
-# add sanitizers
-if 'san' in  env['mode']:
-  env.Append( CXXFLAGS =  ['-g', '-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
-  env.Append( LINKFLAGS = ['-g', '-fsanitize=address', '-fsanitize=undefined'] )
-
-# forward EDGE version
-env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
-
 # detect compilers
 try:
   compVer = subprocess.check_output( [env['CXX'], "--version"] )
@@ -310,6 +294,26 @@ if env['PLATFORM'] == 'darwin':
 else:
   env['op_sys'] = 'linux'
 print( '  using ' + env['op_sys'] + ' as operating system' )
+
+# fix clang's confusion about future flags when using older versions
+if compilers=='clang':
+  env.Append( CXXFLAGS = ["-Wno-unknown-warning-option"] )
+
+# add default flags
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror"] )
+
+# set optimization mode
+if 'debug' in env['mode']:
+  env.Append( CXXFLAGS = ['-g','-O0'] )
+else:
+  env.Append( CXXFLAGS = ['-O2'] )
+# add sanitizers
+if 'san' in  env['mode']:
+  env.Append( CXXFLAGS =  ['-g', '-fsanitize=address', '-fsanitize=undefined', '-fno-omit-frame-pointer'] )
+  env.Append( LINKFLAGS = ['-g', '-fsanitize=address', '-fsanitize=undefined'] )
+
+# forward EDGE version
+env.Append( CPPDEFINES='PP_EDGE_VERSION=\\"'+getEdgeVersion()+'\\"' )
 
 # set architecture and alignment
 if env['arch'] == 'snb':

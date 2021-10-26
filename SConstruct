@@ -525,6 +525,10 @@ if compilers == 'clang':
   except:
     print( '  failed getting dir of libstdc++.so, not setting rpath' )
 
+# fix clang's confusion about future flags when using older versions
+if compilers=='clang':
+  env.Append( CXXFLAGS = ["-Wno-unknown-warning-option"] )
+
 # enable mpi
 if 'mpi' in env['parallel']:
   env.Append( CPPDEFINES = ['PP_USE_MPI'] )
@@ -533,7 +537,7 @@ if 'mpi' in env['parallel']:
 env.Append( CPPPATH = ['#', '#/src'] )
 
 # add default flags
-env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Wno-unknown-warning-option", "-Werror"] )
+env.Append( CXXFLAGS = ["-std=c++11", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-unused-parameter", "-Werror"] )
 
 if env['inst'] == False:
   env.Append( CXXFLAGS = ["-pedantic", "-Wshadow"] ) # some strict flags break compilation with opari..
