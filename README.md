@@ -127,7 +127,7 @@ Based on the equations and the element type, the following table shows the imple
 | Microarchitecture | Machine(s) |
 |-------------------|:----------:|
 | [Haswell](https://ark.intel.com/products/codename/42174/Haswell) | [Comet](http://www.sdsc.edu/support/user_guides/comet.html) |
-| [Knights Landing](https://ark.intel.com/products/codename/48999/Knights-Landing)    | [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2), [Cori Phase 2](http://www.nersc.gov/users/computational-systems/cori/configuration/), [Theta](https://www.alcf.anl.gov/theta) |
+| [Knights Landing](https://ark.intel.com/products/codename/48999/Knights-Landing)    | [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2), [Cori Phase 2](https://docs.nersc.gov/systems/cori/), [Theta](https://www.alcf.anl.gov/theta) |
 | [Knights Mill](https://ark.intel.com/products/codename/57723/Knights-Mill) | - |
 | [Skylake](https://ark.intel.com/products/codename/37572/Skylake) | [Amazon Elastic Compute Cloud](https://aws.amazon.com/ec2/), [Google Cloud Platform](https://cloud.google.com/), [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2) |
 | [Cascade Lake](https://ark.intel.com/content/www/us/en/ark/products/codename/124664/cascade-lake.html) | [Frontera](https://frontera-portal.tacc.utexas.edu/) |
