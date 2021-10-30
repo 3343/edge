@@ -110,7 +110,7 @@
   
 * *tet4 (3D)*:
 
-  4-node tetrahedrons. Arbitrary, conforming tetrahedralization are allowed.
+  4-node tetrahedrons. Arbitrary, conforming tetrahedralizations are allowed.
 
 ## Feature table
 
