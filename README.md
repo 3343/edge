@@ -131,7 +131,7 @@ Based on the equations and the element type, the following table shows the imple
 | [Knights Mill](https://ark.intel.com/products/codename/57723/Knights-Mill) | - |
 | [Skylake](https://ark.intel.com/products/codename/37572/Skylake) | [Amazon Elastic Compute Cloud](https://aws.amazon.com/ec2/), [Google Cloud Platform](https://cloud.google.com/), [Stampede 2](https://portal.tacc.utexas.edu/user-guides/stampede2) |
 | [Cascade Lake](https://ark.intel.com/content/www/us/en/ark/products/codename/124664/cascade-lake.html) | [Frontera](https://frontera-portal.tacc.utexas.edu/) |
-| [Ice Lake](https://ark.intel.com/content/www/us/en/ark/products/codename/74979/products-formerly-ice-lake.html) | [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/) |
+| [Ice Lake](https://ark.intel.com/content/www/us/en/ark/products/codename/74979/products-formerly-ice-lake.html) | [Oracle Cloud Infrastructure](https://blogs.oracle.com/cloud-infrastructure/post/announcing-compute-instances-with-3rd-gen-intel-xeon-ice-lake-processors) |
 | [Rome](https://www.amd.com/en/processors/epyc-7002-series) | [Oracle Cloud Infrastructure](https://blogs.oracle.com/cloud-infrastructure/post/announcing-the-launch-of-oracle-cloud-infrastructure-compute-e3-platform-on-2nd-gen-amd-epyc-processors) |
 | [Milan](https://www.amd.com/en/processors/epyc-7003-series) | [Oracle Cloud Infrastructure](https://blogs.oracle.com/cloud-infrastructure/post/announcing-oracle-cloud-compute-e4-platform-on-third-gen-amd-epyc-processors) |
 | [Neoverse N1](https://www.arm.com/products/silicon-ip-cpu/neoverse/neoverse-n1) | [Amazon Elastic Compute Cloud](https://aws.amazon.com/ec2/graviton/), [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/compute/arm/) |
