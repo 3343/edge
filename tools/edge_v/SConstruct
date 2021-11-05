@@ -230,7 +230,8 @@ print( ""                                                                       
 print( 'Running build script of EDGE-V.' )
 
 # configuration
-conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHeaderFlags})
+conf = Configure(env, custom_tests = {'CheckLinkFlag': CheckLinkFlag,
+                                      'CheckLibWithHeaderFlags': CheckLibWithHeaderFlags})
 
 # include environment
 env['ENV'] = os.environ
