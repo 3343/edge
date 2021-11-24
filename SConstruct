@@ -99,6 +99,27 @@ def simpleWarning(message, category, filename, lineno, file=None, line=None):
     return '%s\n' % (message)
 warnings.formatwarning = simpleWarning
 
+def CheckLinkFlag( io_context, i_flag, i_lang='CXX' ):
+  l_lang, l_suffix, l_msg = SCons.Conftest._lang2suffix(i_lang)
+
+  l_msg = 'Checking for link-flag '+i_flag+'..'
+  io_context.Message( l_msg )
+  l_srcFile = "int main(int i_argc, char **i_argv) { return 0; }"
+
+  l_oldFlags = io_context.env['LINKFLAGS']
+
+  io_context.env.AppendUnique( LINKFLAGS = [i_flag] )
+
+  # test if it exists
+  l_result = io_context.TryLink( l_srcFile, l_suffix )
+  io_context.Result(l_result)
+
+  # fall back it doesnt exit
+  if( l_result != 1 ):
+    io_context.env['LINKFLAGS'] = l_oldFlags
+
+  return l_result
+
 # checkLibWithHeader with link flags
 def CheckLibWithHeaderFlags( io_context, i_lib, i_header='', i_lang='CXX', i_flagsBefore=[''], i_flagsAfter=[''], i_dynamic=False ):
 
@@ -305,7 +326,8 @@ print( ""                                                                       
 print( 'Running build script of EDGE.' )
 
 # configuration
-conf = Configure(env, custom_tests = {'CheckLibWithHeaderFlags': CheckLibWithHeaderFlags})
+conf = Configure(env, custom_tests = {'CheckLinkFlag': CheckLinkFlag,
+                                      'CheckLibWithHeaderFlags': CheckLibWithHeaderFlags})
 
 # include environment
 env['ENV'] = os.environ
@@ -363,7 +385,6 @@ if 'LIBRARY_PATH' in env['ENV'].keys():
 if 'CMAKE_PREFIX_PATH' in env['ENV'].keys():
   l_paths = env['ENV']['CMAKE_PREFIX_PATH'].split(':')
   for l_pa in l_paths:
-    print( 'appending', l_pa )
     l_pa = adjustPath( l_pa )
     env.AppendUnique( CPPPATH = [l_pa + '/include'] )
     env.AppendUnique( LIBPATH = [l_pa + '/lib'] )
@@ -425,6 +446,10 @@ if( env['hugetlbfs'] ):
 if conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], True) or\
    conf.CheckLibWithHeaderFlags('numa', 'numa.h', 'CXX', [], [], False):
   env.AppendUnique( CPPDEFINES =['PP_USE_NUMA'] )
+
+if 'san' in env['mode']:
+  conf.CheckLinkFlag( '-static-libasan' )
+  conf.CheckLinkFlag( '-static-libubsan' )
 
 # set isa
 if env['arch'] == 'wsm':
@@ -525,6 +550,10 @@ if compilers == 'clang':
     env.Append( LINKFLAGS = [ '-Wl,-rpath='+rpath ] )
   except:
     print( '  failed getting dir of libstdc++.so, not setting rpath' )
+
+# fix clang's confusion about future flags when using older versions
+if compilers=='clang':
+  env.Append( CXXFLAGS = ["-Wno-unknown-warning-option"] )
 
 # enable mpi
 if 'mpi' in env['parallel']:
