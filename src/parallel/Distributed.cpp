@@ -67,10 +67,10 @@ edge::parallel::Distributed::Distributed( int    i_argc,
       int l_tdSu;
       MPI_Init_thread( &i_argc,
                         &i_argv,
-                        MPI_THREAD_SERIALIZED,
+                        MPI_THREAD_FUNNELED,
                         &l_tdSu );
       // ensure the required threading support of MPI
-      EDGE_CHECK( l_tdSu == MPI_THREAD_SERIALIZED );
+      EDGE_CHECK( l_tdSu >= MPI_THREAD_FUNNELED );
     }
   }
 
