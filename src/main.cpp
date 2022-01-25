@@ -87,7 +87,7 @@ int main( int i_argc, char *i_argv[] ) {
   PP_INSTR_REG_DEF(init)
   PP_INSTR_REG_BEG(init,"init")
 
-  // start shared memory parallelization
+  // (initial) shared memory init
   edge::parallel::Shared l_shared;
   l_shared.init();
 
@@ -129,10 +129,6 @@ int main( int i_argc, char *i_argv[] ) {
   EDGE_LOG_INFO << "  #ranks: "          << edge::parallel::g_nRanks;
 #endif
 
-#ifdef PP_USE_OMP
-  l_shared.print();
-#endif
-
   // print memory information
   edge::data::common::printHugePages();
   edge::data::common::printNumaSizes();
@@ -144,6 +140,13 @@ int main( int i_argc, char *i_argv[] ) {
 
   EDGE_LOG_INFO << "parsing xml config";
   edge::io::Config l_config( l_options.getXmlPath() );
+
+  // re-init shared memory based on config
+  l_shared.init( l_config.m_separateWrks );
+
+#ifdef PP_USE_OMP
+  l_shared.print();
+#endif
 
   // parse mesh and mesh supplement
   EDGE_LOG_INFO << "parsing mesh and supplement";

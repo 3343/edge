@@ -1,9 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -117,20 +118,13 @@ class edge::parallel::Shared {
 
     /**
      * Initialization of the shared memory parallelization.
-     * Worker threads will be assigned to threads, 0..(nWrks-1).
+     * If separateWrks is set, thread 0 will be used for exclusively scheduling and MPI.
      *
      * Remark: This should be called outside of the omp-parallel region.
      *
-     * @param i_nWrk snumber of of worker-threads. If 0 the class decides.
+     * @param i_separateWrks if true, the workers will be isolated from the scheduling/comm thread
      **/
-    void init( unsigned int i_nWrks = 0 );
-
-    /**
-     * Determine if the thread is the lead of the communication threads
-     *
-     * @return true if the thread is the lead of the communication threads, false otherwise.
-     **/
-    bool isCommLead();
+    void init( bool i_separateWrks = true );
 
     /**
      * Determines if the calling thread is a worker.
@@ -291,7 +285,7 @@ class edge::parallel::Shared {
     /**
      * @brief Performs NUMA-aware zero-initialization of the given array through first-touch.
      *        Should be called within an OpenMP-parallel region from all threads.
-     *        The inits of the workers are done as OpenMP-critical (on by one).
+     *        The inits of the workers are done as OpenMP-critical (one by one).
      *        After all init an OpenMP-barrier is called.
      *
      * @param i_nWrks number of workers.
@@ -304,8 +298,8 @@ class edge::parallel::Shared {
     static void numaInit( unsigned int        i_nWrks,
                           std::size_t const   i_nEns,
                           TL_T_EN           * o_arr ) {
-      // return early, if if this is not a worker.
-      if( g_thread >= int(i_nWrks) ) {
+      // return early, if this is not a worker.
+      if( g_worker < 0 ) {
         // wait for other threads
 #ifdef PP_USE_OMP
 #pragma omp barrier
@@ -320,12 +314,12 @@ class edge::parallel::Shared {
 
       // derive start position of the calling worker in the array
       TL_T_EN * l_arr = o_arr;
-      l_arr += l_split * (std::size_t) g_thread;
-      if( l_rem > 0 ) l_arr += std::min( l_rem, (std::size_t) g_thread );
+      l_arr += l_split * (std::size_t) g_worker;
+      if( l_rem > 0 ) l_arr += std::min( l_rem, (std::size_t) g_worker );
 
       // derive number of entries under control of the worker
       std::size_t l_nEns = l_split;
-      if( (std::size_t) g_thread < l_rem ) l_nEns++;
+      if( (std::size_t) g_worker < l_rem ) l_nEns++;
 
       // perform NUMA-aware init
 #ifdef PP_USE_OMP
