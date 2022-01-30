@@ -57,10 +57,10 @@ void edge::parallel::Shared::init( bool i_separateWrks ) {
 
   // assign worker-id
   if( m_nWrks == g_nThreads ) {
-    g_worker = g_thread;
+    m_wrkOff = 0;
   }
   else {
-    g_worker = g_thread-1;
+    m_wrkOff = -1;
   }
 
   // check that no other threads wrote in private thread num
@@ -70,7 +70,7 @@ void edge::parallel::Shared::init( bool i_separateWrks ) {
 #else
   g_thread   = 0;
   g_nThreads = 1;
-  g_worker   = 0;
+  m_wrkOff  = 0;
   m_nWrks    = 1;
 #endif
 
@@ -102,7 +102,7 @@ void edge::parallel::Shared::print() {
 }
 
 bool edge::parallel::Shared::isWrk() {
-  return g_worker >= 0;
+  return worker(g_thread) >= 0;
 }
 
 bool edge::parallel::Shared::isSched() {
@@ -128,26 +128,28 @@ bool edge::parallel::Shared::getWrkTd( unsigned short & o_tg,
                                        int_el         & o_first,
                                        int_el         & o_size,
                                        int_el         * o_firstSp ) {
-  EDGE_CHECK( g_worker >= 0 );
+  int l_worker = worker(g_thread);
+
+  EDGE_CHECK( l_worker >= 0 );
 
   // invalid everything by default
-  o_tg        = std::numeric_limits< int_tg >::max();
-  o_step      = std::numeric_limits< unsigned short >::max();
-  o_id        = std::numeric_limits< unsigned int >::max();
-  o_first     = std::numeric_limits< int_el       >::max();
-  o_size      = std::numeric_limits< int_el       >::max();
+  o_tg    = std::numeric_limits< int_tg >::max();
+  o_step  = std::numeric_limits< unsigned short >::max();
+  o_id    = std::numeric_limits< unsigned int >::max();
+  o_first = std::numeric_limits< int_el       >::max();
+  o_size  = std::numeric_limits< int_el       >::max();
 
   // iterate over work region
   for( std::size_t l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
     volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
-    if( l_wps[g_worker].status == RDY ) {
+    if( l_wps[l_worker].status == RDY ) {
       o_tg    = m_wrkRgns[l_rg].tg;
       o_step  = m_wrkRgns[l_rg].step;
       o_id    = m_wrkRgns[l_rg].id;
 
       m_balancing.getWrkTd( l_rg,
-                            g_worker,
+                            l_worker,
                             o_first,
                             o_size,
                             o_firstSp );
@@ -210,28 +212,30 @@ void edge::parallel::Shared::resetStatus( t_status i_status ) {
 
 void edge::parallel::Shared::setStatusTd(  t_status     i_status,
                                            unsigned int i_id ) {
+  int l_worker = worker( g_thread );
+
   // flush for a consistent view
 #ifdef PP_USE_OMP
 #pragma omp flush
 #endif
 
   // check that the calling thread is a worker
-  EDGE_CHECK( g_worker >= 0 );
+  EDGE_CHECK( l_worker >= 0 );
 
   std::size_t l_rg = getWrkRgn( i_id );
 
-  volatile t_status *l_st = &m_wrkRgns[l_rg].wrkPkgs[g_worker].status;
+  volatile t_status *l_st = &m_wrkRgns[l_rg].wrkPkgs[l_worker].status;
 
   // check that the previous status matches
   if( i_status == IPR ) {
     EDGE_CHECK( *l_st == RDY );
     // start the timer for this work package, now having status "in progress"
-    m_balancing.startClock( l_rg, g_worker );
+    m_balancing.startClock( l_rg, l_worker );
   }
   else if( i_status == FIN ) {
     EDGE_CHECK( *l_st == IPR );
     // stop the timer for this work package, now having status "finished"
-    m_balancing.stopClock( l_rg, g_worker );
+    m_balancing.stopClock( l_rg, l_worker );
   }
   else {
     EDGE_LOG_FATAL << "previous status not matching: " << i_status;

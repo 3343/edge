@@ -33,8 +33,6 @@ namespace edge {
     extern int           g_thread;
     //! omp-threadprivate thread number as string (null-terminated char array)
     extern char          g_threadStr[10];
-    //! omp-threadprivate worked id (negative if not a worker)
-    extern int           g_worker;
 #ifdef PP_SCRATCH_MEMORY
     //! private scratch high-bandwidth memory for shared memory parallelizations
     extern t_scratchMem* g_scratchMem;
@@ -45,7 +43,7 @@ namespace edge {
 #endif
 
 #ifdef PP_USE_OMP
-#pragma omp threadprivate(edge::parallel::g_thread, edge::parallel::g_threadStr, edge::parallel::g_worker)
+#pragma omp threadprivate(edge::parallel::g_thread, edge::parallel::g_threadStr)
 #endif
     //! number of threads
     extern int         g_nThreads;

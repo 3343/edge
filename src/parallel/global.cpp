@@ -23,12 +23,11 @@
 #include "global.h"
 
 #ifdef PP_USE_OMP
-#pragma omp threadprivate(edge::parallel::g_thread, edge::parallel::g_threadStr, edge::parallel::g_worker)
+#pragma omp threadprivate(edge::parallel::g_thread, edge::parallel::g_threadStr)
 #endif
 int           edge::parallel::g_nThreads = 1;
 int           edge::parallel::g_thread = 0;
 char          edge::parallel::g_threadStr[10] = "0\000000000";
-int           edge::parallel::g_worker = 0;
 #ifdef PP_SCRATCH_MEMORY
 #ifdef PP_USE_OMP
 #pragma omp threadprivate(edge::parallel::g_scratchMem)

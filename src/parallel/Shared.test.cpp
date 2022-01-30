@@ -30,7 +30,7 @@
 #include "Shared.h"
 #undef private
 
-TEST_CASE( "NUMA-aware initialization", "[numaInit]" ) {
+TEST_CASE( "NUMA-aware initialization without separate workers.", "[numaInitNoSep]" ) {
 
   // our test arrays, which are have to be set to zero
   float l_arr1[73*31];
@@ -44,16 +44,47 @@ TEST_CASE( "NUMA-aware initialization", "[numaInit]" ) {
   {
 
 #ifdef PP_USE_OMP
-    edge::parallel::g_thread = omp_get_thread_num();
-    if( edge::parallel::g_thread == 0 ) edge::parallel::g_nThreads = omp_get_num_threads();
-#pragma omp barrier
+    edge::parallel::Shared l_shared;
+    l_shared.init( false );
 #else
     edge::parallel::g_thread   = 0;
     edge::parallel::g_nThreads = 1;
+    edge::parallel::
 #endif
 
-    edge::parallel::Shared::numaInit( edge::parallel::g_nThreads, 73*31, l_arr1 );
-    edge::parallel::Shared::numaInit( edge::parallel::g_nThreads, 3,     l_arr2 );
+    l_shared.numaInit( 73*31, l_arr1 );
+    l_shared.numaInit( 3,     l_arr2 );
+  }
+
+  // check the result
+  for( unsigned int l_en = 0; l_en < 73*31; l_en++ )  REQUIRE( l_arr1[l_en] == float(0) );
+  for( unsigned int l_en = 0; l_en <     3; l_en++ )  REQUIRE( l_arr2[l_en] == float(0) );
+}
+
+TEST_CASE( "NUMA-aware initialization with separate workers.", "[numaInitSep]" ) {
+
+  // our test arrays, which are have to be set to zero
+  float l_arr1[73*31];
+  for( unsigned int l_en = 0; l_en < 73*31; l_en++ ) l_arr1[l_en] = float(1);
+  float l_arr2[3] = {1, 1, 1};
+
+  // open OMP-region if required
+#ifdef PP_USE_OMP
+#pragma omp parallel
+#endif
+  {
+
+#ifdef PP_USE_OMP
+    edge::parallel::Shared l_shared;
+    l_shared.init( true );
+#else
+    edge::parallel::g_thread   = 0;
+    edge::parallel::g_nThreads = 1;
+    edge::parallel::
+#endif
+
+    l_shared.numaInit( 73*31, l_arr1 );
+    l_shared.numaInit( 3,     l_arr2 );
   }
 
   // check the result
