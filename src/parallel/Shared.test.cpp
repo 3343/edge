@@ -42,15 +42,8 @@ TEST_CASE( "NUMA-aware initialization without separate workers.", "[numaInitNoSe
 #pragma omp parallel
 #endif
   {
-
-#ifdef PP_USE_OMP
     edge::parallel::Shared l_shared;
     l_shared.init( false );
-#else
-    edge::parallel::g_thread   = 0;
-    edge::parallel::g_nThreads = 1;
-    edge::parallel::
-#endif
 
     l_shared.numaInit( 73*31, l_arr1 );
     l_shared.numaInit( 3,     l_arr2 );
@@ -73,15 +66,8 @@ TEST_CASE( "NUMA-aware initialization with separate workers.", "[numaInitSep]" )
 #pragma omp parallel
 #endif
   {
-
-#ifdef PP_USE_OMP
     edge::parallel::Shared l_shared;
     l_shared.init( true );
-#else
-    edge::parallel::g_thread   = 0;
-    edge::parallel::g_nThreads = 1;
-    edge::parallel::
-#endif
 
     l_shared.numaInit( 73*31, l_arr1 );
     l_shared.numaInit( 3,     l_arr2 );
