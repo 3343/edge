@@ -1,7 +1,7 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *
  * @section LICENSE
  * Copyright (c) 2020-2021, Friedrich Schiller University Jena
@@ -29,7 +29,7 @@
 #include <omp.h>
 #endif
 
-void edge::parallel::Shared::init( unsigned int i_nWrks ) {
+void edge::parallel::Shared::init( bool i_separateWrks ) {
 #ifdef PP_USE_OMP
 #pragma omp parallel
 {
@@ -42,17 +42,25 @@ void edge::parallel::Shared::init( unsigned int i_nWrks ) {
     g_nThreads = omp_get_num_threads();
 
     // assign worker threads
-    if( i_nWrks == 0 ) {
-#ifdef PP_USE_MPI
-      m_nWrks = std::max( g_nThreads - 1, 1);
-#else
-      m_nWrks = g_nThreads;
-#endif
+    if( i_separateWrks == true && g_nThreads > 1 ) {
+      m_nWrks = g_nThreads - 1;
     }
-    else m_nWrks = i_nWrks;
+    else {
+      m_nWrks = g_nThreads;
+    };
 
     // check for at least one worker
     EDGE_CHECK( m_nWrks > 0 );
+  }
+
+#pragma omp barrier
+
+  // assign worker-id
+  if( m_nWrks == g_nThreads ) {
+    m_wrkOff = 0;
+  }
+  else {
+    m_wrkOff = -1;
   }
 
   // check that no other threads wrote in private thread num
@@ -62,6 +70,7 @@ void edge::parallel::Shared::init( unsigned int i_nWrks ) {
 #else
   g_thread   = 0;
   g_nThreads = 1;
+  m_wrkOff  = 0;
   m_nWrks    = 1;
 #endif
 
@@ -92,29 +101,16 @@ void edge::parallel::Shared::print() {
   EDGE_LOG_INFO << "  #workers: " << m_nWrks;
 }
 
-bool edge::parallel::Shared::isCommLead() {
-  if( m_nWrks == g_nThreads ) return g_thread==0;
-  else                        return g_thread==m_nWrks;
-}
-
 bool edge::parallel::Shared::isWrk() {
-  return g_thread < m_nWrks;
+  return worker(g_thread) >= 0;
 }
 
 bool edge::parallel::Shared::isSched() {
-  EDGE_CHECK( m_nWrks > 0 );
-  // if every thread is a worker, the last one schedules
-  if( m_nWrks == g_nThreads ) return g_thread == m_nWrks-1;
-  // the last thread schedules if not every thread is a worker
-  else                        return g_thread == m_nWrks;
+  return g_thread == 0;
 }
 
 bool edge::parallel::Shared::isComm() {
-  EDGE_CHECK( m_nWrks > 0 );
-  // if every thread is a worker, every thread communicates
-  if( m_nWrks == g_nThreads ) return true;
-  // if scheduling and comm threads are available, every thread but the workers communicates
-  else                        return g_thread >= m_nWrks;
+  return g_thread == 0;
 }
 
 std::size_t edge::parallel::Shared::getWrkRgn( unsigned int i_id ) {
@@ -132,26 +128,28 @@ bool edge::parallel::Shared::getWrkTd( unsigned short & o_tg,
                                        int_el         & o_first,
                                        int_el         & o_size,
                                        int_el         * o_firstSp ) {
-  EDGE_CHECK( g_thread < m_nWrks );
+  int l_worker = worker(g_thread);
+
+  EDGE_CHECK( l_worker >= 0 );
 
   // invalid everything by default
-  o_tg        = std::numeric_limits< int_tg >::max();
-  o_step      = std::numeric_limits< unsigned short >::max();
-  o_id        = std::numeric_limits< unsigned int >::max();
-  o_first     = std::numeric_limits< int_el       >::max();
-  o_size      = std::numeric_limits< int_el       >::max();
+  o_tg    = std::numeric_limits< int_tg >::max();
+  o_step  = std::numeric_limits< unsigned short >::max();
+  o_id    = std::numeric_limits< unsigned int >::max();
+  o_first = std::numeric_limits< int_el       >::max();
+  o_size  = std::numeric_limits< int_el       >::max();
 
   // iterate over work region
   for( std::size_t l_rg = 0; l_rg < m_wrkRgns.size(); l_rg++ ) {
     volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
-    if( l_wps[g_thread].status == RDY ) {
+    if( l_wps[l_worker].status == RDY ) {
       o_tg    = m_wrkRgns[l_rg].tg;
       o_step  = m_wrkRgns[l_rg].step;
       o_id    = m_wrkRgns[l_rg].id;
 
       m_balancing.getWrkTd( l_rg,
-                            g_thread,
+                            l_worker,
                             o_first,
                             o_size,
                             o_firstSp );
@@ -181,16 +179,16 @@ void edge::parallel::Shared::setStatusAll( t_status     i_status,
   volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
   // iterate over all workers and set status
-  for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
+  for( int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
     if( i_status == RDY ) {
-      EDGE_CHECK( l_wps[l_td].status == FIN || l_wps[l_td].status == WAI );
+      EDGE_CHECK( l_wps[l_wo].status == FIN || l_wps[l_wo].status == WAI );
     }
     else {
       EDGE_LOG_FATAL << "status change not allowed";
     }
 
     // set status
-    l_wps[l_td].status = i_status;
+    l_wps[l_wo].status = i_status;
   }
 }
 
@@ -205,37 +203,39 @@ void edge::parallel::Shared::resetStatus( t_status i_status ) {
     volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
     // iterate over all workers
-    for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
+    for( int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
       // set status
-      l_wps[l_td].status = i_status;
+      l_wps[l_wo].status = i_status;
     }
   }
 }
 
 void edge::parallel::Shared::setStatusTd(  t_status     i_status,
                                            unsigned int i_id ) {
+  int l_worker = worker( g_thread );
+
   // flush for a consistent view
 #ifdef PP_USE_OMP
 #pragma omp flush
 #endif
 
   // check that the calling thread is a worker
-  EDGE_CHECK( g_thread < m_nWrks );
+  EDGE_CHECK( l_worker >= 0 );
 
   std::size_t l_rg = getWrkRgn( i_id );
 
-  volatile t_status *l_st = &m_wrkRgns[l_rg].wrkPkgs[g_thread].status;
+  volatile t_status *l_st = &m_wrkRgns[l_rg].wrkPkgs[l_worker].status;
 
   // check that the previous status matches
   if( i_status == IPR ) {
     EDGE_CHECK( *l_st == RDY );
     // start the timer for this work package, now having status "in progress"
-    m_balancing.startClock( l_rg, g_thread );
+    m_balancing.startClock( l_rg, l_worker );
   }
   else if( i_status == FIN ) {
     EDGE_CHECK( *l_st == IPR );
     // stop the timer for this work package, now having status "finished"
-    m_balancing.stopClock( l_rg, g_thread );
+    m_balancing.stopClock( l_rg, l_worker );
   }
   else {
     EDGE_LOG_FATAL << "previous status not matching: " << i_status;
@@ -253,8 +253,8 @@ bool edge::parallel::Shared::getStatusAll( t_status     i_status,
   volatile WrkPkg* l_wps = m_wrkRgns[l_rg].wrkPkgs.data();
 
   // iterate over all workers and check if we are finished
-  for( int l_td = 0; l_td < m_nWrks; l_td++ ) {
-    if(l_wps[l_td].status != i_status) return false;
+  for( int l_wo = 0; l_wo < m_nWrks; l_wo++ ) {
+    if(l_wps[l_wo].status != i_status) return false;
   }
 
 #ifdef PP_USE_OMP

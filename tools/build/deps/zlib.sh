@@ -6,7 +6,7 @@ set -euo pipefail
 # @author Alexander Breuer (breuer AT mytum.de)
 #
 # @section LICENSE
-# Copyright (c) 2021, Friedrich Schiller University Jena
+# Copyright (c) 2021-2022, Friedrich Schiller University Jena
 # Copyright (c) 2019, Alexander Breuer
 # All rights reserved.
 #
@@ -25,8 +25,8 @@ set -euo pipefail
 ##
 set -euo pipefail
 
-ZLIB_LINK=https://www.zlib.net/zlib-1.2.11.tar.xz
-ZLIB_SHA256=4ff941449631ace0d4d203e3483be9dbc9da454084111f97ea0a2114e19bf066
+ZLIB_LINK=https://www.zlib.net/zlib-1.2.12.tar.xz
+ZLIB_SHA256=7db46b8d7726232a621befaab4a1c870f00a90805511c0e0090441dac57def18
 
 help() {
 cat << EOF

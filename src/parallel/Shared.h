@@ -1,9 +1,10 @@
 /**
  * @file This file is part of EDGE.
  *
- * @author Alexander Breuer (anbreuer AT ucsd.edu)
+ * @author Alexander Breuer (alex.breuer AT uni-jena.de)
  *
  * @section LICENSE
+ * Copyright (c) 2021, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2015-2018, Regents of the University of California
  * All rights reserved.
@@ -42,6 +43,8 @@ class edge::parallel::Shared {
   public:
     //! number of workers
     int m_nWrks;
+    //! worker offset w.r.t. thread id
+    int m_wrkOff;
 
     // per-thread status of a work package
     typedef enum {
@@ -95,6 +98,16 @@ class edge::parallel::Shared {
      **/
     std::size_t getWrkRgn( unsigned int i_id );
 
+    /**
+     * Derives the id of the worker from the thread id.
+     *
+     * @param i_thread thread id.
+     * @return worker id, negative means that this isn't a worker.
+     **/
+    int worker( int i_thread ) {
+      return i_thread += m_wrkOff;
+    }
+
   public:
     /**
      * Prints the shared memory config.
@@ -117,20 +130,13 @@ class edge::parallel::Shared {
 
     /**
      * Initialization of the shared memory parallelization.
-     * Worker threads will be assigned to threads, 0..(nWrks-1).
+     * If separateWrks is set, thread 0 will be used for exclusively scheduling and MPI.
      *
      * Remark: This should be called outside of the omp-parallel region.
      *
-     * @param i_nWrk snumber of of worker-threads. If 0 the class decides.
+     * @param i_separateWrks if true, the workers will be isolated from the scheduling/comm thread
      **/
-    void init( unsigned int i_nWrks = 0 );
-
-    /**
-     * Determine if the thread is the lead of the communication threads
-     *
-     * @return true if the thread is the lead of the communication threads, false otherwise.
-     **/
-    bool isCommLead();
+    void init( bool i_separateWrks = true );
 
     /**
      * Determines if the calling thread is a worker.
@@ -291,21 +297,21 @@ class edge::parallel::Shared {
     /**
      * @brief Performs NUMA-aware zero-initialization of the given array through first-touch.
      *        Should be called within an OpenMP-parallel region from all threads.
-     *        The inits of the workers are done as OpenMP-critical (on by one).
+     *        The inits of the workers are done as OpenMP-critical (one by one).
      *        After all init an OpenMP-barrier is called.
      *
-     * @param i_nWrks number of workers.
      * @param i_nEns number of entries in the given array, which will be split equally among the available workers. Remainders will be added to the first workers.
      * @param o_arr array, which will be initialized.
      *
      * @paramt TL_T_EN type of the array entries.
      */
     template< typename TL_T_EN >
-    static void numaInit( unsigned int        i_nWrks,
-                          std::size_t const   i_nEns,
-                          TL_T_EN           * o_arr ) {
-      // return early, if if this is not a worker.
-      if( g_thread >= int(i_nWrks) ) {
+    void numaInit( std::size_t const   i_nEns,
+                   TL_T_EN           * o_arr ) {
+      int l_worker = worker( g_thread );
+
+      // return early, if this is not a worker.
+      if( l_worker < 0 ) {
         // wait for other threads
 #ifdef PP_USE_OMP
 #pragma omp barrier
@@ -315,17 +321,17 @@ class edge::parallel::Shared {
       }
 
       // split among the workers
-      std::size_t l_split = i_nEns / std::size_t(i_nWrks);
-      std::size_t l_rem   = i_nEns % std::size_t(i_nWrks);
+      std::size_t l_split = i_nEns / std::size_t(m_nWrks);
+      std::size_t l_rem   = i_nEns % std::size_t(m_nWrks);
 
       // derive start position of the calling worker in the array
       TL_T_EN * l_arr = o_arr;
-      l_arr += l_split * (std::size_t) g_thread;
-      if( l_rem > 0 ) l_arr += std::min( l_rem, (std::size_t) g_thread );
+      l_arr += l_split * (std::size_t) l_worker;
+      if( l_rem > 0 ) l_arr += std::min( l_rem, (std::size_t) l_worker );
 
       // derive number of entries under control of the worker
       std::size_t l_nEns = l_split;
-      if( (std::size_t) g_thread < l_rem ) l_nEns++;
+      if( (std::size_t) l_worker < l_rem ) l_nEns++;
 
       // perform NUMA-aware init
 #ifdef PP_USE_OMP
@@ -356,12 +362,11 @@ class edge::parallel::Shared {
      */
     template< typename TL_T_LID,
               typename TL_T_VA >
-    static void numaInit( unsigned short         i_nTgs,
-                          TL_T_LID       const * i_nTgEnsIn,
-                          TL_T_LID       const * i_nTgEnsSe,
-                          unsigned int           i_nWrks,
-                          std::size_t    const   i_nVasPerEn,
-                          TL_T_VA              * o_arr ) {
+    void numaInit( unsigned short         i_nTgs,
+                   TL_T_LID       const * i_nTgEnsIn,
+                   TL_T_LID       const * i_nTgEnsSe,
+                   std::size_t    const   i_nVasPerEn,
+                   TL_T_VA              * o_arr ) {
       // offset
       std::size_t l_off = 0;
 
@@ -370,8 +375,7 @@ class edge::parallel::Shared {
         std::size_t l_nVas = i_nTgEnsIn[l_tg];
         l_nVas *= i_nVasPerEn;
 
-        edge::parallel::Shared::numaInit( i_nWrks,
-                                          l_nVas,
+        edge::parallel::Shared::numaInit( l_nVas,
                                           o_arr+l_off );
         l_off += l_nVas;
       }
@@ -381,8 +385,7 @@ class edge::parallel::Shared {
         std::size_t l_nVas = i_nTgEnsSe[l_tg];
         l_nVas *= i_nVasPerEn;
 
-        edge::parallel::Shared::numaInit( i_nWrks,
-                                          l_nVas,
+        edge::parallel::Shared::numaInit( l_nVas,
                                           o_arr+l_off );
         l_off += l_nVas;
       }

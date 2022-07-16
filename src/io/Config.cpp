@@ -128,6 +128,8 @@ void edge::io::Config::printBuild( pugi::xml_node i_build ) {
 void edge::io::Config::printConfig() {
   EDGE_LOG_INFO << "runtime config:";
 
+  EDGE_LOG_INFO << "  parallelization:";
+  EDGE_LOG_INFO << "    separate_workers: " << m_separateWrks;
   EDGE_LOG_INFO << "  synchronization:";
   EDGE_LOG_INFO << "    max_int (possibly using default settings): " << m_syncMaxInt;
   EDGE_LOG_INFO << "  mesh:";
@@ -229,20 +231,6 @@ edge::io::Config::Config( std::string i_xmlPath ):
    * read mesh parameters
    */
   pugi::xml_node l_mesh = m_doc.child("edge").child("cfr").child("mesh");
-
-#ifdef PUGIXML_HAS_LONG_LONG
-  m_nElementsX = l_mesh.child("n_elements").child("x").text().as_ullong();
-  m_nElementsY = l_mesh.child("n_elements").child("y").text().as_ullong();
-  m_nElementsZ = l_mesh.child("n_elements").child("z").text().as_ullong();
-#else
-  m_nElementsX = l_mesh.child("n_elements").child("x").text().as_uint();
-  m_nElementsY = l_mesh.child("n_elements").child("y").text().as_uint();
-  m_nElementsZ = l_mesh.child("n_elements").child("z").text().as_uint();
-#endif
-
-  m_sizeX = l_mesh.child("size").child("x").text().as_double();
-  m_sizeY = l_mesh.child("size").child("y").text().as_double();
-  m_sizeZ = l_mesh.child("size").child("z").text().as_double();
 
   m_meshInBase = l_mesh.child("in").child("base").text().as_string();
   m_meshInExt = l_mesh.child("in").child("extension").text().as_string();
@@ -399,6 +387,20 @@ edge::io::Config::Config( std::string i_xmlPath ):
     m_syncMaxInt = std::min( 0.05*m_endTime, m_waveFieldInt );
   }
   EDGE_CHECK_GT( m_syncMaxInt, TOL.TIME );
+
+  /*
+   * read shared memory parallelization.
+   */
+  if( m_doc.child("edge").find_child(
+      []( pugi::xml_node i_node ){ return std::string(i_node.name()) == "parallelization";} )
+      &&
+      m_doc.child("edge").child("parallelization").find_child(
+      []( pugi::xml_node i_node ){ return std::string(i_node.name()) == "separate_workers";} ) ) {
+    m_separateWrks = m_doc.child("edge").child("parallelization").child("separate_workers").text().as_int();
+  }
+  else {
+    m_separateWrks = 1;
+  }
 
   // print config
   printConfig();

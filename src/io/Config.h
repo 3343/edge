@@ -174,26 +174,13 @@ class edge::io::Config {
     pugi::xml_document m_doc;
 
     /*
+     * Parallelization parameters
+     */
+    int_el m_separateWrks;
+
+    /*
      * Mesh parameters
      */
-    //! elements in x-dimension (regular only)
-    int_el m_nElementsX;
-
-    //! elements in y-dimension (regular only)
-    int_el m_nElementsY;
-
-    //! elements in z-dimension (regular only)
-    int_el m_nElementsZ;
-
-    //! size in x-dimension (regular only)
-    real_mesh m_sizeX;
-
-    //! size in y-dimension (regular only)
-    real_mesh m_sizeY;
-
-    //! size in z-dimension (regular only)
-    real_mesh m_sizeZ;
-
     //! id of periodic boundaries (unstructured only)
     int m_periodic;
 
