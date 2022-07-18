@@ -28,19 +28,23 @@ GKLIB_SHA256=ce9d4b7079f115515d45343a791aae826bd4ab1e33040c6e28fa9418b739fc83
 
 help() {
 cat << EOF
-Usage: ${0##*/} [-h] [-o INSTALL_DIR -j N_BUILD_PROCS]
+Usage: ${0##*/} [-h] [-p EDGE_PATCH_PATH -o INSTALL_DIR -j N_BUILD_PROCS]
 Installs METIS.
      -h This help message.
+     -p EDGE_PATCH_PATH patch-file specific to EDGE.
      -o INSTALL_DIR Absolute path of the installation directory, will be created if missing.
      -j N_BUILD_PROCS (optional) number of build processes, defaults to one.
 EOF
 }
 
-while getopts "ho:j:" opt; do
+while getopts "hp:o:j:" opt; do
   case "$opt" in
     h)
       help
       exit 0
+      ;;
+    p)
+      EDGE_PATCH_PATH=$OPTARG
       ;;
     o)
       INSTALL_DIR=$OPTARG
@@ -55,6 +59,13 @@ while getopts "ho:j:" opt; do
     esac
 done
 shift "$((OPTIND-1))"
+
+if [[ ${EDGE_PATCH_PATH:0:1} != "/" ]]
+then
+  echo "Error patch is required or not absolute: ${EDGE_PATCH_PATH}"
+  help >&2
+  exit 1
+fi
 
 if [[ ${INSTALL_DIR:0:1} != "/" ]]
 then
@@ -84,6 +95,12 @@ mkdir gklib
 unzip gklib.zip -d gklib
 mv gklib/GKlib-*/* gklib
 cd gklib
+
+# patch if requested
+if [[ ${EDGE_PATCH_PATH} != "" ]]
+then
+  patch -p1 < ${EDGE_PATCH_PATH}
+fi
 
 # install
 make config prefix=${INSTALL_DIR}
