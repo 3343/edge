@@ -81,7 +81,8 @@ then
 fi
 
 mkdir gklib
-bsdtar -xf gklib.zip -C gklib --strip-components=1
+unzip gklib.zip -d gklib
+mv gklib/GKlib-*/* gklib
 cd gklib
 
 # install

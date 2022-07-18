@@ -86,7 +86,8 @@ then
 fi
 
 mkdir metis
-bsdtar -xf metis.zip -C metis --strip-components=1
+unzip metis.zip -d metis
+mv metis/METIS-*/* metis
 cd metis
 
 # install
