@@ -247,19 +247,31 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         // compute the derivatives
         for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
           // multiply with transposed stiffness matrices and inverse mass matrix
-          m_mm.m_kernels[0][l_re-1]( m_stiffT[l_re-1][l_di],
-                                     o_derE[l_de-1][0][0],
-                                     o_scratch[0][0] );
+          m_mm.execute( 0, l_re-1,
+                        m_stiffT[l_re-1][l_di],
+                        o_derE[l_de-1][0][0],
+                        o_scratch[0][0],
+                        nullptr,
+                        nullptr,
+                        nullptr );
           // multiply with star matrices
-          m_mm.m_kernels[1][l_re-1]( o_scratch[0][0],
-                                     i_starE[l_di],
-                                     o_derE[l_de][0][0] );
+          m_mm.execute( 1, l_re-1,
+                        o_scratch[0][0],
+                        i_starE[l_di],
+                        o_derE[l_de][0][0],
+                        nullptr,
+                        nullptr,
+                        nullptr );
 
           if( TL_N_RMS > 0 ) {
             // multiply with anelastic star matrices
-            m_mm.m_kernels[2][0]( o_scratch[TL_N_QTS_M][0],
-                                  i_starA[l_di],
-                                  l_scratch[0] );
+            m_mm.execute( 2, 0,
+                          o_scratch[TL_N_QTS_M][0],
+                          i_starA[l_di],
+                          l_scratch[0],
+                          nullptr,
+                          nullptr,
+                          nullptr );
           }
         }
 
@@ -268,9 +280,13 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
           // add contribution of source matrix
-          m_mm.m_kernels[2][1]( o_derA[l_rm][l_de-1][0][0],
-                                i_srcA[l_rm],
-                                o_derE[l_de][0][0] );
+          m_mm.execute( 2, 1,
+                        o_derA[l_rm][l_de-1][0][0],
+                        i_srcA[l_rm],
+                        o_derE[l_de][0][0],
+                        nullptr,
+                        nullptr,
+                        nullptr );
 
           // multiply with relaxation frequency and add
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {

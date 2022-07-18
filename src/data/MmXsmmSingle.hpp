@@ -53,11 +53,11 @@ class edge::data::MmXsmmSingle< float > {
   private:
     //! gemm descriptors of libxsmm
     std::vector< std::vector< const libxsmm_gemm_descriptor* > > m_descs;
- 
-  public:
     //! generated kernels of libxsmm
-    std::vector< std::vector< libxsmm_smmfunction > > m_kernels;
- 
+    std::vector< std::vector< libxsmm_gemmfunction > > m_kernels;
+  
+  public:
+
     /**
      * Adds a libxsmm dense GEMM kernel
      * Remark: LIBXSMM is col-major and so is this call,
@@ -99,17 +99,39 @@ class edge::data::MmXsmmSingle< float > {
       // add description
       libxsmm_descriptor_blob l_xgemmBlob;
       const libxsmm_gemm_descriptor* l_desc = 0;
-      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_GEMM_PRECISION_F32,
+      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+      l_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemmBlob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
         i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
 
       m_descs[i_group].push_back( l_desc );
        
       // generate and store function for this kernels
-      m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).smm );
+      m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).gemm );
  
       // check that we generated a kernel
       EDGE_CHECK_NE( m_kernels[i_group].back(), 0 );
+    }
+
+    void execute( const unsigned short i_group,
+                  const unsigned short i_entry, 
+                  const float*         i_a,
+                  const float*         i_b,
+                        float*         io_c,
+                  const float*         i_pf_a,
+                  const float*         i_pf_b,
+                  const float*         i_pf_c ) const {
+      // @TODO we can optimize by putting this into the constructor
+      libxsmm_gemm_param gemm_param;
+      memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+
+      gemm_param.a.primary    = (void*)i_a;
+      gemm_param.b.primary    = (void*)i_b;
+      gemm_param.c.primary    = (void*)io_c;
+      gemm_param.a.quaternary = (void*)i_pf_a;
+      gemm_param.b.quaternary = (void*)i_pf_b;
+      gemm_param.c.quaternary = (void*)i_pf_c;
+
+      m_kernels[i_group][i_entry]( &gemm_param );
     }
 };
 
@@ -121,11 +143,11 @@ class edge::data::MmXsmmSingle< double > {
   private:
     //! gemm descriptors of libxsmm
     std::vector< std::vector< const libxsmm_gemm_descriptor* > > m_descs;
-  
-  public:
     //! generated kernels of libxsmm
-    std::vector< std::vector< libxsmm_dmmfunction > > m_kernels;
-  
+    std::vector< std::vector< libxsmm_gemmfunction > > m_kernels;
+   
+  public:
+ 
     /**
      * Adds a libxsmm dense GEMM kernel
      * Remark: LIBXSMM is col-major and so is this call,
@@ -167,17 +189,39 @@ class edge::data::MmXsmmSingle< double > {
       // add description
       libxsmm_descriptor_blob l_xgemmBlob;
       const libxsmm_gemm_descriptor* l_desc = 0;
-      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_GEMM_PRECISION_F64,
+      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+      l_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemmBlob, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
         i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
 
       m_descs[i_group].push_back( l_desc );
         
       // generate and store function for this kernels
-      m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).dmm );
+      m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).gemm );
   
       // check that we generated a kernel
       EDGE_CHECK_NE( m_kernels[i_group].back(), 0 );
+    }
+
+    void execute( const unsigned short i_group,
+                  const unsigned short i_entry, 
+                  const double*        i_a,
+                  const double*        i_b,
+                        double*        io_c,
+                  const double*        i_pf_a,
+                  const double*        i_pf_b,
+                  const double*        i_pf_c ) const {
+      // @TODO we can optimize by putting this into the constructor
+      libxsmm_gemm_param gemm_param;
+      memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+
+      gemm_param.a.primary    = (void*)i_a;
+      gemm_param.b.primary    = (void*)i_b;
+      gemm_param.c.primary    = (void*)io_c;
+      gemm_param.a.quaternary = (void*)i_pf_a;
+      gemm_param.b.quaternary = (void*)i_pf_b;
+      gemm_param.c.quaternary = (void*)i_pf_c;
+
+      m_kernels[i_group][i_entry]( &gemm_param );
     }
 };
 #endif

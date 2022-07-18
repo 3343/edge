@@ -196,28 +196,44 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
         // stiffness and inverse mass matrix
-        m_mm.m_kernels[0][0]( m_stiff[l_di],
-                              i_tDofsE[0][0],
-                              o_scratch[0][0] );
+        m_mm.execute( 0, 0,
+                      m_stiff[l_di],
+                      i_tDofsE[0][0],
+                      o_scratch[0][0],
+                      nullptr,
+                      nullptr,
+                      nullptr );
 
         // star matrix
-        m_mm.m_kernels[0][1]( o_scratch[0][0],
-                              i_starE[l_di],
-                              io_dofsE[0][0] );
+        m_mm.execute( 0, 1, 
+                      o_scratch[0][0],
+                      i_starE[l_di],
+                      io_dofsE[0][0],
+                      nullptr,
+                      nullptr,
+                      nullptr );
 
         if( TL_N_RMS > 0 ) {
           // anelastic star matrix
-          m_mm.m_kernels[1][0]( o_scratch[TL_N_QTS_M][0],
-                                i_starA[l_di],
-                                l_scratch[0][0] );
+          m_mm.execute( 1, 0,
+                        o_scratch[TL_N_QTS_M][0],
+                        i_starA[l_di],
+                        l_scratch[0][0],
+                        nullptr,
+                        nullptr,
+                        nullptr );
         }
       }
 
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         // add contribution of source matrix
-        m_mm.m_kernels[1][1]( i_tDofsA[l_rm][0][0],
-                              i_srcA[l_rm],
-                              io_dofsE[0][0] );
+        m_mm.execute( 1, 1,
+                      i_tDofsA[l_rm][0][0],
+                      i_srcA[l_rm],
+                      io_dofsE[0][0],
+                      nullptr,
+                      nullptr,
+                      nullptr );
 
         // multiply with relaxation frequency and add
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
