@@ -31,8 +31,10 @@ steps:
       - ./tools/build/deps/hdf5.sh -z $(pwd)/tools/edge_v/deps -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- Gmsh"
       - ./tools/build/deps/gmsh.sh -p $(pwd)/tools/gmsh -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - echo "--- GKlib"
+      - ./tools/build/deps/gklib.sh -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- METIS"
-      - ./tools/build/deps/metis.sh -p $(pwd)/tools/build/deps/metis.patch -o $(pwd)/tools/edge_v/deps -j ${EDGE_N_BUILD_PROCS}
+      - ./tools/build/deps/metis.sh -g $(pwd)/deps -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
 
       - echo "--- EDGE-V"
       - cd tools/edge_v
