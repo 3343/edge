@@ -34,4 +34,17 @@ index 8584820..508a4a2 100644
 +foreach(prog strings gksort fis gkrw gkgraph csrcnv grKx m2mnbrs cmpnbrs splatt2svd)
    target_link_libraries(${prog} GKlib)
  endforeach(prog)
+
+diff --git a/Makefile b/Makefile
+index d3139e6..0c7cf13 100644
+--- a/Makefile
++++ b/Makefile
+@@ -20,7 +20,7 @@ systype = $(shell uname -s)
+ BUILDDIR = build/$(systype)-$(cputype)
  
+ # Process configuration options.
+-CONFIG_FLAGS = -DCMAKE_VERBOSE_MAKEFILE=1
++CONFIG_FLAGS = -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_C_FLAGS=-D_POSIX_C_SOURCE=199309L
+ ifneq ($(gdb), not-set)
+     CONFIG_FLAGS += -DGDB=$(gdb)
+ endif
