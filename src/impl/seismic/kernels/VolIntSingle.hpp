@@ -30,6 +30,8 @@
 #include "VolInt.hpp"
 #include "dg/Basis.h"
 #include "data/MmXsmmSingle.hpp"
+#include "data/UnaryXsmmSingle.hpp"
+#include "data/BinaryXsmmSingle.hpp"
 
 namespace edge {
   namespace seismic {
@@ -84,6 +86,12 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
+
+    //! unary kernels
+    edge::data::UnaryXsmmSingle< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmmSingle< TL_T_REAL > b_binary;
 
     //! pointers to the stiffness matrices
     TL_T_REAL *m_stiff[TL_N_DIS] = {};
