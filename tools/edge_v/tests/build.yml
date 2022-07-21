@@ -34,7 +34,7 @@ steps:
       - echo "--- GKlib"
       - ./tools/build/deps/gklib.sh -p $(pwd)/tools/build/deps/gklib.patch -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
       - echo "--- METIS"
-      - ./tools/build/deps/gklib.sh -p $(pwd)/tools/build/deps/gklib.patch -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
+      - ./tools/build/deps/metis.sh -g $(pwd)/deps -o $(pwd)/deps -j ${EDGE_N_BUILD_PROCS}
 
       - echo "--- EDGE-V"
       - cd tools/edge_v
