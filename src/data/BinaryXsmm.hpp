@@ -23,77 +23,36 @@
  * Data structures of the non-fused LIBXSMM, matrix-matrix multiplication kernels.
  **/
 
-#ifndef EDGE_DATA_UNARY_XSMM_SINGLE_HPP
-#define EDGE_DATA_UNARY_XSMM_SINGLE_HPP
+#ifndef EDGE_DATA_BINARY_XSMM_HPP
+#define EDGE_DATA_BINARY_XSMM_HPP
  
 #include <vector>
 #include "constants.hpp"
 #include "io/logging.h"
+#include "XsmmUtils.hpp"
  
 #include <libxsmm.h>
  
 namespace edge {
   namespace data {
     template< typename TL_T_REAL >
-    class UnaryXsmmSingle;
-
-    //template<>
-    //class UnaryXsmmSingle< float >;
-
-    //template<>
-    //class UnaryXsmmSingle< double >;
+    class BinaryXsmm;
   }
 }
  
-template <typename T>
-inline libxsmm_datatype XsmmDtype();
-template <>
-inline libxsmm_datatype XsmmDtype<int64_t>() {
-  return LIBXSMM_DATATYPE_I64;
-}
-template <>
-inline libxsmm_datatype XsmmDtype<int32_t>() {
-  return LIBXSMM_DATATYPE_I32;
-}
-template <>
-inline libxsmm_datatype XsmmDtype<float>() {
-  return LIBXSMM_DATATYPE_F32;
-}
-template <>
-inline libxsmm_datatype XsmmDtype<double>() {
-  return LIBXSMM_DATATYPE_F64;
-}
-/*
-template <>
-inline libxsmm_datatype XsmmDtype<bfloat16>() {
-  return LIBXSMM_DATATYPE_BF16;
-}
-template <>
-inline libxsmm_datatype XsmmDtype<half>() {
-  return LIBXSMM_DATATYPE_F16;
-}
-*/
-
 /**
  * Holds LIBXSMM gemm kernels for non-fused, single precision simulations.
  **/
 template<typename TL_T_REAL>
-class edge::data::UnaryXsmmSingle {
+class edge::data::BinaryXsmm {
   private:
-    //! generated unary kernels of libxsmm
-    std::vector< std::vector< libxsmm_meltwfunction_unary > > u_kernels;
-
-    libxsmm_meltw_unary_param unary_param;
+    //! generated binary kernels of libxsmm
+    std::vector< std::vector< libxsmm_meltwfunction_binary > > b_kernels;
 
   public:
 
-    UnaryXsmmSingle() {
-      memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
-    }
-
-
     /**
-     * Adds a libxsmm unary kernel
+     * Adds a libxsmm binary kernel
      * Remark: LIBXSMM is col-major and so is this call,
      * for row-major usage please flip A and B
      *
@@ -112,80 +71,51 @@ class edge::data::UnaryXsmmSingle {
     void add( unsigned short             i_group,
               unsigned int               i_m,
               unsigned int               i_n,
-              unsigned int               i_ldi,
+              unsigned int               i_ldi0,
+              unsigned int               i_ldi1,
               unsigned int               i_ldo,
-              libxsmm_meltw_unary_type   type,
+              libxsmm_meltw_binary_type   type,
               libxsmm_bitfield           flags) {
-      EDGE_VLOG(1) << "  adding, X precision XSMM-kernel unary #" << u_kernels.size()
+      EDGE_VLOG(1) << "  adding, X precision XSMM-kernel binary #" << b_kernels.size()
                    << " M=" << i_m << " N=" << i_n
-                   << " ldi=" << i_ldi << " ldo=" << i_ldo
+                   << " ldi0=" << i_ldi0 << " ldi1=" << i_ldi1 << " ldo=" << i_ldo
                    << " flags=" << flags;
 
       // add kernel groups, if required
-      if( i_group >= u_kernels.size() ) {
-        u_kernels.resize( i_group+1 );
+      if( i_group >= b_kernels.size() ) {
+        b_kernels.resize( i_group+1 );
       }
 
-      libxsmm_datatype dtype_in   = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype dtype_in0  = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype dtype_in1  = XsmmDtype<TL_T_REAL>();
       libxsmm_datatype dtype_out  = XsmmDtype<TL_T_REAL>();
       libxsmm_datatype dtype_comp = XsmmDtype<TL_T_REAL>();
 
-      libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(i_m, i_n, i_ldi, i_ldo, dtype_in, dtype_out, dtype_comp);
+      libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape(i_m, i_n, i_ldi0, i_ldi1, i_ldo, dtype_in0, dtype_in1, dtype_out, dtype_comp);
 
       // generate and store function for this kernels
-      u_kernels[i_group].push_back(libxsmm_dispatch_meltw_unary_v2(type, unary_shape, flags));
+      b_kernels[i_group].push_back(libxsmm_dispatch_meltw_binary_v2(type, binary_shape, flags));
 
       // check that we generated a kernel
-      EDGE_CHECK_NE( u_kernels[i_group].back(), 0 );
-    }
-
-    /* @FIXME: Could have added more of different overloads for various unary kernel calls as in PT extensions */
-    void execute( const unsigned short i_group,
-                  const unsigned short i_entry,
-                  const TL_T_REAL*     i_in,
-                        TL_T_REAL*     io_o) const {
-
-      unary_param.in.primary    = (void*)i_in;
-      unary_param.out.primary   = (void*)io_o;
-
-      u_kernels[i_group][i_entry]( &unary_param );
-    }
-
-    void execute( const unsigned short i_group,
-                  const unsigned short i_entry,
-                  const TL_T_REAL*     i_in,
-                        TL_T_REAL*     io_o0,
-                        TL_T_REAL*     io_o1) const {
-
-      unary_param.in.primary    = (void*)i_in;
-      unary_param.out.primary   = (void*)io_o0;
-      unary_param.out.secondary = (void*)io_o1;
-
-      u_kernels[i_group][i_entry]( &unary_param );
+      EDGE_CHECK_NE( b_kernels[i_group].back(), 0 );
     }
 
     void execute( const unsigned short i_group,
                   const unsigned short i_entry,
                   const TL_T_REAL*     i_in0,
                   const TL_T_REAL*     i_in1,
-                  const TL_T_REAL*     i_in2,
-                  const TL_T_REAL*     i_op0,
-                  const TL_T_REAL*     i_op1,
-                  const TL_T_REAL*     i_op2,
-                        TL_T_REAL*     io_o0,
-                        TL_T_REAL*     io_o1) const {
+                        TL_T_REAL*     io_o) const {
 
-      unary_param.in.primary    = (void*)i_in0;
-      unary_param.in.secondary  = (void*)i_in1;
-      unary_param.in.tertiary   = (void*)i_in2;
-      unary_param.op.primary    = (void*)i_op0;
-      unary_param.op.secondary  = (void*)i_op1;
-      unary_param.op.tertiary   = (void*)i_op2;
-      unary_param.out.primary   = (void*)io_o0;
-      unary_param.out.secondary = (void*)io_o1;
+      libxsmm_meltw_binary_param binary_param;
+      memset( &binary_param, 0, sizeof(libxsmm_meltw_binary_param) );
 
-      u_kernels[i_group][i_entry]( &unary_param );
+      binary_param.in0.primary = (void*)i_in0;
+      binary_param.in1.primary = (void*)i_in1;
+      binary_param.out.primary = (void*)io_o;
+
+      b_kernels[i_group][i_entry]( &binary_param );
     }
+
 };
 #endif
  

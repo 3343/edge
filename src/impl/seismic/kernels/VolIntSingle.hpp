@@ -30,8 +30,10 @@
 #include "VolInt.hpp"
 #include "dg/Basis.h"
 #include "data/MmXsmmSingle.hpp"
-#include "data/UnaryXsmmSingle.hpp"
-#include "data/BinaryXsmmSingle.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+
+#define ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -88,10 +90,10 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
 
     //! unary kernels
-    edge::data::UnaryXsmmSingle< TL_T_REAL > u_unary;
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
 
     //! binary kernels
-    edge::data::BinaryXsmmSingle< TL_T_REAL > b_binary;
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
 
     //! pointers to the stiffness matrices
     TL_T_REAL *m_stiff[TL_N_DIS] = {};
@@ -148,7 +150,14 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                   static_cast<TL_T_REAL>(1.0), // alpha
                   static_cast<TL_T_REAL>(1.0), // beta
                   LIBXSMM_GEMM_PREFETCH_NONE );
-        }
+
+      }
+
+#ifdef ELTWISE_TPP
+      // zeroing the scratch
+      //printf("dimensions for u_unary: %d %d %d %d \n", TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS);
+      u_unary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS /* ldi, ldo */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+#endif
     }
 
   public:
@@ -197,9 +206,32 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
       // buffer for anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][1];
+#ifdef ELTWISE_TPP
+      //u_unary.execute (0, 0, &l_scratch[0][0][0], &l_scratch[0][0][0]);
+      u_unary.execute (0, 0, (TL_T_REAL*)&l_scratch[0][0][0]);
+//      printf("size of type= %lu", sizeof(TL_T_REAL));
+/*
+      libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(TL_N_MDS, TL_N_QTS_M, TL_N_MDS, TL_N_MDS, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+
+      libxsmm_meltwfunction_unary dbg = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+
+      libxsmm_meltw_unary_param unary_param;
+      memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
+      unary_param.out.primary = (void*)l_scratch;
+      dbg(&unary_param);
+*/
+#else
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
 #pragma omp simd
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) l_scratch[l_qt][l_md][0] = 0;
+#endif
+/*
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
+        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
+          if (fabs( (float)l_scratch[l_qt][l_md][0]) > 1.0e-13)
+            printf("l_scratch %p after zeroing [%d][%d] = %15.15f \n", (void*)(&l_scratch[0][0][0]), l_qt, l_md, (float)l_scratch[l_qt][l_md][0]);
+      //memset(&l_scratch[0][0][0], 0, TL_N_QTS_M * TL_N_MDS * sizeof(TL_T_REAL));
+*/
 
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
@@ -243,6 +275,9 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                       nullptr,
                       nullptr );
 
+//#ifdef ELTWISE_TPP
+//#if 0
+//#else
         // multiply with relaxation frequency and add
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
@@ -250,6 +285,7 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
             io_dofsA[l_rm][l_qt][l_md][0] += l_rfs[l_rm] * ( l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] );
           }
         }
+//#endif
       }
     }
 };
