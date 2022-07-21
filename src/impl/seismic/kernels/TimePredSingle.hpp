@@ -29,6 +29,11 @@
 
 #include "TimePred.hpp"
 #include "data/MmXsmmSingle.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -91,6 +96,15 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
 
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
+
     /**
      * Generates the matrix kernels for the transposed stiffness matrices and star matrices.
      **/
@@ -148,6 +162,38 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
                     LIBXSMM_GEMM_PREFETCH_NONE );
         }
       }
+
+#ifdef ELTWISE_TPP
+#if 0
+      // initialize zero-derivative, reset time integrated dofs
+      for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
+#pragma omp simd
+        for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+          o_derE[0][l_qt][l_md][0] = i_dofsE[l_qt][l_md][0];
+          o_tIntE[l_qt][l_md][0]   = l_scalar * i_dofsE[l_qt][l_md][0];
+        }
+      }
+#endif
+      // initialize zero-derivative, reset time integrated dofs
+      u_unary.add(0, TL_N_MDS, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS /* ldi, ldo */, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      b_binary.add(0, TL_N_MDS, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
+                    LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+#if 0
+      for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
+        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
+#pragma omp simd
+          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
+            o_derA[l_rm][0][l_qt][l_md][0] = i_dofsA[l_rm][l_qt][l_md][0];
+            o_tIntA[l_rm][l_qt][l_md][0] = l_scalar * i_dofsA[l_rm][l_qt][l_md][0];
+          }
+        }
+      }
+#endif
+
+      // anelastic: init zero-derivative, reset tDofs
+      u_unary.add(1,  TL_N_MDS * TL_N_QTS_M, TL_N_RMS /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      b_binary.add(1, TL_N_MDS * TL_N_QTS_M, TL_N_RMS /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+#endif
     }
 
   public:
@@ -206,6 +252,12 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       TL_T_REAL l_scalar = i_dT;
 
       // initialize zero-derivative, reset time integrated dofs
+#ifdef ELTWISE_TPP
+        /* 1. o_derE[0][l_qt][l_md][0] = i_dofsE[l_qt][l_md][0] */
+        u_unary.execute(0, 0, &i_dofsE[0][0][0], &o_derE[0][0][0][0]);
+        /* 2. o_tIntE[l_qt][l_md][0]   = l_scalar * i_dofsE[l_qt][l_md][0] */
+        b_binary.execute(0, 0, &l_scalar, &i_dofsE[0][0][0], &o_tIntE[0][0][0]);
+#else
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
 #pragma omp simd
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
@@ -213,8 +265,15 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           o_tIntE[l_qt][l_md][0]   = l_scalar * i_dofsE[l_qt][l_md][0];
         }
       }
+#endif
 
       // anelastic: init zero-derivative, reset tDofs
+#ifdef ELTWISE_TPP
+        /* 1. o_derA[l_rm][0][l_qt][l_md][0] = i_dofsA[l_rm][l_qt][l_md][0]; */
+        u_unary.execute(1, 0, &i_dofsA[0][0][0][0], &o_derA[0][0][0][0][0]);
+        /* 2. o_tIntA[l_rm][l_qt][l_md][0] = l_scalar * i_dofsA[l_rm][l_qt][l_md][0] */
+        b_binary.execute(1, 0, &l_scalar, &i_dofsA[0][0][0][0], &o_tIntA[0][0][0][0]);
+#else
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
@@ -224,6 +283,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           }
         }
       }
+#endif
 
       // iterate over time derivatives
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {

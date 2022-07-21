@@ -100,6 +100,14 @@ class edge::data::BinaryXsmm {
       EDGE_CHECK_NE( b_kernels[i_group].back(), 0 );
     }
 
+    void add( unsigned short             i_group,
+              unsigned int               i_m,
+              unsigned int               i_n,
+              libxsmm_meltw_binary_type  type,
+              libxsmm_bitfield           flags) {
+      add(i_group, i_m, i_n, i_m, i_m, i_m, type, flags);
+    }
+
     void execute( const unsigned short i_group,
                   const unsigned short i_entry,
                   const TL_T_REAL*     i_in0,

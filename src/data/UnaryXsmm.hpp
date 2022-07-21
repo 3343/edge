@@ -100,6 +100,14 @@ class edge::data::UnaryXsmm {
       EDGE_CHECK_NE( u_kernels[i_group].back(), 0 );
     }
 
+    void add( unsigned short             i_group,
+              unsigned int               i_m,
+              unsigned int               i_n,
+              libxsmm_meltw_unary_type   type,
+              libxsmm_bitfield           flags) {
+      add(i_group, i_m, i_n, i_m, i_m, type, flags);
+    }
+
     /* @FIXME: Could have added more of different overloads for various unary kernel calls as in PT extensions */
     void execute( const unsigned short i_group,
                   const unsigned short i_entry,
