@@ -196,6 +196,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       // update time integrated dofs
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
+        //std::cout << "l_de = " << l_de << " l_nCpMds = " << l_nCpMds << " TL_N_MDS = " << TL_N_MDS << std::endl;
         b_binary.add(4, l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
                       LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
         b_binary.add(5, l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
@@ -310,8 +311,10 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         // buffer for the anelastic computations
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS];
 #ifdef ELTWISE_TPP
-        // buffer for relaxation computations and updates for time integrated dofs
+        // buffer for relaxation computations
         TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS];
+        // buffer for time integrated dofs
+        TL_T_REAL l_scratch3[TL_N_QTS_E][TL_N_MDS];
 #endif
 
         if( TL_N_RMS > 0 ) {
@@ -369,23 +372,21 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
                         nullptr,
                         nullptr );
 
-//#if 0
 #ifdef ELTWISE_TPP
-        /* @TODO: One could use a ternary here (but likely it is not possible right now due
-            to the missing support for TERNARY_BCAST flags outside equations) */
+          /* @TODO: One could use a ternary here (but likely it is not possible right now due
+              to the missing support for TERNARY_BCAST flags outside equations) */
 
-        /* 1. l_scratch2[][] = l_scratch[l_qt][l_md] + o_derA[l_rm][l_de-1][l_qt][l_md][0] */
-        b_binary.execute(3, 0, &l_scratch[0][0], &o_derA[l_rm][l_de-1][0][0][0], &l_scratch2[0][0]);
+          /* 1. l_scratch2[][] = l_scratch[l_qt][l_md] + o_derA[l_rm][l_de-1][l_qt][l_md][0] */
+          b_binary.execute(3, 0, &l_scratch[0][0], &o_derA[l_rm][l_de-1][0][0][0], &l_scratch2[0][0]);
 
-        /* 2  o_derA[l_rm][l_de][l_qt][l_md][0] = l_rfs[l_rm] * l_scratch2[l_qt][l_md][0] */
-        b_binary.execute(3, 1, &l_rfs[l_rm], &l_scratch2[0][0], &o_derA[l_rm][l_de][0][0][0]);
+          /* 2  o_derA[l_rm][l_de][l_qt][l_md][0] = l_rfs[l_rm] * l_scratch2[l_qt][l_md][0] */
+          b_binary.execute(3, 1, &l_rfs[l_rm], &l_scratch2[0][0], &o_derA[l_rm][l_de][0][0][0]);
 
-        /* 3.1 l_scratch2 = l_scalar * o_derA[l_rm][l_de][l_qt][l_md][0] */
-        b_binary.execute(3, 2, &l_scalar, &o_derA[l_rm][l_de][0][0][0], &l_scratch2[0][0]);
-        /* 3.2 o_tIntA[l_rm][l_qt][l_md][0] += l_scratch2[l_qt][l_md][0] */
-        b_binary.execute(3, 3, &o_tIntA[l_rm][0][0][0], &l_scratch2[0][0], &o_tIntA[l_rm][0][0][0]);
+          /* 3.1 l_scratch2 = l_scalar * o_derA[l_rm][l_de][l_qt][l_md][0] */
+          b_binary.execute(3, 2, &l_scalar, &o_derA[l_rm][l_de][0][0][0], &l_scratch2[0][0]);
+          /* 3.2 o_tIntA[l_rm][l_qt][l_md][0] += l_scratch2[l_qt][l_md][0] */
+          b_binary.execute(3, 3, &o_tIntA[l_rm][0][0][0], &l_scratch2[0][0], &o_tIntA[l_rm][0][0][0]);
 #else
-//#endif
           // multiply with relaxation frequency and add
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
@@ -398,7 +399,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         }
 
         // elastic: update time integrated DOFs
-        unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
         // update time integrated dofs
 #ifdef ELTWISE_TPP
@@ -406,10 +406,12 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
             to the missing support for TERNARY_BCAST flags outside equations) */
 
         /* 1.1 l_scratch2 = l_scalar * o_derE[l_de][l_qt][l_md][0] */
-        b_binary.execute(4, l_de, &l_scalar, &o_derE[l_de][0][0][0], &l_scratch2[0][0]);
+        b_binary.execute(4, l_de-1, &l_scalar, &o_derE[l_de][0][0][0], &l_scratch3[0][0]);
+
         /* 1.2 o_tIntE[l_qt][l_md][0] += l_scratch2 */
-        b_binary.execute(5, l_de, &o_tIntE[0][0][0], &l_scratch2[0][0], &o_tIntE[0][0][0]);
+        b_binary.execute(5, l_de-1, &o_tIntE[0][0][0], &l_scratch3[0][0], &o_tIntE[0][0][0]);
 #else
+        unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
 #pragma omp simd
           for( unsigned short l_md = 0; l_md < l_nCpMds; l_md++ ) {
