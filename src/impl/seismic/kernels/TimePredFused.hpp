@@ -472,19 +472,29 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
           }
 
           // multiply with transposed stiffness matrices and inverse mass matrix
-          m_mm.m_kernels[0][(l_re-1)*(TL_N_DIS)+l_di]( o_derE[l_de-1][0][0],
-                                                       m_stiffT[l_re-1][l_di],
-                                                       o_scratch[0][0] );
+          m_mm.execute(0, (l_re-1)*(TL_N_DIS)+l_di, o_derE[l_de-1][0][0],
+                                                    m_stiffT[l_re-1][l_di],
+                                                    o_scratch[0][0] );
+          //m_mm.m_kernels[0][(l_re-1)*(TL_N_DIS)+l_di]( o_derE[l_de-1][0][0],
+          //                                             m_stiffT[l_re-1][l_di],
+          //                                             o_scratch[0][0] );
+
           // multiply with star matrices
-          m_mm.m_kernels[1][l_re-1]( i_starE[l_di],
-                                     o_scratch[0][0],
-                                     o_derE[l_de][0][0] );
+          m_mm.execute(1, l_re-1, i_starE[l_di],
+                                  o_scratch[0][0],
+                                  o_derE[l_de][0][0] );
+          //m_mm.m_kernels[1][l_re-1]( i_starE[l_di],
+          //                           o_scratch[0][0],
+          //                           o_derE[l_de][0][0] );
 
           if( TL_N_RMS > 0 ) {
             // multiply with anelastic star matrices
-            m_mm.m_kernels[2][0]( i_starA[l_di],
-                                  o_scratch[0][0],
-                                  l_scratch[0][0] );
+            m_mm.execute(2, 0, i_starA[l_di],
+                               o_scratch[0][0],
+                               l_scratch[0][0] );
+            //m_mm.m_kernels[2][0]( i_starA[l_di],
+            //                      o_scratch[0][0],
+            //                      l_scratch[0][0] );
           }
         }
 
@@ -494,9 +504,12 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         // anelastic: update derivatives and time integrated DOFs
         for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
           // add contribution of source matrix
-          m_mm.m_kernels[2][1]( i_srcA[l_rm],
-                                o_derA[l_rm][l_de-1][0][0],
-                                o_derE[l_de][0][0] );
+          m_mm.execute(2, 1, i_srcA[l_rm],
+                             o_derA[l_rm][l_de-1][0][0],
+                             o_derE[l_de][0][0] );
+          //m_mm.m_kernels[2][1]( i_srcA[l_rm],
+          //                      o_derA[l_rm][l_de-1][0][0],
+          //                      o_derE[l_de][0][0] );
 
           // multiply with relaxation frequency and add
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {

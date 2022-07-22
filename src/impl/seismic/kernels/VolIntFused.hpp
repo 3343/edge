@@ -390,39 +390,57 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
         // elastic: utilize zero-block in star matrix multiplication
         if( TL_N_RMS == 0 ) {
           // multiply with star matrix
-          m_mm.m_kernels[1][0]( i_starE[l_di],
-                                i_tDofsE[0][0],
-                                o_scratch[0][0] );
+          m_mm.execute(1, 0, i_starE[l_di],
+                             i_tDofsE[0][0],
+                             o_scratch[0][0]);
+          //m_mm.m_kernels[1][0]( i_starE[l_di],
+          //                      i_tDofsE[0][0],
+          //                      o_scratch[0][0] );
 
           // multiply with stiffness and inverse mass matrix
-          m_mm.m_kernels[0][l_di]( o_scratch[0][0],
-                                   m_stiff[l_di],
-                                   io_dofsE[0][0] );
+          m_mm.execute(0, l_di, o_scratch[0][0],
+                                m_stiff[l_di],
+                                io_dofsE[0][0] );
+          //m_mm.m_kernels[0][l_di]( o_scratch[0][0],
+          //                         m_stiff[l_di],
+          //                         io_dofsE[0][0] );
         }
         // viscoelastic: re-use stiffness matrix multiplication
         else {
           // multiply with stiffness and inverse mass matrix
-          m_mm.m_kernels[0][l_di]( i_tDofsE[0][0],
-                                   m_stiff[l_di],
-                                   o_scratch[0][0] );
+          m_mm.execute(0, l_di, i_tDofsE[0][0],
+                                m_stiff[l_di],
+                                o_scratch[0][0] );
+          //m_mm.m_kernels[0][l_di]( i_tDofsE[0][0],
+          //                         m_stiff[l_di],
+          //                         o_scratch[0][0] );
 
           // multiply with elastic star matrix
-          m_mm.m_kernels[1][0]( i_starE[l_di],
-                                o_scratch[0][0],
-                                io_dofsE[0][0] );
+          m_mm.execute(1, 0, i_starE[l_di],
+                             o_scratch[0][0],
+                             io_dofsE[0][0] );
+          //m_mm.m_kernels[1][0]( i_starE[l_di],
+          //                      o_scratch[0][0],
+          //                      io_dofsE[0][0] );
 
           // multiply with anelastic star matrices
-          m_mm.m_kernels[2][0]( i_starA[l_di],
-                                o_scratch[0][0],
-                                l_scratch[0][0] );
+          m_mm.execute(2, 0, i_starA[l_di],
+                             o_scratch[0][0],
+                             l_scratch[0][0] );
+          //m_mm.m_kernels[2][0]( i_starA[l_di],
+          //                      o_scratch[0][0],
+          //                      l_scratch[0][0] );
         }
       }
 
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         // add contribution of source matrix
-        m_mm.m_kernels[2][1]( i_srcA[l_rm],
-                              i_tDofsA[l_rm][0][0],
-                              io_dofsE[0][0] );
+        m_mm.execute(2, 1, i_srcA[l_rm],
+                           i_tDofsA[l_rm][0][0],
+                           io_dofsE[0][0] );
+        //m_mm.m_kernels[2][1]( i_srcA[l_rm],
+        //                      i_tDofsA[l_rm][0][0],
+        //                      io_dofsE[0][0] );
 
         // multiply with relaxation frequency and add
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
