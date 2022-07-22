@@ -29,8 +29,14 @@
 
 #include "SurfInt.hpp"
 #include "dg/Basis.h"
-#include "data/MmXsmmFused.hpp"
 #include "FakeMats.hpp"
+
+#include "data/MmXsmmFused.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
 
 #ifdef PP_MMKERNEL_PERF
 #include "parallel/global.h"
@@ -107,6 +113,15 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
 
     //! matrix kernels
     edge::data::MmXsmmFused< TL_T_REAL > m_mm;
+
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
     /**
      * Gets the sparse matrix structure of the dense input matrices.
@@ -343,6 +358,11 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
                    TL_T_REAL(1.0),      // alpha
                    TL_T_REAL(0.0),      // beta
                    LIBXSMM_GEMM_PREFETCH_NONE );
+
+#ifdef ELTWISE_TPP
+        // zeroing the anelastic update
+        u_unary.add(0, TL_N_CRS, TL_N_MDS_EL * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+#endif
       }
     }
 
@@ -493,6 +513,9 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
       // anelastic update
       TL_T_REAL l_upAn[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
       if( TL_N_RMS > 0 ) {
+#ifdef ELTWISE_TPP
+        u_unary.execute (0, 0, (TL_T_REAL*)&l_upAn[0][0][0]);
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
 #pragma omp simd
@@ -501,6 +524,7 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
             }
           }
         }
+#endif
       }
 
       // iterate over faces
