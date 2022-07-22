@@ -41,7 +41,7 @@ namespace edge {
 }
  
 /**
- * Holds LIBXSMM gemm kernels for non-fused, single precision simulations.
+ * Holds LIBXSMM binary kernels.
  **/
 template<typename TL_T_REAL>
 class edge::data::BinaryXsmm {
@@ -54,47 +54,50 @@ class edge::data::BinaryXsmm {
     /**
      * Adds a libxsmm binary kernel
      * Remark: LIBXSMM is col-major and so is this call,
-     * for row-major usage please flip A and B
+     * for row-major usage please flip the shape
      *
      * @param i_group id of the kernel group.
-     * @param i_m number of rows in column-major A and C
-     * @param i_n number of columns in column-major B and C
-     * @param i_k number of columns/rows in column-major A/B
-     * @param i_ldA leading dimension of column-major A
-     * @param i_ldB leading dimension of column-major B
-     * @param i_ldC leading dimension of column-major C
-     * @param i_alpha alpha parameter (needs to be 1.0 for now)
-     * @param i_beta beta parameter (need to be 0.0/1.0 for now)
-     * @param i_prefetch prefetching strategy.
+     * @param i_m number of rows in column-major inputs/output
+     * @param i_n number of columns in column-major inputs/output
+     * @param i_ldi0 leading dimension of column-major first input
+     * @param i_ldi1 leading dimension of column-major second input
+     * @param i_ldo leading dimension of column-major output
+     * @param i_type type of the binary operation
+     * @param i_flags additional operation modifiers.
      *
      **/
+
     void add( unsigned short             i_group,
               unsigned int               i_m,
               unsigned int               i_n,
               unsigned int               i_ldi0,
               unsigned int               i_ldi1,
               unsigned int               i_ldo,
-              libxsmm_meltw_binary_type   type,
-              libxsmm_bitfield           flags) {
+              libxsmm_meltw_binary_type  i_type,
+              libxsmm_bitfield           i_flags) {
       EDGE_VLOG(1) << "  adding, X precision XSMM-kernel binary #" << b_kernels.size()
                    << " M=" << i_m << " N=" << i_n
                    << " ldi0=" << i_ldi0 << " ldi1=" << i_ldi1 << " ldo=" << i_ldo
-                   << " type=" << type << " flags=" << flags;
+                   << " type=" << i_type << " flags=" << i_flags;
 
       // add kernel groups, if required
       if( i_group >= b_kernels.size() ) {
         b_kernels.resize( i_group+1 );
       }
 
-      libxsmm_datatype dtype_in0  = XsmmDtype<TL_T_REAL>();
-      libxsmm_datatype dtype_in1  = XsmmDtype<TL_T_REAL>();
-      libxsmm_datatype dtype_out  = XsmmDtype<TL_T_REAL>();
-      libxsmm_datatype dtype_comp = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_in0  = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_in1  = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_out  = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_comp = XsmmDtype<TL_T_REAL>();
 
-      libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape(i_m, i_n, i_ldi0, i_ldi1, i_ldo, dtype_in0, dtype_in1, dtype_out, dtype_comp);
+      libxsmm_meltw_binary_shape l_binary_shape =
+          libxsmm_create_meltw_binary_shape(i_m, i_n, i_ldi0, i_ldi1, i_ldo,
+                                                l_dtype_in0, l_dtype_in1,
+                                                l_dtype_out, l_dtype_comp);
 
       // generate and store function for this kernels
-      b_kernels[i_group].push_back(libxsmm_dispatch_meltw_binary_v2(type, binary_shape, flags));
+      b_kernels[i_group].push_back(libxsmm_dispatch_meltw_binary_v2(i_type,
+                                                    l_binary_shape, i_flags));
 
       // check that we generated a kernel
       EDGE_CHECK_NE( b_kernels[i_group].back(), 0 );

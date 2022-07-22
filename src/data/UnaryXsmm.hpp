@@ -41,7 +41,7 @@ namespace edge {
 }
  
 /**
- * Holds LIBXSMM gemm kernels for non-fused, single precision simulations.
+ * Holds LIBXSMM unary kernels.
  **/
 template<typename TL_T_REAL>
 class edge::data::UnaryXsmm {
@@ -54,18 +54,15 @@ class edge::data::UnaryXsmm {
     /**
      * Adds a libxsmm unary kernel
      * Remark: LIBXSMM is col-major and so is this call,
-     * for row-major usage please flip A and B
+     * for row-major usage please flip the shape
      *
      * @param i_group id of the kernel group.
-     * @param i_m number of rows in column-major A and C
-     * @param i_n number of columns in column-major B and C
-     * @param i_k number of columns/rows in column-major A/B
-     * @param i_ldA leading dimension of column-major A
-     * @param i_ldB leading dimension of column-major B
-     * @param i_ldC leading dimension of column-major C
-     * @param i_alpha alpha parameter (needs to be 1.0 for now)
-     * @param i_beta beta parameter (need to be 0.0/1.0 for now)
-     * @param i_prefetch prefetching strategy.
+     * @param i_m number of rows in column-major input/output
+     * @param i_n number of columns in column-major input/output
+     * @param i_ldi leading dimension of column-major input
+     * @param i_ldo leading dimension of column-major output
+     * @param i_type type of the unary operation
+     * @param i_flags additional operation modifiers.
      *
      **/
     void add( unsigned short             i_group,
@@ -73,28 +70,29 @@ class edge::data::UnaryXsmm {
               unsigned int               i_n,
               unsigned int               i_ldi,
               unsigned int               i_ldo,
-              libxsmm_meltw_unary_type   type,
-              libxsmm_bitfield           flags) {
+              libxsmm_meltw_unary_type   i_type,
+              libxsmm_bitfield           i_flags) {
       EDGE_VLOG(1) << "  adding, X precision XSMM-kernel unary #" << u_kernels.size()
                    << " M=" << i_m << " N=" << i_n
                    << " ldi=" << i_ldi << " ldo=" << i_ldo
-                   << " type=" << type << " flags=" << flags;
+                   << " type=" << i_type << " flags=" << i_flags;
 
       // add kernel groups, if required
       if( i_group >= u_kernels.size() ) {
         u_kernels.resize( i_group+1 );
       }
 
-      libxsmm_datatype dtype_in   = XsmmDtype<TL_T_REAL>();
-      libxsmm_datatype dtype_out  = XsmmDtype<TL_T_REAL>();
-      libxsmm_datatype dtype_comp = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_in   = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_out  = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_comp = XsmmDtype<TL_T_REAL>();
 
-      EDGE_VLOG(1) << "  dtype = " << dtype_in;
-
-      libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(i_m, i_n, i_ldi, i_ldo, dtype_in, dtype_out, dtype_comp);
+      libxsmm_meltw_unary_shape l_unary_shape =
+          libxsmm_create_meltw_unary_shape(i_m, i_n, i_ldi, i_ldo,
+                                        l_dtype_in, l_dtype_out, l_dtype_comp);
 
       // generate and store function for this kernels
-      u_kernels[i_group].push_back(libxsmm_dispatch_meltw_unary_v2(type, unary_shape, flags));
+      u_kernels[i_group].push_back(libxsmm_dispatch_meltw_unary_v2(i_type,
+                                                      l_unary_shape, i_flags));
 
       // check that we generated a kernel
       EDGE_CHECK_NE( u_kernels[i_group].back(), 0 );
