@@ -230,8 +230,10 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
       // buffer for anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][1];
+#ifdef ELTWISE_TPP
       // buffer for relaxation computations
       TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][1];
+#endif
 
 /*
       TL_T_REAL l_dbg1[TL_N_QTS_M][TL_N_MDS][1];

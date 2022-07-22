@@ -107,6 +107,14 @@ class edge::data::TernaryXsmm {
       EDGE_CHECK_NE( t_kernels[i_group].back(), 0 );
     }
 
+    void add( unsigned short             i_group,
+              unsigned int               i_m,
+              unsigned int               i_n,
+              libxsmm_meltw_ternary_type i_type,
+              libxsmm_bitfield           i_flags) {
+        add(i_group, i_m, i_n, i_m, i_m, i_m, i_m, i_type, i_flags);
+    }
+
     void execute( const unsigned short i_group,
                   const unsigned short i_entry,
                   const TL_T_REAL*     i_in0,
