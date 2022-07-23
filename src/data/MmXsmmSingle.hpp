@@ -30,29 +30,23 @@
 #include "constants.hpp"
 #include "io/logging.h"
  
+#include "XsmmUtils.hpp"
+
 #include <libxsmm.h>
  
 namespace edge {
   namespace data {
     template< typename TL_T_REAL >
     class MmXsmmSingle;
-
-    template<>
-    class MmXsmmSingle< float >;
-
-    template<>
-    class MmXsmmSingle< double >;
   }
 }
  
 /**
- * Holds LIBXSMM kernels for non-fused, single precision simulations.
+ * Holds LIBXSMM gemm kernels for non-fused, single precision simulations.
  **/
-template<> 
-class edge::data::MmXsmmSingle< float > {
+template< typename TL_T_REAL >
+class edge::data::MmXsmmSingle {
   private:
-    //! gemm descriptors of libxsmm
-    std::vector< std::vector< const libxsmm_gemm_descriptor* > > m_descs;
     //! generated kernels of libxsmm
     std::vector< std::vector< libxsmm_gemmfunction > > m_kernels;
   
@@ -82,20 +76,20 @@ class edge::data::MmXsmmSingle< float > {
               unsigned int               i_ldA,
               unsigned int               i_ldB,
               unsigned int               i_ldC,
-              float                      i_alpha,
-              float                      i_beta,
+              TL_T_REAL                  i_alpha,
+              TL_T_REAL                  i_beta,
               libxsmm_gemm_prefetch_type i_prefetch ) {
-      EDGE_VLOG(1) << "  adding, single precision XSMM-kernel gemm #" << m_kernels.size()
+      EDGE_VLOG(1) << "  adding, X precision XSMM-kernel gemm #" << m_kernels.size()
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
                    << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                    << " alpha=" << i_alpha << " beta=" << i_beta;
  
       // add kernel groups, if required
       if( i_group >= m_kernels.size() ) {
-        m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
       }
 
+      /*
       // add description
       libxsmm_descriptor_blob l_xgemmBlob;
       const libxsmm_gemm_descriptor* l_desc = 0;
@@ -104,113 +98,37 @@ class edge::data::MmXsmmSingle< float > {
         i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
 
       m_descs[i_group].push_back( l_desc );
-       
+      */
+
+      int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+      if (i_beta == 0.0)
+        l_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
+
+      libxsmm_datatype l_dtype_A    = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_B    = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_C    = XsmmDtype<TL_T_REAL>();
+      libxsmm_datatype l_dtype_comp = XsmmDtype<TL_T_REAL>();
+
+      libxsmm_gemm_shape l_gemm_shape = libxsmm_create_gemm_shape(i_m, i_n, i_k, i_ldA, i_ldB, i_ldC,
+                                                                  l_dtype_A, l_dtype_B, l_dtype_C, l_dtype_comp);
+
       // generate and store function for this kernels
-      m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).gemm );
- 
+      //m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).gemm );
+      m_kernels[i_group].push_back( libxsmm_dispatch_gemm_v2(l_gemm_shape, l_flags, i_prefetch) );
+
       // check that we generated a kernel
       EDGE_CHECK_NE( m_kernels[i_group].back(), 0 );
     }
 
     void execute( const unsigned short i_group,
-                  const unsigned short i_entry, 
-                  const float*         i_a,
-                  const float*         i_b,
-                        float*         io_c,
-                  const float*         i_pf_a,
-                  const float*         i_pf_b,
-                  const float*         i_pf_c ) const {
-      // @TODO we can optimize by putting this into the constructor
-      libxsmm_gemm_param gemm_param;
-      memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
-
-      gemm_param.a.primary    = (void*)i_a;
-      gemm_param.b.primary    = (void*)i_b;
-      gemm_param.c.primary    = (void*)io_c;
-      gemm_param.a.quaternary = (void*)i_pf_a;
-      gemm_param.b.quaternary = (void*)i_pf_b;
-      gemm_param.c.quaternary = (void*)i_pf_c;
-
-      m_kernels[i_group][i_entry]( &gemm_param );
-    }
-};
-
-/**
- * Holds LIBXSMM kernels for non-fused, double precision simulations.
- **/
-template<>
-class edge::data::MmXsmmSingle< double > {
-  private:
-    //! gemm descriptors of libxsmm
-    std::vector< std::vector< const libxsmm_gemm_descriptor* > > m_descs;
-    //! generated kernels of libxsmm
-    std::vector< std::vector< libxsmm_gemmfunction > > m_kernels;
-   
-  public:
- 
-    /**
-     * Adds a libxsmm dense GEMM kernel
-     * Remark: LIBXSMM is col-major and so is this call,
-     * for row-major usage please flip A and B
-     *
-     * @param i_group id of the kernel group.
-     * @param i_m number of rows in column-major A and C
-     * @param i_n number of columns in column-major B and C
-     * @param i_k number of columns/rows in column-major A/B
-     * @param i_ldA leading dimension of column-major A
-     * @param i_ldB leading dimension of column-major B
-     * @param i_ldC leading dimension of column-major C
-     * @param i_alpha alpha parameter (needs to be 1.0 for now)
-     * @param i_beta beta parameter (need to be 0.0/1.0 for now)
-     * @param i_prefetch prefetching strategy.
-     *
-     **/
-    void add( unsigned short             i_group,
-              unsigned int               i_m,
-              unsigned int               i_n,
-              unsigned int               i_k,
-              unsigned int               i_ldA,
-              unsigned int               i_ldB,
-              unsigned int               i_ldC,
-              double                     i_alpha,
-              double                     i_beta,
-              libxsmm_gemm_prefetch_type i_prefetch ) {
-      EDGE_VLOG(1) << "  adding, double precision XSMM-kernel gemm #" << m_kernels.size()
-                   << " M=" << i_m << " N=" << i_n << " K=" << i_k
-                   << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
-                   << " alpha=" << i_alpha << " beta=" << i_beta;
-
-      // add kernel groups, if required
-      if( i_group >= m_kernels.size() ) {
-        m_descs.resize( i_group+1 );
-        m_kernels.resize( i_group+1 );
-      }
-
-      // add description
-      libxsmm_descriptor_blob l_xgemmBlob;
-      const libxsmm_gemm_descriptor* l_desc = 0;
-      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
-      l_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemmBlob, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
-        i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
-
-      m_descs[i_group].push_back( l_desc );
-        
-      // generate and store function for this kernels
-      m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).gemm );
-  
-      // check that we generated a kernel
-      EDGE_CHECK_NE( m_kernels[i_group].back(), 0 );
-    }
-
-    void execute( const unsigned short i_group,
-                  const unsigned short i_entry, 
-                  const double*        i_a,
-                  const double*        i_b,
-                        double*        io_c,
-                  const double*        i_pf_a,
-                  const double*        i_pf_b,
-                  const double*        i_pf_c ) const {
-      // @TODO we can optimize by putting this into the constructor
+                  const unsigned short i_entry,
+                  const TL_T_REAL*     i_a,
+                  const TL_T_REAL*     i_b,
+                        TL_T_REAL*     io_c,
+                  const TL_T_REAL*     i_pf_a,
+                  const TL_T_REAL*     i_pf_b,
+                  const TL_T_REAL*     i_pf_c ) const {
+      // @TODO we can optimize by putting this into the constructor (if we avoid data races)
       libxsmm_gemm_param gemm_param;
       memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
@@ -225,4 +143,4 @@ class edge::data::MmXsmmSingle< double > {
     }
 };
 #endif
- 
+
