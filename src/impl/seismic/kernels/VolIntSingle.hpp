@@ -164,22 +164,18 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
 #ifdef ELTWISE_TPP
       // zeroing the scratch
-      u_unary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS /* ldi, ldo */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      u_unary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
       // subtraction
-      b_binary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
-                    LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+      b_binary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
       // accumulation
-#ifdef USE_TERNARY
+#  ifdef USE_TERNARY
       /* TERNARY_BCAST is only supported in equations but not in standalone TPPs */
-      t_ternary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldi2, ldo */,
-                    LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
-#else
-      b_binary.add(1, TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
-                    LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
-      b_binary.add(1, TL_N_MDS, TL_N_QTS_M /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
-                    LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-#endif
+      t_ternary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
+#  else
+      b_binary.add(1, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(1, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+#  endif
 
 #endif
     }
@@ -235,12 +231,6 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
       TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][1];
 #endif
 
-/*
-      TL_T_REAL l_dbg1[TL_N_QTS_M][TL_N_MDS][1];
-      TL_T_REAL l_dbg2[TL_N_QTS_M][TL_N_MDS][1];
-      TL_T_REAL l_dbg3[TL_N_QTS_M][TL_N_MDS][1];
-*/
-
 #ifdef ELTWISE_TPP
       u_unary.execute (0, 0, (TL_T_REAL*)&l_scratch[0][0][0]);
 #else
@@ -292,56 +282,22 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                       nullptr );
 
         // multiply with relaxation frequency and add
-//#if 0
 #ifdef ELTWISE_TPP
-/*
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-            l_dbg1[l_qt][l_md][0] = io_dofsA[l_rm][l_qt][l_md][0];
-
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-            l_dbg2[l_qt][l_md][0] = ( l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] );
-
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-            l_dbg3[l_qt][l_md][0] = l_rfs[l_rm] * ( l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] );
-*/
-
         // @TODO: Could be replaced by a single equation (provided no data races occur)
         /* 1. l_scratch2[][] = l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] */
         b_binary.execute(0, 0, &l_scratch[0][0][0], &i_tDofsA[l_rm][0][0][0], &l_scratch2[0][0][0]);
 
-/*
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-            if (fabs( (float)(l_scratch2[l_qt][l_md][0] - l_dbg2[l_qt][l_md][0])) > 1.0e-5)
-              printf("l_scratch2 %p is different from dbg2 [%d][%d] = %15.15f %15.15f \n", (void*)(&l_scratch2[0][0][0]), l_qt, l_md, (float)l_scratch2[l_qt][l_md][0], (float)l_dbg2[l_qt][l_md][0]);
-*/
-
-#ifdef USE_TERNARY
+#  ifdef USE_TERNARY
         /* This does not work, see comments in generateKernels() */
         /* 2. io_dofsA[l_rm][l_qt][l_md][0] += l_rfs[l_rm] * l_scratch2[l_qt][l_md][0] */
         t_ternary.execute(0, 0, &io_dofsA[l_rm][0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
-#else
+#  else
         /* 2.1 l_scratch2[l_qt][l_md][0] *= l_rfs[l_rm] */
         b_binary.execute(1, 0, &l_rfs[l_rm], &l_scratch2[0][0][0], &l_scratch2[0][0][0]);
-/*
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-            if (fabs( (float)(l_scratch2[l_qt][l_md][0] - l_rfs[l_rm] * l_dbg2[l_qt][l_md][0])) > 1.0e-5)
-              printf("l_scratch2 %p is different from dbg2 * l_rfs [%d][%d] = %15.15f %15.15f \n", (void*)(&l_scratch2[0][0][0]), l_qt, l_md, (float)l_scratch2[l_qt][l_md][0], (float)l_rfs[l_rm] * (float)l_dbg2[l_qt][l_md][0]);
-*/
         /* 2.1 io_dofsA[l_rm][l_qt][l_md][0] += l_scratch2[l_qt][l_md][0] */
         b_binary.execute(1, 1, &io_dofsA[l_rm][0][0][0], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
-#endif
-/*
-        for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
-          for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
-            if (fabs( (float)(io_dofsA[l_rm][l_qt][l_md][0] - (l_dbg1[l_qt][l_md][0] + l_dbg3[l_qt][l_md][0]))) > 1.0e-5)
-              printf("final updated value %p is different from dbg1 + dbg3 [%d][%d] = %15.15f %15.15f \n", (void*)(&io_dofsA[0][0][0][0]), l_qt, l_md,
-                        (float)io_dofsA[l_rm][l_qt][l_md][0], (float)l_dbg1[l_qt][l_md][0] + (float)l_dbg3[l_qt][l_md][0]);
-*/
+#  endif
+
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
