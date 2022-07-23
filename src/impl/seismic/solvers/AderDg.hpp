@@ -36,6 +36,13 @@
 #include "io/Receivers.h"
 #include "AderDgInit.hpp"
 
+#include "data/MmXsmmFused.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
+
 namespace edge {
   namespace seismic {
     namespace solvers { 
@@ -131,6 +138,15 @@ class edge::seismic::solvers::AderDg {
                       TL_O_SP,
                       TL_O_TI,
                       TL_N_CRS > * m_kernels;
+
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
     /**
      * Allocates the constant data of the ADER-DG solver.
@@ -309,6 +325,39 @@ class edge::seismic::solvers::AderDg {
                                         i_bgParsRe,
                                         m_fsE,
                                         m_fsA );
+
+#ifdef ELTWISE_TPP
+      // eltwise kernels
+      libxsmm_blasint M  = TL_N_MDS_EL*TL_N_CRS;
+      libxsmm_blasint N  = TL_N_QTS_E;
+      libxsmm_blasint N2 = TL_N_QTS_M;
+      //libxsmm_blasint ld = M;
+
+      // ...
+      u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+//      unary_kernel_copy_dof = libxsmm_dispatch_meltw_unary (M, N, &ld, &ld,
+//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+
+      u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+//      unary_kernel_zero_dof = libxsmm_dispatch_meltw_unary (M, N, &ld, &ld,
+//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+
+      u_unary.add(0, M, N2, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+//      unary_kernel_zero2_dof = libxsmm_dispatch_meltw_unary (M, N2, &ld, &ld,
+//                                                             LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                             LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+
+      b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+//      binary_kernel_sub_dof = libxsmm_dispatch_meltw_binary(M, N, &ld, &ld, &ld,
+//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                            LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_SUB);
+      b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+//      binary_kernel_add_dof = libxsmm_dispatch_meltw_binary(M, N, &ld, &ld, &ld,
+//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                            LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+#endif
     }
 
     /**
@@ -384,6 +433,9 @@ class edge::seismic::solvers::AderDg {
         if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
           // reset, if required
           if( i_firstTs ) {
+#ifdef ELTWISE_TPP
+            u_unary.execute(0, 1, &o_tDofs[1][l_el][0][0][0]);
+#else
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -394,9 +446,13 @@ class edge::seismic::solvers::AderDg {
 #endif
                 for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                   o_tDofs[1][l_el][l_qt][l_md][l_cr] = 0;
+#endif
           }
 
           // add tDofs of this time step
+#ifdef ELTWISE_TPP
+          b_binary.execute(0, 1, &o_tDofs[1][l_el][0][0][0], &o_tDofs[0][l_el][0][0][0], &o_tDofs[1][l_el][0][0][0]);
+#else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -407,6 +463,7 @@ class edge::seismic::solvers::AderDg {
 #endif
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 o_tDofs[1][l_el][l_qt][l_md][l_cr] += o_tDofs[0][l_el][l_qt][l_md][l_cr];
+#endif
         }
 
         // compute [0, 0.5dt] time integrated DOFs, if an adjacent element has a smaller time step
@@ -454,6 +511,7 @@ class edge::seismic::solvers::AderDg {
                                                  o_sendDofs[l_el*TL_N_FAS + l_fa]+TL_N_QTS_E );
 
               // move second integral from [0, dt] to [1/2dt, dt]
+              // @TODO: Eltwise TPPs could be potentially used here as well
               for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -572,6 +630,10 @@ class edge::seismic::solvers::AderDg {
         // anelastic updates (excluding frequency scaling)
         TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
         if( TL_N_RMS > 0) {
+
+#ifdef ELTWISE_TPP
+          u_unary.execute(0, 2, &l_upA[0][0][0]);
+#else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -582,6 +644,7 @@ class edge::seismic::solvers::AderDg {
 #endif
               for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                 l_upA[l_qt][l_md][l_cr] = 0;
+#endif
         }
 
         // add neighboring contribution
@@ -620,6 +683,9 @@ class edge::seismic::solvers::AderDg {
             if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
               // element and face-adjacent one have an equal time step
               if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
+#ifdef ELTWISE_TPP
+                u_unary.execute(0, 0, &i_tDofs[0][l_ne][0][0][0], &l_tDofs[0][0][0]);
+#else
                 for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -630,9 +696,13 @@ class edge::seismic::solvers::AderDg {
 #endif
                     for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                       l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr];
+#endif
               }
               // element has a greater time step than the face-adjacent one
               else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
+#ifdef ELTWISE_TPP
+                u_unary.execute(0, 0, &i_tDofs[1][l_ne][0][0][0], &l_tDofs[0][0][0]);
+#else
                 for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -643,10 +713,14 @@ class edge::seismic::solvers::AderDg {
 #endif
                     for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                       l_tDofs[l_qt][l_md][l_cr] = i_tDofs[1][l_ne][l_qt][l_md][l_cr];
+#endif
               }
               // element has a time step less than the adjacent one
               else {
                 if( i_firstTs ) {
+#ifdef ELTWISE_TPP
+                  u_unary.execute(0, 0, &i_tDofs[2][l_ne][0][0][0], &l_tDofs[0][0][0]);
+#else
                   for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -657,8 +731,12 @@ class edge::seismic::solvers::AderDg {
 #endif
                       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                         l_tDofs[l_qt][l_md][l_cr] = i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+#endif
                 }
                 else {
+#ifdef ELTWISE_TPP
+                  b_binary.execute(0, 0, &i_tDofs[0][l_ne][0][0][0], &i_tDofs[2][l_ne][0][0][0], &l_tDofs[0][0][0]);
+#else
                   for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -669,6 +747,7 @@ class edge::seismic::solvers::AderDg {
 #endif
                       for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ )
                         l_tDofs[l_qt][l_md][l_cr] = i_tDofs[0][l_ne][l_qt][l_md][l_cr] - i_tDofs[2][l_ne][l_qt][l_md][l_cr];
+#endif
                 }
               }
             }
