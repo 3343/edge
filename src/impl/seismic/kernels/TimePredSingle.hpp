@@ -165,27 +165,27 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
 #ifdef ELTWISE_TPP
       // initialize zero-derivative, reset time integrated dofs
-      u_unary.add(0, TL_N_MDS, TL_N_QTS_E /* m, n */,  LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-      b_binary.add(0, TL_N_MDS, TL_N_QTS_E /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      u_unary.add(0, TL_N_MDS * TL_N_QTS_E, 1 /* m, n */,  LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      b_binary.add(0, TL_N_MDS * TL_N_QTS_E, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
 
       // anelastic: init zero-derivative, reset tDofs
       u_unary.add(1,  TL_N_MDS * TL_N_QTS_M, TL_N_RMS /* m, n */, TL_N_MDS * TL_N_QTS_M, TL_N_MDS * TL_N_QTS_M * TL_O_TI /*ldi, ldo */, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
       b_binary.add(1, TL_N_MDS * TL_N_QTS_M, TL_N_RMS /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
 
       // zeroing: elastic: reset this derivative
-      u_unary.add(2, TL_N_MDS, TL_N_QTS_E /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      u_unary.add(2, TL_N_MDS * TL_N_QTS_E, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
       // zeroing: buffer for the anelastic computations
-      u_unary.add(2, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      u_unary.add(2, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
       // multiply with relaxation frequency and add
       // addition
-      b_binary.add(3, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
       // mult + assign
-      b_binary.add(3, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
       // accumulation 2
-      b_binary.add(3, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
-      b_binary.add(3, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 
 
       // update time integrated dofs

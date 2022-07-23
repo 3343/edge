@@ -164,17 +164,17 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
 #ifdef ELTWISE_TPP
       // zeroing the scratch
-      u_unary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      u_unary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
       // subtraction
-      b_binary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+      b_binary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
       // accumulation
 #  ifdef USE_TERNARY
       /* TERNARY_BCAST is only supported in equations but not in standalone TPPs */
-      t_ternary.add(0, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
+      t_ternary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
 #  else
-      b_binary.add(1, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
-      b_binary.add(1, TL_N_MDS, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+      b_binary.add(1, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(1, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 #  endif
 
 #endif

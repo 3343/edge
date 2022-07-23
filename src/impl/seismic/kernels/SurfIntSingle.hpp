@@ -174,7 +174,7 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
                 static_cast<real_base>(1.0), // beta
                 LIBXSMM_GEMM_PREFETCH_NONE );
 
-      u_unary.add(0, TL_N_MDS_EL, TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      u_unary.add(0, TL_N_MDS_EL * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
     }
 
