@@ -331,7 +331,6 @@ class edge::seismic::solvers::AderDg {
       libxsmm_blasint M  = TL_N_MDS_EL*TL_N_CRS;
       libxsmm_blasint N  = TL_N_QTS_E;
       libxsmm_blasint N2 = TL_N_QTS_M;
-      //libxsmm_blasint ld = M;
 
       u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
@@ -342,6 +341,12 @@ class edge::seismic::solvers::AderDg {
       b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 
       b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+
+      // move second integral from [0, dt] to [1/2dt, dt]
+      M  = TL_N_MDS_FA*TL_N_CRS;
+      N  = TL_N_QTS_E;
+
+      b_binary.add(1, M, N, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 #endif
     }
 
@@ -496,7 +501,10 @@ class edge::seismic::solvers::AderDg {
                                                  o_sendDofs[l_el*TL_N_FAS + l_fa]+TL_N_QTS_E );
 
               // move second integral from [0, dt] to [1/2dt, dt]
-              // @TODO: Eltwise TPPs could be potentially used here as well
+#ifdef ELTWISE_TPP
+              b_binary.execute(1, 0, &o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E][0][0], &o_sendDofs[l_el*TL_N_FAS + l_fa][0][0][0],
+                                      &o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E][0][0]);
+#else
               for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
 #if PP_N_CRUNS==1
 #pragma omp simd
@@ -510,6 +518,7 @@ class edge::seismic::solvers::AderDg {
                   }
                 }
               }
+#endif
             }
           }
         }
