@@ -102,8 +102,8 @@ class edge::data::MmXsmmFused {
               unsigned int                      i_ldA,
               unsigned int                      i_ldB,
               unsigned int                      i_ldC,
-              double                            i_alpha,
-              double                            i_beta,
+              TL_T_REAL                         i_alpha,
+              TL_T_REAL                         i_beta,
               libxsmm_gemm_prefetch_type        i_prefetch ) {
       EDGE_VLOG(1) << "  adding X precision XSMM-kernel #" << m_kernels.size() << " (sparse)"
                    << " M=" << i_m << " N=" << i_n << " K=" << i_k
@@ -118,17 +118,6 @@ class edge::data::MmXsmmFused {
           m_kernelStats[i].resize( i_group+1 );
         }
       }
-
-      // add description
-      /*
-      libxsmm_descriptor_blob l_xgemmBlob;
-      const libxsmm_gemm_descriptor* l_desc = 0;
-      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_GEMM_PRECISION_F64,
-        i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
-
-      m_descs[i_group].push_back( l_desc );
-      */
 
       // @FIXME: Do we need LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI?
       int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -145,11 +134,9 @@ class edge::data::MmXsmmFused {
 
       // generate and store function for this kernels
       if( i_csr )
-        //m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), i_nCrs, i_ptr, i_idx, i_val ).dmm );
         m_kernels[i_group].push_back( libxsmm_create_packed_spgemm_csr_v2(l_gemm_shape, l_flags, i_prefetch, i_nCrs,
                                       i_ptr, i_idx, i_val) );
       else
-        //m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csc( m_descs[i_group].back(), i_nCrs, i_ptr, i_idx, i_val ).dmm );
         m_kernels[i_group].push_back( libxsmm_create_packed_spgemm_csc_v2(l_gemm_shape, l_flags, i_prefetch, i_nCrs,
                                       i_ptr, i_idx, i_val) );
 
@@ -203,29 +190,12 @@ class edge::data::MmXsmmFused {
 
       // add kernel groups, if required
       if( i_group >= m_kernels.size() ) {
-        //m_descs.resize( i_group+1 );
         m_kernels.resize( i_group+1 );
         m_kernelFlops.resize( i_group+1 );
         for ( int i = 0; i < edge::parallel::g_nThreads; ++i ) {
           m_kernelStats[i].resize( i_group+1 );
         }
       }
-
-      // add description
-      /*
-      libxsmm_descriptor_blob l_xgemmBlob;
-      const libxsmm_gemm_descriptor* l_desc = 0;
-      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
-      l_desc = libxsmm_gemm_descriptor_dinit2( &l_xgemmBlob,
-                                               LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
-                                               i_m, i_n, i_k,
-                                               (i_fusedBC ? 0 : i_ldA), i_ldB, i_ldC,
-                                               i_alpha, i_beta,
-                                               l_flags,
-                                               i_prefetch);
-
-      m_descs[i_group].push_back( l_desc );
-      */
 
       int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
       if (i_beta == 0.0)
@@ -249,7 +219,6 @@ class edge::data::MmXsmmFused {
 
 
         // generate and store function for this kernels
-        //m_kernels[i_group].push_back( libxsmm_create_packed_spxgemm_csr( m_descs[i_group].back(), i_nCrs, l_rows, l_cols, l_vals ).dmm );
         m_kernels[i_group].push_back( libxsmm_create_packed_spgemm_csr_v2(l_gemm_shape, l_flags, i_prefetch, i_nCrs,
                                       l_rows, l_cols, l_vals) );
 
@@ -257,7 +226,6 @@ class edge::data::MmXsmmFused {
         delete[] l_rows; delete[] l_cols; delete[] l_vals;
       }
       else {
-        //m_kernels[i_group].push_back( libxsmm_create_packed_xgemm_ac_rm( m_descs[i_group].back(), i_nCrs ).dmm );
         m_kernels[i_group].push_back( libxsmm_create_packed_gemm_ac_rm_v2( l_gemm_shape, l_flags, i_prefetch, i_nCrs) );
       }
 
