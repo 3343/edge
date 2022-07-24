@@ -89,17 +89,6 @@ class edge::data::MmXsmmSingle {
         m_kernels.resize( i_group+1 );
       }
 
-      /*
-      // add description
-      libxsmm_descriptor_blob l_xgemmBlob;
-      const libxsmm_gemm_descriptor* l_desc = 0;
-      const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
-      l_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemmBlob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-        i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
-
-      m_descs[i_group].push_back( l_desc );
-      */
-
       int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
       if (i_beta == 0.0)
         l_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
@@ -113,7 +102,6 @@ class edge::data::MmXsmmSingle {
                                                                   l_dtype_A, l_dtype_B, l_dtype_C, l_dtype_comp);
 
       // generate and store function for this kernels
-      //m_kernels[i_group].push_back( libxsmm_xmmdispatch( m_descs[i_group].back() ).gemm );
       m_kernels[i_group].push_back( libxsmm_dispatch_gemm_v2(l_gemm_shape, l_flags, i_prefetch) );
 
       // check that we generated a kernel
