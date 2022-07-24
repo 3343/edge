@@ -30,6 +30,16 @@
 #include "VolInt.hpp"
 #include "dg/Basis.h"
 #include "data/MmXsmmSingle.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
+//#define USE_TERNARY
+
+#ifdef USE_TERNARY
+  #error "USE_TERNARY requires (currently missing) support for TERNARY_BCAST flags in LIBXSMM (hence switched off here)"
+#endif
 
 namespace edge {
   namespace seismic {
@@ -84,6 +94,15 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
+
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
     //! pointers to the stiffness matrices
     TL_T_REAL *m_stiff[TL_N_DIS] = {};
@@ -140,7 +159,25 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                   static_cast<TL_T_REAL>(1.0), // alpha
                   static_cast<TL_T_REAL>(1.0), // beta
                   LIBXSMM_GEMM_PREFETCH_NONE );
-        }
+
+      }
+
+#ifdef ELTWISE_TPP
+      // zeroing the scratch
+      u_unary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+
+      // subtraction
+      b_binary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+      // accumulation
+#  ifdef USE_TERNARY
+      /* TERNARY_BCAST is only supported in equations but not in standalone TPPs */
+      t_ternary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
+#  else
+      b_binary.add(1, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(1, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+#  endif
+
+#endif
     }
 
   public:
@@ -189,9 +226,18 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
       // buffer for anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][1];
+#ifdef ELTWISE_TPP
+      // buffer for relaxation computations
+      TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][1];
+#endif
+
+#ifdef ELTWISE_TPP
+      u_unary.execute (0, 0, (TL_T_REAL*)&l_scratch[0][0][0]);
+#else
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
 #pragma omp simd
         for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) l_scratch[l_qt][l_md][0] = 0;
+#endif
 
       // iterate over dimensions
       for( unsigned short l_di = 0; l_di < TL_N_DIS; l_di++ ) {
@@ -236,12 +282,30 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                       nullptr );
 
         // multiply with relaxation frequency and add
+#ifdef ELTWISE_TPP
+        // @TODO: Could be replaced by a single equation (provided no data races occur)
+        /* 1. l_scratch2[][] = l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] */
+        b_binary.execute(0, 0, &l_scratch[0][0][0], &i_tDofsA[l_rm][0][0][0], &l_scratch2[0][0][0]);
+
+#  ifdef USE_TERNARY
+        /* This does not work, see comments in generateKernels() */
+        /* 2. io_dofsA[l_rm][l_qt][l_md][0] += l_rfs[l_rm] * l_scratch2[l_qt][l_md][0] */
+        t_ternary.execute(0, 0, &io_dofsA[l_rm][0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
+#  else
+        /* 2.1 l_scratch2[l_qt][l_md][0] *= l_rfs[l_rm] */
+        b_binary.execute(1, 0, &l_rfs[l_rm], &l_scratch2[0][0][0], &l_scratch2[0][0][0]);
+        /* 2.1 io_dofsA[l_rm][l_qt][l_md][0] += l_scratch2[l_qt][l_md][0] */
+        b_binary.execute(1, 1, &io_dofsA[l_rm][0][0][0], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
+#  endif
+
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
             io_dofsA[l_rm][l_qt][l_md][0] += l_rfs[l_rm] * ( l_scratch[l_qt][l_md][0] - i_tDofsA[l_rm][l_qt][l_md][0] );
           }
         }
+#endif
       }
     }
 };

@@ -29,6 +29,11 @@
 #include "SurfInt.hpp"
 #include "dg/Basis.h"
 #include "data/MmXsmmSingle.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -96,6 +101,15 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
 
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
+
     /**
      * Generates the matrix kernels for the flux matrices and flux solvers.
      **/
@@ -159,6 +173,9 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
                 static_cast<real_base>(1.0), // alpha
                 static_cast<real_base>(1.0), // beta
                 LIBXSMM_GEMM_PREFETCH_NONE );
+
+      u_unary.add(0, TL_N_MDS_EL * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+
     }
 
   public:
@@ -206,12 +223,16 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
       // anelastic buffer
       TL_T_REAL l_upAn[TL_N_QTS_M][TL_N_MDS_EL][1];
       if( TL_N_RMS > 0 ) {
+#ifdef ELTWISE_TPP
+        u_unary.execute(0, 0, &l_upAn[0][0][0]);
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
           for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
             l_upAn[l_qt][l_md][0] = 0;
           }
         }
+#endif
       }
 
       // iterate over faces

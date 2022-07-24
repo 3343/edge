@@ -29,8 +29,19 @@
 
 #include "VolInt.hpp"
 #include "dg/Basis.h"
-#include "data/MmXsmmFused.hpp"
 #include "FakeMats.hpp"
+
+#include "data/MmXsmmFused.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
+//#define USE_TERNARY
+
+#ifdef USE_TERNARY
+  #error "USE_TERNARY requires (currently missing) support for TERNARY_BCAST flags in LIBXSMM (hence switched off here)"
+#endif
 
 namespace edge {
   namespace seismic {
@@ -88,6 +99,15 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
     //! matrix kernels
     edge::data::MmXsmmFused< TL_T_REAL > m_mm;
+
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
     //! pointers to the stiffness matrices
     TL_T_REAL *m_stiff[TL_N_DIS] = {};
@@ -272,7 +292,30 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
                   TL_T_REAL(1.0),       // alpha
                   TL_T_REAL(1.0),       // beta
                   LIBXSMM_GEMM_PREFETCH_NONE );
-        }
+#ifdef ELTWISE_TPP
+        // zeroing the buffer for the anelastic part
+        u_unary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+
+        // zeroing the scratch memory to zero for attenuation, which multiplies by stiffness matrices first
+        u_unary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_E /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+#endif
+      }
+
+      // multiply with relaxation frequency and add
+#ifdef ELTWISE_TPP
+      // subtraction
+      b_binary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */,
+                    LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+
+#  ifdef USE_TERNARY
+      /* TERNARY_BCAST is only supported in equations but not in standalone TPPs */
+      t_ternary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
+#  else
+      b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
+#  endif
+
+#endif
     }
 
     /**
@@ -370,19 +413,33 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
       // buffer for the anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
+
+#ifdef ELTWISE_TPP
+      // buffer for relaxation computations
+      TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
+#endif
+
       if( TL_N_RMS > 0 ) {
+#ifdef ELTWISE_TPP
+        u_unary.execute (0, 0, (TL_T_REAL*)&l_scratch[0][0][0]);
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
 #pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) l_scratch[l_qt][l_md][l_cr] = 0;
+#endif
       }
 
       // set scratch memory to zero for attenuation, which multiplies by stiffness matrices first
       if( TL_N_RMS > 0 ) {
+#ifdef ELTWISE_TPP
+        u_unary.execute (0, 1, (TL_T_REAL*)&o_scratch[0][0][0]);
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ )
 #pragma omp simd
             for( unsigned short l_cr = 0; l_cr < TL_N_CRS; l_cr++ ) o_scratch[l_qt][l_md][l_cr] = 0;
+#endif
       }
 
       // iterate over dimensions
@@ -390,41 +447,56 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
         // elastic: utilize zero-block in star matrix multiplication
         if( TL_N_RMS == 0 ) {
           // multiply with star matrix
-          m_mm.m_kernels[1][0]( i_starE[l_di],
-                                i_tDofsE[0][0],
-                                o_scratch[0][0] );
+          m_mm.execute(1, 0, i_starE[l_di],
+                             i_tDofsE[0][0],
+                             o_scratch[0][0]);
 
           // multiply with stiffness and inverse mass matrix
-          m_mm.m_kernels[0][l_di]( o_scratch[0][0],
-                                   m_stiff[l_di],
-                                   io_dofsE[0][0] );
+          m_mm.execute(0, l_di, o_scratch[0][0],
+                                m_stiff[l_di],
+                                io_dofsE[0][0] );
         }
         // viscoelastic: re-use stiffness matrix multiplication
         else {
           // multiply with stiffness and inverse mass matrix
-          m_mm.m_kernels[0][l_di]( i_tDofsE[0][0],
-                                   m_stiff[l_di],
-                                   o_scratch[0][0] );
+          m_mm.execute(0, l_di, i_tDofsE[0][0],
+                                m_stiff[l_di],
+                                o_scratch[0][0] );
 
           // multiply with elastic star matrix
-          m_mm.m_kernels[1][0]( i_starE[l_di],
-                                o_scratch[0][0],
-                                io_dofsE[0][0] );
+          m_mm.execute(1, 0, i_starE[l_di],
+                             o_scratch[0][0],
+                             io_dofsE[0][0] );
 
           // multiply with anelastic star matrices
-          m_mm.m_kernels[2][0]( i_starA[l_di],
-                                o_scratch[0][0],
-                                l_scratch[0][0] );
+          m_mm.execute(2, 0, i_starA[l_di],
+                             o_scratch[0][0],
+                             l_scratch[0][0] );
         }
       }
 
       for( unsigned short l_rm = 0; l_rm < TL_N_RMS; l_rm++ ) {
         // add contribution of source matrix
-        m_mm.m_kernels[2][1]( i_srcA[l_rm],
-                              i_tDofsA[l_rm][0][0],
-                              io_dofsE[0][0] );
+        m_mm.execute(2, 1, i_srcA[l_rm],
+                           i_tDofsA[l_rm][0][0],
+                           io_dofsE[0][0] );
 
         // multiply with relaxation frequency and add
+#ifdef ELTWISE_TPP
+        // @TODO: Could be replaced by a single equation (provided no data races occur)
+        /* 1. l_scratch2[][][] = l_scratch[l_qt][l_md][l_cr] - i_tDofsA[l_rm][l_qt][l_md][l_cr] */
+        b_binary.execute(0, 0, &l_scratch[0][0][0], &i_tDofsA[l_rm][0][0][0], &l_scratch2[0][0][0]);
+
+#  ifdef USE_TERNARY
+        t_ternary.execute(0, 0, &io_dofsA[l_rm][0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
+#  else
+        /* 2.1 l_scratch2[l_qt][l_md][l_cr] *= l_rfs[l_rm] */
+        b_binary.execute(1, 0, &l_rfs[l_rm], &l_scratch2[0][0][0], &l_scratch2[0][0][0]);
+
+        /* 2.1 io_dofsA[l_rm][l_qt][l_md][l_cr] += l_scratch2[l_qt][l_md][l_cr] */
+        b_binary.execute(1, 1, &io_dofsA[l_rm][0][0][0], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
+#  endif
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
 #pragma omp simd
@@ -433,6 +505,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
             }
           }
         }
+#endif
       }
     }
 };
