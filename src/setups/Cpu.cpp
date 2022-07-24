@@ -44,7 +44,22 @@ bool edge::setups::Cpu::getFlushToZero() {
 }
 
 void edge::setups::Cpu::setFlushToZero( bool i_on ) {
-#ifdef __SSE__
+#if defined(__aarch64__)
+  uint64_t l_fpcr = 0;
+  // get 64 bits of fpcr register
+  asm volatile( "mrs %0, fpcr" : "=r" (l_fpcr) );
+  // 64-bit value with FZ (flushing denormalized numbers to zero control bit)
+  uint64_t l_ftz = 1 << 24;
+  // adjust FZ bit in local fpcr variable
+  if( i_on ) {
+    l_fpcr |= l_ftz;
+  }
+  else {
+    l_fpcr &= ~l_ftz;
+  }
+  // update fpcr register
+  asm volatile( "msr fpcr, %0" : : "r" (l_fpcr) );
+#elif defined(__SSE__)
   if( i_on )
     _MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
   else
