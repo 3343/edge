@@ -333,30 +333,15 @@ class edge::seismic::solvers::AderDg {
       libxsmm_blasint N2 = TL_N_QTS_M;
       //libxsmm_blasint ld = M;
 
-      // ...
       u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-//      unary_kernel_copy_dof = libxsmm_dispatch_meltw_unary (M, N, &ld, &ld,
-//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-//                                                            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
 
       u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-//      unary_kernel_zero_dof = libxsmm_dispatch_meltw_unary (M, N, &ld, &ld,
-//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-//                                                            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
 
       u_unary.add(0, M, N2, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
-//      unary_kernel_zero2_dof = libxsmm_dispatch_meltw_unary (M, N2, &ld, &ld,
-//                                                             LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-//                                                             LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
 
       b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-//      binary_kernel_sub_dof = libxsmm_dispatch_meltw_binary(M, N, &ld, &ld, &ld,
-//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-//                                                            LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_SUB);
+
       b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-//      binary_kernel_add_dof = libxsmm_dispatch_meltw_binary(M, N, &ld, &ld, &ld,
-//                                                            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-//                                                            LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
 #endif
     }
 
