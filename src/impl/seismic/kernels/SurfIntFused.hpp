@@ -421,7 +421,6 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
 #ifdef PP_MMKERNEL_PERF
       size_t start = _rdtsc();
 #endif
-      //m_mm.m_kernels[i_group][i_kernel]( i_a, i_b, io_c );
       m_mm.execute(i_group, i_kernel, i_a, i_b, io_c);
 #ifdef PP_MMKERNEL_PERF
       size_t duration = _rdtsc() - start;
@@ -441,7 +440,6 @@ class edge::seismic::kernels::SurfIntFused: public edge::seismic::kernels::SurfI
 #ifdef PP_MMKERNEL_PERF
       size_t start = _rdtsc();
 #endif
-      //m_mm.m_kernels[i_group][i_kernel]( i_a, i_b, io_c, i_a_pf, i_b_pf, i_c_pf );
       m_mm.execute(i_group, i_kernel, i_a, i_b, io_c, i_a_pf, i_b_pf, i_c_pf);
 #ifdef PP_MMKERNEL_PERF
       size_t duration = _rdtsc() - start;

@@ -356,7 +356,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       // update time integrated dofs
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
-        //std::cout << "l_de = " << l_de << " l_nCpMds = " << l_nCpMds << " TL_N_MDS = " << TL_N_MDS << std::endl;
         b_binary.add(4, TL_N_CRS * l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS /* ldi0, ldi1, ldo */,
                       LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
         b_binary.add(5, TL_N_CRS * l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS /* ldi0, ldi1, ldo */,
@@ -563,26 +562,17 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
           m_mm.execute(0, (l_re-1)*(TL_N_DIS)+l_di, o_derE[l_de-1][0][0],
                                                     m_stiffT[l_re-1][l_di],
                                                     o_scratch[0][0] );
-          //m_mm.m_kernels[0][(l_re-1)*(TL_N_DIS)+l_di]( o_derE[l_de-1][0][0],
-          //                                             m_stiffT[l_re-1][l_di],
-          //                                             o_scratch[0][0] );
 
           // multiply with star matrices
           m_mm.execute(1, l_re-1, i_starE[l_di],
                                   o_scratch[0][0],
                                   o_derE[l_de][0][0] );
-          //m_mm.m_kernels[1][l_re-1]( i_starE[l_di],
-          //                           o_scratch[0][0],
-          //                           o_derE[l_de][0][0] );
 
           if( TL_N_RMS > 0 ) {
             // multiply with anelastic star matrices
             m_mm.execute(2, 0, i_starA[l_di],
                                o_scratch[0][0],
                                l_scratch[0][0] );
-            //m_mm.m_kernels[2][0]( i_starA[l_di],
-            //                      o_scratch[0][0],
-            //                      l_scratch[0][0] );
           }
         }
 
@@ -595,9 +585,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
           m_mm.execute(2, 1, i_srcA[l_rm],
                              o_derA[l_rm][l_de-1][0][0],
                              o_derE[l_de][0][0] );
-          //m_mm.m_kernels[2][1]( i_srcA[l_rm],
-          //                      o_derA[l_rm][l_de-1][0][0],
-          //                      o_derE[l_de][0][0] );
 
           // multiply with relaxation frequency and add
 #ifdef ELTWISE_TPP
