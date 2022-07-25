@@ -306,6 +306,7 @@ int main( int   i_argc,
   // search for fundamental dt, if not specified
   double l_speedUp = 0;
   if( l_funDt == 0 ) {
+    l_funDt = 1.0;
     double l_dt = 1.0;
     while( l_dt > 0.5 ) {
       edge_v::time::Groups l_tsGroups( l_mesh->getTypeEl(),
