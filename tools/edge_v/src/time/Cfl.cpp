@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2022, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -21,7 +22,7 @@
  * Time steps, based on stability constraints.
  **/
 #include "Cfl.h"
-
+#include <limits>
 #include "../io/logging.h"
 
 edge_v::time::Cfl::Cfl( t_entityType  const    i_elTy,
@@ -126,4 +127,16 @@ void edge_v::time::Cfl::setTimeSteps( t_entityType  const    i_elTy,
   for( t_idx l_el = 0; l_el < i_nEls; l_el++ ) {
     o_ts[l_el] *= l_minInv;
   }
+}
+
+void edge_v::time::Cfl::reorder( t_idx const * i_elPerm ) {
+   double * l_ts = new double[ m_nEls ];
+
+  for( edge_v::t_idx l_el = 0; l_el < m_nEls; l_el++) {
+    t_idx l_elPrev = i_elPerm[l_el];
+    l_ts[l_el] = m_ts[l_elPrev];
+  }
+
+  delete[] m_ts;
+  m_ts = l_ts;
 }

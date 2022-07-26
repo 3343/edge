@@ -22,6 +22,7 @@
  * Gmsh interface.
  **/
 #include "Gmsh.h"
+#include <limits>
 #include <gmsh.h>
 #include "logging.h"
 
@@ -373,7 +374,7 @@ void edge_v::io::Gmsh::getFaVe( int     i_physicalGroupFa,
   }
 }
 
-void edge_v::io::Gmsh::reorder( t_idx const * i_priorities ) {
+void edge_v::io::Gmsh::reorder( t_idx const * i_elPerm ) {
   // check if a reordering is possible (we assume a single tag for all elements)
   int l_nDis = gmsh::model::getDimension();
   gmsh::vectorpair l_dimTags;
@@ -384,15 +385,12 @@ void edge_v::io::Gmsh::reorder( t_idx const * i_priorities ) {
   << "try using a single tag, i.e., volume in 3D, for all elements when meshing";
 
   // derive the permutation based on the priorities
+  t_idx l_nEls = nEls();
   std::vector< std::size_t > l_elPerm;
-  l_elPerm.resize( m_elTags.size() );
-  for( std::size_t l_el = 0; l_el < l_elPerm.size(); l_el++ ) {
-    l_elPerm[l_el] = l_el;
+  l_elPerm.resize( l_nEls );
+  for( std::size_t l_el = 0; l_el < l_nEls; l_el++ ) {
+    l_elPerm[l_el] = i_elPerm[l_el];
   }
-  std::sort( l_elPerm.begin(),
-             l_elPerm.end(),
-             [&]( std::size_t const & i_e0, std::size_t const & i_e1 )  {
-               return (i_priorities[i_e0] < i_priorities[i_e1]); });
 
   // perform the reordering within gmsh
   t_entityType l_elTy = getElType();

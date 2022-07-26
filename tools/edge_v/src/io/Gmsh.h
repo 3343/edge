@@ -203,11 +203,11 @@ class edge_v::io::Gmsh {
     void getElFaVe( t_idx * o_elFaVe ) const;
 
     /**
-     * Reorders the elements based on the given priorities.
+     * Reorders the elements based on the given permutation.
      *
-     * @param i_priorities priorities of the elements (lower is higher, sorted first).
+     * @param i_elPerm used permutation of the element ids.
      **/
-    void reorder( t_idx const * i_priorities );
+    void reorder( t_idx const * i_elPerm );
 
     /**
      * Partitions the mesh.
