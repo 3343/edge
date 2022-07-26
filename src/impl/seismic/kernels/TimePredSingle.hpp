@@ -207,8 +207,8 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         b_binary.add(5, l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
                       LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
       }
-#  ifdef EQUATION_TPP
 
+#  ifdef EQUATION_TPP
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
@@ -283,7 +283,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         e_eqns00.push_back(func00);
 
         // adding to eqns01 (multiply with relaxation frequency and add, part 2)
-
 
         libxsmm_blasint my_eqn01 = libxsmm_matrix_eqn_create();         /* o_tintA += l_scalar * o_derA */
 
@@ -471,7 +470,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       }
 #endif
 
-#ifdef EQUATION_TPP
+#if defined(ELTWISE_TPP) and defined(EQUATION_TPP)
       libxsmm_matrix_arg arg_array[3];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
@@ -565,7 +564,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           eqn_param.output.primary = &o_derA[l_rm][l_de][0][0][0];
           e_eqns00[l_de-1](&eqn_param);
 
-          arg_array[0].primary     = &l_scalar;                                      /* [1] */
+          arg_array[0].primary     = &l_scalar;
           arg_array[1].primary     = &o_derA[l_rm][l_de][0][0][0];
           arg_array[2].primary     = &o_tIntA[l_rm][0][0][0];
           eqn_param.output.primary = &o_tIntA[l_rm][0][0][0];
