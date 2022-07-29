@@ -311,7 +311,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
       /* TERNARY_BCAST is only supported in equations but not in standalone TPPs */
       t_ternary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
 #  else
-      b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0);
+      b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
       b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 #  endif
 
@@ -491,7 +491,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
         t_ternary.execute(0, 0, &io_dofsA[l_rm][0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
 #  else
         /* 2.1 l_scratch2[l_qt][l_md][l_cr] *= l_rfs[l_rm] */
-        b_binary.execute(1, 0, &l_rfs[l_rm], &l_scratch2[0][0][0], &l_scratch2[0][0][0]);
+        b_binary.execute(1, 0, &l_scratch2[0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0]);
 
         /* 2.1 io_dofsA[l_rm][l_qt][l_md][l_cr] += l_scratch2[l_qt][l_md][l_cr] */
         b_binary.execute(1, 1, &io_dofsA[l_rm][0][0][0], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
