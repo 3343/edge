@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2022, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -113,6 +114,13 @@ class edge_v::time::Cfl {
      * @return normalized time steps.
      **/
     double const * getTimeSteps() const { return m_ts; }
+
+    /**
+     * Reorders the elements' time steps.
+     *
+     * @param i_elPerm used permutation; for an element id x, i_elPerm[x] gives the id of the element in the old order.
+     **/
+    void reorder( t_idx const * i_elPerm );
 };
 
 #endif

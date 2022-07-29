@@ -25,6 +25,7 @@
 #define EDGE_V_IO_HDF5_H
 
 #include <hdf5.h>
+#include <limits>
 #include <string>
 #include "logging.h"
 #include "../constants.h"

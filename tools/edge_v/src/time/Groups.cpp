@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2022, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * All rights reserved.
  *
@@ -21,7 +22,7 @@
  * Time step groups.
  **/
 #include "Groups.h"
-
+#include <limits>
 #include "../io/logging.h"
 
 void edge_v::time::Groups::getLoads( t_idx                  i_nEls,
@@ -212,4 +213,16 @@ void edge_v::time::Groups::nGroupEls( t_idx   i_first,
              m_nGroups,
              m_elTg,
              o_nGroupEls );
+}
+
+void edge_v::time::Groups::reorder( t_idx const * i_elPerm ) {
+  unsigned short * l_elTg = new unsigned short[ m_nEls ];
+
+  for( edge_v::t_idx l_el = 0; l_el < m_nEls; l_el++) {
+    t_idx l_elPrev = i_elPerm[l_el];
+    l_elTg[l_el] = m_elTg[l_elPrev];
+  }
+
+  delete[] m_elTg;
+  m_elTg = l_elTg;
 }

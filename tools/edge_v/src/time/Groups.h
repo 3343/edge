@@ -4,6 +4,7 @@
  * @author Alexander Breuer (anbreuer AT ucsd.edu)
  *
  * @section LICENSE
+ * Copyright (c) 2022, Friedrich Schiller University Jena
  * Copyright (c) 2019-2020, Alexander Breuer
  * All rights reserved.
  *
@@ -217,6 +218,13 @@ class edge_v::time::Groups {
      * @return speedup.
      **/
     double getSpeedUp() { return m_loads[0] / m_loads[2]; }
+
+    /**
+     * Reorders the elements' time groups.
+     *
+     * @param i_elPerm used permutation; for an element with id x, i_elPerm[x] gives the id in the old order.
+     **/
+    void reorder( t_idx const * i_elPerm );
 };
 
 #endif

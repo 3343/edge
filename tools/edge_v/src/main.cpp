@@ -306,6 +306,7 @@ int main( int   i_argc,
   // search for fundamental dt, if not specified
   double l_speedUp = 0;
   if( l_funDt == 0 ) {
+    l_funDt = 1.0;
     double l_dt = 1.0;
     while( l_dt > 0.5 ) {
       edge_v::time::Groups l_tsGroups( l_mesh->getTypeEl(),
@@ -354,8 +355,19 @@ int main( int   i_argc,
                         l_config.getMeshOutBase() + "_element_partition" + l_config.getMeshOutExt() );
   }
 
-  EDGE_V_LOG_INFO << "reordering by rank and time group";
-  l_gmsh.reorder( l_part->getElPr() );
+  EDGE_V_LOG_INFO << "deriving element permutation based on priorities";
+  std::vector< edge_v::t_idx > l_elPerm;
+  l_elPerm.resize( l_mesh->nEls() );
+  for( edge_v::t_idx l_el = 0; l_el < l_elPerm.size(); l_el++ ) {
+    l_elPerm[l_el] = l_el;
+  }
+  std::sort( l_elPerm.begin(),
+             l_elPerm.end(),
+             [&]( edge_v::t_idx const & i_e0, edge_v::t_idx const & i_e1 )  {
+               return (l_part->getElPr()[i_e0] < l_part->getElPr()[i_e1]); });
+
+  EDGE_V_LOG_INFO << "reordering mesh by rank and time group";
+  l_gmsh.reorder( l_elPerm.data() );
 
   // clear partitioning if only a reordering was requested
   if( l_config.getReorderOnly() ) {
@@ -363,6 +375,10 @@ int main( int   i_argc,
     l_part = new edge_v::mesh::Partition( *l_mesh,
                                           l_tsGroups->getElTg() );
   }
+
+  EDGE_V_LOG_INFO << "reordering time steps and groups by rank and time group";
+  l_cfl->reorder( l_elPerm.data() );
+  l_tsGroups->reorder( l_elPerm.data() );
 
   // store partitioning in gmsh
   if( l_part->nPas() > 1 ) {
@@ -395,9 +411,7 @@ int main( int   i_argc,
     delete[] l_elIds;
   }
 
-  EDGE_V_LOG_INFO << "freeing ts-groups, cfl, mesh and velocity model";
-  delete l_tsGroups;
-  delete l_cfl;
+  EDGE_V_LOG_INFO << "freeing mesh and velocity model";
   delete l_mesh;
   delete l_velMod;
 
@@ -525,24 +539,6 @@ int main( int   i_argc,
     l_velMod->init( l_mesh->nEls(),
                     l_mesh->getCentroidsEl() );
   }
-  EDGE_V_LOG_INFO << "re-initializing CFL interface with reordered data";
-  l_cfl = new edge_v::time::Cfl(  l_mesh->getTypeEl(),
-                                  l_mesh->nVes(),
-                                  l_mesh->nEls(),
-                                  l_mesh->getElVe(),
-                                  l_mesh->getVeCrds(),
-                                  l_mesh->getInDiasEl(),
-                                  l_config.getCenCfl(),
-                                  *l_velMod );
-
-  EDGE_V_LOG_INFO << "re-initializing time step groups with reordered data";
-  l_tsGroups = new edge_v::time::Groups( l_mesh->getTypeEl(),
-                                         l_mesh->nEls(),
-                                         l_mesh->getElFaEl(),
-                                         l_nRates,
-                                         l_rates,
-                                         l_funDt,
-                                         l_cfl->getTimeSteps() );
 
   EDGE_V_LOG_INFO << "deriving communication structure";
   edge_v::mesh::Communication l_comm( l_tsGroups->nGroups(),
