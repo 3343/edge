@@ -246,17 +246,17 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         arg_metadata.eqn_idx     = my_eqn00;
         arg_metadata.in_arg_pos  = 0;
-        arg_shape.m    = TL_N_MDS;                                      /* l_scratch, [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = TL_N_QTS_M;
-        arg_shape.ld   = TL_N_MDS;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* l_scratch, [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
         arg_shape.type = dtype;
         libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
 
         arg_metadata.eqn_idx     = my_eqn00;
         arg_metadata.in_arg_pos  = 1;
-        arg_shape.m    = TL_N_MDS;                                      /* o_derA[l_de-1], [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = TL_N_QTS_M;
-        arg_shape.ld   = TL_N_MDS;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_derA[l_de-1], [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
         arg_shape.type = dtype;
         libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
 
@@ -268,9 +268,9 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         arg_shape.type = dtype;
         libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
 
-        eqn_out_arg_shape.m    = TL_N_MDS;                             /* o_derA[l_de], [TL_N_MDS][TL_N_QTS_M] */
-        eqn_out_arg_shape.n    = TL_N_QTS_M;
-        eqn_out_arg_shape.ld   = TL_N_MDS;
+        eqn_out_arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                   /* o_derA[l_de], [TL_N_MDS][TL_N_QTS_M] */
+        eqn_out_arg_shape.n    = 1;
+        eqn_out_arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
         eqn_out_arg_shape.type = dtype;
 
         //libxsmm_matrix_eqn_tree_print( my_eqn00 );
@@ -293,9 +293,9 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         arg_metadata.eqn_idx     = my_eqn01;
         arg_metadata.in_arg_pos  = 0;
-        arg_shape.m    = TL_N_MDS;                                      /* o_derA, [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = TL_N_QTS_M;
-        arg_shape.ld   = TL_N_MDS;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_derA, [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
         arg_shape.type = dtype;
         libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
 
@@ -309,15 +309,15 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         arg_metadata.eqn_idx     = my_eqn01;
         arg_metadata.in_arg_pos  = 2;
-        arg_shape.m    = TL_N_MDS;                                      /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = TL_N_QTS_M;
-        arg_shape.ld   = TL_N_MDS;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
         arg_shape.type = dtype;
         libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
 
-        eqn_out_arg_shape.m    = TL_N_MDS;                             /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
-        eqn_out_arg_shape.n    = TL_N_QTS_M;
-        eqn_out_arg_shape.ld   = TL_N_MDS;
+        eqn_out_arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                   /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
+        eqn_out_arg_shape.n    = 1;
+        eqn_out_arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
         eqn_out_arg_shape.type = dtype;
 
         //libxsmm_matrix_eqn_tree_print( my_eqn01 );

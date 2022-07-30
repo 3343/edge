@@ -328,23 +328,24 @@ class edge::seismic::solvers::AderDg {
 
 #ifdef ELTWISE_TPP
       // eltwise kernels
-      libxsmm_blasint M  = TL_N_MDS_EL*TL_N_CRS;
-      libxsmm_blasint N  = TL_N_QTS_E;
-      libxsmm_blasint N2 = TL_N_QTS_M;
+      libxsmm_blasint M  = TL_N_MDS_EL*TL_N_CRS*TL_N_QTS_E;
+      libxsmm_blasint N  = 1;
+      libxsmm_blasint M2 = TL_N_MDS_EL*TL_N_CRS*TL_N_QTS_M;
+      libxsmm_blasint N2 = 1;
 
       u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
       u_unary.add(0, M, N, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
-      u_unary.add(0, M, N2, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+      u_unary.add(0, M2, N2, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
       b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 
       b_binary.add(0, M, N, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 
       // move second integral from [0, dt] to [1/2dt, dt]
-      M  = TL_N_MDS_FA*TL_N_CRS;
-      N  = TL_N_QTS_E;
+      M  = TL_N_MDS_FA*TL_N_CRS*TL_N_QTS_E;
+      N  = 1;
 
       b_binary.add(1, M, N, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
 #endif
