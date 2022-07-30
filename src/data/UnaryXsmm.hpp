@@ -137,7 +137,9 @@ class edge::data::UnaryXsmm {
                         TL_T_REAL*     io_o1) const {
 
       libxsmm_meltw_unary_param unary_param;
+#if !defined(NDEBUG)
       memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
+#endif
 
       unary_param.in.primary    = (void*)i_in;
       unary_param.out.primary   = (void*)io_o0;
@@ -158,7 +160,9 @@ class edge::data::UnaryXsmm {
                         TL_T_REAL*     io_o1) const {
 
       libxsmm_meltw_unary_param unary_param;
+#if !defined(NDEBUG)
       memset( &unary_param, 0, sizeof(libxsmm_meltw_unary_param) );
+#endif
 
       unary_param.in.primary    = (void*)i_in0;
       unary_param.in.secondary  = (void*)i_in1;

@@ -116,7 +116,9 @@ class edge::data::BinaryXsmm {
                         TL_T_REAL*     io_o) const {
 
       libxsmm_meltw_binary_param binary_param;
+#if !defined(NDEBUG)
       memset( &binary_param, 0, sizeof(libxsmm_meltw_binary_param) );
+#endif
 
       binary_param.in0.primary = (void*)i_in0;
       binary_param.in1.primary = (void*)i_in1;

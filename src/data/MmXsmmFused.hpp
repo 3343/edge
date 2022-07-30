@@ -251,7 +251,9 @@ class edge::data::MmXsmmFused {
                   TL_T_REAL            * io_c) const {
 
       libxsmm_gemm_param gemm_param;
+#if !defined(NDEBUG)
       memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+#endif
 
       gemm_param.a.primary    = (void*)i_a;
       gemm_param.b.primary    = (void*)i_b;
@@ -270,7 +272,9 @@ class edge::data::MmXsmmFused {
                   TL_T_REAL      const * i_c_pf) const {
 
       libxsmm_gemm_param gemm_param;
+#if !defined(NDEBUG)
       memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+#endif
 
       gemm_param.a.primary    = (void*)i_a;
       gemm_param.b.primary    = (void*)i_b;

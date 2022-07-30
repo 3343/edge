@@ -121,7 +121,9 @@ class edge::data::TernaryXsmm {
                         TL_T_REAL*     io_o) const {
 
       libxsmm_meltw_ternary_param ternary_param;
+#if !defined(NDEBUG)
       memset( &ternary_param, 0, sizeof(libxsmm_meltw_ternary_param) );
+#endif
 
       ternary_param.in0.primary = (void*)i_in0;
       ternary_param.in1.primary = (void*)i_in1;
