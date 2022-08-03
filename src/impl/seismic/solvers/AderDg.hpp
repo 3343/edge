@@ -138,6 +138,7 @@ class edge::seismic::solvers::AderDg {
                       TL_O_TI,
                       TL_N_CRS > * m_kernels;
 
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
     //! unary kernels
     edge::data::UnaryXsmm< TL_T_REAL > u_unary;
 
@@ -146,6 +147,7 @@ class edge::seismic::solvers::AderDg {
 
     //! ternary kernels
     edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
+#endif
 
     /**
      * Allocates the constant data of the ADER-DG solver.
