@@ -36,7 +36,6 @@
 #include "io/Receivers.h"
 #include "AderDgInit.hpp"
 
-#include "data/MmXsmmFused.hpp"
 #include "data/UnaryXsmm.hpp"
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
