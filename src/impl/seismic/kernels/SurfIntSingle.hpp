@@ -29,6 +29,11 @@
 #include "SurfInt.hpp"
 #include "dg/Basis.h"
 #include "data/MmXsmmSingle.hpp"
+#include "data/UnaryXsmm.hpp"
+#include "data/BinaryXsmm.hpp"
+#include "data/TernaryXsmm.hpp"
+
+#define ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -96,6 +101,15 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
     //! matrix kernels
     edge::data::MmXsmmSingle< TL_T_REAL > m_mm;
 
+    //! unary kernels
+    edge::data::UnaryXsmm< TL_T_REAL > u_unary;
+
+    //! binary kernels
+    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
+
+    //! ternary kernels
+    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
+
     /**
      * Generates the matrix kernels for the flux matrices and flux solvers.
      **/
@@ -159,6 +173,9 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
                 static_cast<real_base>(1.0), // alpha
                 static_cast<real_base>(1.0), // beta
                 LIBXSMM_GEMM_PREFETCH_NONE );
+#ifdef ELTWISE_TPP
+      u_unary.add(0, TL_N_MDS_EL * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+#endif
     }
 
   public:
@@ -206,47 +223,65 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
       // anelastic buffer
       TL_T_REAL l_upAn[TL_N_QTS_M][TL_N_MDS_EL][1];
       if( TL_N_RMS > 0 ) {
+#ifdef ELTWISE_TPP
+        u_unary.execute(0, 0, &l_upAn[0][0][0]);
+#else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
           for( unsigned short l_md = 0; l_md < TL_N_MDS_EL; l_md++ ) {
             l_upAn[l_qt][l_md][0] = 0;
           }
         }
+#endif
       }
 
       // iterate over faces
       for( unsigned short l_fa = 0; l_fa < TL_N_FAS; l_fa++ ) {
         // multiply with first face integration matrix
-        m_mm.m_kernels[0][0]( m_fIntLN[l_fa],
-                              i_tDofsE[0][0],
-                              o_scratch[0][0][0],
-                              nullptr,
-                              i_dofsP[0][0],
-                              nullptr );
+        m_mm.execute( 0, 0,
+                      m_fIntLN[l_fa],
+                      i_tDofsE[0][0],
+                      o_scratch[0][0][0],
+                      nullptr,
+                      i_dofsP[0][0],
+                      nullptr );
 
         // multiply with flux solver
-        m_mm.m_kernels[0][1]( o_scratch[0][0][0],
-                              i_fsE[l_fa],
-                              o_scratch[1][0][0] );
+        m_mm.execute( 0, 1,            
+                      o_scratch[0][0][0],
+                      i_fsE[l_fa],
+                      o_scratch[1][0][0],
+                      nullptr,
+                      nullptr,
+                      nullptr );
 
         // multiply with second face integration matrix
-        m_mm.m_kernels[0][2]( m_fIntT[l_fa],
-                              o_scratch[1][0][0],
-                              io_dofsE[0][0],
-                              nullptr,
-                              i_tDofsP[0][0],
-                              nullptr );
+        m_mm.execute( 0, 2,
+                      m_fIntT[l_fa],
+                      o_scratch[1][0][0],
+                      io_dofsE[0][0],
+                      nullptr,
+                      i_tDofsP[0][0],
+                      nullptr );
 
         if( TL_N_RMS > 0 ) {
           // multiply with anelastic flux solver
-          m_mm.m_kernels[1][0]( o_scratch[0][0][0],
-                                i_fsA[l_fa],
-                                o_scratch[1][0][0] );
+          m_mm.execute( 1, 0, 
+                        o_scratch[0][0][0],
+                        i_fsA[l_fa],
+                        o_scratch[1][0][0],
+                        nullptr,
+                        nullptr,
+                        nullptr );
 
           // multiply with secand face integration matrix
-          m_mm.m_kernels[1][1]( m_fIntT[l_fa],
-                                o_scratch[1][0][0],
-                                l_upAn[0][0] );
+          m_mm.execute( 1, 1,
+                        m_fIntT[l_fa],
+                        o_scratch[1][0][0],
+                        l_upAn[0][0],
+                        nullptr,
+                        nullptr,
+                        nullptr );
         }
       }
 
@@ -280,12 +315,13 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
       }
 
       // multiply with first face integration matrix
-      m_mm.m_kernels[0][0](                     m_fIntLN[l_fMatId],
-                                                i_tDofsE[0][0],
-                                                o_tDofsFiE[0][0],
-                                                nullptr,
-                            (TL_T_REAL const *) i_pre,
-                                                nullptr );
+      m_mm.execute( 0, 0,
+                    m_fIntLN[l_fMatId],
+                    i_tDofsE[0][0],
+                    o_tDofsFiE[0][0],
+                    nullptr,
+                    (TL_T_REAL const *) i_pre,
+                    nullptr );
     }
 
     /**
@@ -330,28 +366,41 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
       }
 
       // multiply with flux solver
-      m_mm.m_kernels[0][1]( l_tDofsFiE,
-                            i_fsE,
-                            o_scratch[1][0][0] );
+      m_mm.execute( 0, 1,
+                    l_tDofsFiE,
+                    i_fsE,
+                    o_scratch[1][0][0],
+                    nullptr,
+                    nullptr,
+                    nullptr );
 
       // multiply with second face integration matrix
-      m_mm.m_kernels[0][2](                     m_fIntT[i_fa],
-                                                o_scratch[1][0][0],
-                                                io_dofsE[0][0],
-                                                nullptr,
-                            (TL_T_REAL const *) i_pre,
-                                                nullptr );
+      m_mm.execute( 0, 2,
+                    m_fIntT[i_fa],
+                    o_scratch[1][0][0],
+                    io_dofsE[0][0],
+                    nullptr,
+                    (TL_T_REAL const *) i_pre,
+                    nullptr );
 
       if( TL_N_RMS > 0 ) {
         // multiply with anelastic flux solver
-        m_mm.m_kernels[1][0]( l_tDofsFiE,
-                              i_fsA,
-                              o_scratch[1][0][0] );
+        m_mm.execute( 1, 0,
+                      l_tDofsFiE,
+                      i_fsA,
+                      o_scratch[1][0][0],
+                      nullptr,
+                      nullptr,
+                      nullptr );
 
         // multiply with second face integration matrix
-        m_mm.m_kernels[1][1]( m_fIntT[i_fa],
-                              o_scratch[1][0][0],
-                              io_dofsA[0][0] );
+        m_mm.execute( 1, 1,
+                      m_fIntT[i_fa],
+                      o_scratch[1][0][0],
+                      io_dofsA[0][0],
+                      nullptr,
+                      nullptr,
+                      nullptr );
       }
     }
 };
