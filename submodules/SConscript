@@ -68,6 +68,7 @@ if env['xsmm'] != False:
       env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_DENSE_SINGLE'] )
     else:
       env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM'] )
+    env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_ELTWISE_TPP'] )
   else:
     warnings.warn('  Warning: Could not enable libxsmm, continuing without.' )
     env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )

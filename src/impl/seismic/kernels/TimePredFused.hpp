@@ -35,8 +35,6 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-#define PP_T_KERNELS_XSMM_ELTWISE_TPP
-
 namespace edge {
   namespace seismic {
     namespace kernels {
