@@ -35,10 +35,6 @@
 #include "data/TernaryXsmm.hpp"
 #include "data/XsmmUtils.hpp"
 
-#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-#  define PP_T_KERNELS_XSMM_EQUATION_TPP
-#endif
-
 //#define USE_TERNARY
 
 #ifdef USE_TERNARY
