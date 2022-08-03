@@ -33,7 +33,7 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-#define PP_ELTWISE_TPP
+#define PP_T_KERNELS_XSMM_ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -173,7 +173,7 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
                 static_cast<real_base>(1.0), // alpha
                 static_cast<real_base>(1.0), // beta
                 LIBXSMM_GEMM_PREFETCH_NONE );
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       u_unary.add(0, TL_N_MDS_EL * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 #endif
     }
@@ -223,7 +223,7 @@ class edge::seismic::kernels::SurfIntSingle: public edge::seismic::kernels::Surf
       // anelastic buffer
       TL_T_REAL l_upAn[TL_N_QTS_M][TL_N_MDS_EL][1];
       if( TL_N_RMS > 0 ) {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         u_unary.execute(0, 0, &l_upAn[0][0][0]);
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {

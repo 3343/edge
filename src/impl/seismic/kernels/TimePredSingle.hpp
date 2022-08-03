@@ -34,9 +34,9 @@
 #include "data/TernaryXsmm.hpp"
 #include "data/XsmmUtils.hpp"
 
-#define PP_ELTWISE_TPP
+#define PP_T_KERNELS_XSMM_ELTWISE_TPP
 
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
 #  define PP_EQUATION_TPP
 #endif
 
@@ -174,7 +174,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         }
       } /* loop over l_de for adding matrix kernels */
 
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       // initialize zero-derivative, reset time integrated dofs
       u_unary.add(0, TL_N_MDS * TL_N_QTS_E, 1 /* m, n */,  LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
       b_binary.add(0, TL_N_MDS * TL_N_QTS_E, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
@@ -437,7 +437,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       TL_T_REAL l_scalar = i_dT;
 
       // initialize zero-derivative, reset time integrated dofs
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       /* 1. o_derE[0][l_qt][l_md][0] = i_dofsE[l_qt][l_md][0] */
       u_unary.execute(0, 0, &i_dofsE[0][0][0], &o_derE[0][0][0][0]);
       /* 2. o_tIntE[l_qt][l_md][0]   = l_scalar * i_dofsE[l_qt][l_md][0] */
@@ -453,7 +453,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 #endif
 
       // anelastic: init zero-derivative, reset tDofs
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       /* 1. o_derA[l_rm][0][l_qt][l_md][0] = i_dofsA[l_rm][l_qt][l_md][0]; */
       u_unary.execute(1, 0, &i_dofsA[0][0][0][0], &o_derA[0][0][0][0][0]);
       /* 2. o_tIntA[l_rm][l_qt][l_md][0] = l_scalar * i_dofsA[l_rm][l_qt][l_md][0] */
@@ -470,7 +470,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       }
 #endif
 
-#if defined(PP_ELTWISE_TPP) and defined(PP_EQUATION_TPP)
+#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and defined(PP_EQUATION_TPP)
       libxsmm_matrix_arg arg_array[3];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
@@ -483,7 +483,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         unsigned short l_re = (TL_N_RMS == 0) ? l_de : 1;
 
         // elastic: reset this derivative
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         u_unary.execute(2, 0, &o_derE[l_de][0][0][0]);
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -493,7 +493,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         // buffer for the anelastic computations
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS];
-#if defined(PP_ELTWISE_TPP) and !defined(PP_EQUATION_TPP)
+#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and !defined(PP_EQUATION_TPP)
         // buffer for relaxation computations
         TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS];
         // buffer for time integrated dofs
@@ -501,7 +501,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 #endif
 
         if( TL_N_RMS > 0 ) {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
           u_unary.execute(2, 1, &l_scratch[0][0]);
 #else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
@@ -556,7 +556,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
                         nullptr );
 
           // multiply with relaxation frequency and add
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
 #  ifdef PP_EQUATION_TPP
           arg_array[0].primary     = &l_scratch[0][0];               
           arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
@@ -594,7 +594,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         }
 
         // elastic: update time integrated DOFs
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
 #  ifdef PP_EQUATION_TPP
         arg_array[0].primary     = &o_derE[l_de][0][0][0];                         /* [l_nCpMds, TL_N_QTS_E] */
         arg_array[1].primary     = &l_scalar;                                      /* [1] */

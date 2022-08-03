@@ -41,7 +41,7 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-#define PP_ELTWISE_TPP
+#define PP_T_KERNELS_XSMM_ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -326,7 +326,7 @@ class edge::seismic::solvers::AderDg {
                                         m_fsE,
                                         m_fsA );
 
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       // eltwise kernels
       libxsmm_blasint M  = TL_N_MDS_EL*TL_N_CRS*TL_N_QTS_E;
       libxsmm_blasint N  = 1;
@@ -424,7 +424,7 @@ class edge::seismic::solvers::AderDg {
         if( (i_elChars[l_el].spType & C_LTS_EL[EL_INT_LT]) == C_LTS_EL[EL_INT_LT] ) {
           // reset, if required
           if( i_firstTs ) {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
             u_unary.execute(0, 1, &o_tDofs[1][l_el][0][0][0]);
 #else
             for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -441,7 +441,7 @@ class edge::seismic::solvers::AderDg {
           }
 
           // add tDofs of this time step
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
           b_binary.execute(0, 1, &o_tDofs[1][l_el][0][0][0], &o_tDofs[0][l_el][0][0][0], &o_tDofs[1][l_el][0][0][0]);
 #else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -502,7 +502,7 @@ class edge::seismic::solvers::AderDg {
                                                  o_sendDofs[l_el*TL_N_FAS + l_fa]+TL_N_QTS_E );
 
               // move second integral from [0, dt] to [1/2dt, dt]
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
               b_binary.execute(1, 0, &o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E][0][0], &o_sendDofs[l_el*TL_N_FAS + l_fa][0][0][0],
                                       &o_sendDofs[l_el*TL_N_FAS + l_fa][TL_N_QTS_E][0][0]);
 #else
@@ -626,7 +626,7 @@ class edge::seismic::solvers::AderDg {
         TL_T_REAL l_upA[TL_N_QTS_M][TL_N_MDS_EL][TL_N_CRS];
         if( TL_N_RMS > 0) {
 
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
           u_unary.execute(0, 2, &l_upA[0][0][0]);
 #else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
@@ -678,7 +678,7 @@ class edge::seismic::solvers::AderDg {
             if( i_recvDofs == nullptr || i_recvDofs[l_el*TL_N_FAS + l_fa] == nullptr ) {
               // element and face-adjacent one have an equal time step
               if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_EQ]) == C_LTS_AD[l_fa][AD_EQ] ) {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
                 u_unary.execute(0, 0, &i_tDofs[0][l_ne][0][0][0], &l_tDofs[0][0][0]);
 #else
                 for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -695,7 +695,7 @@ class edge::seismic::solvers::AderDg {
               }
               // element has a greater time step than the face-adjacent one
               else if( (i_elChars[l_el].spType & C_LTS_AD[l_fa][AD_GT]) == C_LTS_AD[l_fa][AD_GT] ) {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
                 u_unary.execute(0, 0, &i_tDofs[1][l_ne][0][0][0], &l_tDofs[0][0][0]);
 #else
                 for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -713,7 +713,7 @@ class edge::seismic::solvers::AderDg {
               // element has a time step less than the adjacent one
               else {
                 if( i_firstTs ) {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
                   u_unary.execute(0, 0, &i_tDofs[2][l_ne][0][0][0], &l_tDofs[0][0][0]);
 #else
                   for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -729,7 +729,7 @@ class edge::seismic::solvers::AderDg {
 #endif
                 }
                 else {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
                   b_binary.execute(0, 0, &i_tDofs[0][l_ne][0][0][0], &i_tDofs[2][l_ne][0][0][0], &l_tDofs[0][0][0]);
 #else
                   for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )

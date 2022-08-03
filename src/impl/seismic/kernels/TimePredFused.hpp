@@ -35,7 +35,7 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-#define PP_ELTWISE_TPP
+#define PP_T_KERNELS_XSMM_ELTWISE_TPP
 
 namespace edge {
   namespace seismic {
@@ -110,7 +110,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
     //! ternary kernels
     edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
-#ifndef PP_ELTWISE_TPP
+#ifndef PP_T_KERNELS_XSMM_ELTWISE_TPP
     /**
      * Sets the given matrix to zero.
      *
@@ -326,7 +326,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
                   TL_T_REAL(1.0),       // beta
                   LIBXSMM_GEMM_PREFETCH_NONE );
       }
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       // initialize zero-derivative, reset time integrated dofs
       u_unary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_E /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE);
       b_binary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_E /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
@@ -476,7 +476,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       TL_T_REAL l_scalar = i_dT;
 
       // elastic initialize zero-derivative, reset time integrated dofs
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       /* 1. o_derE[0][l_qt][l_md][l_cfr] = i_dofsE[l_qt][l_md][l_cfr] */
       u_unary.execute(0, 0, &i_dofsE[0][0][0], &o_derE[0][0][0][0]);
       /* 2. o_tIntE[l_qt][l_md][l_cfr]   = l_scalar * i_dofsE[l_qt][l_md][l_cfr]*/
@@ -494,7 +494,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
 #endif
 
       // anelastic: init zero-derivative, reset tDofs
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         /* 1. o_derA[l_rm][0][l_qt][l_md][l_cr] = i_dofsA[l_rm][l_qt][l_md][l_cr] */
         u_unary.execute(1, 0, &i_dofsA[0][0][0][0], &o_derA[0][0][0][0][0]);
         /* 2. o_tIntA[l_rm][l_qt][l_md][l_cr] = l_scalar * i_dofsA[l_rm][l_qt][l_md][l_cr] */
@@ -519,7 +519,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         unsigned short l_re = (TL_N_RMS == 0) ? l_de : 1;
 
         // elastic: reset this derivative
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         u_unary.execute (2, 0, (TL_T_REAL*)&o_derE[l_de][0][0][0]);
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -530,14 +530,14 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
 
         // scratch memory for viscoelastic part
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         // buffer for relaxation computations
         TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
         // buffer for time integrated dofs
         TL_T_REAL l_scratch3[TL_N_QTS_E][TL_N_MDS][TL_N_CRS];
 #endif
 
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         u_unary.execute (2, 1, (TL_T_REAL*)&l_scratch[0][0][0]);
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
@@ -551,7 +551,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
           // reset to zero for basis in non-hierarchical storage
           if( TL_T_EL == TET4 || TL_T_EL == TRIA3 ) {}
           else {
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
             u_unary.execute (2, 2, (TL_T_REAL*)&o_scratch[0][0][0]);
 #else
             zero( o_scratch );
@@ -587,7 +587,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
                              o_derE[l_de][0][0] );
 
           // multiply with relaxation frequency and add
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
           /* @TODO: One could use a ternary here (but likely it is not possible right now due
               to the missing support for TERNARY_BCAST flags outside equations) */
 
@@ -615,7 +615,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         }
 
         // elastic: update time integrated DOFs
-#ifdef PP_ELTWISE_TPP
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         /* @TODO: One could use a ternary here (but likely it is not possible right now due
             to the missing support for TERNARY_BCAST flags outside equations) */
 
