@@ -5,10 +5,10 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2020-2021, Friedrich Schiller University Jena
+ * Copyright (c) 2020-2022, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2022, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-#define ELTWISE_TPP
+#define PP_ELTWISE_TPP
 //#define USE_TERNARY
 
 #ifdef USE_TERNARY
@@ -292,7 +292,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
                   TL_T_REAL(1.0),       // alpha
                   TL_T_REAL(1.0),       // beta
                   LIBXSMM_GEMM_PREFETCH_NONE );
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
         // zeroing the buffer for the anelastic part
         u_unary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
@@ -302,7 +302,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
       }
 
       // multiply with relaxation frequency and add
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
       // subtraction
       b_binary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */,
                     LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
@@ -414,13 +414,13 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
       // buffer for the anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
 
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
       // buffer for relaxation computations
       TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
 #endif
 
       if( TL_N_RMS > 0 ) {
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
         u_unary.execute (0, 0, (TL_T_REAL*)&l_scratch[0][0][0]);
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
@@ -432,7 +432,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
       // set scratch memory to zero for attenuation, which multiplies by stiffness matrices first
       if( TL_N_RMS > 0 ) {
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
         u_unary.execute (0, 1, (TL_T_REAL*)&o_scratch[0][0][0]);
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ )
@@ -482,7 +482,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
                            io_dofsE[0][0] );
 
         // multiply with relaxation frequency and add
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
         // @TODO: Could be replaced by a single equation (provided no data races occur)
         /* 1. l_scratch2[][][] = l_scratch[l_qt][l_md][l_cr] - i_tDofsA[l_rm][l_qt][l_md][l_cr] */
         b_binary.execute(0, 0, &l_scratch[0][0][0], &i_tDofsA[l_rm][0][0][0], &l_scratch2[0][0][0]);

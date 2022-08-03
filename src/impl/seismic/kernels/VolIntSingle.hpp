@@ -5,10 +5,10 @@
  *         Alexander Heinecke (alexander.heinecke AT intel.com)
  *
  * @section LICENSE
- * Copyright (c) 2021, Friedrich Schiller University Jena
+ * Copyright (c) 2021-2022, Friedrich Schiller University Jena
  * Copyright (c) 2019, Alexander Breuer
  * Copyright (c) 2016-2018, Regents of the University of California
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2022, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -35,9 +35,9 @@
 #include "data/TernaryXsmm.hpp"
 #include "data/XsmmUtils.hpp"
 
-#define ELTWISE_TPP
+#define PP_ELTWISE_TPP
 
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
 #  define EQUATION_TPP
 #endif
 
@@ -172,7 +172,7 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
       }
 
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
       // zeroing the scratch
       u_unary.add(0, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
@@ -315,12 +315,12 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
 
       // buffer for anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][1];
-#if defined(ELTWISE_TPP) and !defined(EQUATION_TPP)
+#if defined(PP_ELTWISE_TPP) and !defined(EQUATION_TPP)
       // buffer for relaxation computations
       TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][1];
 #endif
 
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
       u_unary.execute (0, 0, (TL_T_REAL*)&l_scratch[0][0][0]);
 #else
       for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ )
@@ -360,7 +360,7 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
         }
       }
 
-#if defined(ELTWISE_TPP) and defined(EQUATION_TPP)
+#if defined(PP_ELTWISE_TPP) and defined(EQUATION_TPP)
       libxsmm_matrix_arg arg_array[4];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
@@ -378,7 +378,7 @@ class edge::seismic::kernels::VolIntSingle: edge::seismic::kernels::VolInt < TL_
                       nullptr );
 
         // multiply with relaxation frequency and add
-#ifdef ELTWISE_TPP
+#ifdef PP_ELTWISE_TPP
 #  ifdef EQUATION_TPP
         arg_array[0].primary     = &l_scratch[0][0][0];
         arg_array[1].primary     = const_cast<void*>(reinterpret_cast<const void*>(&i_tDofsA[l_rm][0][0]));
