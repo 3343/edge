@@ -36,9 +36,11 @@
 #include "io/Receivers.h"
 #include "AderDgInit.hpp"
 
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
 #include "data/UnaryXsmm.hpp"
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
+#endif
 
 namespace edge {
   namespace seismic {
