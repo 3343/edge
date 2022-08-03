@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 ##
 # @file This file is part of EDGE.
 #

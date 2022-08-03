@@ -1,12 +1,11 @@
 #!/bin/bash
-set -euo pipefail
 ##
 # @file This file is part of EDGE.
 #
 # @author Alexander Breuer (alex.breuer AT uni-jena.de)
 #
 # @section LICENSE
-# Copyright (c) 2021, Friedrich Schiller University Jena
+# Copyright (c) 2021-2022, Friedrich Schiller University Jena
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
