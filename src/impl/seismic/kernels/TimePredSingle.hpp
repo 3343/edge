@@ -37,7 +37,7 @@
 #define PP_ELTWISE_TPP
 
 #ifdef PP_ELTWISE_TPP
-#  define EQUATION_TPP
+#  define PP_EQUATION_TPP
 #endif
 
 namespace edge {
@@ -110,7 +110,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
     //! ternary kernels
     edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
-#ifdef EQUATION_TPP
+#ifdef PP_EQUATION_TPP
     std::vector<libxsmm_matrix_eqn_function>  e_eqns00;
     std::vector<libxsmm_matrix_eqn_function>  e_eqns01;
     std::vector<libxsmm_matrix_eqn_function>  e_eqns1;
@@ -208,7 +208,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
                       LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
       }
 
-#  ifdef EQUATION_TPP
+#  ifdef PP_EQUATION_TPP
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
@@ -470,7 +470,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       }
 #endif
 
-#if defined(PP_ELTWISE_TPP) and defined(EQUATION_TPP)
+#if defined(PP_ELTWISE_TPP) and defined(PP_EQUATION_TPP)
       libxsmm_matrix_arg arg_array[3];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
@@ -493,7 +493,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         // buffer for the anelastic computations
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS];
-#if defined(PP_ELTWISE_TPP) and !defined(EQUATION_TPP)
+#if defined(PP_ELTWISE_TPP) and !defined(PP_EQUATION_TPP)
         // buffer for relaxation computations
         TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS];
         // buffer for time integrated dofs
@@ -557,7 +557,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
           // multiply with relaxation frequency and add
 #ifdef PP_ELTWISE_TPP
-#  ifdef EQUATION_TPP
+#  ifdef PP_EQUATION_TPP
           arg_array[0].primary     = &l_scratch[0][0];               
           arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
           arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
@@ -595,7 +595,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         // elastic: update time integrated DOFs
 #ifdef PP_ELTWISE_TPP
-#  ifdef EQUATION_TPP
+#  ifdef PP_EQUATION_TPP
         arg_array[0].primary     = &o_derE[l_de][0][0][0];                         /* [l_nCpMds, TL_N_QTS_E] */
         arg_array[1].primary     = &l_scalar;                                      /* [1] */
         arg_array[2].primary     = &o_tIntE[0][0][0];                              /* [l_nCpMds, TL_N_QTS_E] */
