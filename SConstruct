@@ -577,7 +577,7 @@ else:
 if 'debug' in env['mode']:
   env.Append( CXXFLAGS = ['-g','-O0'] )
 else:
-  env.Append( CPPDEFINES = ['-DNDEBUG'] )
+  env.Append( CPPDEFINES = ['PP_NDEBUG'] )
   env.Append( CXXFLAGS = ['-O2'] )
   if compilers=='gnu':
     env.Append( CXXFLAGS = '-ftree-vectorize' )

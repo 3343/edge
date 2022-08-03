@@ -118,7 +118,7 @@ class edge::data::MmXsmmSingle {
                   const TL_T_REAL*     i_pf_c ) const {
       // @TODO we can optimize by putting this into the constructor (if we avoid data races)
       libxsmm_gemm_param gemm_param;
-#if !defined(NDEBUG)
+#if !defined(PP_NDEBUG)
       memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 #endif
 
