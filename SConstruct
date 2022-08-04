@@ -85,8 +85,10 @@ def getArch():
       l_arch = 'snb'
     elif( 'sse4_2' in l_cpuInfo['flags'] ):
       l_arch = 'wsm'
-    elif( 'sve' in l_cpuInfo['flags'] ):
+    elif( 'brand_raw' in l_cpuInfo.keys() and l_cpuInfo['brand_raw'] == 'A64FX' ):
       l_arch = 'a64fx'
+    elif( 'brand_raw' in l_cpuInfo.keys() and l_cpuInfo['brand_raw'] == 'Neoverse-V1' ):
+      l_arch = 'v1'
     elif( 'brand_raw' in l_cpuInfo.keys() and l_cpuInfo['brand_raw'] == 'Neoverse-N1' ):
       l_arch = 'n1'
     elif( l_cpuInfo['arch_string_raw'] == 'aarch64' ):
@@ -481,6 +483,10 @@ elif env['arch'] == 'knl' or env['arch'] == 'knm':
 elif env['arch'] == 'n1':
   if compilers=='gnu' or compilers=='clang':
     env.Append( CPPFLAGS = ['-mtune=neoverse-n1'] )
+    env.Append( CPPDEFINES = ['LIBXSMM_PLATFORM_FORCE'] )
+elif env['arch'] == 'v1':
+  if compilers=='gnu' or compilers=='clang':
+    env.Append( CPPFLAGS = ['-mtune=neoverse-v1'] )
     env.Append( CPPDEFINES = ['LIBXSMM_PLATFORM_FORCE'] )
 elif env['arch'] == 'a64fx':
   if compilers=='gnu' or compilers=='clang':
