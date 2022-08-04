@@ -6,7 +6,7 @@
 	url = https://github.com/easylogging/easyloggingpp.git
 [submodule "submodules/libxsmm"]
 	path = submodules/libxsmm
-	url = https://github.com/hfp/libxsmm.git
+	url = https://github.com/breuera/libxsmm.git
 [submodule "submodules/Catch"]
 	path = submodules/Catch
 	url = https://github.com/philsquared/Catch.git
