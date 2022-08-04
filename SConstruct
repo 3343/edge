@@ -234,7 +234,7 @@ vars.AddVariables(
   EnumVariable( 'arch',
                 'architecture to compile for',
                 'native',
-                 allowed_values=('native', 'wsm', 'snb', 'hsw', 'knl', 'skx', 'avx512', 'n1', 'a64fx')
+                 allowed_values=('native', 'wsm', 'snb', 'hsw', 'knl', 'skx', 'avx512', 'n1', 'a64fx', 'v1')
               ),
   EnumVariable( 'precision',
                 'floating point precision (bit)',
@@ -429,7 +429,7 @@ if( env['xsmm'] ):
   if( env['order'] == '1' ):
     warnings.warn('  Warning: LIBXSMM is not supported finite volume settings, continuing without' )
     env['xsmm'] = False
-  if( not (env['arch'] == 'wsm' and env['cfr'] == '1') and env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512' and env['arch'] != 'n1' and env['arch'] != 'aarch64' and env['arch'] != 'a64fx' ):
+  if( not (env['arch'] == 'wsm' and env['cfr'] == '1') and env['arch'] != 'snb' and env['arch'] != 'hsw' and env['arch'] != 'knl' and env['arch'] != 'skx' and env['arch'] != 'avx512' and env['arch'] != 'n1' and env['arch'] != 'aarch64' and env['arch'] != 'a64fx' and env['arch'] != 'v1' ):
     warnings.warn( '  Warning: LIBXSMM not supported for arch != (wsm (cfr=1), snb, hsw, knl, skx, avx512, n1 or aarch64), continuing without' )
     env['xsmm'] = False
 
