@@ -605,7 +605,7 @@ if env['cov'] == True:
   env.Append( LINKFLAGS = ['-coverage'] )
 
 # add Catch
-if env['tests']:
+if env['tests'] or env['bench']:
   env.Append( CXXFLAGS = ['-Isubmodules/Catch2/single_include/catch2'] )
 
 # test for kernel timings
