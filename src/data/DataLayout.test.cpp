@@ -21,10 +21,8 @@
  * Unit test for the data layout.
  **/
 #include <catch.hpp>
-#define private public
+#include "io/logging.h"
 #include "DataLayout.hpp"
-#undef private
-
 
 TEST_CASE( "Data Layout: Sparse adjacency.", "[dataLayout][spAd]" ) {
   /*

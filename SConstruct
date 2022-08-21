@@ -252,6 +252,9 @@ vars.AddVariables(
   BoolVariable( 'tests',
                 'enable unit tests.',
                  False ),
+  BoolVariable( 'bench',
+                'enable performance benchmarks.',
+                 False ),
   PathVariable( 'build_dir',
                 'location where the code is build',
                 'build',
@@ -603,7 +606,7 @@ if env['cov'] == True:
 
 # add Catch
 if env['tests']:
-  env.Append( CXXFLAGS = ['-Isubmodules/Catch/include'] )
+  env.Append( CXXFLAGS = ['-Isubmodules/Catch2/single_include/catch2'] )
 
 # test for kernel timings
 if env['mmperf']:
@@ -615,6 +618,7 @@ VariantDir( env['build_dir']+'/submodules', 'submodules')
 
 env.sources = []
 env.tests = []
+env.bench = []
 
 Export('env')
 Export('conf')
@@ -642,3 +646,6 @@ env.Program( env['build_dir']+'/edge', source = env.sources )
 
 if env['tests']:
   env.Program( env['build_dir']+'/tests', source = env.tests )
+
+if env['bench']:
+  env.Program( env['build_dir']+'/bench', source = env.bench )

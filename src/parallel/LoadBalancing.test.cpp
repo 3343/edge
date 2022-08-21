@@ -22,6 +22,7 @@
  * Unit tests of the dynamic load balancing.
  **/
 #include <catch.hpp>
+#include "io/logging.h"
 #define private public
 #include "LoadBalancing.h"
 #undef private

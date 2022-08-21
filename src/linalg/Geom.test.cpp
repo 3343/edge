@@ -23,9 +23,7 @@
 #include <catch.hpp>
 #include "constants.hpp"
 
-#define private public
 #include "Geom.hpp"
-#undef private
 #include "Matrix.h"
 
 TEST_CASE( "Inside/outside derivation: Points with respect to lines", "[geom][insideLine]" ) {

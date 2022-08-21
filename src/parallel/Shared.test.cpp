@@ -26,9 +26,7 @@
 #include <omp.h>
 #endif
 
-#define private public
 #include "Shared.h"
-#undef private
 
 TEST_CASE( "NUMA-aware initialization without separate workers.", "[numaInitNoSep]" ) {
 

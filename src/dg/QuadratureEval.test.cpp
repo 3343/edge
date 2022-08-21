@@ -21,9 +21,7 @@
  * Unit tests for evals through quadrature rules.
  **/
 #include <catch.hpp>
-#define private public
 #include "QuadratureEval.hpp"
-#undef private
 
 // TODO: unit tests only valid for double-precision arithmetic since dg::Basis is not templatized.
 #if PP_PRECISION == 64

@@ -7,9 +7,6 @@
 [submodule "submodules/libxsmm"]
 	path = submodules/libxsmm
 	url = https://github.com/breuera/libxsmm.git
-[submodule "submodules/Catch"]
-	path = submodules/Catch
-	url = https://github.com/philsquared/Catch.git
 [submodule "submodules/exprtk"]
 	path = submodules/exprtk
 	url = https://github.com/3343/exprtk.git
@@ -25,3 +22,6 @@
 [submodule "submodules/py-cpuinfo"]
 	path = submodules/py-cpuinfo
 	url = https://github.com/workhorsy/py-cpuinfo.git
+[submodule "submodules/Catch2"]
+	path = submodules/Catch2
+	url = https://github.com/catchorg/Catch2.git

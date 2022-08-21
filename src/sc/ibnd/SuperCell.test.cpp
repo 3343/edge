@@ -21,9 +21,7 @@
  * Unit test for super-cells.
  **/
 #include <catch.hpp>
-#define private public
 #include "SuperCell.hpp"
-#undef private
 
 unsigned short l_scSfScTet1[63][4] = {
   { 2,4,1,3 },

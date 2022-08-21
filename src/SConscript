@@ -156,6 +156,19 @@ if env['tests']:
   for l_test in l_tests:
     env.tests.append( env.Object( l_test, CXXFLAGS = env['CXXFLAGS']+l_cxxflags ) )
 
+# gather performance benchmarks
+if env['bench']:
+  l_bench = ['bench.cpp']
+  if env['xsmm']:
+    if 'elastic' in env['equations']:
+      if env['element_type'] == 'tet4':
+        l_bench += ['impl/seismic/kernels/TimePredSingle.bench.cpp']
+
+  env.bench.append( env.sources )
+
+  for l_file in l_bench:
+    env.bench.append( env.Object( l_file ) )
+
 # prepend main file to edge
 env.sources = env.Object( 'main.cpp' ) + env.sources
 

@@ -21,6 +21,7 @@
  * Tests the timer.
  **/
 #include <catch.hpp>
+#include "io/logging.h"
 #define private public
 #include "Timer.hpp"
 #undef private
@@ -36,8 +37,8 @@ TEST_CASE( "Monitor: Timer.", "[timer][monitor]" ) {
   l_timer.start();
 
   // keep the CPU busy
-  unsigned short l_state = 0;
-  for( unsigned short l_it = 0; l_it < 10000; l_it++ ) l_state++;
+  unsigned int l_state = 0;
+  for( unsigned int l_it = 0; l_it < 10000; l_it++ ) l_state+=1.0;
   REQUIRE( l_state == 10000 );
 
   // stop time and check that time elapsed
@@ -53,7 +54,7 @@ TEST_CASE( "Monitor: Timer.", "[timer][monitor]" ) {
 
   // do some work
   l_state = 0;
-  for( unsigned short l_it = 0; l_it < 10000; l_it++ ) l_state++;
+  for( unsigned int l_it = 0; l_it < 10000; l_it++ ) l_state+=1.0;
   REQUIRE( l_state == 10000 );
 
   // stop timer and get time
@@ -64,7 +65,7 @@ TEST_CASE( "Monitor: Timer.", "[timer][monitor]" ) {
 
   // do some work
   l_state = 0;
-  for( unsigned short l_it = 0; l_it < 10000; l_it++ ) l_state++;
+  for( unsigned int l_it = 0; l_it < 10000; l_it++ ) l_state+=1.0;
   REQUIRE( l_state == 10000 );
 
   // stop timer and get time

@@ -21,9 +21,7 @@
  * Unit tests for initialization of internal boundary data.
  **/
 #include <catch.hpp>
-#define private public
 #include "Init.hpp"
-#undef private
 
 TEST_CASE( "Ibnd init: Connectivity.", "[ibndInit][conn]") {
   /*

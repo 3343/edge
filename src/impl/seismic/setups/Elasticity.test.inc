@@ -127,6 +127,7 @@
 #pragma GCC diagnostic push
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
 double l_starE2d[2][5][5] =

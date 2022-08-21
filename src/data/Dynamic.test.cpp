@@ -91,7 +91,7 @@ TEST_CASE( "Dynamic: Flex data structure.", "[Dynamic][flex]" ) {
   REQUIRE( (l_flex1[20] - l_flex1[19]) == 8       );
 
   // size per entry: rows, columns, 8 byte per double
-  std::size_t l_sizeEntry = 20 * 8 * 8;
+  long int l_sizeEntry = 20 * 8 * 8;
 
   // check the base pointers
   REQUIRE( ((char*) l_flex1[ 1] - (char*) l_flex1[ 0]) == 2 * l_sizeEntry );

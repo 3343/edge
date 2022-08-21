@@ -21,6 +21,7 @@
  * Unit tests of elastic local Lax-Friedrichs sub-cell solver.
  **/
 #include <catch.hpp>
+#include "io/logging.h"
 #define private public
 #include "Llf.hpp"
 #undef private

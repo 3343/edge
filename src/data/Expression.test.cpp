@@ -21,9 +21,7 @@
  * Unit tests for EDGE's expressions.
  **/
 #include <catch.hpp>
-#define private public
 #include "Expression.hpp"
-#undef private
 
 TEST_CASE( "Expression: Scalar.", "[expression][scalar]" ) {
   edge::data::Expression< float > l_expr1;

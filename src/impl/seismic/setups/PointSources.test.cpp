@@ -22,6 +22,7 @@
  **/
 
 #include <catch.hpp>
+#include "io/logging.h"
 #define private public
 #include "PointSources.hpp"
 #undef private

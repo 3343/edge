@@ -23,6 +23,7 @@
 
 #include <catch.hpp>
 
+#include "io/logging.h"
 #define private public
 #include "InternalBoundary.hpp"
 #undef private

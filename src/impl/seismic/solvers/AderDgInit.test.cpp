@@ -23,9 +23,7 @@
  **/
 
 #include <catch.hpp>
-#define private public
 #include "AderDgInit.hpp"
-#undef private
 
 TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[AderDgInit][setupFs2dElastic]" ) {
   double l_fL[5*5];
@@ -49,12 +47,12 @@ TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[AderDgInit][setup
   REQUIRE( l_fL[1*5 + 0] == Approx( 0.0008)              );
   REQUIRE( l_fL[2*5 + 0] == Approx(-0.094060406122874)   );
   REQUIRE( l_fL[3*5 + 0] == Approx( 0.1)                 );
-  REQUIRE( l_fL[4*5 + 0] == Approx( 0.0)                 );
+  REQUIRE( l_fL[4*5 + 0] == Approx( 0.0).margin(1E-15)   );
 
   REQUIRE( l_fL[0*5 + 1] == Approx( 0.4608)              );
   REQUIRE( l_fL[1*5 + 1] == Approx( 0.9792)              );
   REQUIRE( l_fL[2*5 + 1] == Approx(-0.00391918358845308) );
-  REQUIRE( l_fL[3*5 + 1] == Approx( 0.0)                 );
+  REQUIRE( l_fL[3*5 + 1] == Approx( 0.0).margin(1E-15)   );
   REQUIRE( l_fL[4*5 + 1] == Approx(-0.489897948556636)   );
 
   REQUIRE( l_fR[0*5 + 2] == Approx( 0.384079991668402)   );
@@ -92,12 +90,12 @@ TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[AderDgInit][setup
   REQUIRE( l_fL[1*5 + 0] == Approx( 0.03125)            );
   REQUIRE( l_fL[2*5 + 0] == Approx(-0.162379763209582)  );
   REQUIRE( l_fL[3*5 + 0] == Approx(-0.25)               );
-  REQUIRE( l_fL[4*5 + 0] == Approx( 0.0)                );
+  REQUIRE( l_fL[4*5 + 0] == Approx( 0.0).margin(1E-15)  );
 
   REQUIRE( l_fL[0*5 + 1] == Approx( 0.28125)            );
   REQUIRE( l_fL[1*5 + 1] == Approx( 0.84375)            );
   REQUIRE( l_fL[2*5 + 1] == Approx(-0.0541265877365274) );
-  REQUIRE( l_fL[3*5 + 1] == Approx( 0.0)                );
+  REQUIRE( l_fL[3*5 + 1] == Approx( 0.0).margin(1E-15)  );
   REQUIRE( l_fL[4*5 + 1] == Approx( 0.433012701892219)  );
 
   REQUIRE( l_fR[0*5 + 2] == Approx( 0.757772228311384)  );
@@ -135,12 +133,12 @@ TEST_CASE( "Setup of the two-dimensional, elastic solvers.", "[AderDgInit][setup
   REQUIRE( l_fL[1*5 + 0] == Approx( 0.125)               );
   REQUIRE( l_fL[2*5 + 0] == Approx( 0.125)               );
   REQUIRE( l_fL[3*5 + 0] == Approx(-0.25 * std::sqrt(2)) );
-  REQUIRE( l_fL[4*5 + 0] == Approx( 0.0)                 );
+  REQUIRE( l_fL[4*5 + 0] == Approx( 0.0).margin(1E-15)   );
 
   REQUIRE( l_fL[0*5 + 1] == Approx( 0.125)               );
   REQUIRE( l_fL[1*5 + 1] == Approx( 0.625)               );
   REQUIRE( l_fL[2*5 + 1] == Approx( 0.125)               );
-  REQUIRE( l_fL[3*5 + 1] == Approx( 0.0)                 );
+  REQUIRE( l_fL[3*5 + 1] == Approx( 0.0).margin(1E-15)   );
   REQUIRE( l_fL[4*5 + 1] == Approx(-0.25 * std::sqrt(2)) );
 
   REQUIRE( l_fR[0*5 + 2] == Approx(-0.75)                );
