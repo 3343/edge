@@ -45,6 +45,6 @@ env.submods.append( '#submodules/pugixml/src/pugixml.cpp' )
 
 # add Catch
 if env['tests']:
-  env.Append( CPPPATH = ['#submodules/Catch/include'] )
+  env.Append( CPPPATH = ['#submodules/Catch2/single_include/catch2'] )
 
 Export('env')
