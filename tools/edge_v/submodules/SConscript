@@ -68,7 +68,7 @@ env.Append( CPPDEFINES=['EIGEN_MAX_STATIC_ALIGN_BYTES=0'] )
 
 # add Catch
 if env['tests']:
-  env.Append( CXXFLAGS = ['-Isubmodules/Catch/include'] )
+  env.Append( CXXFLAGS = ['-Isubmodules/Catch2/single_include/catch2'] )
   conf.CheckHeader( 'catch.hpp',
                     language = 'c++' )
 
