@@ -48,7 +48,6 @@ TEST_CASE( "Tests the derivation of time step groups.", "[time][groups]" ) {
    **/
 
   double l_rates1[4] = {1.6, 1.9, 2.0, 1.5};
-  edge_v::t_idx l_nEls1 = 11;
   double l_ts1[11] = {12.3, 3.7,  10.4, 3.5,  5.0,  1.0 , 3.9,  3.6,  3.2, 1.5,  2.1};
 
   edge_v::t_idx l_elFaEl1[11*3];

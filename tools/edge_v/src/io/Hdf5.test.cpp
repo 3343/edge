@@ -22,9 +22,7 @@
  * Tests the HDF5 interface.
  **/
 #include <catch.hpp>
-#define private public
 #include "Hdf5.h"
-#undef private
 
 TEST_CASE( "Tests set/get data HDF5 interface.", "[hdf5][setGetData]" ) {
   // dummy data

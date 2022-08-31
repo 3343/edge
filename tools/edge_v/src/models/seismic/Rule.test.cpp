@@ -22,9 +22,7 @@
  **/
 
 #include <catch.hpp>
-#define private public
 #include "Rule.h"
-#undef private
 
 TEST_CASE( "Tests the application of velocity rules for the 2018 HighF setting.", "[rule][highf2018]" ) {
   std::string l_expr = R"V0G0N(
