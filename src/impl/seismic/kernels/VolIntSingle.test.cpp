@@ -21,10 +21,7 @@
  * Tests the optimized volume integration for single forward simulations.
  **/
 #include <catch.hpp>
-#define private public
 #include "VolIntSingle.hpp"
-#undef private
-
 
 TEST_CASE( "Optimized elastic volume integration for single forward simulations.", "[elastic][VolIntSingle]" ) {
   // set up matrix structures

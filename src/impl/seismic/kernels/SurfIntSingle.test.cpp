@@ -21,10 +21,7 @@
  * Tests the surface integration for single seismic simulations.
  **/
 #include <catch.hpp>
-#define private public
 #include "SurfIntSingle.hpp"
-#undef private
-
 
 TEST_CASE( "Local surface integration for single seismic simulations.", "[elastic][SurfIntLocalSingle]" ) {
   // set up matrix structures

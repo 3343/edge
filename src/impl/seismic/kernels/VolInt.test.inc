@@ -221,6 +221,7 @@ printCStyle( l_dofsVUpdated[1] )
 #pragma GCC diagnostic push
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
 float l_rfs[2] = {0.012, 0.052};

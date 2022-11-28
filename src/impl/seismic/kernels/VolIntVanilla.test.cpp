@@ -21,10 +21,7 @@
  * Tests the vanilla volume integration.
  **/
 #include <catch.hpp>
-#define private public
 #include "VolIntVanilla.hpp"
-#undef private
-
 
 TEST_CASE( "Elastic volume integration using vanilla kernels.", "[elastic][VolIntVanilla]" ) {
   // set up matrix structures
