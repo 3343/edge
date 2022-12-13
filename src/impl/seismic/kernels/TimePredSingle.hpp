@@ -34,6 +34,8 @@
 #include "data/TernaryXsmm.hpp"
 #include "data/XsmmUtils.hpp"
 
+#define PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+
 namespace edge {
   namespace seismic {
     namespace kernels {
@@ -105,8 +107,12 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
     edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
 
 #ifdef PP_T_KERNELS_XSMM_EQUATION_TPP
+#  ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+    std::vector<libxsmm_matrix_eqn_function>  e_eqns0;
+#  else
     std::vector<libxsmm_matrix_eqn_function>  e_eqns00;
     std::vector<libxsmm_matrix_eqn_function>  e_eqns01;
+#  endif
     std::vector<libxsmm_matrix_eqn_function>  e_eqns1;
 #endif
 
@@ -219,13 +225,96 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         libxsmm_matrix_eqn_arg_metadata arg_metadata;
         libxsmm_matrix_eqn_op_metadata  op_metadata;
 
+#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+        libxsmm_bitfield unary_flags;
+#    endif
         libxsmm_bitfield binary_flags;
         libxsmm_bitfield ternary_flags;
 
         arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
-        // adding to eqns00 (multiply with relaxation frequency and add, part 1)
+#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+        // adding to eqns0 (multiply with relaxation frequency and add)
+        libxsmm_blasint my_eqn0 = libxsmm_matrix_eqn_create();         /* o_derA[l_de] = l_rfs[l_rm] * (l_scratch + o_derA[l-de-1]) and o_tintA += l_scalar * o_derA (via DUMP) */
 
+        /* First part of eqn 0 (which is the second equation mathematically) */
+
+        ternary_flags            = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+        op_metadata.eqn_idx      = my_eqn0;
+        op_metadata.op_arg_pos   = -1;
+        libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype_comp, ternary_flags);
+
+        /* UNARY_DUMP is used for o_derA[l_de] which is the output of the first mathematical equation */
+        unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+        op_metadata.eqn_idx      = my_eqn0;
+        op_metadata.op_arg_pos   = 0;
+        libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_DUMP, dtype_comp, unary_flags);
+
+        binary_flags             = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
+        op_metadata.eqn_idx      = my_eqn0;
+        op_metadata.op_arg_pos   = -1;
+        libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_BINARY_MUL, dtype_comp, binary_flags);
+
+        binary_flags             = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+        op_metadata.eqn_idx      = my_eqn0;
+        op_metadata.op_arg_pos   = -1;
+        libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_BINARY_ADD, dtype_comp, binary_flags);
+
+        arg_metadata.eqn_idx     = my_eqn0;
+        arg_metadata.in_arg_pos  = 0;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* l_scratch, [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
+        arg_shape.type = dtype;
+        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
+
+        arg_metadata.eqn_idx     = my_eqn0;
+        arg_metadata.in_arg_pos  = 1;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_derA[l_de-1], [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
+        arg_shape.type = dtype;
+        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
+
+        arg_metadata.eqn_idx     = my_eqn0;
+        arg_metadata.in_arg_pos  = 2;
+        arg_shape.m    = 1;                                             /* l_rfs[l_rm], [1] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = 1;
+        arg_shape.type = dtype;
+        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
+
+        arg_metadata.eqn_idx     = my_eqn0;
+        arg_metadata.in_arg_pos  = 3;
+        arg_shape.m    = 1;                                             /* l_scalar, [1] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = 1;
+        arg_shape.type = dtype;
+        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
+
+        arg_metadata.eqn_idx     = my_eqn0;
+        arg_metadata.in_arg_pos  = 4;
+        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
+        arg_shape.n    = 1;
+        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
+        arg_shape.type = dtype;
+        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
+
+        eqn_out_arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                   /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
+        eqn_out_arg_shape.n    = 1;
+        eqn_out_arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
+        eqn_out_arg_shape.type = dtype;
+
+        /* libxsmm_matrix_eqn_tree_print( my_eqn0 ); */
+        /* libxsmm_matrix_eqn_rpn_print ( my_eqn0 ); */
+        libxsmm_matrix_eqn_function func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, eqn_out_arg_shape );
+        if ( func0 == NULL) {
+          fprintf( stderr, "JIT for TPP equation func0 (eqn0) failed. Bailing...!\n");
+          exit(-1);
+        }
+        e_eqns0.push_back(func0);
+#    else
+        // adding to eqns00 (multiply with relaxation frequency and add, part 1)
         libxsmm_blasint my_eqn00 = libxsmm_matrix_eqn_create();         /* o_derA[l_de] = l_rfs[l_rm] * (l_scratch + o_derA[l-de-1]) */
 
         binary_flags             = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
@@ -322,6 +411,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           exit(-1);
         }
         e_eqns01.push_back(func01);
+#    endif
 
         // adding to eqns1 (update time integrated DOFs)
 
@@ -465,10 +555,15 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 #endif
 
 #if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and defined(PP_T_KERNELS_XSMM_EQUATION_TPP)
-      libxsmm_matrix_arg arg_array[3];
+      libxsmm_matrix_arg arg_array[5];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
       eqn_param.inputs = arg_array;
+
+#  ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+      libxsmm_matrix_op_arg op_arg_arr[1];
+      eqn_param.ops_args = op_arg_arr;
+#  endif
 #endif
 
       // iterate over time derivatives
@@ -552,7 +647,18 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           // multiply with relaxation frequency and add
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
 #  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP
-          arg_array[0].primary     = &l_scratch[0][0];               
+#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+          arg_array[0].primary     = &l_scratch[0][0];
+          arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
+          arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
+          arg_array[3].primary     = &l_scalar;
+          arg_array[4].primary     = &o_tIntA[l_rm][0][0][0];
+          op_arg_arr[0].primary    = &o_derA[l_rm][l_de][0][0][0];
+          eqn_param.output.primary = &o_tIntA[l_rm][0][0][0];
+
+          e_eqns0[l_de-1](&eqn_param);
+#    else
+          arg_array[0].primary     = &l_scratch[0][0];
           arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
           arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
           eqn_param.output.primary = &o_derA[l_rm][l_de][0][0][0];
@@ -563,6 +669,7 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           arg_array[2].primary     = &o_tIntA[l_rm][0][0][0];
           eqn_param.output.primary = &o_tIntA[l_rm][0][0][0];
           e_eqns01[l_de-1](&eqn_param);
+#    endif
 #  else
           /* 1. l_scratch2[][] = l_scratch[l_qt][l_md] + o_derA[l_rm][l_de-1][l_qt][l_md][0] */
           b_binary.execute(3, 0, &l_scratch[0][0], &o_derA[l_rm][l_de-1][0][0][0], &l_scratch2[0][0]);
