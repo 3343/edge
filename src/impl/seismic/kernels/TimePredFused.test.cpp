@@ -21,10 +21,7 @@
  * Tests the optimized time prediction for fused forward simulation.
  **/
 #include <catch.hpp>
-#define private public
 #include "TimePredFused.hpp"
-#undef private
-
 
 TEST_CASE( "Optimized elastic ADER time prediction for fused forward simulations.", "[elastic][TimePredFused]" ) {
   // set up matrix structures

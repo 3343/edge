@@ -21,10 +21,7 @@
  * Tests the optimized volume integration for fused seismic forward simulations.
  **/
 #include <catch.hpp>
-#define private public
 #include "VolIntFused.hpp"
-#undef private
-
 
 TEST_CASE( "Optimized elastic volume integration for fused simulations.", "[elastic][VolIntFused]" ) {
   // set up matrix structures

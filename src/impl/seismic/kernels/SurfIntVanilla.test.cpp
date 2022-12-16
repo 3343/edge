@@ -21,10 +21,7 @@
  * Tests the vanilla surface integration.
  **/
 #include <catch.hpp>
-#define private public
 #include "SurfIntVanilla.hpp"
-#undef private
-
 
 TEST_CASE( "Elastic local surface integration using vanilla kernels.", "[elastic][SurfIntLocalVanilla]" ) {
   // set up matrix structures

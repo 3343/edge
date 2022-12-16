@@ -21,10 +21,7 @@
  * Tests the optimized time prediction for single forward simulation.
  **/
 #include <catch.hpp>
-#define private public
 #include "TimePredSingle.hpp"
-#undef private
-
 
 TEST_CASE( "Optimized elastic ADER time prediction for single forward simulations.", "[elastic][TimePredSingle]" ) {
   // set up matrix structures

@@ -21,10 +21,7 @@
  * Tests the fused surface integration.
  **/
 #include <catch.hpp>
-#define private public
 #include "SurfIntFused.hpp"
-#undef private
-
 
 TEST_CASE( "Local elastic surface integration for fused simulations.", "[elastic][SurfIntLocalFused]" ) {
   // set up matrix structures

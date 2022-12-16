@@ -23,10 +23,7 @@
 #include <limits>
 
 #include <catch.hpp>
-#define private public
 #include "TimePredVanilla.hpp"
-#undef private
-
 
 TEST_CASE( "Elastic ADER time prediction using vanilla kernels.", "[elastic][TimePredVanilla]" ) {
   // set up matrix structures
