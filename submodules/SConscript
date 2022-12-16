@@ -72,6 +72,10 @@ if env['xsmm'] != False:
       if env['arch'] in ['hsw', 'skx', 'avx512']:
         env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_ELTWISE_TPP'] )
         env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_EQUATION_TPP'] )
+    if env['precision'] == '64':
+      if env['arch'] in ['hsw', 'skx', 'avx512']:
+        env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_ELTWISE_TPP'] )
+        env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_XSMM_EQUATION_TPP'] )
   else:
     warnings.warn('  Warning: Could not enable libxsmm, continuing without.' )
     env.AppendUnique( CPPDEFINES=['PP_T_KERNELS_VANILLA'] )
