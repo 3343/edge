@@ -35,14 +35,6 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-#define PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED
-/*
-FIXME:
-In the current build system, PP_T_KERNELS_XSMM_EQUATION_TPP is enabled for building all files hence a different temporary macro is used here in the PR
-*/
-
-#define PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
-
 namespace edge {
   namespace seismic {
     namespace kernels {
@@ -113,15 +105,9 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
     //! binary kernels
     edge::data::BinaryXsmm< TL_T_REAL > b_binary;
 
-    //! ternary kernels
-    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
-
-#ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+    //! equation kernels
     std::vector<libxsmm_matrix_eqn_function>  e_eqns0;
-#  endif
     std::vector<libxsmm_matrix_eqn_function>  e_eqns1;
-#endif
 
 #ifndef PP_T_KERNELS_XSMM_ELTWISE_TPP
     /**
@@ -357,28 +343,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       // zeroing the scratch for basis in non-hierarchical storage
       u_unary.add(2, TL_N_CRS, TL_N_MDS * TL_N_QTS_E /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
-      // multiply with relaxation frequency and add
-      // addition
-      b_binary.add(3, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-      // mult + assign
-      b_binary.add(3, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-      // accumulation 2
-      b_binary.add(3, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-      b_binary.add(3, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-
-      // update time integrated dofs
-      for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
-        unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
-        b_binary.add(4, TL_N_CRS * l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS /* ldi0, ldi1, ldo */,
-                      LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-        b_binary.add(5, TL_N_CRS * l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS, TL_N_CRS * TL_N_MDS /* ldi0, ldi1, ldo */,
-                      LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-      }
-
-
-//////////////////////
-//see FIXME:#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
@@ -395,15 +359,12 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         libxsmm_matrix_eqn_arg_metadata arg_metadata;
         libxsmm_matrix_eqn_op_metadata  op_metadata;
 
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
         libxsmm_bitfield unary_flags;
-#    endif
         libxsmm_bitfield binary_flags;
         libxsmm_bitfield ternary_flags;
 
         arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
         // adding to eqns0 (multiply with relaxation frequency and add)
         libxsmm_blasint my_eqn0 = libxsmm_matrix_eqn_create();         /* o_derA[l_de] = l_rfs[l_rm] * (l_scratch + o_derA[l-de-1]) and o_tintA += l_scalar * o_derA (via DUMP) */
 
@@ -481,9 +442,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
           exit(-1);
         }
         e_eqns0.push_back(func0);
-#    else
-        #error "Not implemented in TimePredFused for #undefined PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP"
-#    endif
 
         // adding to eqns1 (update time integrated DOFs)
 
@@ -533,10 +491,7 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
         }
         e_eqns1.push_back(func1);
       } /* loop over l_de for TPP equations */
-#  endif
-
-//////////////////////
-#endif
+#endif /* PP_T_KERNELS_XSMM_ELTWISE_TPP */
     }
 
     /**
@@ -649,17 +604,14 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
       // scalar for the time integration
       TL_T_REAL l_scalar = i_dT;
 
-//see FIXME: PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version instead of TIMEPREDFUSED
-#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and defined(PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED)
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       libxsmm_matrix_arg arg_array[5];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
       eqn_param.inputs = arg_array;
 
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
       libxsmm_matrix_op_arg op_arg_arr[1];
       eqn_param.ops_args = op_arg_arr;
-#  endif
 #endif
 
       // elastic initialize zero-derivative, reset time integrated dofs
@@ -717,13 +669,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
 
         // scratch memory for viscoelastic part
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
-//see FIXME: PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version instead of TIMEPREDFUSED
-#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) && !defined(PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED)
-        // buffer for relaxation computations
-        TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
-        // buffer for time integrated dofs
-        TL_T_REAL l_scratch3[TL_N_QTS_E][TL_N_MDS][TL_N_CRS];
-#endif
 
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
         u_unary.execute (2, 1, (TL_T_REAL*)&l_scratch[0][0][0]);
@@ -776,9 +721,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
 
           // multiply with relaxation frequency and add
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-//see FIXME:#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
           arg_array[0].primary     = &l_scratch[0][0];
           arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
           arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
@@ -788,24 +730,6 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
           eqn_param.output.primary = &o_tIntA[l_rm][0][0][0];
 
           e_eqns0[l_de-1](&eqn_param);
-#    else
-#      error "Not implemented"
-#    endif
-#  else
-          /* @TODO: One could use a ternary here (but likely it is not possible right now due
-              to the missing support for TERNARY_BCAST flags outside equations) */
-
-          /* 1. l_scratch2[][][] = l_scratch[l_qt][l_md][l_cr] + o_derA[l_rm][l_de-1][l_qt][l_md][l_cr] */
-          b_binary.execute(3, 0, &l_scratch[0][0][0], &o_derA[l_rm][l_de-1][0][0][0], &l_scratch2[0][0][0]);
-
-          /* 2  o_derA[l_rm][l_de][l_qt][l_md][0] = l_rfs[l_rm] * l_scratch2[l_qt][l_md][l_cr] */
-          b_binary.execute(3, 1, &l_scratch2[0][0][0], &l_rfs[l_rm], &o_derA[l_rm][l_de][0][0][0]);
-
-          /* 3.1 l_scratch2 = l_scalar * o_derA[l_rm][l_de][l_qt][l_md][l_cr] */
-          b_binary.execute(3, 2, &o_derA[l_rm][l_de][0][0][0], &l_scalar, &l_scratch2[0][0][0]);
-          /* 3.2 o_tIntA[l_rm][l_qt][l_md][l_cr] += l_scratch2[l_qt][l_md][l_cr] */
-          b_binary.execute(3, 3, &o_tIntA[l_rm][0][0][0], &l_scratch2[0][0][0], &o_tIntA[l_rm][0][0][0]);
-#  endif
 #else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
             for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {
@@ -821,27 +745,11 @@ class edge::seismic::kernels::TimePredFused: public edge::seismic::kernels::Time
 
         // elastic: update time integrated DOFs
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-//see FIXME:#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_TIMEPREDFUSED
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
         arg_array[0].primary     = &o_derE[l_de][0][0][0];                         /* [TL_N_CRS * TL_N_MDS, TL_N_QTS_E] */
         arg_array[1].primary     = &l_scalar;                                      /* [1] */
         arg_array[2].primary     = &o_tIntE[0][0][0];                              /* [TL_N_CRS * TL_N_MDS, TL_N_QTS_E] */
         eqn_param.output.primary = &o_tIntE[0][0][0];                              /* [TL_N_CRS * TL_N_MDS, TL_N_QTS_E] */
         e_eqns1[l_de-1](&eqn_param);
-#    else
-#      error "Not implemented"
-#    endif
-#  else
-        /* @TODO: One could use a ternary here (but likely it is not possible right now due
-            to the missing support for TERNARY_BCAST flags outside equations) */
-
-        /* 1.1 l_scratch3[][][] = l_scalar * o_derE[l_de][l_qt][l_md][l_cr] */
-        b_binary.execute(4, l_de-1, &o_derE[l_de][0][0][0], &l_scalar, &l_scratch3[0][0][0]);
-
-        /* 1.2 o_tIntE[l_qt][l_md][l_cr] += l_scratch3 */
-        b_binary.execute(5, l_de-1, &o_tIntE[0][0][0], &l_scratch3[0][0][0], &o_tIntE[0][0][0]);
-#  endif
 #else
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 

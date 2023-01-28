@@ -36,18 +36,6 @@
 #include "data/BinaryXsmm.hpp"
 #include "data/TernaryXsmm.hpp"
 
-/*
-FIXME:
-In the current build system, PP_T_KERNELS_XSMM_EQUATION_TPP is enabled for building all files hence a different temporary macro is used here in the PR
-*/
-#define PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED
-
-//#define USE_TERNARY
-
-#ifdef USE_TERNARY
-  #error "USE_TERNARY requires (currently missing) support for TERNARY_BCAST flags in LIBXSMM (hence switched off here)"
-#endif
-
 namespace edge {
   namespace seismic {
     namespace kernels { 
@@ -108,16 +96,8 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
     //! unary kernels
     edge::data::UnaryXsmm< TL_T_REAL > u_unary;
 
-    //! binary kernels
-    edge::data::BinaryXsmm< TL_T_REAL > b_binary;
-
-    //! ternary kernels
-    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
-
-//see FIXME:#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version
-#ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED
+    //! equation kernels
     libxsmm_matrix_eqn_function e_eqn;
-#endif
 
     //! pointers to the stiffness matrices
     TL_T_REAL *m_stiff[TL_N_DIS] = {};
@@ -313,20 +293,6 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
       // multiply with relaxation frequency and add
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-      // subtraction
-      b_binary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */,
-                    LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-
-#  ifdef USE_TERNARY
-      /* TERNARY_BCAST is only supported in equations but not in standalone TPPs */
-      t_ternary.add(0, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1);
-#  else
-      b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-      b_binary.add(1, TL_N_CRS, TL_N_MDS * TL_N_QTS_M /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-#  endif
-
-//see FIXME:#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED
       libxsmm_datatype dtype      = XsmmDtype<TL_T_REAL>();
       libxsmm_datatype dtype_comp = XsmmDtype<TL_T_REAL>();
 
@@ -402,8 +368,6 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
         fprintf( stderr, "JIT for TPP equation e_eqn (my_eqn) failed. Bailing...!\n");
         exit(-1);
       }
-#  endif
-
 #endif
     }
 
@@ -503,14 +467,7 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
       // buffer for the anelastic part
       TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
 
-//see FIXME: PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version instead of PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED
-#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) && !defined(PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED)
-      // buffer for relaxation computations
-      TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS][TL_N_CRS];
-#endif
-
-//see FIXME: PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version instead of PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED
-#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and defined(PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED)
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       libxsmm_matrix_arg arg_array[4];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
@@ -581,29 +538,12 @@ class edge::seismic::kernels::VolIntFused: edge::seismic::kernels::VolInt< TL_T_
 
         // multiply with relaxation frequency and add
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-//see FIXME:#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP should be used here in the final version
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP_VOLINTFUSED
         arg_array[0].primary     = &l_scratch[0][0][0];
         arg_array[1].primary     = const_cast<void*>(reinterpret_cast<const void*>(&i_tDofsA[l_rm][0][0]));
         arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
         arg_array[3].primary     = &io_dofsA[l_rm][0][0][0];
         eqn_param.output.primary = &io_dofsA[l_rm][0][0][0];
         e_eqn(&eqn_param);
-#  else
-        // @TODO: Could be replaced by a single equation (provided no data races occur)
-        /* 1. l_scratch2[][][] = l_scratch[l_qt][l_md][l_cr] - i_tDofsA[l_rm][l_qt][l_md][l_cr] */
-        b_binary.execute(0, 0, &l_scratch[0][0][0], &i_tDofsA[l_rm][0][0][0], &l_scratch2[0][0][0]);
-
-#    ifdef USE_TERNARY
-        t_ternary.execute(0, 0, &io_dofsA[l_rm][0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
-#    else
-        /* 2.1 l_scratch2[l_qt][l_md][l_cr] *= l_rfs[l_rm] */
-        b_binary.execute(1, 0, &l_scratch2[0][0][0], &l_rfs[l_rm], &l_scratch2[0][0][0]);
-
-        /* 2.1 io_dofsA[l_rm][l_qt][l_md][l_cr] += l_scratch2[l_qt][l_md][l_cr] */
-        b_binary.execute(1, 1, &io_dofsA[l_rm][0][0][0], &l_scratch2[0][0][0], &io_dofsA[l_rm][0][0][0]);
-#    endif
-#  endif
 #else
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
           for( unsigned short l_md = 0; l_md < TL_N_MDS; l_md++ ) {

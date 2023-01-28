@@ -34,8 +34,6 @@
 #include "data/TernaryXsmm.hpp"
 #include "data/XsmmUtils.hpp"
 
-#define PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
-
 namespace edge {
   namespace seismic {
     namespace kernels {
@@ -103,18 +101,9 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
     //! binary kernels
     edge::data::BinaryXsmm< TL_T_REAL > b_binary;
 
-    //! ternary kernels
-    edge::data::TernaryXsmm< TL_T_REAL > t_ternary;
-
-#ifdef PP_T_KERNELS_XSMM_EQUATION_TPP
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
+    //! equation kernels
     std::vector<libxsmm_matrix_eqn_function>  e_eqns0;
-#  else
-    std::vector<libxsmm_matrix_eqn_function>  e_eqns00;
-    std::vector<libxsmm_matrix_eqn_function>  e_eqns01;
-#  endif
     std::vector<libxsmm_matrix_eqn_function>  e_eqns1;
-#endif
 
     /**
      * Generates the matrix kernels for the transposed stiffness matrices and star matrices.
@@ -189,26 +178,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       // zeroing: buffer for the anelastic computations
       u_unary.add(2, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_UNARY_XOR, LIBXSMM_MELTW_FLAG_UNARY_NONE);
 
-      // multiply with relaxation frequency and add
-      // addition
-      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-      // mult + assign
-      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-      // accumulation 2
-      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-      b_binary.add(3, TL_N_MDS * TL_N_QTS_M, 1 /* m, n */, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-
-
-      // update time integrated dofs
-      for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
-        unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
-        b_binary.add(4, l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
-                      LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
-        b_binary.add(5, l_nCpMds, TL_N_QTS_E /* m, n */, TL_N_MDS, TL_N_MDS, TL_N_MDS /* ldi0, ldi1, ldo */,
-                      LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-      }
-
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP
       for( unsigned short l_de = 1; l_de < TL_O_TI; l_de++ ) {
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
 
@@ -225,15 +194,12 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         libxsmm_matrix_eqn_arg_metadata arg_metadata;
         libxsmm_matrix_eqn_op_metadata  op_metadata;
 
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
         libxsmm_bitfield unary_flags;
-#    endif
         libxsmm_bitfield binary_flags;
         libxsmm_bitfield ternary_flags;
 
         arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
         // adding to eqns0 (multiply with relaxation frequency and add)
         libxsmm_blasint my_eqn0 = libxsmm_matrix_eqn_create();         /* o_derA[l_de] = l_rfs[l_rm] * (l_scratch + o_derA[l-de-1]) and o_tintA += l_scalar * o_derA (via DUMP) */
 
@@ -313,108 +279,8 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           exit(-1);
         }
         e_eqns0.push_back(func0);
-#    else
-        // adding to eqns00 (multiply with relaxation frequency and add, part 1)
-        libxsmm_blasint my_eqn00 = libxsmm_matrix_eqn_create();         /* o_derA[l_de] = l_rfs[l_rm] * (l_scratch + o_derA[l-de-1]) */
-
-        binary_flags             = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
-        op_metadata.eqn_idx      = my_eqn00;
-        op_metadata.op_arg_pos   = -1;
-        libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_BINARY_MUL, dtype_comp, binary_flags);
-
-        binary_flags             = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-        op_metadata.eqn_idx      = my_eqn00;
-        op_metadata.op_arg_pos   = -1;
-        libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_BINARY_ADD, dtype_comp, binary_flags);
-
-        arg_metadata.eqn_idx     = my_eqn00;
-        arg_metadata.in_arg_pos  = 0;
-        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* l_scratch, [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = 1;
-        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
-        arg_shape.type = dtype;
-        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
-
-        arg_metadata.eqn_idx     = my_eqn00;
-        arg_metadata.in_arg_pos  = 1;
-        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_derA[l_de-1], [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = 1;
-        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
-        arg_shape.type = dtype;
-        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
-
-        arg_metadata.eqn_idx     = my_eqn00;
-        arg_metadata.in_arg_pos  = 2;
-        arg_shape.m    = 1;                                             /* l_rfs[l_rm], [1] */
-        arg_shape.n    = 1;
-        arg_shape.ld   = 1;
-        arg_shape.type = dtype;
-        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
-
-        eqn_out_arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                   /* o_derA[l_de], [TL_N_MDS][TL_N_QTS_M] */
-        eqn_out_arg_shape.n    = 1;
-        eqn_out_arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
-        eqn_out_arg_shape.type = dtype;
-
-        //libxsmm_matrix_eqn_tree_print( my_eqn00 );
-        //libxsmm_matrix_eqn_rpn_print ( my_eqn00 );
-        libxsmm_matrix_eqn_function func00 = libxsmm_dispatch_matrix_eqn_v2( my_eqn00, eqn_out_arg_shape );
-        if ( func00 == NULL) {
-          fprintf( stderr, "JIT for TPP equation func00 (eqn00) failed. Bailing...!\n");
-          exit(-1);
-        }
-        e_eqns00.push_back(func00);
-
-        // adding to eqns01 (multiply with relaxation frequency and add, part 2)
-
-        libxsmm_blasint my_eqn01 = libxsmm_matrix_eqn_create();         /* o_tintA += l_scalar * o_derA */
-
-        ternary_flags            = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1;
-        op_metadata.eqn_idx      = my_eqn01;
-        op_metadata.op_arg_pos   = -1;
-        libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype_comp, ternary_flags);
-
-        arg_metadata.eqn_idx     = my_eqn01;
-        arg_metadata.in_arg_pos  = 0;
-        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_derA, [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = 1;
-        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
-        arg_shape.type = dtype;
-        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
-
-        arg_metadata.eqn_idx     = my_eqn01;
-        arg_metadata.in_arg_pos  = 1;
-        arg_shape.m    = 1;                                             /* l_scalar, [1] */
-        arg_shape.n    = 1;
-        arg_shape.ld   = 1;
-        arg_shape.type = dtype;
-        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
-
-        arg_metadata.eqn_idx     = my_eqn01;
-        arg_metadata.in_arg_pos  = 2;
-        arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                           /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
-        arg_shape.n    = 1;
-        arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
-        arg_shape.type = dtype;
-        libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape, arg_singular_attr);
-
-        eqn_out_arg_shape.m    = TL_N_MDS*TL_N_QTS_M;                   /* o_tintA, [TL_N_MDS][TL_N_QTS_M] */
-        eqn_out_arg_shape.n    = 1;
-        eqn_out_arg_shape.ld   = TL_N_MDS*TL_N_QTS_M;
-        eqn_out_arg_shape.type = dtype;
-
-        //libxsmm_matrix_eqn_tree_print( my_eqn01 );
-        //libxsmm_matrix_eqn_rpn_print ( my_eqn01 );
-        libxsmm_matrix_eqn_function func01 = libxsmm_dispatch_matrix_eqn_v2( my_eqn01, eqn_out_arg_shape );
-        if ( func01 == NULL) {
-          fprintf( stderr, "JIT for TPP equation func01 (eqn01) failed. Bailing...!\n");
-          exit(-1);
-        }
-        e_eqns01.push_back(func01);
-#    endif
 
         // adding to eqns1 (update time integrated DOFs)
-
         libxsmm_blasint my_eqn1 = libxsmm_matrix_eqn_create();          /* o_tintE += l_scalar * o_derE */
 
         ternary_flags            = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1;
@@ -461,7 +327,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
         }
         e_eqns1.push_back(func1);
       } /* loop over l_de for TPP equations */
-#  endif
 #endif
     }
 
@@ -554,16 +419,14 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
       }
 #endif
 
-#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and defined(PP_T_KERNELS_XSMM_EQUATION_TPP)
+#ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
       libxsmm_matrix_arg arg_array[5];
       libxsmm_matrix_eqn_param eqn_param;
       memset( &eqn_param, 0, sizeof(eqn_param));
       eqn_param.inputs = arg_array;
 
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
       libxsmm_matrix_op_arg op_arg_arr[1];
       eqn_param.ops_args = op_arg_arr;
-#  endif
 #endif
 
       // iterate over time derivatives
@@ -582,12 +445,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         // buffer for the anelastic computations
         TL_T_REAL l_scratch[TL_N_QTS_M][TL_N_MDS];
-#if defined(PP_T_KERNELS_XSMM_ELTWISE_TPP) and !defined(PP_T_KERNELS_XSMM_EQUATION_TPP)
-        // buffer for relaxation computations
-        TL_T_REAL l_scratch2[TL_N_QTS_M][TL_N_MDS];
-        // buffer for time integrated dofs
-        TL_T_REAL l_scratch3[TL_N_QTS_E][TL_N_MDS];
-#endif
 
         if( TL_N_RMS > 0 ) {
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
@@ -646,8 +503,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
           // multiply with relaxation frequency and add
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP
-#    ifdef PP_T_KERNELS_XSMM_EQUATION_DUMP_TPP
           arg_array[0].primary     = &l_scratch[0][0];
           arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
           arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
@@ -657,32 +512,6 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
           eqn_param.output.primary = &o_tIntA[l_rm][0][0][0];
 
           e_eqns0[l_de-1](&eqn_param);
-#    else
-          arg_array[0].primary     = &l_scratch[0][0];
-          arg_array[1].primary     = &o_derA[l_rm][l_de-1][0][0][0];
-          arg_array[2].primary     = const_cast<void*>(reinterpret_cast<const void*>(&l_rfs[l_rm]));
-          eqn_param.output.primary = &o_derA[l_rm][l_de][0][0][0];
-          e_eqns00[l_de-1](&eqn_param);
-
-          arg_array[0].primary     = &o_derA[l_rm][l_de][0][0][0];
-          arg_array[1].primary     = &l_scalar;
-          arg_array[2].primary     = &o_tIntA[l_rm][0][0][0];
-          eqn_param.output.primary = &o_tIntA[l_rm][0][0][0];
-          e_eqns01[l_de-1](&eqn_param);
-#    endif
-#  else
-          /* 1. l_scratch2[][] = l_scratch[l_qt][l_md] + o_derA[l_rm][l_de-1][l_qt][l_md][0] */
-          b_binary.execute(3, 0, &l_scratch[0][0], &o_derA[l_rm][l_de-1][0][0][0], &l_scratch2[0][0]);
-
-          /* 2  o_derA[l_rm][l_de][l_qt][l_md][0] = l_rfs[l_rm] * l_scratch2[l_qt][l_md][0] */
-          b_binary.execute(3, 1, &l_scratch2[0][0], &l_rfs[l_rm], &o_derA[l_rm][l_de][0][0][0]);
-
-          /* 3.1 l_scratch2 = l_scalar * o_derA[l_rm][l_de][l_qt][l_md][0] */
-          b_binary.execute(3, 2, &o_derA[l_rm][l_de][0][0][0], &l_scalar, &l_scratch2[0][0]);
-          /* 3.2 o_tIntA[l_rm][l_qt][l_md][0] += l_scratch2[l_qt][l_md][0] */
-          b_binary.execute(3, 3, &o_tIntA[l_rm][0][0][0], &l_scratch2[0][0], &o_tIntA[l_rm][0][0][0]);
-#  endif
-
 #else
           for( unsigned short l_qt = 0; l_qt < TL_N_QTS_M; l_qt++ ) {
 #pragma omp simd
@@ -696,22 +525,11 @@ class edge::seismic::kernels::TimePredSingle: public edge::seismic::kernels::Tim
 
         // elastic: update time integrated DOFs
 #ifdef PP_T_KERNELS_XSMM_ELTWISE_TPP
-#  ifdef PP_T_KERNELS_XSMM_EQUATION_TPP
         arg_array[0].primary     = &o_derE[l_de][0][0][0];                         /* [l_nCpMds, TL_N_QTS_E] */
         arg_array[1].primary     = &l_scalar;                                      /* [1] */
         arg_array[2].primary     = &o_tIntE[0][0][0];                              /* [l_nCpMds, TL_N_QTS_E] */
         eqn_param.output.primary = &o_tIntE[0][0][0];                              /* [l_nCpMds, TL_N_QTS_E] */
         e_eqns1[l_de-1](&eqn_param);
-#  else
-        /* @TODO: One could use a ternary here (but likely it is not possible right now due
-            to the missing support for TERNARY_BCAST flags outside equations) */
-
-        /* 1.1 l_scratch3 = l_scalar * o_derE[l_de][l_qt][l_md][0] */
-        b_binary.execute(4, l_de-1, &o_derE[l_de][0][0][0], &l_scalar, &l_scratch3[0][0]);
-
-        /* 1.2 o_tIntE[l_qt][l_md][0] += l_scratch3 */
-        b_binary.execute(5, l_de-1, &o_tIntE[0][0][0], &l_scratch3[0][0], &o_tIntE[0][0][0]);
-#  endif
 #else
         unsigned short l_nCpMds = (TL_N_RMS == 0) ? CE_N_ELEMENT_MODES_CK( TL_T_EL, TL_O_SP, l_de ) : TL_N_MDS;
         for( unsigned short l_qt = 0; l_qt < TL_N_QTS_E; l_qt++ ) {
