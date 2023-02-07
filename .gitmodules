@@ -6,7 +6,7 @@
 	url = https://github.com/easylogging/easyloggingpp.git
 [submodule "submodules/libxsmm"]
 	path = submodules/libxsmm
-	url = https://github.com/breuera/libxsmm.git
+	url = https://github.com/libxsmm/libxsmm.git
 [submodule "submodules/exprtk"]
 	path = submodules/exprtk
 	url = https://github.com/3343/exprtk.git
